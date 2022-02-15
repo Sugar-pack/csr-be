@@ -1,16 +1,16 @@
 ## What is this repo?
-This repo is working example of repository in Request To Pay system.
-Repository performs the processing of any request in the system -
-each biller or payer requests. Or even requests between several repositories.
+This is skeleton of CSR backend API.
 
 Current repository provides API for following interactions:
+Unauthorized APIs:
+- `GET /api/docs` - swagger generated UI
+- `POST /api/v1/users` - user registration (doesn't require authorization)
 
-Interactions between customer (biller or payer) with the system:
-
-- registration (creation of user account)
+Authorized APIs:
+- `GET /api/v1/users/me` - get current user data
+- `PATCH /api/v1/users/me` - PATCH current user data
 
 ## How to run this code
-
 1. Install go language binary https://golang.org/doc/install
 2. Install go-swagger binary https://goswagger.io/install.html
 3. Install ent binary:
