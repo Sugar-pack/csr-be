@@ -1,0 +1,153 @@
+swagger: "2.0"
+info:
+  version: "0.0.1"
+  title: Be
+  description: |
+    The API provides CSR backend API.
+
+basePath: /api/
+schemes:
+  - http
+securityDefinitions:
+  Bearer:
+    type: apiKey
+    name: Authorization
+    in: header
+consumes:
+  - application/json
+produces:
+  - application/json
+
+paths:
+  /v1/users:
+    post:
+      summary: Register a new user.
+      tags:
+        - Users
+      operationId: postUser
+      responses:
+        201:
+          description: Created
+          schema:
+            $ref: "#/definitions/CreateUserResponse"
+        default:
+          description: Unexpected error.
+          schema:
+            $ref: "#/definitions/Error"
+  /v1/users/me:
+    get:
+      summary: Get the current user data.
+      security:
+        - Bearer: []
+      tags:
+        - Users
+      operationId: getCurrentUser
+      responses:
+        200:
+          description: Success
+          schema:
+            $ref: "#/definitions/GetUserResponse"
+        default:
+          description: Unexpected error.
+          schema:
+            $ref: "#/definitions/Error"
+    patch:
+      summary: Edit selected fields of the current user.
+      security:
+        - Bearer: []
+      tags:
+        - Users
+      operationId: patchUser
+      consumes:
+        - application/json
+      parameters:
+        - name: userPatch
+          in: body
+          description: The patch to apply to the user.
+          required: true
+          schema:
+            $ref: "#/definitions/PatchRequest"
+      responses:
+        204:
+          description: Success
+        default:
+          description: Unexpected error
+          schema:
+            $ref: "#/definitions/Error"
+
+definitions:
+  Error:
+    type: object
+    required:
+      - data
+    properties:
+      data:
+        type: object
+        properties:
+          correlationId:
+            type: string
+          message:
+            type: string
+
+  PatchRequest:
+    type: array
+    items:
+      $ref: "#/definitions/PatchItem"
+  PatchItem:
+    type: object
+    description: A JSONPatch document as defined by RFC 6902
+    required:
+      - op
+      - path
+    properties:
+      from:
+        description: A string containing a JSON Pointer value
+        type: string
+      op:
+        description: The operation to be performed
+        enum:
+          - add
+          - remove
+          - replace
+          - move
+          - copy
+          - test
+        type: string
+      path:
+        description: A JSON-Pointer
+        type: string
+      value:
+        description: The value to be used within the operations
+        type: object
+
+  # User
+  User:
+    type: object
+    required:
+      - id
+      - createTime
+    properties:
+      id:
+        type: string
+      createTime:
+        type: string
+        format: date-time
+  CreateUserResponse:
+    type: object
+    required:
+      - data
+    properties:
+      data:
+        type: object
+        required:
+          - id
+        properties:
+          id:
+            type: string
+  GetUserResponse:
+    type: object
+    required:
+      - data
+    properties:
+      data:
+        $ref: "#/definitions/User"
