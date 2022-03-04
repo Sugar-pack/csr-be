@@ -29,6 +29,17 @@ var (
 		Columns:    PermissionsColumns,
 		PrimaryKey: []*schema.Column{PermissionsColumns[0]},
 	}
+	// StatusesColumns holds the columns for the "statuses" table.
+	StatusesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "name", Type: field.TypeString, Unique: true},
+	}
+	// StatusesTable holds the schema information for the "statuses" table.
+	StatusesTable = &schema.Table{
+		Name:       "statuses",
+		Columns:    StatusesColumns,
+		PrimaryKey: []*schema.Column{StatusesColumns[0]},
+	}
 	// UsersColumns holds the columns for the "users" table.
 	UsersColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt, Increment: true},
@@ -94,6 +105,7 @@ var (
 	Tables = []*schema.Table{
 		GroupsTable,
 		PermissionsTable,
+		StatusesTable,
 		UsersTable,
 		GroupUsersTable,
 		GroupPermissionsTable,
