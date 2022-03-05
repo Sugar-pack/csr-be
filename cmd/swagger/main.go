@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"log"
+	"os"
 
 	"entgo.io/ent/dialect"
 	entsql "entgo.io/ent/dialect/sql"
@@ -26,7 +27,9 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	connectionString := "host=localhost user=csr password=csr dbname=csr sslmode=disable"
+	dbHost := getEnv("DB_HOST", "localhost")
+
+	connectionString := "host=" + dbHost + " user=csr password=csr dbname=csr sslmode=disable"
 	db, err := sql.Open("pgx", connectionString)
 	if err != nil {
 		log.Fatal(err)
@@ -66,7 +69,7 @@ func main() {
 	listeners := []string{"http"}
 
 	server.EnabledListeners = listeners
-	server.Host = "127.0.0.1"
+	server.Host = getEnv("SERVER_HOST", "127.0.0.1")
 	server.Port = 8080
 
 	if err := server.Serve(); err != nil {
@@ -78,4 +81,11 @@ func main() {
 		logger.Error("error shutting down server", zap.Error(err))
 		return
 	}
+}
+
+func getEnv(key string, defaultValue string) string {
+    if value, exists := os.LookupEnv(key); exists {
+		return value
+    }
+    return defaultValue
 }

@@ -2,9 +2,34 @@ version: '3'
 services:
   database:
     image: "postgres:latest"
+    container_name: lc_postgres
     environment:
       - POSTGRES_PASSWORD=postgres # required
     volumes:
       - ./docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d # mount volume with init scripts
     ports:
       - "5432:5432"
+    networks:
+      - go-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U csr -p 5432"]
+      interval: 2s
+      timeout: 1s
+      retries: 5
+
+  goapp:
+    image: go_run:${TAG}
+    container_name: lc_golang
+    environment:
+      - DB_HOST=database
+      - SERVER_HOST=0.0.0.0
+    depends_on:
+      - database
+    ports:
+      - 8080:8080
+    restart: on-failure:3
+    networks:
+      - go-network
+
+networks:
+  go-network:
