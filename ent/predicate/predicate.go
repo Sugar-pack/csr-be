@@ -12,5 +12,8 @@ type Group func(*sql.Selector)
 // Permission is the predicate function for permission builders.
 type Permission func(*sql.Selector)
 
+// Statuses is the predicate function for statuses builders.
+type Statuses func(*sql.Selector)
+
 // User is the predicate function for user builders.
 type User func(*sql.Selector)

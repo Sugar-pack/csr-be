@@ -18,7 +18,7 @@ consumes:
 produces:
   - application/json
 
-paths:
+paths:  
   /v1/users:
     post:
       summary: Register a new user.
@@ -74,6 +74,77 @@ paths:
           description: Unexpected error
           schema:
             $ref: "#/definitions/Error"
+  /equipment/statuses:
+    post:
+      summary: Creating a new status.
+      tags:
+        - Status
+      operationId: postStatus
+      parameters:
+        - name: name
+          in: body
+          description: Status Name
+          required: true
+          schema:
+            $ref: "#/definitions/StatusName"
+      responses:
+        201:
+          description: Status has been created
+          schema: 
+            $ref: "#/definitions/SuccessStatusOperationResponse" 
+        default:
+          description: Unexpected error.
+          schema:
+            $ref: "#/definitions/Error"
+    get:
+      summary: List all statuses.
+      tags:
+        - Status
+      operationId: GetStatuses
+      responses:
+        201:
+          description: Success
+          schema:
+            $ref: "#/definitions/ListStatuses"
+        default:
+          description: Unexpected error.
+          schema:
+            $ref: "#/definitions/Error"
+  /equipment/statuses/{statusId}:
+    parameters:
+      - name: statusId
+        in: path
+        required: true
+        description: status id
+        type: string
+    get:
+      summary: Get status by id
+      tags:
+        - Status
+      operationId: GetStatus
+      responses:
+        201:
+          description: Status has been created
+          schema: 
+            $ref: "#/definitions/SuccessStatusOperationResponse" 
+        default:
+          description: Unexpected error.
+          schema:
+            $ref: "#/definitions/Error"
+    delete:
+      summary: Delete status by id
+      tags:
+        - Status
+      operationId: DeleteStatus
+      responses:
+        201:
+          description: Status has been created
+          schema: 
+            $ref: "#/definitions/SuccessStatusOperationResponse" 
+        default:
+          description: Unexpected error.
+          schema:
+            $ref: "#/definitions/Error"  
 
 definitions:
   Error:
@@ -151,3 +222,36 @@ definitions:
     properties:
       data:
         $ref: "#/definitions/User"
+
+  #Status
+  Status:
+    type: object
+    required:
+      - id
+      - name
+    properties:
+      id:
+        type: string
+      name:
+        type: string
+  ListStatuses:
+    type: array
+    items:
+      $ref: "#/definitions/Status"
+  SuccessStatusOperationResponse:
+    type: object
+    required:
+      - data 
+    properties:
+      data:
+        $ref: "#/definitions/Status"
+  StatusName:          
+    type: object
+    required: 
+      - name
+    properties:
+      name: 
+        type: string
+
+
+
