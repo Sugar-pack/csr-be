@@ -58,7 +58,7 @@ func (c Status) GetStatusesFunc() status.GetStatusesHandlerFunc {
 		listStatuses := models.ListStatuses{}
 		for _, element := range e {
 			id := strconv.Itoa(element.ID)
-			listStatuses = append(listStatuses, &models.Status{&id, &element.Name})
+			listStatuses = append(listStatuses, &models.Status{ID: &id, Name: &element.Name})
 		}
 		return status.NewGetStatusesCreated().WithPayload(listStatuses)
 	}
@@ -110,11 +110,11 @@ func (c Status) DeleteStatusFunc() status.DeleteStatusHandlerFunc {
 				},
 			})
 		}
-		deleteErr := c.client.Statuses.DeleteOne(e).Exec(s.HTTPRequest.Context())
-		if deleteErr != nil {
+		err = c.client.Statuses.DeleteOne(e).Exec(s.HTTPRequest.Context())
+		if err != nil {
 			return status.NewDeleteStatusDefault(http.StatusInternalServerError).WithPayload(&models.Error{
 				Data: &models.ErrorData{
-					Message: deleteErr.Error(),
+					Message: err.Error(),
 				},
 			})
 		}
