@@ -9,6 +9,9 @@ import (
 // Group is the predicate function for group builders.
 type Group func(*sql.Selector)
 
+// Kind is the predicate function for kind builders.
+type Kind func(*sql.Selector)
+
 // Permission is the predicate function for permission builders.
 type Permission func(*sql.Selector)
 

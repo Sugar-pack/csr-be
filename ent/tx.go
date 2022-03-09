@@ -14,6 +14,8 @@ type Tx struct {
 	config
 	// Group is the client for interacting with the Group builders.
 	Group *GroupClient
+	// Kind is the client for interacting with the Kind builders.
+	Kind *KindClient
 	// Permission is the client for interacting with the Permission builders.
 	Permission *PermissionClient
 	// User is the client for interacting with the User builders.
@@ -154,6 +156,7 @@ func (tx *Tx) Client() *Client {
 
 func (tx *Tx) init() {
 	tx.Group = NewGroupClient(tx.config)
+	tx.Kind = NewKindClient(tx.config)
 	tx.Permission = NewPermissionClient(tx.config)
 	tx.User = NewUserClient(tx.config)
 }

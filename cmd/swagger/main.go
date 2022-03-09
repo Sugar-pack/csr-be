@@ -54,6 +54,11 @@ func main() {
 		logger,
 	)
 
+	kindsHandler := handlers.NewKind(
+		client,
+		logger,
+	)
+
 	api := operations.NewBeAPI(swaggerSpec)
 	api.UseSwaggerUI()
 	api.BearerAuth = middlewares.BearerAuthenticateFunc("key", logger)
@@ -61,6 +66,11 @@ func main() {
 	api.UsersPostUserHandler = userHandler.PostUserFunc()
 	api.UsersGetCurrentUserHandler = userHandler.GetUserFunc()
 	api.UsersPatchUserHandler = userHandler.PatchUserFunc()
+
+	api.KindsCreateNewKindHandler = kindsHandler.CreateNewKindFunc()
+	api.KindsGetKindByIDHandler = kindsHandler.GetKindByIDFunc()
+	api.KindsDeleteKindHandler = kindsHandler.DeleteKindFunc()
+	api.KindsGetAllKindsHandler = kindsHandler.GetAllKindsFunc()
 
 	server := restapi.NewServer(api)
 	listeners := []string{"http"}

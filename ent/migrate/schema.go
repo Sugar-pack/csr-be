@@ -18,6 +18,17 @@ var (
 		Columns:    GroupsColumns,
 		PrimaryKey: []*schema.Column{GroupsColumns[0]},
 	}
+	// KindsColumns holds the columns for the "kinds" table.
+	KindsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "name", Type: field.TypeString, Default: "unknown"},
+	}
+	// KindsTable holds the schema information for the "kinds" table.
+	KindsTable = &schema.Table{
+		Name:       "kinds",
+		Columns:    KindsColumns,
+		PrimaryKey: []*schema.Column{KindsColumns[0]},
+	}
 	// PermissionsColumns holds the columns for the "permissions" table.
 	PermissionsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt, Increment: true},
@@ -93,6 +104,7 @@ var (
 	// Tables holds all the tables in the schema.
 	Tables = []*schema.Table{
 		GroupsTable,
+		KindsTable,
 		PermissionsTable,
 		UsersTable,
 		GroupUsersTable,

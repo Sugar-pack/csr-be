@@ -5,17 +5,17 @@ go 1.17
 require (
 	entgo.io/ent v0.10.0
 	github.com/go-openapi/errors v0.20.2
-	github.com/go-openapi/loads v0.21.0
-	github.com/go-openapi/runtime v0.21.1
+	github.com/go-openapi/loads v0.21.1
+	github.com/go-openapi/runtime v0.23.2
 	github.com/go-openapi/spec v0.20.4
-	github.com/go-openapi/strfmt v0.21.1
-	github.com/go-openapi/swag v0.19.15
-	github.com/go-openapi/validate v0.20.3
+	github.com/go-openapi/strfmt v0.21.2
+	github.com/go-openapi/swag v0.21.1
+	github.com/go-openapi/validate v0.21.0
 	github.com/golang-jwt/jwt v3.2.2+incompatible
 	github.com/jackc/pgx/v4 v4.15.0
 	github.com/jessevdk/go-flags v1.5.0
 	go.uber.org/zap v1.21.0
-	golang.org/x/net v0.0.0-20220121210141-e204ce36a2ba
+	golang.org/x/net v0.0.0-20220225172249-27dd8689420f
 )
 
 require (
@@ -56,17 +56,19 @@ require (
 	github.com/jackc/pgproto3/v2 v2.2.0 // indirect
 	github.com/jackc/pgservicefile v0.0.0-20200714003250-2b9c44734f2b // indirect
 	github.com/jackc/pgtype v1.10.0 // indirect
+	github.com/jmoiron/sqlx v1.3.4
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/kr/pretty v0.2.0 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/mitchellh/go-wordwrap v0.0.0-20150314170334-ad45545899c7 // indirect
 	github.com/mitchellh/mapstructure v1.4.3 // indirect
 	github.com/oklog/ulid v1.3.1 // indirect
+	github.com/rs/zerolog v1.26.1
 	github.com/zclconf/go-cty v1.8.0 // indirect
-	go.mongodb.org/mongo-driver v1.8.2 // indirect
+	go.mongodb.org/mongo-driver v1.8.3 // indirect
 	go.uber.org/atomic v1.7.0 // indirect
 	go.uber.org/multierr v1.6.0 // indirect
-	golang.org/x/crypto v0.0.0-20210817164053-32db794688a5 // indirect
+	golang.org/x/crypto v0.0.0-20211215165025-cf75a172585e // indirect
 	golang.org/x/mod v0.5.1 // indirect
 	golang.org/x/sys v0.0.0-20220114195835-da31bd327af9 // indirect
 	golang.org/x/text v0.3.7 // indirect

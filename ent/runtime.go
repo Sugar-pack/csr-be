@@ -3,6 +3,7 @@
 package ent
 
 import (
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/kind"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/permission"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/schema"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/user"
@@ -12,6 +13,12 @@ import (
 // (default values, validators, hooks and policies) and stitches it
 // to their package variables.
 func init() {
+	kindFields := schema.Kind{}.Fields()
+	_ = kindFields
+	// kindDescName is the schema descriptor for name field.
+	kindDescName := kindFields[0].Descriptor()
+	// kind.DefaultName holds the default value on creation for the name field.
+	kind.DefaultName = kindDescName.Default.(string)
 	permissionFields := schema.Permission{}.Fields()
 	_ = permissionFields
 	// permissionDescName is the schema descriptor for name field.
