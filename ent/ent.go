@@ -11,6 +11,7 @@ import (
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/group"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/kind"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/permission"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/statuses"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/user"
 )
 
@@ -35,6 +36,7 @@ func columnChecker(table string) func(string) error {
 		group.Table:      group.ValidColumn,
 		kind.Table:       kind.ValidColumn,
 		permission.Table: permission.ValidColumn,
+		statuses.Table:   statuses.ValidColumn,
 		user.Table:       user.ValidColumn,
 	}
 	check, ok := checks[table]

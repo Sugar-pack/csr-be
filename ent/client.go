@@ -12,6 +12,7 @@ import (
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/group"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/kind"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/permission"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/statuses"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/user"
 
 	"entgo.io/ent/dialect"
@@ -30,6 +31,8 @@ type Client struct {
 	Kind *KindClient
 	// Permission is the client for interacting with the Permission builders.
 	Permission *PermissionClient
+	// Statuses is the client for interacting with the Statuses builders.
+	Statuses *StatusesClient
 	// User is the client for interacting with the User builders.
 	User *UserClient
 }
@@ -48,6 +51,7 @@ func (c *Client) init() {
 	c.Group = NewGroupClient(c.config)
 	c.Kind = NewKindClient(c.config)
 	c.Permission = NewPermissionClient(c.config)
+	c.Statuses = NewStatusesClient(c.config)
 	c.User = NewUserClient(c.config)
 }
 
@@ -85,6 +89,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		Group:      NewGroupClient(cfg),
 		Kind:       NewKindClient(cfg),
 		Permission: NewPermissionClient(cfg),
+		Statuses:   NewStatusesClient(cfg),
 		User:       NewUserClient(cfg),
 	}, nil
 }
@@ -108,6 +113,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		Group:      NewGroupClient(cfg),
 		Kind:       NewKindClient(cfg),
 		Permission: NewPermissionClient(cfg),
+		Statuses:   NewStatusesClient(cfg),
 		User:       NewUserClient(cfg),
 	}, nil
 }
@@ -141,6 +147,7 @@ func (c *Client) Use(hooks ...Hook) {
 	c.Group.Use(hooks...)
 	c.Kind.Use(hooks...)
 	c.Permission.Use(hooks...)
+	c.Statuses.Use(hooks...)
 	c.User.Use(hooks...)
 }
 
@@ -460,6 +467,96 @@ func (c *PermissionClient) QueryGroups(pe *Permission) *GroupQuery {
 // Hooks returns the client hooks.
 func (c *PermissionClient) Hooks() []Hook {
 	return c.hooks.Permission
+}
+
+// StatusesClient is a client for the Statuses schema.
+type StatusesClient struct {
+	config
+}
+
+// NewStatusesClient returns a client for the Statuses from the given config.
+func NewStatusesClient(c config) *StatusesClient {
+	return &StatusesClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `statuses.Hooks(f(g(h())))`.
+func (c *StatusesClient) Use(hooks ...Hook) {
+	c.hooks.Statuses = append(c.hooks.Statuses, hooks...)
+}
+
+// Create returns a create builder for Statuses.
+func (c *StatusesClient) Create() *StatusesCreate {
+	mutation := newStatusesMutation(c.config, OpCreate)
+	return &StatusesCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of Statuses entities.
+func (c *StatusesClient) CreateBulk(builders ...*StatusesCreate) *StatusesCreateBulk {
+	return &StatusesCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for Statuses.
+func (c *StatusesClient) Update() *StatusesUpdate {
+	mutation := newStatusesMutation(c.config, OpUpdate)
+	return &StatusesUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *StatusesClient) UpdateOne(s *Statuses) *StatusesUpdateOne {
+	mutation := newStatusesMutation(c.config, OpUpdateOne, withStatuses(s))
+	return &StatusesUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *StatusesClient) UpdateOneID(id int) *StatusesUpdateOne {
+	mutation := newStatusesMutation(c.config, OpUpdateOne, withStatusesID(id))
+	return &StatusesUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for Statuses.
+func (c *StatusesClient) Delete() *StatusesDelete {
+	mutation := newStatusesMutation(c.config, OpDelete)
+	return &StatusesDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a delete builder for the given entity.
+func (c *StatusesClient) DeleteOne(s *Statuses) *StatusesDeleteOne {
+	return c.DeleteOneID(s.ID)
+}
+
+// DeleteOneID returns a delete builder for the given id.
+func (c *StatusesClient) DeleteOneID(id int) *StatusesDeleteOne {
+	builder := c.Delete().Where(statuses.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &StatusesDeleteOne{builder}
+}
+
+// Query returns a query builder for Statuses.
+func (c *StatusesClient) Query() *StatusesQuery {
+	return &StatusesQuery{
+		config: c.config,
+	}
+}
+
+// Get returns a Statuses entity by its id.
+func (c *StatusesClient) Get(ctx context.Context, id int) (*Statuses, error) {
+	return c.Query().Where(statuses.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *StatusesClient) GetX(ctx context.Context, id int) *Statuses {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *StatusesClient) Hooks() []Hook {
+	return c.hooks.Statuses
 }
 
 // UserClient is a client for the User schema.

@@ -20,6 +20,7 @@ import (
 	"github.com/go-openapi/swag"
 
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/restapi/operations/kinds"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/restapi/operations/status"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/restapi/operations/users"
 )
 
@@ -48,8 +49,17 @@ func NewBeAPI(spec *loads.Document) *BeAPI {
 		KindsCreateNewKindHandler: kinds.CreateNewKindHandlerFunc(func(params kinds.CreateNewKindParams) middleware.Responder {
 			return middleware.NotImplemented("operation kinds.CreateNewKind has not yet been implemented")
 		}),
+		StatusDeleteStatusHandler: status.DeleteStatusHandlerFunc(func(params status.DeleteStatusParams) middleware.Responder {
+			return middleware.NotImplemented("operation status.DeleteStatus has not yet been implemented")
+		}),
 		KindsGetAllKindsHandler: kinds.GetAllKindsHandlerFunc(func(params kinds.GetAllKindsParams) middleware.Responder {
 			return middleware.NotImplemented("operation kinds.GetAllKinds has not yet been implemented")
+		}),
+		StatusGetStatusHandler: status.GetStatusHandlerFunc(func(params status.GetStatusParams) middleware.Responder {
+			return middleware.NotImplemented("operation status.GetStatus has not yet been implemented")
+		}),
+		StatusGetStatusesHandler: status.GetStatusesHandlerFunc(func(params status.GetStatusesParams) middleware.Responder {
+			return middleware.NotImplemented("operation status.GetStatuses has not yet been implemented")
 		}),
 		KindsDeleteKindHandler: kinds.DeleteKindHandlerFunc(func(params kinds.DeleteKindParams) middleware.Responder {
 			return middleware.NotImplemented("operation kinds.DeleteKind has not yet been implemented")
@@ -62,6 +72,9 @@ func NewBeAPI(spec *loads.Document) *BeAPI {
 		}),
 		UsersPatchUserHandler: users.PatchUserHandlerFunc(func(params users.PatchUserParams, principal interface{}) middleware.Responder {
 			return middleware.NotImplemented("operation users.PatchUser has not yet been implemented")
+		}),
+		StatusPostStatusHandler: status.PostStatusHandlerFunc(func(params status.PostStatusParams) middleware.Responder {
+			return middleware.NotImplemented("operation status.PostStatus has not yet been implemented")
 		}),
 		UsersPostUserHandler: users.PostUserHandlerFunc(func(params users.PostUserParams) middleware.Responder {
 			return middleware.NotImplemented("operation users.PostUser has not yet been implemented")
@@ -119,8 +132,14 @@ type BeAPI struct {
 
 	// KindsCreateNewKindHandler sets the operation handler for the create new kind operation
 	KindsCreateNewKindHandler kinds.CreateNewKindHandler
+	// StatusDeleteStatusHandler sets the operation handler for the delete status operation
+	StatusDeleteStatusHandler status.DeleteStatusHandler
 	// KindsGetAllKindsHandler sets the operation handler for the get all kinds operation
 	KindsGetAllKindsHandler kinds.GetAllKindsHandler
+	// StatusGetStatusHandler sets the operation handler for the get status operation
+	StatusGetStatusHandler status.GetStatusHandler
+	// StatusGetStatusesHandler sets the operation handler for the get statuses operation
+	StatusGetStatusesHandler status.GetStatusesHandler
 	// KindsDeleteKindHandler sets the operation handler for the delete kind operation
 	KindsDeleteKindHandler kinds.DeleteKindHandler
 	// UsersGetCurrentUserHandler sets the operation handler for the get current user operation
@@ -129,6 +148,8 @@ type BeAPI struct {
 	KindsGetKindByIDHandler kinds.GetKindByIDHandler
 	// UsersPatchUserHandler sets the operation handler for the patch user operation
 	UsersPatchUserHandler users.PatchUserHandler
+	// StatusPostStatusHandler sets the operation handler for the post status operation
+	StatusPostStatusHandler status.PostStatusHandler
 	// UsersPostUserHandler sets the operation handler for the post user operation
 	UsersPostUserHandler users.PostUserHandler
 
@@ -215,8 +236,17 @@ func (o *BeAPI) Validate() error {
 	if o.KindsCreateNewKindHandler == nil {
 		unregistered = append(unregistered, "kinds.CreateNewKindHandler")
 	}
+	if o.StatusDeleteStatusHandler == nil {
+		unregistered = append(unregistered, "status.DeleteStatusHandler")
+	}
 	if o.KindsGetAllKindsHandler == nil {
 		unregistered = append(unregistered, "kinds.GetAllKindsHandler")
+	}
+	if o.StatusGetStatusHandler == nil {
+		unregistered = append(unregistered, "status.GetStatusHandler")
+	}
+	if o.StatusGetStatusesHandler == nil {
+		unregistered = append(unregistered, "status.GetStatusesHandler")
 	}
 	if o.KindsDeleteKindHandler == nil {
 		unregistered = append(unregistered, "kinds.DeleteKindHandler")
@@ -229,6 +259,9 @@ func (o *BeAPI) Validate() error {
 	}
 	if o.UsersPatchUserHandler == nil {
 		unregistered = append(unregistered, "users.PatchUserHandler")
+	}
+	if o.StatusPostStatusHandler == nil {
+		unregistered = append(unregistered, "status.PostStatusHandler")
 	}
 	if o.UsersPostUserHandler == nil {
 		unregistered = append(unregistered, "users.PostUserHandler")
@@ -334,10 +367,22 @@ func (o *BeAPI) initHandlerCache() {
 		o.handlers["POST"] = make(map[string]http.Handler)
 	}
 	o.handlers["POST"]["/equipment/kinds"] = kinds.NewCreateNewKind(o.context, o.KindsCreateNewKindHandler)
+	if o.handlers["DELETE"] == nil {
+		o.handlers["DELETE"] = make(map[string]http.Handler)
+	}
+	o.handlers["DELETE"]["/equipment/statuses/{statusId}"] = status.NewDeleteStatus(o.context, o.StatusDeleteStatusHandler)
 	if o.handlers["GET"] == nil {
 		o.handlers["GET"] = make(map[string]http.Handler)
 	}
 	o.handlers["GET"]["/equipment/kinds"] = kinds.NewGetAllKinds(o.context, o.KindsGetAllKindsHandler)
+	if o.handlers["GET"] == nil {
+		o.handlers["GET"] = make(map[string]http.Handler)
+	}
+	o.handlers["GET"]["/equipment/statuses/{statusId}"] = status.NewGetStatus(o.context, o.StatusGetStatusHandler)
+	if o.handlers["GET"] == nil {
+		o.handlers["GET"] = make(map[string]http.Handler)
+	}
+	o.handlers["GET"]["/equipment/statuses"] = status.NewGetStatuses(o.context, o.StatusGetStatusesHandler)
 	if o.handlers["DELETE"] == nil {
 		o.handlers["DELETE"] = make(map[string]http.Handler)
 	}
@@ -354,6 +399,10 @@ func (o *BeAPI) initHandlerCache() {
 		o.handlers["PATCH"] = make(map[string]http.Handler)
 	}
 	o.handlers["PATCH"]["/v1/users/me"] = users.NewPatchUser(o.context, o.UsersPatchUserHandler)
+	if o.handlers["POST"] == nil {
+		o.handlers["POST"] = make(map[string]http.Handler)
+	}
+	o.handlers["POST"]["/equipment/statuses"] = status.NewPostStatus(o.context, o.StatusPostStatusHandler)
 	if o.handlers["POST"] == nil {
 		o.handlers["POST"] = make(map[string]http.Handler)
 	}

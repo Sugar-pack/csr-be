@@ -143,6 +143,114 @@ func init() {
         }
       ]
     },
+    "/equipment/statuses": {
+      "get": {
+        "tags": [
+          "Status"
+        ],
+        "summary": "List all statuses.",
+        "operationId": "GetStatuses",
+        "responses": {
+          "201": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/ListStatuses"
+            }
+          },
+          "default": {
+            "description": "Unexpected error.",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Status"
+        ],
+        "summary": "Creating a new status.",
+        "operationId": "postStatus",
+        "parameters": [
+          {
+            "description": "Status Name",
+            "name": "name",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/StatusName"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Status has been created",
+            "schema": {
+              "$ref": "#/definitions/SuccessStatusOperationResponse"
+            }
+          },
+          "default": {
+            "description": "Unexpected error.",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        }
+      }
+    },
+    "/equipment/statuses/{statusId}": {
+      "get": {
+        "tags": [
+          "Status"
+        ],
+        "summary": "Get status by id",
+        "operationId": "GetStatus",
+        "responses": {
+          "201": {
+            "description": "Status has been created",
+            "schema": {
+              "$ref": "#/definitions/SuccessStatusOperationResponse"
+            }
+          },
+          "default": {
+            "description": "Unexpected error.",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Status"
+        ],
+        "summary": "Delete status by id",
+        "operationId": "DeleteStatus",
+        "responses": {
+          "201": {
+            "description": "Status has been created",
+            "schema": {
+              "$ref": "#/definitions/SuccessStatusOperationResponse"
+            }
+          },
+          "default": {
+            "description": "Unexpected error.",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        }
+      },
+      "parameters": [
+        {
+          "type": "string",
+          "description": "status id",
+          "name": "statusId",
+          "in": "path",
+          "required": true
+        }
+      ]
+    },
     "/v1/users": {
       "post": {
         "tags": [
@@ -347,6 +455,12 @@ func init() {
         "$ref": "#/definitions/Kind"
       }
     },
+    "ListStatuses": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/Status"
+      }
+    },
     "PatchItem": {
       "description": "A JSONPatch document as defined by RFC 6902",
       "type": "object",
@@ -385,6 +499,43 @@ func init() {
       "type": "array",
       "items": {
         "$ref": "#/definitions/PatchItem"
+      }
+    },
+    "Status": {
+      "type": "object",
+      "required": [
+        "id",
+        "name"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        }
+      }
+    },
+    "StatusName": {
+      "type": "object",
+      "required": [
+        "name"
+      ],
+      "properties": {
+        "name": {
+          "type": "string"
+        }
+      }
+    },
+    "SuccessStatusOperationResponse": {
+      "type": "object",
+      "required": [
+        "data"
+      ],
+      "properties": {
+        "data": {
+          "$ref": "#/definitions/Status"
+        }
       }
     },
     "User": {
@@ -533,6 +684,114 @@ func init() {
           "type": "string",
           "description": "kind id",
           "name": "kindId",
+          "in": "path",
+          "required": true
+        }
+      ]
+    },
+    "/equipment/statuses": {
+      "get": {
+        "tags": [
+          "Status"
+        ],
+        "summary": "List all statuses.",
+        "operationId": "GetStatuses",
+        "responses": {
+          "201": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/ListStatuses"
+            }
+          },
+          "default": {
+            "description": "Unexpected error.",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Status"
+        ],
+        "summary": "Creating a new status.",
+        "operationId": "postStatus",
+        "parameters": [
+          {
+            "description": "Status Name",
+            "name": "name",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/StatusName"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Status has been created",
+            "schema": {
+              "$ref": "#/definitions/SuccessStatusOperationResponse"
+            }
+          },
+          "default": {
+            "description": "Unexpected error.",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        }
+      }
+    },
+    "/equipment/statuses/{statusId}": {
+      "get": {
+        "tags": [
+          "Status"
+        ],
+        "summary": "Get status by id",
+        "operationId": "GetStatus",
+        "responses": {
+          "201": {
+            "description": "Status has been created",
+            "schema": {
+              "$ref": "#/definitions/SuccessStatusOperationResponse"
+            }
+          },
+          "default": {
+            "description": "Unexpected error.",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Status"
+        ],
+        "summary": "Delete status by id",
+        "operationId": "DeleteStatus",
+        "responses": {
+          "201": {
+            "description": "Status has been created",
+            "schema": {
+              "$ref": "#/definitions/SuccessStatusOperationResponse"
+            }
+          },
+          "default": {
+            "description": "Unexpected error.",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        }
+      },
+      "parameters": [
+        {
+          "type": "string",
+          "description": "status id",
+          "name": "statusId",
           "in": "path",
           "required": true
         }
@@ -764,6 +1023,12 @@ func init() {
         "$ref": "#/definitions/Kind"
       }
     },
+    "ListStatuses": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/Status"
+      }
+    },
     "PatchItem": {
       "description": "A JSONPatch document as defined by RFC 6902",
       "type": "object",
@@ -802,6 +1067,43 @@ func init() {
       "type": "array",
       "items": {
         "$ref": "#/definitions/PatchItem"
+      }
+    },
+    "Status": {
+      "type": "object",
+      "required": [
+        "id",
+        "name"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        }
+      }
+    },
+    "StatusName": {
+      "type": "object",
+      "required": [
+        "name"
+      ],
+      "properties": {
+        "name": {
+          "type": "string"
+        }
+      }
+    },
+    "SuccessStatusOperationResponse": {
+      "type": "object",
+      "required": [
+        "data"
+      ],
+      "properties": {
+        "data": {
+          "$ref": "#/definitions/Status"
+        }
       }
     },
     "User": {

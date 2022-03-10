@@ -27,6 +27,7 @@ type hooks struct {
 	Group      []ent.Hook
 	Kind       []ent.Hook
 	Permission []ent.Hook
+	Statuses   []ent.Hook
 	User       []ent.Hook
 }
 
