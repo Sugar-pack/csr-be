@@ -26,6 +26,7 @@ type config struct {
 type hooks struct {
 	Group      []ent.Hook
 	Permission []ent.Hook
+	Role       []ent.Hook
 	Statuses   []ent.Hook
 	User       []ent.Hook
 }
