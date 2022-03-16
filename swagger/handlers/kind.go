@@ -93,7 +93,13 @@ func (c Kind) GetKindByIDFunc() kinds.GetKindByIDHandlerFunc {
 func (c Kind) DeleteKindFunc() kinds.DeleteKindHandlerFunc {
 	return func(s kinds.DeleteKindParams) middleware.Responder {
 		id, err := strconv.Atoi(s.KindID)
-
+		if err != nil {
+			return kinds.NewDeleteKindDefault(http.StatusInternalServerError).WithPayload(&models.Error{
+				Data: &models.ErrorData{
+					Message: err.Error(),
+				},
+			})
+		}
 		e, err := c.client.Kind.Get(s.HTTPRequest.Context(), id)
 		if err != nil {
 			return kinds.NewDeleteKindDefault(http.StatusInternalServerError).WithPayload(&models.Error{
