@@ -27,7 +27,13 @@ func NewKind(client *ent.Client, logger *zap.Logger) *Kind {
 func (c Kind) CreateNewKindFunc() kinds.CreateNewKindHandlerFunc {
 	return func(s kinds.CreateNewKindParams) middleware.Responder {
 		e, err := c.client.Kind.Create().SetName(*s.Name.Data.Name).Save(s.HTTPRequest.Context())
-		checkPostNewKindError(err)
+		if err != nil {
+			return kinds.NewCreateNewKindDefault(http.StatusInternalServerError).WithPayload(&models.Error{
+				Data: &models.ErrorData{
+					Message: err.Error(),
+				},
+			})
+		}
 		id := fmt.Sprintf("%d", e.ID)
 		return kinds.NewCreateNewKindCreated().WithPayload(&models.CreateNewKindResponse{
 			Data: &models.Kind{
@@ -41,8 +47,13 @@ func (c Kind) CreateNewKindFunc() kinds.CreateNewKindHandlerFunc {
 func (c Kind) GetAllKindsFunc() kinds.GetAllKindsHandlerFunc {
 	return func(s kinds.GetAllKindsParams) middleware.Responder {
 		e, err := c.client.Kind.Query().All(s.HTTPRequest.Context())
-		checkGetAllKindsError(err)
-
+		if err != nil {
+			return kinds.NewGetAllKindsDefault(http.StatusInternalServerError).WithPayload(&models.Error{
+				Data: &models.ErrorData{
+					Message: err.Error(),
+				},
+			})
+		}
 		listOfKinds := models.ListOfKinds{}
 		for _, v := range e {
 			id := strconv.Itoa(v.ID)
@@ -55,11 +66,21 @@ func (c Kind) GetAllKindsFunc() kinds.GetAllKindsHandlerFunc {
 func (c Kind) GetKindByIDFunc() kinds.GetKindByIDHandlerFunc {
 	return func(s kinds.GetKindByIDParams) middleware.Responder {
 		id, err := strconv.Atoi(s.KindID)
-		checkGetKindByIDError(err)
-
+		if err != nil {
+			return kinds.NewGetKindByIDDefault(http.StatusInternalServerError).WithPayload(&models.Error{
+				Data: &models.ErrorData{
+					Message: err.Error(),
+				},
+			})
+		}
 		e, err := c.client.Kind.Get(s.HTTPRequest.Context(), id)
-		checkGetKindByIDError(err)
-
+		if err != nil {
+			return kinds.NewGetKindByIDDefault(http.StatusInternalServerError).WithPayload(&models.Error{
+				Data: &models.ErrorData{
+					Message: err.Error(),
+				},
+			})
+		}
 		return kinds.NewGetKindByIDOK().WithPayload(&models.GetKindByIDResponse{
 			Data: &models.Kind{
 				ID:   &s.KindID,
@@ -68,17 +89,28 @@ func (c Kind) GetKindByIDFunc() kinds.GetKindByIDHandlerFunc {
 		})
 	}
 }
+
 func (c Kind) DeleteKindFunc() kinds.DeleteKindHandlerFunc {
 	return func(s kinds.DeleteKindParams) middleware.Responder {
 		id, err := strconv.Atoi(s.KindID)
-		checkDeleteError(err)
 
 		e, err := c.client.Kind.Get(s.HTTPRequest.Context(), id)
-		checkDeleteError(err)
+		if err != nil {
+			return kinds.NewDeleteKindDefault(http.StatusInternalServerError).WithPayload(&models.Error{
+				Data: &models.ErrorData{
+					Message: err.Error(),
+				},
+			})
+		}
 
 		err = c.client.Kind.DeleteOneID(e.ID).Exec(s.HTTPRequest.Context())
-		checkDeleteError(err)
-
+		if err != nil {
+			return kinds.NewDeleteKindDefault(http.StatusInternalServerError).WithPayload(&models.Error{
+				Data: &models.ErrorData{
+					Message: err.Error(),
+				},
+			})
+		}
 		return kinds.NewDeleteKindCreated().WithPayload(&models.DeleteKindResponse{
 			Data: &models.Kind{
 				ID:   &s.KindID,
@@ -86,46 +118,4 @@ func (c Kind) DeleteKindFunc() kinds.DeleteKindHandlerFunc {
 			},
 		})
 	}
-}
-
-func checkDeleteError(err error) *kinds.DeleteKindDefault {
-	if err != nil {
-		return kinds.NewDeleteKindDefault(http.StatusInternalServerError).WithPayload(&models.Error{
-			Data: &models.ErrorData{
-				Message: err.Error(),
-			},
-		})
-	}
-	return nil
-}
-
-func checkGetKindByIDError(err error) *kinds.GetKindByIDDefault {
-	if err != nil {
-		return kinds.NewGetKindByIDDefault(http.StatusInternalServerError).WithPayload(&models.Error{
-			Data: &models.ErrorData{
-				Message: err.Error(),
-			},
-		})
-	}
-	return nil
-}
-func checkPostNewKindError(err error) *kinds.CreateNewKindDefault {
-	if err != nil {
-		return kinds.NewCreateNewKindDefault(http.StatusInternalServerError).WithPayload(&models.Error{
-			Data: &models.ErrorData{
-				Message: err.Error(),
-			},
-		})
-	}
-	return nil
-}
-func checkGetAllKindsError(err error) *kinds.GetAllKindsDefault {
-	if err != nil {
-		return kinds.NewGetAllKindsDefault(http.StatusInternalServerError).WithPayload(&models.Error{
-			Data: &models.ErrorData{
-				Message: err.Error(),
-			},
-		})
-	}
-	return nil
 }
