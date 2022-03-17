@@ -74,6 +74,21 @@ paths:
           description: Unexpected error
           schema:
             $ref: "#/definitions/Error"
+  /v1/roles:
+    get:
+      summary: List all roles.
+      tags:
+        - Roles
+      operationId: GetRoles
+      responses:
+        200:
+          description: Success
+          schema:
+            $ref: "#/definitions/ListRoles"
+        default:
+          description: Unexpected error.
+          schema:
+            $ref: "#/definitions/Error"
   /equipment/statuses:
     post:
       summary: Creating a new status.
@@ -293,6 +308,25 @@ definitions:
     properties:
       data:
         $ref: "#/definitions/User"
+
+  #Role
+  Role:
+    type: object
+    required:
+      - id
+      - name
+      - slug
+    properties:
+      id:
+        type: integer
+      name:
+        type: string
+      slug:
+        type: string
+  ListRoles:
+    type: array
+    items:
+      $ref: "#/definitions/Role"
 
   #Status
   Status:

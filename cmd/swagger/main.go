@@ -60,6 +60,7 @@ func main() {
 		}
 		log.Println(err)
 	}
+
 	swaggerSpec, err := loads.Analyzed(restapi.SwaggerJSON, "")
 	if err != nil {
 		logger.Error("error loading swagger spec", zap.Error(err))
@@ -67,6 +68,11 @@ func main() {
 	}
 
 	userHandler := handlers.NewUser(
+		client,
+		logger,
+	)
+
+	roleHandler := handlers.NewRole(
 		client,
 		logger,
 	)
@@ -87,6 +93,8 @@ func main() {
 	api.UsersPostUserHandler = userHandler.PostUserFunc()
 	api.UsersGetCurrentUserHandler = userHandler.GetUserFunc()
 	api.UsersPatchUserHandler = userHandler.PatchUserFunc()
+
+	api.RolesGetRolesHandler = roleHandler.GetRolesFunc()
 
 	api.KindsCreateNewKindHandler = kindsHandler.CreateNewKindFunc()
 	api.KindsGetKindByIDHandler = kindsHandler.GetKindByIDFunc()
