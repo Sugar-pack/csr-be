@@ -35,6 +35,114 @@ func init() {
   },
   "basePath": "/api/",
   "paths": {
+    "/equipment/kinds": {
+      "get": {
+        "tags": [
+          "Kinds"
+        ],
+        "summary": "Get all kinds.",
+        "operationId": "GetAllKinds",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/ListOfKinds"
+            }
+          },
+          "default": {
+            "description": "Unexpected error.",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Kinds"
+        ],
+        "summary": "Create a new kind.",
+        "operationId": "CreateNewKind",
+        "parameters": [
+          {
+            "description": "Name of a kind",
+            "name": "name",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/CreateNewKind"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/CreateNewKindResponse"
+            }
+          },
+          "default": {
+            "description": "Unexpected error.",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        }
+      }
+    },
+    "/equipment/kinds/{kindId}": {
+      "get": {
+        "tags": [
+          "Kinds"
+        ],
+        "summary": "Get information about the kind of equipment by id.",
+        "operationId": "getKindByID",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/GetKindByIDResponse"
+            }
+          },
+          "default": {
+            "description": "Unexpected error.",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Kinds"
+        ],
+        "summary": "Delete kind of equipment from db by id.",
+        "operationId": "deleteKind",
+        "responses": {
+          "201": {
+            "description": "kind of equipment successfully deleted from db",
+            "schema": {
+              "$ref": "#/definitions/DeleteKindResponse"
+            }
+          },
+          "default": {
+            "description": "Unexpected error.",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        }
+      },
+      "parameters": [
+        {
+          "type": "string",
+          "description": "kind id",
+          "name": "kindId",
+          "in": "path",
+          "required": true
+        }
+      ]
+    },
     "/equipment/statuses": {
       "get": {
         "tags": [
@@ -233,6 +341,28 @@ func init() {
     }
   },
   "definitions": {
+    "CreateNewKind": {
+      "type": "object",
+      "required": [
+        "data"
+      ],
+      "properties": {
+        "data": {
+          "$ref": "#/definitions/Kind"
+        }
+      }
+    },
+    "CreateNewKindResponse": {
+      "type": "object",
+      "required": [
+        "data"
+      ],
+      "properties": {
+        "data": {
+          "$ref": "#/definitions/Kind"
+        }
+      }
+    },
     "CreateUserResponse": {
       "type": "object",
       "required": [
@@ -249,6 +379,17 @@ func init() {
               "type": "string"
             }
           }
+        }
+      }
+    },
+    "DeleteKindResponse": {
+      "type": "object",
+      "required": [
+        "data"
+      ],
+      "properties": {
+        "data": {
+          "$ref": "#/definitions/Kind"
         }
       }
     },
@@ -271,6 +412,17 @@ func init() {
         }
       }
     },
+    "GetKindByIDResponse": {
+      "type": "object",
+      "required": [
+        "data"
+      ],
+      "properties": {
+        "data": {
+          "$ref": "#/definitions/Kind"
+        }
+      }
+    },
     "GetUserResponse": {
       "type": "object",
       "required": [
@@ -280,6 +432,27 @@ func init() {
         "data": {
           "$ref": "#/definitions/User"
         }
+      }
+    },
+    "Kind": {
+      "type": "object",
+      "required": [
+        "id",
+        "name"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        }
+      }
+    },
+    "ListOfKinds": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/Kind"
       }
     },
     "ListStatuses": {
@@ -408,6 +581,114 @@ func init() {
   },
   "basePath": "/api/",
   "paths": {
+    "/equipment/kinds": {
+      "get": {
+        "tags": [
+          "Kinds"
+        ],
+        "summary": "Get all kinds.",
+        "operationId": "GetAllKinds",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/ListOfKinds"
+            }
+          },
+          "default": {
+            "description": "Unexpected error.",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Kinds"
+        ],
+        "summary": "Create a new kind.",
+        "operationId": "CreateNewKind",
+        "parameters": [
+          {
+            "description": "Name of a kind",
+            "name": "name",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/CreateNewKind"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/CreateNewKindResponse"
+            }
+          },
+          "default": {
+            "description": "Unexpected error.",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        }
+      }
+    },
+    "/equipment/kinds/{kindId}": {
+      "get": {
+        "tags": [
+          "Kinds"
+        ],
+        "summary": "Get information about the kind of equipment by id.",
+        "operationId": "getKindByID",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/GetKindByIDResponse"
+            }
+          },
+          "default": {
+            "description": "Unexpected error.",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Kinds"
+        ],
+        "summary": "Delete kind of equipment from db by id.",
+        "operationId": "deleteKind",
+        "responses": {
+          "201": {
+            "description": "kind of equipment successfully deleted from db",
+            "schema": {
+              "$ref": "#/definitions/DeleteKindResponse"
+            }
+          },
+          "default": {
+            "description": "Unexpected error.",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        }
+      },
+      "parameters": [
+        {
+          "type": "string",
+          "description": "kind id",
+          "name": "kindId",
+          "in": "path",
+          "required": true
+        }
+      ]
+    },
     "/equipment/statuses": {
       "get": {
         "tags": [
@@ -606,6 +887,28 @@ func init() {
     }
   },
   "definitions": {
+    "CreateNewKind": {
+      "type": "object",
+      "required": [
+        "data"
+      ],
+      "properties": {
+        "data": {
+          "$ref": "#/definitions/Kind"
+        }
+      }
+    },
+    "CreateNewKindResponse": {
+      "type": "object",
+      "required": [
+        "data"
+      ],
+      "properties": {
+        "data": {
+          "$ref": "#/definitions/Kind"
+        }
+      }
+    },
     "CreateUserResponse": {
       "type": "object",
       "required": [
@@ -633,6 +936,17 @@ func init() {
       "properties": {
         "id": {
           "type": "string"
+        }
+      }
+    },
+    "DeleteKindResponse": {
+      "type": "object",
+      "required": [
+        "data"
+      ],
+      "properties": {
+        "data": {
+          "$ref": "#/definitions/Kind"
         }
       }
     },
@@ -666,6 +980,17 @@ func init() {
         }
       }
     },
+    "GetKindByIDResponse": {
+      "type": "object",
+      "required": [
+        "data"
+      ],
+      "properties": {
+        "data": {
+          "$ref": "#/definitions/Kind"
+        }
+      }
+    },
     "GetUserResponse": {
       "type": "object",
       "required": [
@@ -675,6 +1000,27 @@ func init() {
         "data": {
           "$ref": "#/definitions/User"
         }
+      }
+    },
+    "Kind": {
+      "type": "object",
+      "required": [
+        "id",
+        "name"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        }
+      }
+    },
+    "ListOfKinds": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/Kind"
       }
     },
     "ListStatuses": {

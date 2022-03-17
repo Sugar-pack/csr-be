@@ -6,7 +6,7 @@ info:
     The API provides CSR backend API.
 
 basePath: /api/
-schemes:
+schemes: 
   - http
 securityDefinitions:
   Bearer:
@@ -145,6 +145,77 @@ paths:
           description: Unexpected error.
           schema:
             $ref: "#/definitions/Error"  
+  /equipment/kinds:
+    get:
+      summary: Get all kinds.
+      tags:
+        - Kinds
+      operationId: GetAllKinds
+      responses:
+        200:
+          description: Success
+          schema:
+            $ref: "#/definitions/ListOfKinds"
+        default:
+          description: Unexpected error.
+          schema:
+            $ref: "#/definitions/Error"
+    post:
+      summary: Create a new kind.
+      tags:
+        - Kinds
+      operationId: CreateNewKind
+      parameters:
+        - name: name
+          in: body
+          description: Name of a kind
+          required: true
+          schema:
+            $ref: "#/definitions/CreateNewKind"      
+      responses:
+        201:
+          description: Success
+          schema:
+            $ref: "#/definitions/CreateNewKindResponse"
+        default:
+          description: Unexpected error.
+          schema:
+            $ref: "#/definitions/Error"
+  /equipment/kinds/{kindId}:
+    parameters:
+      - name: kindId
+        in: path
+        required: true
+        description: kind id
+        type: string
+    get:
+      summary: Get information about the kind of equipment by id.
+      tags:
+        - Kinds
+      operationId: getKindByID
+      responses:
+        200:
+          description: Success
+          schema:
+            $ref: "#/definitions/GetKindByIDResponse"
+        default:
+          description: Unexpected error.
+          schema:
+            $ref: "#/definitions/Error"
+    delete:
+      summary: Delete kind of equipment from db by id.
+      tags:
+        - Kinds
+      operationId: deleteKind
+      responses:
+        201:
+          description: kind of equipment successfully deleted from db 
+          schema:
+            $ref: "#/definitions/DeleteKindResponse"
+        default:
+          description: Unexpected error.
+          schema:
+            $ref: "#/definitions/Error"            
 
 definitions:
   Error:
@@ -252,6 +323,49 @@ definitions:
     properties:
       name: 
         type: string
+  # Kind
+  Kind:
+    type: object
+    required:
+      - id
+      - name
+    properties:
+      id:
+        type: string
+      name:
+        type: string
+  ListOfKinds:
+    type: array
+    items:
+     $ref: "#/definitions/Kind"
+  GetKindByIDResponse:
+    type: object
+    required:
+      - data
+    properties:
+      data:
+        $ref: "#/definitions/Kind"
+  DeleteKindResponse:
+   type: object
+   required:
+    - data
+   properties:
+    data:
+      $ref: "#/definitions/Kind"
+  CreateNewKind:
+   type: object  
+   required:
+    - data
+   properties:
+    data:
+      $ref: "#/definitions/Kind"    
+  CreateNewKindResponse:
+   type: object  
+   required:
+    - data
+   properties:
+    data:
+      $ref: "#/definitions/Kind"
 
 
 

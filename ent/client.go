@@ -10,6 +10,7 @@ import (
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/migrate"
 
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/group"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/kind"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/permission"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/role"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/statuses"
@@ -27,6 +28,8 @@ type Client struct {
 	Schema *migrate.Schema
 	// Group is the client for interacting with the Group builders.
 	Group *GroupClient
+	// Kind is the client for interacting with the Kind builders.
+	Kind *KindClient
 	// Permission is the client for interacting with the Permission builders.
 	Permission *PermissionClient
 	// Role is the client for interacting with the Role builders.
@@ -49,6 +52,7 @@ func NewClient(opts ...Option) *Client {
 func (c *Client) init() {
 	c.Schema = migrate.NewSchema(c.driver)
 	c.Group = NewGroupClient(c.config)
+	c.Kind = NewKindClient(c.config)
 	c.Permission = NewPermissionClient(c.config)
 	c.Role = NewRoleClient(c.config)
 	c.Statuses = NewStatusesClient(c.config)
@@ -87,6 +91,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		ctx:        ctx,
 		config:     cfg,
 		Group:      NewGroupClient(cfg),
+		Kind:       NewKindClient(cfg),
 		Permission: NewPermissionClient(cfg),
 		Role:       NewRoleClient(cfg),
 		Statuses:   NewStatusesClient(cfg),
@@ -111,6 +116,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		ctx:        ctx,
 		config:     cfg,
 		Group:      NewGroupClient(cfg),
+		Kind:       NewKindClient(cfg),
 		Permission: NewPermissionClient(cfg),
 		Role:       NewRoleClient(cfg),
 		Statuses:   NewStatusesClient(cfg),
@@ -145,6 +151,7 @@ func (c *Client) Close() error {
 // In order to add hooks to a specific client, call: `client.Node.Use(...)`.
 func (c *Client) Use(hooks ...Hook) {
 	c.Group.Use(hooks...)
+	c.Kind.Use(hooks...)
 	c.Permission.Use(hooks...)
 	c.Role.Use(hooks...)
 	c.Statuses.Use(hooks...)
@@ -271,6 +278,96 @@ func (c *GroupClient) QueryPermissions(gr *Group) *PermissionQuery {
 // Hooks returns the client hooks.
 func (c *GroupClient) Hooks() []Hook {
 	return c.hooks.Group
+}
+
+// KindClient is a client for the Kind schema.
+type KindClient struct {
+	config
+}
+
+// NewKindClient returns a client for the Kind from the given config.
+func NewKindClient(c config) *KindClient {
+	return &KindClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `kind.Hooks(f(g(h())))`.
+func (c *KindClient) Use(hooks ...Hook) {
+	c.hooks.Kind = append(c.hooks.Kind, hooks...)
+}
+
+// Create returns a create builder for Kind.
+func (c *KindClient) Create() *KindCreate {
+	mutation := newKindMutation(c.config, OpCreate)
+	return &KindCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of Kind entities.
+func (c *KindClient) CreateBulk(builders ...*KindCreate) *KindCreateBulk {
+	return &KindCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for Kind.
+func (c *KindClient) Update() *KindUpdate {
+	mutation := newKindMutation(c.config, OpUpdate)
+	return &KindUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *KindClient) UpdateOne(k *Kind) *KindUpdateOne {
+	mutation := newKindMutation(c.config, OpUpdateOne, withKind(k))
+	return &KindUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *KindClient) UpdateOneID(id int) *KindUpdateOne {
+	mutation := newKindMutation(c.config, OpUpdateOne, withKindID(id))
+	return &KindUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for Kind.
+func (c *KindClient) Delete() *KindDelete {
+	mutation := newKindMutation(c.config, OpDelete)
+	return &KindDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a delete builder for the given entity.
+func (c *KindClient) DeleteOne(k *Kind) *KindDeleteOne {
+	return c.DeleteOneID(k.ID)
+}
+
+// DeleteOneID returns a delete builder for the given id.
+func (c *KindClient) DeleteOneID(id int) *KindDeleteOne {
+	builder := c.Delete().Where(kind.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &KindDeleteOne{builder}
+}
+
+// Query returns a query builder for Kind.
+func (c *KindClient) Query() *KindQuery {
+	return &KindQuery{
+		config: c.config,
+	}
+}
+
+// Get returns a Kind entity by its id.
+func (c *KindClient) Get(ctx context.Context, id int) (*Kind, error) {
+	return c.Query().Where(kind.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *KindClient) GetX(ctx context.Context, id int) *Kind {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *KindClient) Hooks() []Hook {
+	return c.hooks.Kind
 }
 
 // PermissionClient is a client for the Permission schema.

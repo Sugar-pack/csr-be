@@ -71,6 +71,10 @@ func main() {
 		logger,
 	)
 
+	kindsHandler := handlers.NewKind(
+		client,
+		logger,
+	)
 	statusHandler := handlers.NewStatus(
 		client,
 		logger,
@@ -83,6 +87,11 @@ func main() {
 	api.UsersPostUserHandler = userHandler.PostUserFunc()
 	api.UsersGetCurrentUserHandler = userHandler.GetUserFunc()
 	api.UsersPatchUserHandler = userHandler.PatchUserFunc()
+
+	api.KindsCreateNewKindHandler = kindsHandler.CreateNewKindFunc()
+	api.KindsGetKindByIDHandler = kindsHandler.GetKindByIDFunc()
+	api.KindsDeleteKindHandler = kindsHandler.DeleteKindFunc()
+	api.KindsGetAllKindsHandler = kindsHandler.GetAllKindsFunc()
 
 	api.StatusPostStatusHandler = statusHandler.PostStatusFunc()
 	api.StatusGetStatusesHandler = statusHandler.GetStatusesFunc()
