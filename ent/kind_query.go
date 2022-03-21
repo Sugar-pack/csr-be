@@ -106,7 +106,7 @@ func (kq *KindQuery) FirstIDX(ctx context.Context) int {
 }
 
 // Only returns a single Kind entity found by the query, ensuring it only returns one.
-// Returns a *NotSingularError when exactly one Kind entity is not found.
+// Returns a *NotSingularError when more than one Kind entity is found.
 // Returns a *NotFoundError when no Kind entities are found.
 func (kq *KindQuery) Only(ctx context.Context) (*Kind, error) {
 	nodes, err := kq.Limit(2).All(ctx)
@@ -133,7 +133,7 @@ func (kq *KindQuery) OnlyX(ctx context.Context) *Kind {
 }
 
 // OnlyID is like Only, but returns the only Kind ID in the query.
-// Returns a *NotSingularError when exactly one Kind ID is not found.
+// Returns a *NotSingularError when more than one Kind ID is found.
 // Returns a *NotFoundError when no entities are found.
 func (kq *KindQuery) OnlyID(ctx context.Context) (id int, err error) {
 	var ids []int
@@ -242,8 +242,9 @@ func (kq *KindQuery) Clone() *KindQuery {
 		order:      append([]OrderFunc{}, kq.order...),
 		predicates: append([]predicate.Kind{}, kq.predicates...),
 		// clone intermediate query.
-		sql:  kq.sql.Clone(),
-		path: kq.path,
+		sql:    kq.sql.Clone(),
+		path:   kq.path,
+		unique: kq.unique,
 	}
 }
 

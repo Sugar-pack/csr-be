@@ -132,7 +132,7 @@ func (pq *PermissionQuery) FirstIDX(ctx context.Context) int {
 }
 
 // Only returns a single Permission entity found by the query, ensuring it only returns one.
-// Returns a *NotSingularError when exactly one Permission entity is not found.
+// Returns a *NotSingularError when more than one Permission entity is found.
 // Returns a *NotFoundError when no Permission entities are found.
 func (pq *PermissionQuery) Only(ctx context.Context) (*Permission, error) {
 	nodes, err := pq.Limit(2).All(ctx)
@@ -159,7 +159,7 @@ func (pq *PermissionQuery) OnlyX(ctx context.Context) *Permission {
 }
 
 // OnlyID is like Only, but returns the only Permission ID in the query.
-// Returns a *NotSingularError when exactly one Permission ID is not found.
+// Returns a *NotSingularError when more than one Permission ID is found.
 // Returns a *NotFoundError when no entities are found.
 func (pq *PermissionQuery) OnlyID(ctx context.Context) (id int, err error) {
 	var ids []int
@@ -269,8 +269,9 @@ func (pq *PermissionQuery) Clone() *PermissionQuery {
 		predicates: append([]predicate.Permission{}, pq.predicates...),
 		withGroups: pq.withGroups.Clone(),
 		// clone intermediate query.
-		sql:  pq.sql.Clone(),
-		path: pq.path,
+		sql:    pq.sql.Clone(),
+		path:   pq.path,
+		unique: pq.unique,
 	}
 }
 

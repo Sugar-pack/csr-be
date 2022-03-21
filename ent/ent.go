@@ -8,6 +8,7 @@ import (
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/activearea"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/group"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/kind"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/permission"
@@ -34,6 +35,7 @@ type OrderFunc func(*sql.Selector)
 // columnChecker returns a function indicates if the column exists in the given column.
 func columnChecker(table string) func(string) error {
 	checks := map[string]func(string) bool{
+		activearea.Table: activearea.ValidColumn,
 		group.Table:      group.ValidColumn,
 		kind.Table:       kind.ValidColumn,
 		permission.Table: permission.ValidColumn,

@@ -106,7 +106,7 @@ func (sq *StatusesQuery) FirstIDX(ctx context.Context) int {
 }
 
 // Only returns a single Statuses entity found by the query, ensuring it only returns one.
-// Returns a *NotSingularError when exactly one Statuses entity is not found.
+// Returns a *NotSingularError when more than one Statuses entity is found.
 // Returns a *NotFoundError when no Statuses entities are found.
 func (sq *StatusesQuery) Only(ctx context.Context) (*Statuses, error) {
 	nodes, err := sq.Limit(2).All(ctx)
@@ -133,7 +133,7 @@ func (sq *StatusesQuery) OnlyX(ctx context.Context) *Statuses {
 }
 
 // OnlyID is like Only, but returns the only Statuses ID in the query.
-// Returns a *NotSingularError when exactly one Statuses ID is not found.
+// Returns a *NotSingularError when more than one Statuses ID is found.
 // Returns a *NotFoundError when no entities are found.
 func (sq *StatusesQuery) OnlyID(ctx context.Context) (id int, err error) {
 	var ids []int
@@ -242,8 +242,9 @@ func (sq *StatusesQuery) Clone() *StatusesQuery {
 		order:      append([]OrderFunc{}, sq.order...),
 		predicates: append([]predicate.Statuses{}, sq.predicates...),
 		// clone intermediate query.
-		sql:  sq.sql.Clone(),
-		path: sq.path,
+		sql:    sq.sql.Clone(),
+		path:   sq.path,
+		unique: sq.unique,
 	}
 }
 

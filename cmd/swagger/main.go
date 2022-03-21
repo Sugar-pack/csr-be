@@ -3,10 +3,11 @@ package main
 import (
 	"context"
 	"database/sql"
-	"github.com/golang-migrate/migrate/v4"
-	"github.com/golang-migrate/migrate/v4/database/postgres"
 	"log"
 	"os"
+
+	"github.com/golang-migrate/migrate/v4"
+	"github.com/golang-migrate/migrate/v4/database/postgres"
 
 	"entgo.io/ent/dialect"
 	entsql "entgo.io/ent/dialect/sql"
@@ -38,17 +39,6 @@ func main() {
 		log.Fatal(err)
 	}
 
-	driver, err := postgres.WithInstance(db, &postgres.Config{})
-	m, err := migrate.NewWithDatabaseInstance(
-		"file://db/migrations",
-		"csr", driver)
-	if err := m.Up(); err != nil {
-		if err != migrate.ErrNoChange {
-			log.Fatal(err)
-		}
-		log.Println(err)
-	}
-
 	// Create an ent.Driver from `db`.
 	drv := entsql.OpenDB(dialect.Postgres, db)
 	client := ent.NewClient(ent.Driver(drv))
@@ -60,6 +50,16 @@ func main() {
 		log.Fatalf("failed creating schema resources: %v", err)
 	}
 
+	driver, err := postgres.WithInstance(db, &postgres.Config{})
+	m, err := migrate.NewWithDatabaseInstance(
+		"file://db/migrations",
+		"csr", driver)
+	if err := m.Up(); err != nil {
+		if err != migrate.ErrNoChange {
+			log.Fatal(err)
+		}
+		log.Println(err)
+	}
 	swaggerSpec, err := loads.Analyzed(restapi.SwaggerJSON, "")
 	if err != nil {
 		logger.Error("error loading swagger spec", zap.Error(err))
