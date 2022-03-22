@@ -8,6 +8,17 @@ import (
 )
 
 var (
+	// ActiveAreasColumns holds the columns for the "active_areas" table.
+	ActiveAreasColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "name", Type: field.TypeString, Unique: true},
+	}
+	// ActiveAreasTable holds the schema information for the "active_areas" table.
+	ActiveAreasTable = &schema.Table{
+		Name:       "active_areas",
+		Columns:    ActiveAreasColumns,
+		PrimaryKey: []*schema.Column{ActiveAreasColumns[0]},
+	}
 	// GroupsColumns holds the columns for the "groups" table.
 	GroupsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt, Increment: true},
@@ -67,6 +78,7 @@ var (
 	UsersColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt, Increment: true},
 		{Name: "name", Type: field.TypeString, Default: "unknown"},
+		{Name: "active_area_users", Type: field.TypeInt, Nullable: true},
 		{Name: "role_users", Type: field.TypeInt, Nullable: true},
 	}
 	// UsersTable holds the schema information for the "users" table.
@@ -76,8 +88,14 @@ var (
 		PrimaryKey: []*schema.Column{UsersColumns[0]},
 		ForeignKeys: []*schema.ForeignKey{
 			{
-				Symbol:     "users_roles_users",
+				Symbol:     "users_active_areas_users",
 				Columns:    []*schema.Column{UsersColumns[2]},
+				RefColumns: []*schema.Column{ActiveAreasColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+			{
+				Symbol:     "users_roles_users",
+				Columns:    []*schema.Column{UsersColumns[3]},
 				RefColumns: []*schema.Column{RolesColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
@@ -135,6 +153,7 @@ var (
 	}
 	// Tables holds all the tables in the schema.
 	Tables = []*schema.Table{
+		ActiveAreasTable,
 		GroupsTable,
 		KindsTable,
 		PermissionsTable,
@@ -147,7 +166,8 @@ var (
 )
 
 func init() {
-	UsersTable.ForeignKeys[0].RefTable = RolesTable
+	UsersTable.ForeignKeys[0].RefTable = ActiveAreasTable
+	UsersTable.ForeignKeys[1].RefTable = RolesTable
 	GroupUsersTable.ForeignKeys[0].RefTable = GroupsTable
 	GroupUsersTable.ForeignKeys[1].RefTable = UsersTable
 	GroupPermissionsTable.ForeignKeys[0].RefTable = GroupsTable

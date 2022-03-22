@@ -19,8 +19,9 @@ type User struct {
 	Name string `json:"name,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the UserQuery when eager-loading is set.
-	Edges      UserEdges `json:"edges"`
-	role_users *int
+	Edges             UserEdges `json:"edges"`
+	active_area_users *int
+	role_users        *int
 }
 
 // UserEdges holds the relations/edges for other nodes in the graph.
@@ -50,7 +51,9 @@ func (*User) scanValues(columns []string) ([]interface{}, error) {
 			values[i] = new(sql.NullInt64)
 		case user.FieldName:
 			values[i] = new(sql.NullString)
-		case user.ForeignKeys[0]: // role_users
+		case user.ForeignKeys[0]: // active_area_users
+			values[i] = new(sql.NullInt64)
+		case user.ForeignKeys[1]: // role_users
 			values[i] = new(sql.NullInt64)
 		default:
 			return nil, fmt.Errorf("unexpected column %q for type User", columns[i])
@@ -80,6 +83,13 @@ func (u *User) assignValues(columns []string, values []interface{}) error {
 				u.Name = value.String
 			}
 		case user.ForeignKeys[0]:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for edge-field active_area_users", value)
+			} else if value.Valid {
+				u.active_area_users = new(int)
+				*u.active_area_users = int(value.Int64)
+			}
+		case user.ForeignKeys[1]:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
 				return fmt.Errorf("unexpected type %T for edge-field role_users", value)
 			} else if value.Valid {

@@ -3,6 +3,7 @@
 package ent
 
 import (
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/activearea"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/kind"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/permission"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/role"
@@ -14,6 +15,12 @@ import (
 // (default values, validators, hooks and policies) and stitches it
 // to their package variables.
 func init() {
+	activeareaFields := schema.ActiveArea{}.Fields()
+	_ = activeareaFields
+	// activeareaDescName is the schema descriptor for name field.
+	activeareaDescName := activeareaFields[0].Descriptor()
+	// activearea.NameValidator is a validator for the "name" field. It is called by the builders before save.
+	activearea.NameValidator = activeareaDescName.Validators[0].(func(string) error)
 	kindFields := schema.Kind{}.Fields()
 	_ = kindFields
 	// kindDescName is the schema descriptor for name field.

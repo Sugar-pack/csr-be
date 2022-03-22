@@ -9,6 +9,7 @@ import (
 
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/migrate"
 
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/activearea"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/group"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/kind"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/permission"
@@ -26,6 +27,8 @@ type Client struct {
 	config
 	// Schema is the client for creating, migrating and dropping schema.
 	Schema *migrate.Schema
+	// ActiveArea is the client for interacting with the ActiveArea builders.
+	ActiveArea *ActiveAreaClient
 	// Group is the client for interacting with the Group builders.
 	Group *GroupClient
 	// Kind is the client for interacting with the Kind builders.
@@ -51,6 +54,7 @@ func NewClient(opts ...Option) *Client {
 
 func (c *Client) init() {
 	c.Schema = migrate.NewSchema(c.driver)
+	c.ActiveArea = NewActiveAreaClient(c.config)
 	c.Group = NewGroupClient(c.config)
 	c.Kind = NewKindClient(c.config)
 	c.Permission = NewPermissionClient(c.config)
@@ -90,6 +94,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 	return &Tx{
 		ctx:        ctx,
 		config:     cfg,
+		ActiveArea: NewActiveAreaClient(cfg),
 		Group:      NewGroupClient(cfg),
 		Kind:       NewKindClient(cfg),
 		Permission: NewPermissionClient(cfg),
@@ -115,6 +120,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 	return &Tx{
 		ctx:        ctx,
 		config:     cfg,
+		ActiveArea: NewActiveAreaClient(cfg),
 		Group:      NewGroupClient(cfg),
 		Kind:       NewKindClient(cfg),
 		Permission: NewPermissionClient(cfg),
@@ -127,7 +133,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 // Debug returns a new debug-client. It's used to get verbose logging on specific operations.
 //
 //	client.Debug().
-//		Group.
+//		ActiveArea.
 //		Query().
 //		Count(ctx)
 //
@@ -150,12 +156,119 @@ func (c *Client) Close() error {
 // Use adds the mutation hooks to all the entity clients.
 // In order to add hooks to a specific client, call: `client.Node.Use(...)`.
 func (c *Client) Use(hooks ...Hook) {
+	c.ActiveArea.Use(hooks...)
 	c.Group.Use(hooks...)
 	c.Kind.Use(hooks...)
 	c.Permission.Use(hooks...)
 	c.Role.Use(hooks...)
 	c.Statuses.Use(hooks...)
 	c.User.Use(hooks...)
+}
+
+// ActiveAreaClient is a client for the ActiveArea schema.
+type ActiveAreaClient struct {
+	config
+}
+
+// NewActiveAreaClient returns a client for the ActiveArea from the given config.
+func NewActiveAreaClient(c config) *ActiveAreaClient {
+	return &ActiveAreaClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `activearea.Hooks(f(g(h())))`.
+func (c *ActiveAreaClient) Use(hooks ...Hook) {
+	c.hooks.ActiveArea = append(c.hooks.ActiveArea, hooks...)
+}
+
+// Create returns a create builder for ActiveArea.
+func (c *ActiveAreaClient) Create() *ActiveAreaCreate {
+	mutation := newActiveAreaMutation(c.config, OpCreate)
+	return &ActiveAreaCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of ActiveArea entities.
+func (c *ActiveAreaClient) CreateBulk(builders ...*ActiveAreaCreate) *ActiveAreaCreateBulk {
+	return &ActiveAreaCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for ActiveArea.
+func (c *ActiveAreaClient) Update() *ActiveAreaUpdate {
+	mutation := newActiveAreaMutation(c.config, OpUpdate)
+	return &ActiveAreaUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *ActiveAreaClient) UpdateOne(aa *ActiveArea) *ActiveAreaUpdateOne {
+	mutation := newActiveAreaMutation(c.config, OpUpdateOne, withActiveArea(aa))
+	return &ActiveAreaUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *ActiveAreaClient) UpdateOneID(id int) *ActiveAreaUpdateOne {
+	mutation := newActiveAreaMutation(c.config, OpUpdateOne, withActiveAreaID(id))
+	return &ActiveAreaUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for ActiveArea.
+func (c *ActiveAreaClient) Delete() *ActiveAreaDelete {
+	mutation := newActiveAreaMutation(c.config, OpDelete)
+	return &ActiveAreaDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a delete builder for the given entity.
+func (c *ActiveAreaClient) DeleteOne(aa *ActiveArea) *ActiveAreaDeleteOne {
+	return c.DeleteOneID(aa.ID)
+}
+
+// DeleteOneID returns a delete builder for the given id.
+func (c *ActiveAreaClient) DeleteOneID(id int) *ActiveAreaDeleteOne {
+	builder := c.Delete().Where(activearea.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &ActiveAreaDeleteOne{builder}
+}
+
+// Query returns a query builder for ActiveArea.
+func (c *ActiveAreaClient) Query() *ActiveAreaQuery {
+	return &ActiveAreaQuery{
+		config: c.config,
+	}
+}
+
+// Get returns a ActiveArea entity by its id.
+func (c *ActiveAreaClient) Get(ctx context.Context, id int) (*ActiveArea, error) {
+	return c.Query().Where(activearea.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *ActiveAreaClient) GetX(ctx context.Context, id int) *ActiveArea {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryUsers queries the users edge of a ActiveArea.
+func (c *ActiveAreaClient) QueryUsers(aa *ActiveArea) *UserQuery {
+	query := &UserQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := aa.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(activearea.Table, activearea.FieldID, id),
+			sqlgraph.To(user.Table, user.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, activearea.UsersTable, activearea.UsersColumn),
+		)
+		fromV = sqlgraph.Neighbors(aa.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *ActiveAreaClient) Hooks() []Hook {
+	return c.hooks.ActiveArea
 }
 
 // GroupClient is a client for the Group schema.
