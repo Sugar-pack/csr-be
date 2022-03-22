@@ -113,7 +113,7 @@ type CreateUserResponseData struct {
 
 	// id
 	// Required: true
-	ID *string `json:"id"`
+	ID *int64 `json:"id"`
 }
 
 // Validate validates this create user response data

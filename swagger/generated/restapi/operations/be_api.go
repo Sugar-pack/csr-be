@@ -47,6 +47,9 @@ func NewBeAPI(spec *loads.Document) *BeAPI {
 
 		JSONProducer: runtime.JSONProducer(),
 
+		UsersAssignRoleToUserHandler: users.AssignRoleToUserHandlerFunc(func(params users.AssignRoleToUserParams) middleware.Responder {
+			return middleware.NotImplemented("operation users.AssignRoleToUser has not yet been implemented")
+		}),
 		KindsCreateNewKindHandler: kinds.CreateNewKindHandlerFunc(func(params kinds.CreateNewKindParams) middleware.Responder {
 			return middleware.NotImplemented("operation kinds.CreateNewKind has not yet been implemented")
 		}),
@@ -137,6 +140,8 @@ type BeAPI struct {
 	// APIAuthorizer provides access control (ACL/RBAC/ABAC) by providing access to the request and authenticated principal
 	APIAuthorizer runtime.Authorizer
 
+	// UsersAssignRoleToUserHandler sets the operation handler for the assign role to user operation
+	UsersAssignRoleToUserHandler users.AssignRoleToUserHandler
 	// KindsCreateNewKindHandler sets the operation handler for the create new kind operation
 	KindsCreateNewKindHandler kinds.CreateNewKindHandler
 	// StatusDeleteStatusHandler sets the operation handler for the delete status operation
@@ -244,6 +249,9 @@ func (o *BeAPI) Validate() error {
 		unregistered = append(unregistered, "AuthorizationAuth")
 	}
 
+	if o.UsersAssignRoleToUserHandler == nil {
+		unregistered = append(unregistered, "users.AssignRoleToUserHandler")
+	}
 	if o.KindsCreateNewKindHandler == nil {
 		unregistered = append(unregistered, "kinds.CreateNewKindHandler")
 	}
@@ -380,6 +388,10 @@ func (o *BeAPI) initHandlerCache() {
 		o.handlers = make(map[string]map[string]http.Handler)
 	}
 
+	if o.handlers["POST"] == nil {
+		o.handlers["POST"] = make(map[string]http.Handler)
+	}
+	o.handlers["POST"]["/v1/management/users/{userId}/role"] = users.NewAssignRoleToUser(o.context, o.UsersAssignRoleToUserHandler)
 	if o.handlers["POST"] == nil {
 		o.handlers["POST"] = make(map[string]http.Handler)
 	}

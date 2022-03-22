@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"entgo.io/ent/dialect/sql"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/role"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/user"
 )
 
@@ -28,9 +29,11 @@ type User struct {
 type UserEdges struct {
 	// Groups holds the value of the groups edge.
 	Groups []*Group `json:"groups,omitempty"`
+	// Role holds the value of the role edge.
+	Role *Role `json:"role,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [1]bool
+	loadedTypes [2]bool
 }
 
 // GroupsOrErr returns the Groups value or an error if the edge
@@ -40,6 +43,20 @@ func (e UserEdges) GroupsOrErr() ([]*Group, error) {
 		return e.Groups, nil
 	}
 	return nil, &NotLoadedError{edge: "groups"}
+}
+
+// RoleOrErr returns the Role value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e UserEdges) RoleOrErr() (*Role, error) {
+	if e.loadedTypes[1] {
+		if e.Role == nil {
+			// The edge role was loaded in eager-loading,
+			// but was not found.
+			return nil, &NotFoundError{label: role.Label}
+		}
+		return e.Role, nil
+	}
+	return nil, &NotLoadedError{edge: "role"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -104,6 +121,11 @@ func (u *User) assignValues(columns []string, values []interface{}) error {
 // QueryGroups queries the "groups" edge of the User entity.
 func (u *User) QueryGroups() *GroupQuery {
 	return (&UserClient{config: u.config}).QueryGroups(u)
+}
+
+// QueryRole queries the "role" edge of the User entity.
+func (u *User) QueryRole() *RoleQuery {
+	return (&UserClient{config: u.config}).QueryRole(u)
 }
 
 // Update returns a builder for updating this User.

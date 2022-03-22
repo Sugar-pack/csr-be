@@ -26,7 +26,11 @@ type User struct {
 
 	// id
 	// Required: true
-	ID *string `json:"id"`
+	ID *int64 `json:"id"`
+
+	// role Id
+	// Required: true
+	RoleID *int64 `json:"roleId"`
 }
 
 // Validate validates this user
@@ -38,6 +42,10 @@ func (m *User) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateID(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateRoleID(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -63,6 +71,15 @@ func (m *User) validateCreateTime(formats strfmt.Registry) error {
 func (m *User) validateID(formats strfmt.Registry) error {
 
 	if err := validate.Required("id", "body", m.ID); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (m *User) validateRoleID(formats strfmt.Registry) error {
+
+	if err := validate.Required("roleId", "body", m.RoleID); err != nil {
 		return err
 	}
 
