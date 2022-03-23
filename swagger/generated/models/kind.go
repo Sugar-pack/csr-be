@@ -20,8 +20,13 @@ import (
 type Kind struct {
 
 	// id
-	// Required: true
-	ID *string `json:"id"`
+	ID int64 `json:"id,omitempty"`
+
+	// max reservation time
+	MaxReservationTime int64 `json:"max_reservation_time,omitempty"`
+
+	// max reservation units
+	MaxReservationUnits int64 `json:"max_reservation_units,omitempty"`
 
 	// name
 	// Required: true
@@ -32,10 +37,6 @@ type Kind struct {
 func (m *Kind) Validate(formats strfmt.Registry) error {
 	var res []error
 
-	if err := m.validateID(formats); err != nil {
-		res = append(res, err)
-	}
-
 	if err := m.validateName(formats); err != nil {
 		res = append(res, err)
 	}
@@ -43,15 +44,6 @@ func (m *Kind) Validate(formats strfmt.Registry) error {
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
-	return nil
-}
-
-func (m *Kind) validateID(formats strfmt.Registry) error {
-
-	if err := validate.Required("id", "body", m.ID); err != nil {
-		return err
-	}
-
 	return nil
 }
 

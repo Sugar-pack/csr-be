@@ -65,6 +65,9 @@ func NewBeAPI(spec *loads.Document) *BeAPI {
 		StatusGetStatusesHandler: status.GetStatusesHandlerFunc(func(params status.GetStatusesParams) middleware.Responder {
 			return middleware.NotImplemented("operation status.GetStatuses has not yet been implemented")
 		}),
+		KindsPatchKindHandler: kinds.PatchKindHandlerFunc(func(params kinds.PatchKindParams) middleware.Responder {
+			return middleware.NotImplemented("operation kinds.PatchKind has not yet been implemented")
+		}),
 		KindsDeleteKindHandler: kinds.DeleteKindHandlerFunc(func(params kinds.DeleteKindParams) middleware.Responder {
 			return middleware.NotImplemented("operation kinds.DeleteKind has not yet been implemented")
 		}),
@@ -146,6 +149,8 @@ type BeAPI struct {
 	StatusGetStatusHandler status.GetStatusHandler
 	// StatusGetStatusesHandler sets the operation handler for the get statuses operation
 	StatusGetStatusesHandler status.GetStatusesHandler
+	// KindsPatchKindHandler sets the operation handler for the patch kind operation
+	KindsPatchKindHandler kinds.PatchKindHandler
 	// KindsDeleteKindHandler sets the operation handler for the delete kind operation
 	KindsDeleteKindHandler kinds.DeleteKindHandler
 	// UsersGetCurrentUserHandler sets the operation handler for the get current user operation
@@ -256,6 +261,9 @@ func (o *BeAPI) Validate() error {
 	}
 	if o.StatusGetStatusesHandler == nil {
 		unregistered = append(unregistered, "status.GetStatusesHandler")
+	}
+	if o.KindsPatchKindHandler == nil {
+		unregistered = append(unregistered, "kinds.PatchKindHandler")
 	}
 	if o.KindsDeleteKindHandler == nil {
 		unregistered = append(unregistered, "kinds.DeleteKindHandler")
@@ -396,6 +404,10 @@ func (o *BeAPI) initHandlerCache() {
 		o.handlers["GET"] = make(map[string]http.Handler)
 	}
 	o.handlers["GET"]["/equipment/statuses"] = status.NewGetStatuses(o.context, o.StatusGetStatusesHandler)
+	if o.handlers["PATCH"] == nil {
+		o.handlers["PATCH"] = make(map[string]http.Handler)
+	}
+	o.handlers["PATCH"]["/equipment/kinds/{kindId}"] = kinds.NewPatchKind(o.context, o.KindsPatchKindHandler)
 	if o.handlers["DELETE"] == nil {
 		o.handlers["DELETE"] = make(map[string]http.Handler)
 	}

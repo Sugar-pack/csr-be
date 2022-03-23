@@ -17,6 +17,10 @@ type Kind struct {
 	ID int `json:"id,omitempty"`
 	// Name holds the value of the "name" field.
 	Name string `json:"name,omitempty"`
+	// MaxReservationTime holds the value of the "max_reservation_time" field.
+	MaxReservationTime int64 `json:"max_reservation_time,omitempty"`
+	// MaxReservationUnits holds the value of the "max_reservation_units" field.
+	MaxReservationUnits int64 `json:"max_reservation_units,omitempty"`
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -24,7 +28,7 @@ func (*Kind) scanValues(columns []string) ([]interface{}, error) {
 	values := make([]interface{}, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case kind.FieldID:
+		case kind.FieldID, kind.FieldMaxReservationTime, kind.FieldMaxReservationUnits:
 			values[i] = new(sql.NullInt64)
 		case kind.FieldName:
 			values[i] = new(sql.NullString)
@@ -54,6 +58,18 @@ func (k *Kind) assignValues(columns []string, values []interface{}) error {
 				return fmt.Errorf("unexpected type %T for field name", values[i])
 			} else if value.Valid {
 				k.Name = value.String
+			}
+		case kind.FieldMaxReservationTime:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field max_reservation_time", values[i])
+			} else if value.Valid {
+				k.MaxReservationTime = value.Int64
+			}
+		case kind.FieldMaxReservationUnits:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field max_reservation_units", values[i])
+			} else if value.Valid {
+				k.MaxReservationUnits = value.Int64
 			}
 		}
 	}
@@ -85,6 +101,10 @@ func (k *Kind) String() string {
 	builder.WriteString(fmt.Sprintf("id=%v", k.ID))
 	builder.WriteString(", name=")
 	builder.WriteString(k.Name)
+	builder.WriteString(", max_reservation_time=")
+	builder.WriteString(fmt.Sprintf("%v", k.MaxReservationTime))
+	builder.WriteString(", max_reservation_units=")
+	builder.WriteString(fmt.Sprintf("%v", k.MaxReservationUnits))
 	builder.WriteByte(')')
 	return builder.String()
 }

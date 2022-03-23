@@ -230,7 +230,27 @@ paths:
         default:
           description: Unexpected error.
           schema:
-            $ref: "#/definitions/Error"            
+            $ref: "#/definitions/Error"
+    patch:
+      summary: Edit equipment kind by id.
+      tags:
+        - Kinds
+      operationId: PatchKind
+      parameters:
+        - name: patchTask
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/PatchTask'
+      responses:
+        201:
+          description: Success
+          schema:
+           $ref: "#/definitions/PatchKindResponse"
+        default:
+          description: Unexpected error
+          schema:
+            $ref: "#/definitions/Error"
 
 definitions:
   Error:
@@ -245,6 +265,21 @@ definitions:
             type: string
           message:
             type: string
+  PatchTask:
+    type: object
+    required:
+      - data  
+    description: Patch task object (adding max reservation time and max reservation units)
+    properties:
+      data:
+        type: object
+        properties:
+          max_reservation_time:
+            type: integer
+            description: max reservation time field
+          max_reservation_units:
+            type: integer
+            description: max reservation units field
 
   PatchRequest:
     type: array
@@ -361,13 +396,16 @@ definitions:
   Kind:
     type: object
     required:
-      - id
       - name
     properties:
       id:
-        type: string
+        type: integer
       name:
         type: string
+      max_reservation_time:
+        type: integer
+      max_reservation_units:
+        type: integer
   ListOfKinds:
     type: array
     items:
@@ -394,6 +432,13 @@ definitions:
     data:
       $ref: "#/definitions/Kind"    
   CreateNewKindResponse:
+   type: object  
+   required:
+    - data
+   properties:
+    data:
+      $ref: "#/definitions/Kind"
+  PatchKindResponse:
    type: object  
    required:
     - data

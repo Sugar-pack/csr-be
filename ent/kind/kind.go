@@ -9,6 +9,10 @@ const (
 	FieldID = "id"
 	// FieldName holds the string denoting the name field in the database.
 	FieldName = "name"
+	// FieldMaxReservationTime holds the string denoting the max_reservation_time field in the database.
+	FieldMaxReservationTime = "max_reservation_time"
+	// FieldMaxReservationUnits holds the string denoting the max_reservation_units field in the database.
+	FieldMaxReservationUnits = "max_reservation_units"
 	// Table holds the table name of the kind in the database.
 	Table = "kinds"
 )
@@ -17,6 +21,8 @@ const (
 var Columns = []string{
 	FieldID,
 	FieldName,
+	FieldMaxReservationTime,
+	FieldMaxReservationUnits,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -32,4 +38,8 @@ func ValidColumn(column string) bool {
 var (
 	// DefaultName holds the default value on creation for the "name" field.
 	DefaultName string
+	// DefaultMaxReservationTime holds the default value on creation for the "max_reservation_time" field.
+	DefaultMaxReservationTime int64
+	// DefaultMaxReservationUnits holds the default value on creation for the "max_reservation_units" field.
+	DefaultMaxReservationUnits int64
 )
