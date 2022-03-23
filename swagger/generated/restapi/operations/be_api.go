@@ -20,6 +20,7 @@ import (
 	"github.com/go-openapi/swag"
 
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/restapi/operations/kinds"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/restapi/operations/roles"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/restapi/operations/status"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/restapi/operations/users"
 )
@@ -54,6 +55,9 @@ func NewBeAPI(spec *loads.Document) *BeAPI {
 		}),
 		KindsGetAllKindsHandler: kinds.GetAllKindsHandlerFunc(func(params kinds.GetAllKindsParams) middleware.Responder {
 			return middleware.NotImplemented("operation kinds.GetAllKinds has not yet been implemented")
+		}),
+		RolesGetRolesHandler: roles.GetRolesHandlerFunc(func(params roles.GetRolesParams) middleware.Responder {
+			return middleware.NotImplemented("operation roles.GetRoles has not yet been implemented")
 		}),
 		StatusGetStatusHandler: status.GetStatusHandlerFunc(func(params status.GetStatusParams) middleware.Responder {
 			return middleware.NotImplemented("operation status.GetStatus has not yet been implemented")
@@ -136,6 +140,8 @@ type BeAPI struct {
 	StatusDeleteStatusHandler status.DeleteStatusHandler
 	// KindsGetAllKindsHandler sets the operation handler for the get all kinds operation
 	KindsGetAllKindsHandler kinds.GetAllKindsHandler
+	// RolesGetRolesHandler sets the operation handler for the get roles operation
+	RolesGetRolesHandler roles.GetRolesHandler
 	// StatusGetStatusHandler sets the operation handler for the get status operation
 	StatusGetStatusHandler status.GetStatusHandler
 	// StatusGetStatusesHandler sets the operation handler for the get statuses operation
@@ -241,6 +247,9 @@ func (o *BeAPI) Validate() error {
 	}
 	if o.KindsGetAllKindsHandler == nil {
 		unregistered = append(unregistered, "kinds.GetAllKindsHandler")
+	}
+	if o.RolesGetRolesHandler == nil {
+		unregistered = append(unregistered, "roles.GetRolesHandler")
 	}
 	if o.StatusGetStatusHandler == nil {
 		unregistered = append(unregistered, "status.GetStatusHandler")
@@ -375,6 +384,10 @@ func (o *BeAPI) initHandlerCache() {
 		o.handlers["GET"] = make(map[string]http.Handler)
 	}
 	o.handlers["GET"]["/equipment/kinds"] = kinds.NewGetAllKinds(o.context, o.KindsGetAllKindsHandler)
+	if o.handlers["GET"] == nil {
+		o.handlers["GET"] = make(map[string]http.Handler)
+	}
+	o.handlers["GET"]["/v1/roles"] = roles.NewGetRoles(o.context, o.RolesGetRolesHandler)
 	if o.handlers["GET"] == nil {
 		o.handlers["GET"] = make(map[string]http.Handler)
 	}

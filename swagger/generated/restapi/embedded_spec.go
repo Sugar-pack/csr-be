@@ -251,6 +251,29 @@ func init() {
         }
       ]
     },
+    "/v1/roles": {
+      "get": {
+        "tags": [
+          "Roles"
+        ],
+        "summary": "List all roles.",
+        "operationId": "GetRoles",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/ListRoles"
+            }
+          },
+          "default": {
+            "description": "Unexpected error.",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        }
+      }
+    },
     "/v1/users": {
       "post": {
         "tags": [
@@ -455,6 +478,12 @@ func init() {
         "$ref": "#/definitions/Kind"
       }
     },
+    "ListRoles": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/Role"
+      }
+    },
     "ListStatuses": {
       "type": "array",
       "items": {
@@ -499,6 +528,25 @@ func init() {
       "type": "array",
       "items": {
         "$ref": "#/definitions/PatchItem"
+      }
+    },
+    "Role": {
+      "type": "object",
+      "required": [
+        "id",
+        "name",
+        "slug"
+      ],
+      "properties": {
+        "id": {
+          "type": "integer"
+        },
+        "name": {
+          "type": "string"
+        },
+        "slug": {
+          "type": "string"
+        }
       }
     },
     "Status": {
@@ -797,6 +845,29 @@ func init() {
         }
       ]
     },
+    "/v1/roles": {
+      "get": {
+        "tags": [
+          "Roles"
+        ],
+        "summary": "List all roles.",
+        "operationId": "GetRoles",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/ListRoles"
+            }
+          },
+          "default": {
+            "description": "Unexpected error.",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        }
+      }
+    },
     "/v1/users": {
       "post": {
         "tags": [
@@ -1023,6 +1094,12 @@ func init() {
         "$ref": "#/definitions/Kind"
       }
     },
+    "ListRoles": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/Role"
+      }
+    },
     "ListStatuses": {
       "type": "array",
       "items": {
@@ -1067,6 +1144,25 @@ func init() {
       "type": "array",
       "items": {
         "$ref": "#/definitions/PatchItem"
+      }
+    },
+    "Role": {
+      "type": "object",
+      "required": [
+        "id",
+        "name",
+        "slug"
+      ],
+      "properties": {
+        "id": {
+          "type": "integer"
+        },
+        "name": {
+          "type": "string"
+        },
+        "slug": {
+          "type": "string"
+        }
       }
     },
     "Status": {
