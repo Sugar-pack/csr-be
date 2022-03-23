@@ -33,6 +33,8 @@ var (
 	KindsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt, Increment: true},
 		{Name: "name", Type: field.TypeString, Default: "unknown"},
+		{Name: "max_reservation_time", Type: field.TypeInt64, Default: 120000000},
+		{Name: "max_reservation_units", Type: field.TypeInt64, Default: 10},
 	}
 	// KindsTable holds the schema information for the "kinds" table.
 	KindsTable = &schema.Table{

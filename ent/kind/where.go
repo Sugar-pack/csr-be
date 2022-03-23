@@ -97,6 +97,20 @@ func Name(v string) predicate.Kind {
 	})
 }
 
+// MaxReservationTime applies equality check predicate on the "max_reservation_time" field. It's identical to MaxReservationTimeEQ.
+func MaxReservationTime(v int64) predicate.Kind {
+	return predicate.Kind(func(s *sql.Selector) {
+		s.Where(sql.EQ(s.C(FieldMaxReservationTime), v))
+	})
+}
+
+// MaxReservationUnits applies equality check predicate on the "max_reservation_units" field. It's identical to MaxReservationUnitsEQ.
+func MaxReservationUnits(v int64) predicate.Kind {
+	return predicate.Kind(func(s *sql.Selector) {
+		s.Where(sql.EQ(s.C(FieldMaxReservationUnits), v))
+	})
+}
+
 // NameEQ applies the EQ predicate on the "name" field.
 func NameEQ(v string) predicate.Kind {
 	return predicate.Kind(func(s *sql.Selector) {
@@ -205,6 +219,158 @@ func NameEqualFold(v string) predicate.Kind {
 func NameContainsFold(v string) predicate.Kind {
 	return predicate.Kind(func(s *sql.Selector) {
 		s.Where(sql.ContainsFold(s.C(FieldName), v))
+	})
+}
+
+// MaxReservationTimeEQ applies the EQ predicate on the "max_reservation_time" field.
+func MaxReservationTimeEQ(v int64) predicate.Kind {
+	return predicate.Kind(func(s *sql.Selector) {
+		s.Where(sql.EQ(s.C(FieldMaxReservationTime), v))
+	})
+}
+
+// MaxReservationTimeNEQ applies the NEQ predicate on the "max_reservation_time" field.
+func MaxReservationTimeNEQ(v int64) predicate.Kind {
+	return predicate.Kind(func(s *sql.Selector) {
+		s.Where(sql.NEQ(s.C(FieldMaxReservationTime), v))
+	})
+}
+
+// MaxReservationTimeIn applies the In predicate on the "max_reservation_time" field.
+func MaxReservationTimeIn(vs ...int64) predicate.Kind {
+	v := make([]interface{}, len(vs))
+	for i := range v {
+		v[i] = vs[i]
+	}
+	return predicate.Kind(func(s *sql.Selector) {
+		// if not arguments were provided, append the FALSE constants,
+		// since we can't apply "IN ()". This will make this predicate falsy.
+		if len(v) == 0 {
+			s.Where(sql.False())
+			return
+		}
+		s.Where(sql.In(s.C(FieldMaxReservationTime), v...))
+	})
+}
+
+// MaxReservationTimeNotIn applies the NotIn predicate on the "max_reservation_time" field.
+func MaxReservationTimeNotIn(vs ...int64) predicate.Kind {
+	v := make([]interface{}, len(vs))
+	for i := range v {
+		v[i] = vs[i]
+	}
+	return predicate.Kind(func(s *sql.Selector) {
+		// if not arguments were provided, append the FALSE constants,
+		// since we can't apply "IN ()". This will make this predicate falsy.
+		if len(v) == 0 {
+			s.Where(sql.False())
+			return
+		}
+		s.Where(sql.NotIn(s.C(FieldMaxReservationTime), v...))
+	})
+}
+
+// MaxReservationTimeGT applies the GT predicate on the "max_reservation_time" field.
+func MaxReservationTimeGT(v int64) predicate.Kind {
+	return predicate.Kind(func(s *sql.Selector) {
+		s.Where(sql.GT(s.C(FieldMaxReservationTime), v))
+	})
+}
+
+// MaxReservationTimeGTE applies the GTE predicate on the "max_reservation_time" field.
+func MaxReservationTimeGTE(v int64) predicate.Kind {
+	return predicate.Kind(func(s *sql.Selector) {
+		s.Where(sql.GTE(s.C(FieldMaxReservationTime), v))
+	})
+}
+
+// MaxReservationTimeLT applies the LT predicate on the "max_reservation_time" field.
+func MaxReservationTimeLT(v int64) predicate.Kind {
+	return predicate.Kind(func(s *sql.Selector) {
+		s.Where(sql.LT(s.C(FieldMaxReservationTime), v))
+	})
+}
+
+// MaxReservationTimeLTE applies the LTE predicate on the "max_reservation_time" field.
+func MaxReservationTimeLTE(v int64) predicate.Kind {
+	return predicate.Kind(func(s *sql.Selector) {
+		s.Where(sql.LTE(s.C(FieldMaxReservationTime), v))
+	})
+}
+
+// MaxReservationUnitsEQ applies the EQ predicate on the "max_reservation_units" field.
+func MaxReservationUnitsEQ(v int64) predicate.Kind {
+	return predicate.Kind(func(s *sql.Selector) {
+		s.Where(sql.EQ(s.C(FieldMaxReservationUnits), v))
+	})
+}
+
+// MaxReservationUnitsNEQ applies the NEQ predicate on the "max_reservation_units" field.
+func MaxReservationUnitsNEQ(v int64) predicate.Kind {
+	return predicate.Kind(func(s *sql.Selector) {
+		s.Where(sql.NEQ(s.C(FieldMaxReservationUnits), v))
+	})
+}
+
+// MaxReservationUnitsIn applies the In predicate on the "max_reservation_units" field.
+func MaxReservationUnitsIn(vs ...int64) predicate.Kind {
+	v := make([]interface{}, len(vs))
+	for i := range v {
+		v[i] = vs[i]
+	}
+	return predicate.Kind(func(s *sql.Selector) {
+		// if not arguments were provided, append the FALSE constants,
+		// since we can't apply "IN ()". This will make this predicate falsy.
+		if len(v) == 0 {
+			s.Where(sql.False())
+			return
+		}
+		s.Where(sql.In(s.C(FieldMaxReservationUnits), v...))
+	})
+}
+
+// MaxReservationUnitsNotIn applies the NotIn predicate on the "max_reservation_units" field.
+func MaxReservationUnitsNotIn(vs ...int64) predicate.Kind {
+	v := make([]interface{}, len(vs))
+	for i := range v {
+		v[i] = vs[i]
+	}
+	return predicate.Kind(func(s *sql.Selector) {
+		// if not arguments were provided, append the FALSE constants,
+		// since we can't apply "IN ()". This will make this predicate falsy.
+		if len(v) == 0 {
+			s.Where(sql.False())
+			return
+		}
+		s.Where(sql.NotIn(s.C(FieldMaxReservationUnits), v...))
+	})
+}
+
+// MaxReservationUnitsGT applies the GT predicate on the "max_reservation_units" field.
+func MaxReservationUnitsGT(v int64) predicate.Kind {
+	return predicate.Kind(func(s *sql.Selector) {
+		s.Where(sql.GT(s.C(FieldMaxReservationUnits), v))
+	})
+}
+
+// MaxReservationUnitsGTE applies the GTE predicate on the "max_reservation_units" field.
+func MaxReservationUnitsGTE(v int64) predicate.Kind {
+	return predicate.Kind(func(s *sql.Selector) {
+		s.Where(sql.GTE(s.C(FieldMaxReservationUnits), v))
+	})
+}
+
+// MaxReservationUnitsLT applies the LT predicate on the "max_reservation_units" field.
+func MaxReservationUnitsLT(v int64) predicate.Kind {
+	return predicate.Kind(func(s *sql.Selector) {
+		s.Where(sql.LT(s.C(FieldMaxReservationUnits), v))
+	})
+}
+
+// MaxReservationUnitsLTE applies the LTE predicate on the "max_reservation_units" field.
+func MaxReservationUnitsLTE(v int64) predicate.Kind {
+	return predicate.Kind(func(s *sql.Selector) {
+		s.Where(sql.LTE(s.C(FieldMaxReservationUnits), v))
 	})
 }
 

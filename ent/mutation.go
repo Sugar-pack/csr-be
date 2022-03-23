@@ -870,14 +870,18 @@ func (m *GroupMutation) ResetEdge(name string) error {
 // KindMutation represents an operation that mutates the Kind nodes in the graph.
 type KindMutation struct {
 	config
-	op            Op
-	typ           string
-	id            *int
-	name          *string
-	clearedFields map[string]struct{}
-	done          bool
-	oldValue      func(context.Context) (*Kind, error)
-	predicates    []predicate.Kind
+	op                       Op
+	typ                      string
+	id                       *int
+	name                     *string
+	max_reservation_time     *int64
+	addmax_reservation_time  *int64
+	max_reservation_units    *int64
+	addmax_reservation_units *int64
+	clearedFields            map[string]struct{}
+	done                     bool
+	oldValue                 func(context.Context) (*Kind, error)
+	predicates               []predicate.Kind
 }
 
 var _ ent.Mutation = (*KindMutation)(nil)
@@ -1014,6 +1018,118 @@ func (m *KindMutation) ResetName() {
 	m.name = nil
 }
 
+// SetMaxReservationTime sets the "max_reservation_time" field.
+func (m *KindMutation) SetMaxReservationTime(i int64) {
+	m.max_reservation_time = &i
+	m.addmax_reservation_time = nil
+}
+
+// MaxReservationTime returns the value of the "max_reservation_time" field in the mutation.
+func (m *KindMutation) MaxReservationTime() (r int64, exists bool) {
+	v := m.max_reservation_time
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldMaxReservationTime returns the old "max_reservation_time" field's value of the Kind entity.
+// If the Kind object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *KindMutation) OldMaxReservationTime(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldMaxReservationTime is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldMaxReservationTime requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldMaxReservationTime: %w", err)
+	}
+	return oldValue.MaxReservationTime, nil
+}
+
+// AddMaxReservationTime adds i to the "max_reservation_time" field.
+func (m *KindMutation) AddMaxReservationTime(i int64) {
+	if m.addmax_reservation_time != nil {
+		*m.addmax_reservation_time += i
+	} else {
+		m.addmax_reservation_time = &i
+	}
+}
+
+// AddedMaxReservationTime returns the value that was added to the "max_reservation_time" field in this mutation.
+func (m *KindMutation) AddedMaxReservationTime() (r int64, exists bool) {
+	v := m.addmax_reservation_time
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetMaxReservationTime resets all changes to the "max_reservation_time" field.
+func (m *KindMutation) ResetMaxReservationTime() {
+	m.max_reservation_time = nil
+	m.addmax_reservation_time = nil
+}
+
+// SetMaxReservationUnits sets the "max_reservation_units" field.
+func (m *KindMutation) SetMaxReservationUnits(i int64) {
+	m.max_reservation_units = &i
+	m.addmax_reservation_units = nil
+}
+
+// MaxReservationUnits returns the value of the "max_reservation_units" field in the mutation.
+func (m *KindMutation) MaxReservationUnits() (r int64, exists bool) {
+	v := m.max_reservation_units
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldMaxReservationUnits returns the old "max_reservation_units" field's value of the Kind entity.
+// If the Kind object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *KindMutation) OldMaxReservationUnits(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldMaxReservationUnits is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldMaxReservationUnits requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldMaxReservationUnits: %w", err)
+	}
+	return oldValue.MaxReservationUnits, nil
+}
+
+// AddMaxReservationUnits adds i to the "max_reservation_units" field.
+func (m *KindMutation) AddMaxReservationUnits(i int64) {
+	if m.addmax_reservation_units != nil {
+		*m.addmax_reservation_units += i
+	} else {
+		m.addmax_reservation_units = &i
+	}
+}
+
+// AddedMaxReservationUnits returns the value that was added to the "max_reservation_units" field in this mutation.
+func (m *KindMutation) AddedMaxReservationUnits() (r int64, exists bool) {
+	v := m.addmax_reservation_units
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetMaxReservationUnits resets all changes to the "max_reservation_units" field.
+func (m *KindMutation) ResetMaxReservationUnits() {
+	m.max_reservation_units = nil
+	m.addmax_reservation_units = nil
+}
+
 // Where appends a list predicates to the KindMutation builder.
 func (m *KindMutation) Where(ps ...predicate.Kind) {
 	m.predicates = append(m.predicates, ps...)
@@ -1033,9 +1149,15 @@ func (m *KindMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *KindMutation) Fields() []string {
-	fields := make([]string, 0, 1)
+	fields := make([]string, 0, 3)
 	if m.name != nil {
 		fields = append(fields, kind.FieldName)
+	}
+	if m.max_reservation_time != nil {
+		fields = append(fields, kind.FieldMaxReservationTime)
+	}
+	if m.max_reservation_units != nil {
+		fields = append(fields, kind.FieldMaxReservationUnits)
 	}
 	return fields
 }
@@ -1047,6 +1169,10 @@ func (m *KindMutation) Field(name string) (ent.Value, bool) {
 	switch name {
 	case kind.FieldName:
 		return m.Name()
+	case kind.FieldMaxReservationTime:
+		return m.MaxReservationTime()
+	case kind.FieldMaxReservationUnits:
+		return m.MaxReservationUnits()
 	}
 	return nil, false
 }
@@ -1058,6 +1184,10 @@ func (m *KindMutation) OldField(ctx context.Context, name string) (ent.Value, er
 	switch name {
 	case kind.FieldName:
 		return m.OldName(ctx)
+	case kind.FieldMaxReservationTime:
+		return m.OldMaxReservationTime(ctx)
+	case kind.FieldMaxReservationUnits:
+		return m.OldMaxReservationUnits(ctx)
 	}
 	return nil, fmt.Errorf("unknown Kind field %s", name)
 }
@@ -1074,6 +1204,20 @@ func (m *KindMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetName(v)
 		return nil
+	case kind.FieldMaxReservationTime:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetMaxReservationTime(v)
+		return nil
+	case kind.FieldMaxReservationUnits:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetMaxReservationUnits(v)
+		return nil
 	}
 	return fmt.Errorf("unknown Kind field %s", name)
 }
@@ -1081,13 +1225,26 @@ func (m *KindMutation) SetField(name string, value ent.Value) error {
 // AddedFields returns all numeric fields that were incremented/decremented during
 // this mutation.
 func (m *KindMutation) AddedFields() []string {
-	return nil
+	var fields []string
+	if m.addmax_reservation_time != nil {
+		fields = append(fields, kind.FieldMaxReservationTime)
+	}
+	if m.addmax_reservation_units != nil {
+		fields = append(fields, kind.FieldMaxReservationUnits)
+	}
+	return fields
 }
 
 // AddedField returns the numeric value that was incremented/decremented on a field
 // with the given name. The second boolean return value indicates that this field
 // was not set, or was not defined in the schema.
 func (m *KindMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case kind.FieldMaxReservationTime:
+		return m.AddedMaxReservationTime()
+	case kind.FieldMaxReservationUnits:
+		return m.AddedMaxReservationUnits()
+	}
 	return nil, false
 }
 
@@ -1096,6 +1253,20 @@ func (m *KindMutation) AddedField(name string) (ent.Value, bool) {
 // type.
 func (m *KindMutation) AddField(name string, value ent.Value) error {
 	switch name {
+	case kind.FieldMaxReservationTime:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddMaxReservationTime(v)
+		return nil
+	case kind.FieldMaxReservationUnits:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddMaxReservationUnits(v)
+		return nil
 	}
 	return fmt.Errorf("unknown Kind numeric field %s", name)
 }
@@ -1125,6 +1296,12 @@ func (m *KindMutation) ResetField(name string) error {
 	switch name {
 	case kind.FieldName:
 		m.ResetName()
+		return nil
+	case kind.FieldMaxReservationTime:
+		m.ResetMaxReservationTime()
+		return nil
+	case kind.FieldMaxReservationUnits:
+		m.ResetMaxReservationUnits()
 		return nil
 	}
 	return fmt.Errorf("unknown Kind field %s", name)

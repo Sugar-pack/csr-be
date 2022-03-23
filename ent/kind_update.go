@@ -41,6 +41,48 @@ func (ku *KindUpdate) SetNillableName(s *string) *KindUpdate {
 	return ku
 }
 
+// SetMaxReservationTime sets the "max_reservation_time" field.
+func (ku *KindUpdate) SetMaxReservationTime(i int64) *KindUpdate {
+	ku.mutation.ResetMaxReservationTime()
+	ku.mutation.SetMaxReservationTime(i)
+	return ku
+}
+
+// SetNillableMaxReservationTime sets the "max_reservation_time" field if the given value is not nil.
+func (ku *KindUpdate) SetNillableMaxReservationTime(i *int64) *KindUpdate {
+	if i != nil {
+		ku.SetMaxReservationTime(*i)
+	}
+	return ku
+}
+
+// AddMaxReservationTime adds i to the "max_reservation_time" field.
+func (ku *KindUpdate) AddMaxReservationTime(i int64) *KindUpdate {
+	ku.mutation.AddMaxReservationTime(i)
+	return ku
+}
+
+// SetMaxReservationUnits sets the "max_reservation_units" field.
+func (ku *KindUpdate) SetMaxReservationUnits(i int64) *KindUpdate {
+	ku.mutation.ResetMaxReservationUnits()
+	ku.mutation.SetMaxReservationUnits(i)
+	return ku
+}
+
+// SetNillableMaxReservationUnits sets the "max_reservation_units" field if the given value is not nil.
+func (ku *KindUpdate) SetNillableMaxReservationUnits(i *int64) *KindUpdate {
+	if i != nil {
+		ku.SetMaxReservationUnits(*i)
+	}
+	return ku
+}
+
+// AddMaxReservationUnits adds i to the "max_reservation_units" field.
+func (ku *KindUpdate) AddMaxReservationUnits(i int64) *KindUpdate {
+	ku.mutation.AddMaxReservationUnits(i)
+	return ku
+}
+
 // Mutation returns the KindMutation object of the builder.
 func (ku *KindUpdate) Mutation() *KindMutation {
 	return ku.mutation
@@ -125,6 +167,34 @@ func (ku *KindUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Column: kind.FieldName,
 		})
 	}
+	if value, ok := ku.mutation.MaxReservationTime(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeInt64,
+			Value:  value,
+			Column: kind.FieldMaxReservationTime,
+		})
+	}
+	if value, ok := ku.mutation.AddedMaxReservationTime(); ok {
+		_spec.Fields.Add = append(_spec.Fields.Add, &sqlgraph.FieldSpec{
+			Type:   field.TypeInt64,
+			Value:  value,
+			Column: kind.FieldMaxReservationTime,
+		})
+	}
+	if value, ok := ku.mutation.MaxReservationUnits(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeInt64,
+			Value:  value,
+			Column: kind.FieldMaxReservationUnits,
+		})
+	}
+	if value, ok := ku.mutation.AddedMaxReservationUnits(); ok {
+		_spec.Fields.Add = append(_spec.Fields.Add, &sqlgraph.FieldSpec{
+			Type:   field.TypeInt64,
+			Value:  value,
+			Column: kind.FieldMaxReservationUnits,
+		})
+	}
 	if n, err = sqlgraph.UpdateNodes(ctx, ku.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{kind.Label}
@@ -155,6 +225,48 @@ func (kuo *KindUpdateOne) SetNillableName(s *string) *KindUpdateOne {
 	if s != nil {
 		kuo.SetName(*s)
 	}
+	return kuo
+}
+
+// SetMaxReservationTime sets the "max_reservation_time" field.
+func (kuo *KindUpdateOne) SetMaxReservationTime(i int64) *KindUpdateOne {
+	kuo.mutation.ResetMaxReservationTime()
+	kuo.mutation.SetMaxReservationTime(i)
+	return kuo
+}
+
+// SetNillableMaxReservationTime sets the "max_reservation_time" field if the given value is not nil.
+func (kuo *KindUpdateOne) SetNillableMaxReservationTime(i *int64) *KindUpdateOne {
+	if i != nil {
+		kuo.SetMaxReservationTime(*i)
+	}
+	return kuo
+}
+
+// AddMaxReservationTime adds i to the "max_reservation_time" field.
+func (kuo *KindUpdateOne) AddMaxReservationTime(i int64) *KindUpdateOne {
+	kuo.mutation.AddMaxReservationTime(i)
+	return kuo
+}
+
+// SetMaxReservationUnits sets the "max_reservation_units" field.
+func (kuo *KindUpdateOne) SetMaxReservationUnits(i int64) *KindUpdateOne {
+	kuo.mutation.ResetMaxReservationUnits()
+	kuo.mutation.SetMaxReservationUnits(i)
+	return kuo
+}
+
+// SetNillableMaxReservationUnits sets the "max_reservation_units" field if the given value is not nil.
+func (kuo *KindUpdateOne) SetNillableMaxReservationUnits(i *int64) *KindUpdateOne {
+	if i != nil {
+		kuo.SetMaxReservationUnits(*i)
+	}
+	return kuo
+}
+
+// AddMaxReservationUnits adds i to the "max_reservation_units" field.
+func (kuo *KindUpdateOne) AddMaxReservationUnits(i int64) *KindUpdateOne {
+	kuo.mutation.AddMaxReservationUnits(i)
 	return kuo
 }
 
@@ -264,6 +376,34 @@ func (kuo *KindUpdateOne) sqlSave(ctx context.Context) (_node *Kind, err error) 
 			Type:   field.TypeString,
 			Value:  value,
 			Column: kind.FieldName,
+		})
+	}
+	if value, ok := kuo.mutation.MaxReservationTime(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeInt64,
+			Value:  value,
+			Column: kind.FieldMaxReservationTime,
+		})
+	}
+	if value, ok := kuo.mutation.AddedMaxReservationTime(); ok {
+		_spec.Fields.Add = append(_spec.Fields.Add, &sqlgraph.FieldSpec{
+			Type:   field.TypeInt64,
+			Value:  value,
+			Column: kind.FieldMaxReservationTime,
+		})
+	}
+	if value, ok := kuo.mutation.MaxReservationUnits(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeInt64,
+			Value:  value,
+			Column: kind.FieldMaxReservationUnits,
+		})
+	}
+	if value, ok := kuo.mutation.AddedMaxReservationUnits(); ok {
+		_spec.Fields.Add = append(_spec.Fields.Add, &sqlgraph.FieldSpec{
+			Type:   field.TypeInt64,
+			Value:  value,
+			Column: kind.FieldMaxReservationUnits,
 		})
 	}
 	_node = &Kind{config: kuo.config}

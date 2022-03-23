@@ -27,6 +27,14 @@ func init() {
 	kindDescName := kindFields[0].Descriptor()
 	// kind.DefaultName holds the default value on creation for the name field.
 	kind.DefaultName = kindDescName.Default.(string)
+	// kindDescMaxReservationTime is the schema descriptor for max_reservation_time field.
+	kindDescMaxReservationTime := kindFields[1].Descriptor()
+	// kind.DefaultMaxReservationTime holds the default value on creation for the max_reservation_time field.
+	kind.DefaultMaxReservationTime = kindDescMaxReservationTime.Default.(int64)
+	// kindDescMaxReservationUnits is the schema descriptor for max_reservation_units field.
+	kindDescMaxReservationUnits := kindFields[2].Descriptor()
+	// kind.DefaultMaxReservationUnits holds the default value on creation for the max_reservation_units field.
+	kind.DefaultMaxReservationUnits = kindDescMaxReservationUnits.Default.(int64)
 	permissionFields := schema.Permission{}.Fields()
 	_ = permissionFields
 	// permissionDescName is the schema descriptor for name field.

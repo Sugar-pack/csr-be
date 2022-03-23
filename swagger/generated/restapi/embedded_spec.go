@@ -133,6 +133,37 @@ func init() {
           }
         }
       },
+      "patch": {
+        "tags": [
+          "Kinds"
+        ],
+        "summary": "Edit equipment kind by id.",
+        "operationId": "PatchKind",
+        "parameters": [
+          {
+            "name": "patchTask",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/PatchTask"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/PatchKindResponse"
+            }
+          },
+          "default": {
+            "description": "Unexpected error",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        }
+      },
       "parameters": [
         {
           "type": "string",
@@ -460,12 +491,17 @@ func init() {
     "Kind": {
       "type": "object",
       "required": [
-        "id",
         "name"
       ],
       "properties": {
         "id": {
-          "type": "string"
+          "type": "integer"
+        },
+        "max_reservation_time": {
+          "type": "integer"
+        },
+        "max_reservation_units": {
+          "type": "integer"
         },
         "name": {
           "type": "string"
@@ -524,10 +560,43 @@ func init() {
         }
       }
     },
+    "PatchKindResponse": {
+      "type": "object",
+      "required": [
+        "data"
+      ],
+      "properties": {
+        "data": {
+          "$ref": "#/definitions/Kind"
+        }
+      }
+    },
     "PatchRequest": {
       "type": "array",
       "items": {
         "$ref": "#/definitions/PatchItem"
+      }
+    },
+    "PatchTask": {
+      "description": "Patch task object (adding max reservation time and max reservation units)",
+      "type": "object",
+      "required": [
+        "data"
+      ],
+      "properties": {
+        "data": {
+          "type": "object",
+          "properties": {
+            "max_reservation_time": {
+              "description": "max reservation time field",
+              "type": "integer"
+            },
+            "max_reservation_units": {
+              "description": "max reservation units field",
+              "type": "integer"
+            }
+          }
+        }
       }
     },
     "Role": {
@@ -721,6 +790,37 @@ func init() {
           },
           "default": {
             "description": "Unexpected error.",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Kinds"
+        ],
+        "summary": "Edit equipment kind by id.",
+        "operationId": "PatchKind",
+        "parameters": [
+          {
+            "name": "patchTask",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/PatchTask"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/PatchKindResponse"
+            }
+          },
+          "default": {
+            "description": "Unexpected error",
             "schema": {
               "$ref": "#/definitions/Error"
             }
@@ -1076,12 +1176,17 @@ func init() {
     "Kind": {
       "type": "object",
       "required": [
-        "id",
         "name"
       ],
       "properties": {
         "id": {
-          "type": "string"
+          "type": "integer"
+        },
+        "max_reservation_time": {
+          "type": "integer"
+        },
+        "max_reservation_units": {
+          "type": "integer"
         },
         "name": {
           "type": "string"
@@ -1140,10 +1245,56 @@ func init() {
         }
       }
     },
+    "PatchKindResponse": {
+      "type": "object",
+      "required": [
+        "data"
+      ],
+      "properties": {
+        "data": {
+          "$ref": "#/definitions/Kind"
+        }
+      }
+    },
     "PatchRequest": {
       "type": "array",
       "items": {
         "$ref": "#/definitions/PatchItem"
+      }
+    },
+    "PatchTask": {
+      "description": "Patch task object (adding max reservation time and max reservation units)",
+      "type": "object",
+      "required": [
+        "data"
+      ],
+      "properties": {
+        "data": {
+          "type": "object",
+          "properties": {
+            "max_reservation_time": {
+              "description": "max reservation time field",
+              "type": "integer"
+            },
+            "max_reservation_units": {
+              "description": "max reservation units field",
+              "type": "integer"
+            }
+          }
+        }
+      }
+    },
+    "PatchTaskData": {
+      "type": "object",
+      "properties": {
+        "max_reservation_time": {
+          "description": "max reservation time field",
+          "type": "integer"
+        },
+        "max_reservation_units": {
+          "description": "max reservation units field",
+          "type": "integer"
+        }
       }
     },
     "Role": {

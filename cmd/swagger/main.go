@@ -100,6 +100,7 @@ func main() {
 	api.KindsGetKindByIDHandler = kindsHandler.GetKindByIDFunc()
 	api.KindsDeleteKindHandler = kindsHandler.DeleteKindFunc()
 	api.KindsGetAllKindsHandler = kindsHandler.GetAllKindsFunc()
+	api.KindsPatchKindHandler = kindsHandler.PatchKindFunc()
 
 	api.StatusPostStatusHandler = statusHandler.PostStatusFunc()
 	api.StatusGetStatusesHandler = statusHandler.GetStatusesFunc()

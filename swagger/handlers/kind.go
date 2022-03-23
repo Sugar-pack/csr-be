@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"fmt"
 	"net/http"
 	"strconv"
 
@@ -34,10 +33,9 @@ func (c Kind) CreateNewKindFunc() kinds.CreateNewKindHandlerFunc {
 				},
 			})
 		}
-		id := fmt.Sprintf("%d", e.ID)
 		return kinds.NewCreateNewKindCreated().WithPayload(&models.CreateNewKindResponse{
 			Data: &models.Kind{
-				ID:   &id,
+				ID:   int64(e.ID),
 				Name: &e.Name,
 			},
 		})
@@ -56,8 +54,7 @@ func (c Kind) GetAllKindsFunc() kinds.GetAllKindsHandlerFunc {
 		}
 		listOfKinds := models.ListOfKinds{}
 		for _, v := range e {
-			id := strconv.Itoa(v.ID)
-			listOfKinds = append(listOfKinds, &models.Kind{ID: &id, Name: &v.Name})
+			listOfKinds = append(listOfKinds, &models.Kind{ID: int64(v.ID), Name: &v.Name, MaxReservationTime: v.MaxReservationTime, MaxReservationUnits: v.MaxReservationUnits})
 		}
 		return kinds.NewGetAllKindsOK().WithPayload(listOfKinds)
 	}
@@ -83,8 +80,10 @@ func (c Kind) GetKindByIDFunc() kinds.GetKindByIDHandlerFunc {
 		}
 		return kinds.NewGetKindByIDOK().WithPayload(&models.GetKindByIDResponse{
 			Data: &models.Kind{
-				ID:   &s.KindID,
-				Name: &e.Name,
+				ID:                  int64(e.ID),
+				Name:                &e.Name,
+				MaxReservationTime:  e.MaxReservationTime,
+				MaxReservationUnits: e.MaxReservationUnits,
 			},
 		})
 	}
@@ -119,8 +118,65 @@ func (c Kind) DeleteKindFunc() kinds.DeleteKindHandlerFunc {
 		}
 		return kinds.NewDeleteKindCreated().WithPayload(&models.DeleteKindResponse{
 			Data: &models.Kind{
-				ID:   &s.KindID,
-				Name: &e.Name,
+				ID:                  int64(e.ID),
+				Name:                &e.Name,
+				MaxReservationTime:  e.MaxReservationTime,
+				MaxReservationUnits: e.MaxReservationUnits,
+			},
+		})
+	}
+}
+
+func (c Kind) PatchKindFunc() kinds.PatchKindHandlerFunc {
+	return func(s kinds.PatchKindParams) middleware.Responder {
+		id, err := strconv.Atoi(s.KindID)
+		if err != nil {
+			return kinds.NewPatchKindDefault(http.StatusInternalServerError).WithPayload(&models.Error{
+				Data: &models.ErrorData{
+					Message: err.Error(),
+				},
+			})
+		}
+
+		e, err := c.client.Kind.Get(s.HTTPRequest.Context(), id)
+		if err != nil {
+			return kinds.NewGetKindByIDDefault(http.StatusInternalServerError).WithPayload(&models.Error{
+				Data: &models.ErrorData{
+					Message: err.Error(),
+				},
+			})
+		}
+
+		maxTime := s.PatchTask.Data.MaxReservationTime
+		maxUnits := s.PatchTask.Data.MaxReservationUnits
+
+		if maxTime != 0 {
+			e, err = c.client.Kind.UpdateOneID(id).SetMaxReservationTime(maxTime).Save(s.HTTPRequest.Context())
+			if err != nil {
+				return kinds.NewPatchKindDefault(http.StatusInternalServerError).WithPayload(&models.Error{
+					Data: &models.ErrorData{
+						Message: err.Error(),
+					},
+				})
+			}
+		}
+		if maxUnits != 0 {
+			e, err = c.client.Kind.UpdateOneID(id).SetMaxReservationUnits(maxUnits).Save(s.HTTPRequest.Context())
+			if err != nil {
+				return kinds.NewPatchKindDefault(http.StatusInternalServerError).WithPayload(&models.Error{
+					Data: &models.ErrorData{
+						Message: err.Error(),
+					},
+				})
+			}
+		}
+
+		return kinds.NewPatchKindCreated().WithPayload(&models.PatchKindResponse{
+			Data: &models.Kind{
+				ID:                  int64(id),
+				Name:                &e.Name,
+				MaxReservationTime:  e.MaxReservationTime,
+				MaxReservationUnits: e.MaxReservationUnits,
 			},
 		})
 	}

@@ -33,6 +33,34 @@ func (kc *KindCreate) SetNillableName(s *string) *KindCreate {
 	return kc
 }
 
+// SetMaxReservationTime sets the "max_reservation_time" field.
+func (kc *KindCreate) SetMaxReservationTime(i int64) *KindCreate {
+	kc.mutation.SetMaxReservationTime(i)
+	return kc
+}
+
+// SetNillableMaxReservationTime sets the "max_reservation_time" field if the given value is not nil.
+func (kc *KindCreate) SetNillableMaxReservationTime(i *int64) *KindCreate {
+	if i != nil {
+		kc.SetMaxReservationTime(*i)
+	}
+	return kc
+}
+
+// SetMaxReservationUnits sets the "max_reservation_units" field.
+func (kc *KindCreate) SetMaxReservationUnits(i int64) *KindCreate {
+	kc.mutation.SetMaxReservationUnits(i)
+	return kc
+}
+
+// SetNillableMaxReservationUnits sets the "max_reservation_units" field if the given value is not nil.
+func (kc *KindCreate) SetNillableMaxReservationUnits(i *int64) *KindCreate {
+	if i != nil {
+		kc.SetMaxReservationUnits(*i)
+	}
+	return kc
+}
+
 // Mutation returns the KindMutation object of the builder.
 func (kc *KindCreate) Mutation() *KindMutation {
 	return kc.mutation
@@ -108,12 +136,26 @@ func (kc *KindCreate) defaults() {
 		v := kind.DefaultName
 		kc.mutation.SetName(v)
 	}
+	if _, ok := kc.mutation.MaxReservationTime(); !ok {
+		v := kind.DefaultMaxReservationTime
+		kc.mutation.SetMaxReservationTime(v)
+	}
+	if _, ok := kc.mutation.MaxReservationUnits(); !ok {
+		v := kind.DefaultMaxReservationUnits
+		kc.mutation.SetMaxReservationUnits(v)
+	}
 }
 
 // check runs all checks and user-defined validators on the builder.
 func (kc *KindCreate) check() error {
 	if _, ok := kc.mutation.Name(); !ok {
 		return &ValidationError{Name: "name", err: errors.New(`ent: missing required field "Kind.name"`)}
+	}
+	if _, ok := kc.mutation.MaxReservationTime(); !ok {
+		return &ValidationError{Name: "max_reservation_time", err: errors.New(`ent: missing required field "Kind.max_reservation_time"`)}
+	}
+	if _, ok := kc.mutation.MaxReservationUnits(); !ok {
+		return &ValidationError{Name: "max_reservation_units", err: errors.New(`ent: missing required field "Kind.max_reservation_units"`)}
 	}
 	return nil
 }
@@ -149,6 +191,22 @@ func (kc *KindCreate) createSpec() (*Kind, *sqlgraph.CreateSpec) {
 			Column: kind.FieldName,
 		})
 		_node.Name = value
+	}
+	if value, ok := kc.mutation.MaxReservationTime(); ok {
+		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
+			Type:   field.TypeInt64,
+			Value:  value,
+			Column: kind.FieldMaxReservationTime,
+		})
+		_node.MaxReservationTime = value
+	}
+	if value, ok := kc.mutation.MaxReservationUnits(); ok {
+		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
+			Type:   field.TypeInt64,
+			Value:  value,
+			Column: kind.FieldMaxReservationUnits,
+		})
+		_node.MaxReservationUnits = value
 	}
 	return _node, _spec
 }
