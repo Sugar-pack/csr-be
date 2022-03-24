@@ -85,6 +85,10 @@ func main() {
 		client,
 		logger,
 	)
+	activeAreasHandler := handlers.NewActiveArea(
+		client,
+		logger,
+	)
 
 	api := operations.NewBeAPI(swaggerSpec)
 	api.UseSwaggerUI()
@@ -107,6 +111,8 @@ func main() {
 	api.StatusGetStatusesHandler = statusHandler.GetStatusesFunc()
 	api.StatusGetStatusHandler = statusHandler.GetStatusFunc()
 	api.StatusDeleteStatusHandler = statusHandler.DeleteStatusFunc()
+
+	api.ActiveAreasGetAllActiveAreasHandler = activeAreasHandler.GetActiveAreasFunc()
 
 	server := restapi.NewServer(api)
 	listeners := []string{"http"}

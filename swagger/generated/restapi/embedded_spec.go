@@ -282,6 +282,29 @@ func init() {
         }
       ]
     },
+    "/v1/active_areas": {
+      "get": {
+        "tags": [
+          "Active_Areas"
+        ],
+        "summary": "Get all active areas.",
+        "operationId": "GetAllActiveAreas",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/ListOfActiveAreas"
+            }
+          },
+          "default": {
+            "description": "Unexpected error.",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        }
+      }
+    },
     "/v1/management/users/{userId}/role": {
       "post": {
         "consumes": [
@@ -441,6 +464,21 @@ func init() {
     }
   },
   "definitions": {
+    "ActiveArea": {
+      "type": "object",
+      "required": [
+        "id",
+        "name"
+      ],
+      "properties": {
+        "id": {
+          "type": "integer"
+        },
+        "name": {
+          "type": "string"
+        }
+      }
+    },
     "AssignRoleToUser": {
       "type": "object",
       "required": [
@@ -563,6 +601,12 @@ func init() {
         "name": {
           "type": "string"
         }
+      }
+    },
+    "ListOfActiveAreas": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/ActiveArea"
       }
     },
     "ListOfKinds": {
@@ -1006,6 +1050,29 @@ func init() {
         }
       ]
     },
+    "/v1/active_areas": {
+      "get": {
+        "tags": [
+          "Active_Areas"
+        ],
+        "summary": "Get all active areas.",
+        "operationId": "GetAllActiveAreas",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/ListOfActiveAreas"
+            }
+          },
+          "default": {
+            "description": "Unexpected error.",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        }
+      }
+    },
     "/v1/management/users/{userId}/role": {
       "post": {
         "consumes": [
@@ -1165,6 +1232,21 @@ func init() {
     }
   },
   "definitions": {
+    "ActiveArea": {
+      "type": "object",
+      "required": [
+        "id",
+        "name"
+      ],
+      "properties": {
+        "id": {
+          "type": "integer"
+        },
+        "name": {
+          "type": "string"
+        }
+      }
+    },
     "AssignRoleToUser": {
       "type": "object",
       "required": [
@@ -1309,6 +1391,12 @@ func init() {
         "name": {
           "type": "string"
         }
+      }
+    },
+    "ListOfActiveAreas": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/ActiveArea"
       }
     },
     "ListOfKinds": {

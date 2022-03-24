@@ -19,6 +19,7 @@ import (
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/restapi/operations/active_areas"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/restapi/operations/kinds"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/restapi/operations/roles"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/restapi/operations/status"
@@ -55,6 +56,9 @@ func NewBeAPI(spec *loads.Document) *BeAPI {
 		}),
 		StatusDeleteStatusHandler: status.DeleteStatusHandlerFunc(func(params status.DeleteStatusParams) middleware.Responder {
 			return middleware.NotImplemented("operation status.DeleteStatus has not yet been implemented")
+		}),
+		ActiveAreasGetAllActiveAreasHandler: active_areas.GetAllActiveAreasHandlerFunc(func(params active_areas.GetAllActiveAreasParams) middleware.Responder {
+			return middleware.NotImplemented("operation active_areas.GetAllActiveAreas has not yet been implemented")
 		}),
 		KindsGetAllKindsHandler: kinds.GetAllKindsHandlerFunc(func(params kinds.GetAllKindsParams) middleware.Responder {
 			return middleware.NotImplemented("operation kinds.GetAllKinds has not yet been implemented")
@@ -146,6 +150,8 @@ type BeAPI struct {
 	KindsCreateNewKindHandler kinds.CreateNewKindHandler
 	// StatusDeleteStatusHandler sets the operation handler for the delete status operation
 	StatusDeleteStatusHandler status.DeleteStatusHandler
+	// ActiveAreasGetAllActiveAreasHandler sets the operation handler for the get all active areas operation
+	ActiveAreasGetAllActiveAreasHandler active_areas.GetAllActiveAreasHandler
 	// KindsGetAllKindsHandler sets the operation handler for the get all kinds operation
 	KindsGetAllKindsHandler kinds.GetAllKindsHandler
 	// RolesGetRolesHandler sets the operation handler for the get roles operation
@@ -257,6 +263,9 @@ func (o *BeAPI) Validate() error {
 	}
 	if o.StatusDeleteStatusHandler == nil {
 		unregistered = append(unregistered, "status.DeleteStatusHandler")
+	}
+	if o.ActiveAreasGetAllActiveAreasHandler == nil {
+		unregistered = append(unregistered, "active_areas.GetAllActiveAreasHandler")
 	}
 	if o.KindsGetAllKindsHandler == nil {
 		unregistered = append(unregistered, "kinds.GetAllKindsHandler")
@@ -400,6 +409,10 @@ func (o *BeAPI) initHandlerCache() {
 		o.handlers["DELETE"] = make(map[string]http.Handler)
 	}
 	o.handlers["DELETE"]["/equipment/statuses/{statusId}"] = status.NewDeleteStatus(o.context, o.StatusDeleteStatusHandler)
+	if o.handlers["GET"] == nil {
+		o.handlers["GET"] = make(map[string]http.Handler)
+	}
+	o.handlers["GET"]["/v1/active_areas"] = active_areas.NewGetAllActiveAreas(o.context, o.ActiveAreasGetAllActiveAreasHandler)
 	if o.handlers["GET"] == nil {
 		o.handlers["GET"] = make(map[string]http.Handler)
 	}
