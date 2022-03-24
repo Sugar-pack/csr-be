@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
@@ -21,6 +22,24 @@ type UserCreate struct {
 	hooks    []Hook
 }
 
+// SetLogin sets the "login" field.
+func (uc *UserCreate) SetLogin(s string) *UserCreate {
+	uc.mutation.SetLogin(s)
+	return uc
+}
+
+// SetEmail sets the "email" field.
+func (uc *UserCreate) SetEmail(s string) *UserCreate {
+	uc.mutation.SetEmail(s)
+	return uc
+}
+
+// SetPassword sets the "password" field.
+func (uc *UserCreate) SetPassword(s string) *UserCreate {
+	uc.mutation.SetPassword(s)
+	return uc
+}
+
 // SetName sets the "name" field.
 func (uc *UserCreate) SetName(s string) *UserCreate {
 	uc.mutation.SetName(s)
@@ -31,6 +50,152 @@ func (uc *UserCreate) SetName(s string) *UserCreate {
 func (uc *UserCreate) SetNillableName(s *string) *UserCreate {
 	if s != nil {
 		uc.SetName(*s)
+	}
+	return uc
+}
+
+// SetSurname sets the "surname" field.
+func (uc *UserCreate) SetSurname(s string) *UserCreate {
+	uc.mutation.SetSurname(s)
+	return uc
+}
+
+// SetNillableSurname sets the "surname" field if the given value is not nil.
+func (uc *UserCreate) SetNillableSurname(s *string) *UserCreate {
+	if s != nil {
+		uc.SetSurname(*s)
+	}
+	return uc
+}
+
+// SetPatronymic sets the "patronymic" field.
+func (uc *UserCreate) SetPatronymic(s string) *UserCreate {
+	uc.mutation.SetPatronymic(s)
+	return uc
+}
+
+// SetNillablePatronymic sets the "patronymic" field if the given value is not nil.
+func (uc *UserCreate) SetNillablePatronymic(s *string) *UserCreate {
+	if s != nil {
+		uc.SetPatronymic(*s)
+	}
+	return uc
+}
+
+// SetPassportSeries sets the "passport_series" field.
+func (uc *UserCreate) SetPassportSeries(s string) *UserCreate {
+	uc.mutation.SetPassportSeries(s)
+	return uc
+}
+
+// SetNillablePassportSeries sets the "passport_series" field if the given value is not nil.
+func (uc *UserCreate) SetNillablePassportSeries(s *string) *UserCreate {
+	if s != nil {
+		uc.SetPassportSeries(*s)
+	}
+	return uc
+}
+
+// SetPassportNumber sets the "passport_number" field.
+func (uc *UserCreate) SetPassportNumber(s string) *UserCreate {
+	uc.mutation.SetPassportNumber(s)
+	return uc
+}
+
+// SetNillablePassportNumber sets the "passport_number" field if the given value is not nil.
+func (uc *UserCreate) SetNillablePassportNumber(s *string) *UserCreate {
+	if s != nil {
+		uc.SetPassportNumber(*s)
+	}
+	return uc
+}
+
+// SetPassportAuthority sets the "passport_authority" field.
+func (uc *UserCreate) SetPassportAuthority(s string) *UserCreate {
+	uc.mutation.SetPassportAuthority(s)
+	return uc
+}
+
+// SetNillablePassportAuthority sets the "passport_authority" field if the given value is not nil.
+func (uc *UserCreate) SetNillablePassportAuthority(s *string) *UserCreate {
+	if s != nil {
+		uc.SetPassportAuthority(*s)
+	}
+	return uc
+}
+
+// SetPassportIssueDate sets the "passport_issue_date" field.
+func (uc *UserCreate) SetPassportIssueDate(t time.Time) *UserCreate {
+	uc.mutation.SetPassportIssueDate(t)
+	return uc
+}
+
+// SetNillablePassportIssueDate sets the "passport_issue_date" field if the given value is not nil.
+func (uc *UserCreate) SetNillablePassportIssueDate(t *time.Time) *UserCreate {
+	if t != nil {
+		uc.SetPassportIssueDate(*t)
+	}
+	return uc
+}
+
+// SetPhone sets the "phone" field.
+func (uc *UserCreate) SetPhone(s string) *UserCreate {
+	uc.mutation.SetPhone(s)
+	return uc
+}
+
+// SetNillablePhone sets the "phone" field if the given value is not nil.
+func (uc *UserCreate) SetNillablePhone(s *string) *UserCreate {
+	if s != nil {
+		uc.SetPhone(*s)
+	}
+	return uc
+}
+
+// SetIsBlocked sets the "is_blocked" field.
+func (uc *UserCreate) SetIsBlocked(b bool) *UserCreate {
+	uc.mutation.SetIsBlocked(b)
+	return uc
+}
+
+// SetNillableIsBlocked sets the "is_blocked" field if the given value is not nil.
+func (uc *UserCreate) SetNillableIsBlocked(b *bool) *UserCreate {
+	if b != nil {
+		uc.SetIsBlocked(*b)
+	}
+	return uc
+}
+
+// SetType sets the "type" field.
+func (uc *UserCreate) SetType(u user.Type) *UserCreate {
+	uc.mutation.SetType(u)
+	return uc
+}
+
+// SetOrgName sets the "org_name" field.
+func (uc *UserCreate) SetOrgName(s string) *UserCreate {
+	uc.mutation.SetOrgName(s)
+	return uc
+}
+
+// SetNillableOrgName sets the "org_name" field if the given value is not nil.
+func (uc *UserCreate) SetNillableOrgName(s *string) *UserCreate {
+	if s != nil {
+		uc.SetOrgName(*s)
+	}
+	return uc
+}
+
+// SetWebsite sets the "website" field.
+func (uc *UserCreate) SetWebsite(s string) *UserCreate {
+	uc.mutation.SetWebsite(s)
+	return uc
+}
+
+// SetNillableWebsite sets the "website" field if the given value is not nil.
+func (uc *UserCreate) SetNillableWebsite(s *string) *UserCreate {
+	if s != nil {
+		uc.SetWebsite(*s)
 	}
 	return uc
 }
@@ -144,12 +309,36 @@ func (uc *UserCreate) defaults() {
 		v := user.DefaultName
 		uc.mutation.SetName(v)
 	}
+	if _, ok := uc.mutation.IsBlocked(); !ok {
+		v := user.DefaultIsBlocked
+		uc.mutation.SetIsBlocked(v)
+	}
 }
 
 // check runs all checks and user-defined validators on the builder.
 func (uc *UserCreate) check() error {
+	if _, ok := uc.mutation.Login(); !ok {
+		return &ValidationError{Name: "login", err: errors.New(`ent: missing required field "User.login"`)}
+	}
+	if _, ok := uc.mutation.Email(); !ok {
+		return &ValidationError{Name: "email", err: errors.New(`ent: missing required field "User.email"`)}
+	}
+	if _, ok := uc.mutation.Password(); !ok {
+		return &ValidationError{Name: "password", err: errors.New(`ent: missing required field "User.password"`)}
+	}
 	if _, ok := uc.mutation.Name(); !ok {
 		return &ValidationError{Name: "name", err: errors.New(`ent: missing required field "User.name"`)}
+	}
+	if _, ok := uc.mutation.IsBlocked(); !ok {
+		return &ValidationError{Name: "is_blocked", err: errors.New(`ent: missing required field "User.is_blocked"`)}
+	}
+	if _, ok := uc.mutation.GetType(); !ok {
+		return &ValidationError{Name: "type", err: errors.New(`ent: missing required field "User.type"`)}
+	}
+	if v, ok := uc.mutation.GetType(); ok {
+		if err := user.TypeValidator(v); err != nil {
+			return &ValidationError{Name: "type", err: fmt.Errorf(`ent: validator failed for field "User.type": %w`, err)}
+		}
 	}
 	return nil
 }
@@ -178,6 +367,30 @@ func (uc *UserCreate) createSpec() (*User, *sqlgraph.CreateSpec) {
 			},
 		}
 	)
+	if value, ok := uc.mutation.Login(); ok {
+		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Value:  value,
+			Column: user.FieldLogin,
+		})
+		_node.Login = value
+	}
+	if value, ok := uc.mutation.Email(); ok {
+		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Value:  value,
+			Column: user.FieldEmail,
+		})
+		_node.Email = value
+	}
+	if value, ok := uc.mutation.Password(); ok {
+		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Value:  value,
+			Column: user.FieldPassword,
+		})
+		_node.Password = value
+	}
 	if value, ok := uc.mutation.Name(); ok {
 		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
 			Type:   field.TypeString,
@@ -185,6 +398,94 @@ func (uc *UserCreate) createSpec() (*User, *sqlgraph.CreateSpec) {
 			Column: user.FieldName,
 		})
 		_node.Name = value
+	}
+	if value, ok := uc.mutation.Surname(); ok {
+		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Value:  value,
+			Column: user.FieldSurname,
+		})
+		_node.Surname = &value
+	}
+	if value, ok := uc.mutation.Patronymic(); ok {
+		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Value:  value,
+			Column: user.FieldPatronymic,
+		})
+		_node.Patronymic = &value
+	}
+	if value, ok := uc.mutation.PassportSeries(); ok {
+		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Value:  value,
+			Column: user.FieldPassportSeries,
+		})
+		_node.PassportSeries = &value
+	}
+	if value, ok := uc.mutation.PassportNumber(); ok {
+		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Value:  value,
+			Column: user.FieldPassportNumber,
+		})
+		_node.PassportNumber = &value
+	}
+	if value, ok := uc.mutation.PassportAuthority(); ok {
+		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Value:  value,
+			Column: user.FieldPassportAuthority,
+		})
+		_node.PassportAuthority = &value
+	}
+	if value, ok := uc.mutation.PassportIssueDate(); ok {
+		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
+			Type:   field.TypeTime,
+			Value:  value,
+			Column: user.FieldPassportIssueDate,
+		})
+		_node.PassportIssueDate = value
+	}
+	if value, ok := uc.mutation.Phone(); ok {
+		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Value:  value,
+			Column: user.FieldPhone,
+		})
+		_node.Phone = &value
+	}
+	if value, ok := uc.mutation.IsBlocked(); ok {
+		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
+			Type:   field.TypeBool,
+			Value:  value,
+			Column: user.FieldIsBlocked,
+		})
+		_node.IsBlocked = value
+	}
+	if value, ok := uc.mutation.GetType(); ok {
+		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
+			Type:   field.TypeEnum,
+			Value:  value,
+			Column: user.FieldType,
+		})
+		_node.Type = value
+	}
+	if value, ok := uc.mutation.OrgName(); ok {
+		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Value:  value,
+			Column: user.FieldOrgName,
+		})
+		_node.OrgName = &value
+	}
+	if value, ok := uc.mutation.Website(); ok {
+		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Value:  value,
+			Column: user.FieldWebsite,
+		})
+		_node.Website = &value
 	}
 	if nodes := uc.mutation.GroupsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{

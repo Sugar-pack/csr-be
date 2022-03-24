@@ -79,7 +79,21 @@ var (
 	// UsersColumns holds the columns for the "users" table.
 	UsersColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "login", Type: field.TypeString, Unique: true},
+		{Name: "email", Type: field.TypeString, Unique: true},
+		{Name: "password", Type: field.TypeString},
 		{Name: "name", Type: field.TypeString, Default: "unknown"},
+		{Name: "surname", Type: field.TypeString, Nullable: true},
+		{Name: "patronymic", Type: field.TypeString, Nullable: true},
+		{Name: "passport_series", Type: field.TypeString, Nullable: true},
+		{Name: "passport_number", Type: field.TypeString, Nullable: true},
+		{Name: "passport_authority", Type: field.TypeString, Nullable: true},
+		{Name: "passport_issue_date", Type: field.TypeTime, Nullable: true, SchemaType: map[string]string{"postgres": "timestamp"}},
+		{Name: "phone", Type: field.TypeString, Nullable: true},
+		{Name: "is_blocked", Type: field.TypeBool, Default: false},
+		{Name: "type", Type: field.TypeEnum, Enums: []string{"person", "organization"}},
+		{Name: "org_name", Type: field.TypeString, Nullable: true},
+		{Name: "website", Type: field.TypeString, Nullable: true},
 		{Name: "active_area_users", Type: field.TypeInt, Nullable: true},
 		{Name: "role_users", Type: field.TypeInt, Nullable: true},
 	}
@@ -91,13 +105,13 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "users_active_areas_users",
-				Columns:    []*schema.Column{UsersColumns[2]},
+				Columns:    []*schema.Column{UsersColumns[16]},
 				RefColumns: []*schema.Column{ActiveAreasColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 			{
 				Symbol:     "users_roles_users",
-				Columns:    []*schema.Column{UsersColumns[3]},
+				Columns:    []*schema.Column{UsersColumns[17]},
 				RefColumns: []*schema.Column{RolesColumns[0]},
 				OnDelete:   schema.SetNull,
 			},

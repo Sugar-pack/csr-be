@@ -2,13 +2,45 @@
 
 package user
 
+import (
+	"fmt"
+)
+
 const (
 	// Label holds the string label denoting the user type in the database.
 	Label = "user"
 	// FieldID holds the string denoting the id field in the database.
 	FieldID = "id"
+	// FieldLogin holds the string denoting the login field in the database.
+	FieldLogin = "login"
+	// FieldEmail holds the string denoting the email field in the database.
+	FieldEmail = "email"
+	// FieldPassword holds the string denoting the password field in the database.
+	FieldPassword = "password"
 	// FieldName holds the string denoting the name field in the database.
 	FieldName = "name"
+	// FieldSurname holds the string denoting the surname field in the database.
+	FieldSurname = "surname"
+	// FieldPatronymic holds the string denoting the patronymic field in the database.
+	FieldPatronymic = "patronymic"
+	// FieldPassportSeries holds the string denoting the passport_series field in the database.
+	FieldPassportSeries = "passport_series"
+	// FieldPassportNumber holds the string denoting the passport_number field in the database.
+	FieldPassportNumber = "passport_number"
+	// FieldPassportAuthority holds the string denoting the passport_authority field in the database.
+	FieldPassportAuthority = "passport_authority"
+	// FieldPassportIssueDate holds the string denoting the passport_issue_date field in the database.
+	FieldPassportIssueDate = "passport_issue_date"
+	// FieldPhone holds the string denoting the phone field in the database.
+	FieldPhone = "phone"
+	// FieldIsBlocked holds the string denoting the is_blocked field in the database.
+	FieldIsBlocked = "is_blocked"
+	// FieldType holds the string denoting the type field in the database.
+	FieldType = "type"
+	// FieldOrgName holds the string denoting the org_name field in the database.
+	FieldOrgName = "org_name"
+	// FieldWebsite holds the string denoting the website field in the database.
+	FieldWebsite = "website"
 	// EdgeGroups holds the string denoting the groups edge name in mutations.
 	EdgeGroups = "groups"
 	// EdgeRole holds the string denoting the role edge name in mutations.
@@ -32,7 +64,21 @@ const (
 // Columns holds all SQL columns for user fields.
 var Columns = []string{
 	FieldID,
+	FieldLogin,
+	FieldEmail,
+	FieldPassword,
 	FieldName,
+	FieldSurname,
+	FieldPatronymic,
+	FieldPassportSeries,
+	FieldPassportNumber,
+	FieldPassportAuthority,
+	FieldPassportIssueDate,
+	FieldPhone,
+	FieldIsBlocked,
+	FieldType,
+	FieldOrgName,
+	FieldWebsite,
 }
 
 // ForeignKeys holds the SQL foreign-keys that are owned by the "users"
@@ -66,4 +112,29 @@ func ValidColumn(column string) bool {
 var (
 	// DefaultName holds the default value on creation for the "name" field.
 	DefaultName string
+	// DefaultIsBlocked holds the default value on creation for the "is_blocked" field.
+	DefaultIsBlocked bool
 )
+
+// Type defines the type for the "type" enum field.
+type Type string
+
+// Type values.
+const (
+	TypePerson       Type = "person"
+	TypeOrganization Type = "organization"
+)
+
+func (_type Type) String() string {
+	return string(_type)
+}
+
+// TypeValidator is a validator for the "type" field enum values. It is called by the builders before save.
+func TypeValidator(_type Type) error {
+	switch _type {
+	case TypePerson, TypeOrganization:
+		return nil
+	default:
+		return fmt.Errorf("user: invalid enum value for type field: %q", _type)
+	}
+}
