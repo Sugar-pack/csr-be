@@ -5,6 +5,7 @@ package ent
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"entgo.io/ent/dialect/sql"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/role"
@@ -16,8 +17,36 @@ type User struct {
 	config `json:"-"`
 	// ID of the ent.
 	ID int `json:"id,omitempty"`
+	// Login holds the value of the "login" field.
+	Login string `json:"login,omitempty"`
+	// Email holds the value of the "email" field.
+	Email string `json:"email,omitempty"`
+	// Password holds the value of the "password" field.
+	Password string `json:"password,omitempty"`
 	// Name holds the value of the "name" field.
 	Name string `json:"name,omitempty"`
+	// Surname holds the value of the "surname" field.
+	Surname *string `json:"surname,omitempty"`
+	// Patronymic holds the value of the "patronymic" field.
+	Patronymic *string `json:"patronymic,omitempty"`
+	// PassportSeries holds the value of the "passport_series" field.
+	PassportSeries *string `json:"passport_series,omitempty"`
+	// PassportNumber holds the value of the "passport_number" field.
+	PassportNumber *string `json:"passport_number,omitempty"`
+	// PassportAuthority holds the value of the "passport_authority" field.
+	PassportAuthority *string `json:"passport_authority,omitempty"`
+	// PassportIssueDate holds the value of the "passport_issue_date" field.
+	PassportIssueDate time.Time `json:"passport_issue_date,omitempty"`
+	// Phone holds the value of the "phone" field.
+	Phone *string `json:"phone,omitempty"`
+	// IsBlocked holds the value of the "is_blocked" field.
+	IsBlocked bool `json:"is_blocked,omitempty"`
+	// Type holds the value of the "type" field.
+	Type user.Type `json:"type,omitempty"`
+	// OrgName holds the value of the "org_name" field.
+	OrgName *string `json:"org_name,omitempty"`
+	// Website holds the value of the "website" field.
+	Website *string `json:"website,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the UserQuery when eager-loading is set.
 	Edges             UserEdges `json:"edges"`
@@ -64,10 +93,14 @@ func (*User) scanValues(columns []string) ([]interface{}, error) {
 	values := make([]interface{}, len(columns))
 	for i := range columns {
 		switch columns[i] {
+		case user.FieldIsBlocked:
+			values[i] = new(sql.NullBool)
 		case user.FieldID:
 			values[i] = new(sql.NullInt64)
-		case user.FieldName:
+		case user.FieldLogin, user.FieldEmail, user.FieldPassword, user.FieldName, user.FieldSurname, user.FieldPatronymic, user.FieldPassportSeries, user.FieldPassportNumber, user.FieldPassportAuthority, user.FieldPhone, user.FieldType, user.FieldOrgName, user.FieldWebsite:
 			values[i] = new(sql.NullString)
+		case user.FieldPassportIssueDate:
+			values[i] = new(sql.NullTime)
 		case user.ForeignKeys[0]: // active_area_users
 			values[i] = new(sql.NullInt64)
 		case user.ForeignKeys[1]: // role_users
@@ -93,11 +126,103 @@ func (u *User) assignValues(columns []string, values []interface{}) error {
 				return fmt.Errorf("unexpected type %T for field id", value)
 			}
 			u.ID = int(value.Int64)
+		case user.FieldLogin:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field login", values[i])
+			} else if value.Valid {
+				u.Login = value.String
+			}
+		case user.FieldEmail:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field email", values[i])
+			} else if value.Valid {
+				u.Email = value.String
+			}
+		case user.FieldPassword:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field password", values[i])
+			} else if value.Valid {
+				u.Password = value.String
+			}
 		case user.FieldName:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field name", values[i])
 			} else if value.Valid {
 				u.Name = value.String
+			}
+		case user.FieldSurname:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field surname", values[i])
+			} else if value.Valid {
+				u.Surname = new(string)
+				*u.Surname = value.String
+			}
+		case user.FieldPatronymic:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field patronymic", values[i])
+			} else if value.Valid {
+				u.Patronymic = new(string)
+				*u.Patronymic = value.String
+			}
+		case user.FieldPassportSeries:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field passport_series", values[i])
+			} else if value.Valid {
+				u.PassportSeries = new(string)
+				*u.PassportSeries = value.String
+			}
+		case user.FieldPassportNumber:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field passport_number", values[i])
+			} else if value.Valid {
+				u.PassportNumber = new(string)
+				*u.PassportNumber = value.String
+			}
+		case user.FieldPassportAuthority:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field passport_authority", values[i])
+			} else if value.Valid {
+				u.PassportAuthority = new(string)
+				*u.PassportAuthority = value.String
+			}
+		case user.FieldPassportIssueDate:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field passport_issue_date", values[i])
+			} else if value.Valid {
+				u.PassportIssueDate = value.Time
+			}
+		case user.FieldPhone:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field phone", values[i])
+			} else if value.Valid {
+				u.Phone = new(string)
+				*u.Phone = value.String
+			}
+		case user.FieldIsBlocked:
+			if value, ok := values[i].(*sql.NullBool); !ok {
+				return fmt.Errorf("unexpected type %T for field is_blocked", values[i])
+			} else if value.Valid {
+				u.IsBlocked = value.Bool
+			}
+		case user.FieldType:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field type", values[i])
+			} else if value.Valid {
+				u.Type = user.Type(value.String)
+			}
+		case user.FieldOrgName:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field org_name", values[i])
+			} else if value.Valid {
+				u.OrgName = new(string)
+				*u.OrgName = value.String
+			}
+		case user.FieldWebsite:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field website", values[i])
+			} else if value.Valid {
+				u.Website = new(string)
+				*u.Website = value.String
 			}
 		case user.ForeignKeys[0]:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
@@ -151,8 +276,52 @@ func (u *User) String() string {
 	var builder strings.Builder
 	builder.WriteString("User(")
 	builder.WriteString(fmt.Sprintf("id=%v", u.ID))
+	builder.WriteString(", login=")
+	builder.WriteString(u.Login)
+	builder.WriteString(", email=")
+	builder.WriteString(u.Email)
+	builder.WriteString(", password=")
+	builder.WriteString(u.Password)
 	builder.WriteString(", name=")
 	builder.WriteString(u.Name)
+	if v := u.Surname; v != nil {
+		builder.WriteString(", surname=")
+		builder.WriteString(*v)
+	}
+	if v := u.Patronymic; v != nil {
+		builder.WriteString(", patronymic=")
+		builder.WriteString(*v)
+	}
+	if v := u.PassportSeries; v != nil {
+		builder.WriteString(", passport_series=")
+		builder.WriteString(*v)
+	}
+	if v := u.PassportNumber; v != nil {
+		builder.WriteString(", passport_number=")
+		builder.WriteString(*v)
+	}
+	if v := u.PassportAuthority; v != nil {
+		builder.WriteString(", passport_authority=")
+		builder.WriteString(*v)
+	}
+	builder.WriteString(", passport_issue_date=")
+	builder.WriteString(u.PassportIssueDate.Format(time.ANSIC))
+	if v := u.Phone; v != nil {
+		builder.WriteString(", phone=")
+		builder.WriteString(*v)
+	}
+	builder.WriteString(", is_blocked=")
+	builder.WriteString(fmt.Sprintf("%v", u.IsBlocked))
+	builder.WriteString(", type=")
+	builder.WriteString(fmt.Sprintf("%v", u.Type))
+	if v := u.OrgName; v != nil {
+		builder.WriteString(", org_name=")
+		builder.WriteString(*v)
+	}
+	if v := u.Website; v != nil {
+		builder.WriteString(", website=")
+		builder.WriteString(*v)
+	}
 	builder.WriteByte(')')
 	return builder.String()
 }

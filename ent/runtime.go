@@ -54,7 +54,11 @@ func init() {
 	userFields := schema.User{}.Fields()
 	_ = userFields
 	// userDescName is the schema descriptor for name field.
-	userDescName := userFields[0].Descriptor()
+	userDescName := userFields[3].Descriptor()
 	// user.DefaultName holds the default value on creation for the name field.
 	user.DefaultName = userDescName.Default.(string)
+	// userDescIsBlocked is the schema descriptor for is_blocked field.
+	userDescIsBlocked := userFields[11].Descriptor()
+	// user.DefaultIsBlocked holds the default value on creation for the is_blocked field.
+	user.DefaultIsBlocked = userDescIsBlocked.Default.(bool)
 }

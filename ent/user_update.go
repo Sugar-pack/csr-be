@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
@@ -29,6 +30,24 @@ func (uu *UserUpdate) Where(ps ...predicate.User) *UserUpdate {
 	return uu
 }
 
+// SetLogin sets the "login" field.
+func (uu *UserUpdate) SetLogin(s string) *UserUpdate {
+	uu.mutation.SetLogin(s)
+	return uu
+}
+
+// SetEmail sets the "email" field.
+func (uu *UserUpdate) SetEmail(s string) *UserUpdate {
+	uu.mutation.SetEmail(s)
+	return uu
+}
+
+// SetPassword sets the "password" field.
+func (uu *UserUpdate) SetPassword(s string) *UserUpdate {
+	uu.mutation.SetPassword(s)
+	return uu
+}
+
 // SetName sets the "name" field.
 func (uu *UserUpdate) SetName(s string) *UserUpdate {
 	uu.mutation.SetName(s)
@@ -40,6 +59,206 @@ func (uu *UserUpdate) SetNillableName(s *string) *UserUpdate {
 	if s != nil {
 		uu.SetName(*s)
 	}
+	return uu
+}
+
+// SetSurname sets the "surname" field.
+func (uu *UserUpdate) SetSurname(s string) *UserUpdate {
+	uu.mutation.SetSurname(s)
+	return uu
+}
+
+// SetNillableSurname sets the "surname" field if the given value is not nil.
+func (uu *UserUpdate) SetNillableSurname(s *string) *UserUpdate {
+	if s != nil {
+		uu.SetSurname(*s)
+	}
+	return uu
+}
+
+// ClearSurname clears the value of the "surname" field.
+func (uu *UserUpdate) ClearSurname() *UserUpdate {
+	uu.mutation.ClearSurname()
+	return uu
+}
+
+// SetPatronymic sets the "patronymic" field.
+func (uu *UserUpdate) SetPatronymic(s string) *UserUpdate {
+	uu.mutation.SetPatronymic(s)
+	return uu
+}
+
+// SetNillablePatronymic sets the "patronymic" field if the given value is not nil.
+func (uu *UserUpdate) SetNillablePatronymic(s *string) *UserUpdate {
+	if s != nil {
+		uu.SetPatronymic(*s)
+	}
+	return uu
+}
+
+// ClearPatronymic clears the value of the "patronymic" field.
+func (uu *UserUpdate) ClearPatronymic() *UserUpdate {
+	uu.mutation.ClearPatronymic()
+	return uu
+}
+
+// SetPassportSeries sets the "passport_series" field.
+func (uu *UserUpdate) SetPassportSeries(s string) *UserUpdate {
+	uu.mutation.SetPassportSeries(s)
+	return uu
+}
+
+// SetNillablePassportSeries sets the "passport_series" field if the given value is not nil.
+func (uu *UserUpdate) SetNillablePassportSeries(s *string) *UserUpdate {
+	if s != nil {
+		uu.SetPassportSeries(*s)
+	}
+	return uu
+}
+
+// ClearPassportSeries clears the value of the "passport_series" field.
+func (uu *UserUpdate) ClearPassportSeries() *UserUpdate {
+	uu.mutation.ClearPassportSeries()
+	return uu
+}
+
+// SetPassportNumber sets the "passport_number" field.
+func (uu *UserUpdate) SetPassportNumber(s string) *UserUpdate {
+	uu.mutation.SetPassportNumber(s)
+	return uu
+}
+
+// SetNillablePassportNumber sets the "passport_number" field if the given value is not nil.
+func (uu *UserUpdate) SetNillablePassportNumber(s *string) *UserUpdate {
+	if s != nil {
+		uu.SetPassportNumber(*s)
+	}
+	return uu
+}
+
+// ClearPassportNumber clears the value of the "passport_number" field.
+func (uu *UserUpdate) ClearPassportNumber() *UserUpdate {
+	uu.mutation.ClearPassportNumber()
+	return uu
+}
+
+// SetPassportAuthority sets the "passport_authority" field.
+func (uu *UserUpdate) SetPassportAuthority(s string) *UserUpdate {
+	uu.mutation.SetPassportAuthority(s)
+	return uu
+}
+
+// SetNillablePassportAuthority sets the "passport_authority" field if the given value is not nil.
+func (uu *UserUpdate) SetNillablePassportAuthority(s *string) *UserUpdate {
+	if s != nil {
+		uu.SetPassportAuthority(*s)
+	}
+	return uu
+}
+
+// ClearPassportAuthority clears the value of the "passport_authority" field.
+func (uu *UserUpdate) ClearPassportAuthority() *UserUpdate {
+	uu.mutation.ClearPassportAuthority()
+	return uu
+}
+
+// SetPassportIssueDate sets the "passport_issue_date" field.
+func (uu *UserUpdate) SetPassportIssueDate(t time.Time) *UserUpdate {
+	uu.mutation.SetPassportIssueDate(t)
+	return uu
+}
+
+// SetNillablePassportIssueDate sets the "passport_issue_date" field if the given value is not nil.
+func (uu *UserUpdate) SetNillablePassportIssueDate(t *time.Time) *UserUpdate {
+	if t != nil {
+		uu.SetPassportIssueDate(*t)
+	}
+	return uu
+}
+
+// ClearPassportIssueDate clears the value of the "passport_issue_date" field.
+func (uu *UserUpdate) ClearPassportIssueDate() *UserUpdate {
+	uu.mutation.ClearPassportIssueDate()
+	return uu
+}
+
+// SetPhone sets the "phone" field.
+func (uu *UserUpdate) SetPhone(s string) *UserUpdate {
+	uu.mutation.SetPhone(s)
+	return uu
+}
+
+// SetNillablePhone sets the "phone" field if the given value is not nil.
+func (uu *UserUpdate) SetNillablePhone(s *string) *UserUpdate {
+	if s != nil {
+		uu.SetPhone(*s)
+	}
+	return uu
+}
+
+// ClearPhone clears the value of the "phone" field.
+func (uu *UserUpdate) ClearPhone() *UserUpdate {
+	uu.mutation.ClearPhone()
+	return uu
+}
+
+// SetIsBlocked sets the "is_blocked" field.
+func (uu *UserUpdate) SetIsBlocked(b bool) *UserUpdate {
+	uu.mutation.SetIsBlocked(b)
+	return uu
+}
+
+// SetNillableIsBlocked sets the "is_blocked" field if the given value is not nil.
+func (uu *UserUpdate) SetNillableIsBlocked(b *bool) *UserUpdate {
+	if b != nil {
+		uu.SetIsBlocked(*b)
+	}
+	return uu
+}
+
+// SetType sets the "type" field.
+func (uu *UserUpdate) SetType(u user.Type) *UserUpdate {
+	uu.mutation.SetType(u)
+	return uu
+}
+
+// SetOrgName sets the "org_name" field.
+func (uu *UserUpdate) SetOrgName(s string) *UserUpdate {
+	uu.mutation.SetOrgName(s)
+	return uu
+}
+
+// SetNillableOrgName sets the "org_name" field if the given value is not nil.
+func (uu *UserUpdate) SetNillableOrgName(s *string) *UserUpdate {
+	if s != nil {
+		uu.SetOrgName(*s)
+	}
+	return uu
+}
+
+// ClearOrgName clears the value of the "org_name" field.
+func (uu *UserUpdate) ClearOrgName() *UserUpdate {
+	uu.mutation.ClearOrgName()
+	return uu
+}
+
+// SetWebsite sets the "website" field.
+func (uu *UserUpdate) SetWebsite(s string) *UserUpdate {
+	uu.mutation.SetWebsite(s)
+	return uu
+}
+
+// SetNillableWebsite sets the "website" field if the given value is not nil.
+func (uu *UserUpdate) SetNillableWebsite(s *string) *UserUpdate {
+	if s != nil {
+		uu.SetWebsite(*s)
+	}
+	return uu
+}
+
+// ClearWebsite clears the value of the "website" field.
+func (uu *UserUpdate) ClearWebsite() *UserUpdate {
+	uu.mutation.ClearWebsite()
 	return uu
 }
 
@@ -116,12 +335,18 @@ func (uu *UserUpdate) Save(ctx context.Context) (int, error) {
 		affected int
 	)
 	if len(uu.hooks) == 0 {
+		if err = uu.check(); err != nil {
+			return 0, err
+		}
 		affected, err = uu.sqlSave(ctx)
 	} else {
 		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
 			mutation, ok := m.(*UserMutation)
 			if !ok {
 				return nil, fmt.Errorf("unexpected mutation type %T", m)
+			}
+			if err = uu.check(); err != nil {
+				return 0, err
 			}
 			uu.mutation = mutation
 			affected, err = uu.sqlSave(ctx)
@@ -163,6 +388,16 @@ func (uu *UserUpdate) ExecX(ctx context.Context) {
 	}
 }
 
+// check runs all checks and user-defined validators on the builder.
+func (uu *UserUpdate) check() error {
+	if v, ok := uu.mutation.GetType(); ok {
+		if err := user.TypeValidator(v); err != nil {
+			return &ValidationError{Name: "type", err: fmt.Errorf(`ent: validator failed for field "User.type": %w`, err)}
+		}
+	}
+	return nil
+}
+
 func (uu *UserUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	_spec := &sqlgraph.UpdateSpec{
 		Node: &sqlgraph.NodeSpec{
@@ -181,11 +416,163 @@ func (uu *UserUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			}
 		}
 	}
+	if value, ok := uu.mutation.Login(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Value:  value,
+			Column: user.FieldLogin,
+		})
+	}
+	if value, ok := uu.mutation.Email(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Value:  value,
+			Column: user.FieldEmail,
+		})
+	}
+	if value, ok := uu.mutation.Password(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Value:  value,
+			Column: user.FieldPassword,
+		})
+	}
 	if value, ok := uu.mutation.Name(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
 			Type:   field.TypeString,
 			Value:  value,
 			Column: user.FieldName,
+		})
+	}
+	if value, ok := uu.mutation.Surname(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Value:  value,
+			Column: user.FieldSurname,
+		})
+	}
+	if uu.mutation.SurnameCleared() {
+		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Column: user.FieldSurname,
+		})
+	}
+	if value, ok := uu.mutation.Patronymic(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Value:  value,
+			Column: user.FieldPatronymic,
+		})
+	}
+	if uu.mutation.PatronymicCleared() {
+		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Column: user.FieldPatronymic,
+		})
+	}
+	if value, ok := uu.mutation.PassportSeries(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Value:  value,
+			Column: user.FieldPassportSeries,
+		})
+	}
+	if uu.mutation.PassportSeriesCleared() {
+		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Column: user.FieldPassportSeries,
+		})
+	}
+	if value, ok := uu.mutation.PassportNumber(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Value:  value,
+			Column: user.FieldPassportNumber,
+		})
+	}
+	if uu.mutation.PassportNumberCleared() {
+		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Column: user.FieldPassportNumber,
+		})
+	}
+	if value, ok := uu.mutation.PassportAuthority(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Value:  value,
+			Column: user.FieldPassportAuthority,
+		})
+	}
+	if uu.mutation.PassportAuthorityCleared() {
+		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Column: user.FieldPassportAuthority,
+		})
+	}
+	if value, ok := uu.mutation.PassportIssueDate(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeTime,
+			Value:  value,
+			Column: user.FieldPassportIssueDate,
+		})
+	}
+	if uu.mutation.PassportIssueDateCleared() {
+		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
+			Type:   field.TypeTime,
+			Column: user.FieldPassportIssueDate,
+		})
+	}
+	if value, ok := uu.mutation.Phone(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Value:  value,
+			Column: user.FieldPhone,
+		})
+	}
+	if uu.mutation.PhoneCleared() {
+		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Column: user.FieldPhone,
+		})
+	}
+	if value, ok := uu.mutation.IsBlocked(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeBool,
+			Value:  value,
+			Column: user.FieldIsBlocked,
+		})
+	}
+	if value, ok := uu.mutation.GetType(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeEnum,
+			Value:  value,
+			Column: user.FieldType,
+		})
+	}
+	if value, ok := uu.mutation.OrgName(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Value:  value,
+			Column: user.FieldOrgName,
+		})
+	}
+	if uu.mutation.OrgNameCleared() {
+		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Column: user.FieldOrgName,
+		})
+	}
+	if value, ok := uu.mutation.Website(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Value:  value,
+			Column: user.FieldWebsite,
+		})
+	}
+	if uu.mutation.WebsiteCleared() {
+		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Column: user.FieldWebsite,
 		})
 	}
 	if uu.mutation.GroupsCleared() {
@@ -296,6 +683,24 @@ type UserUpdateOne struct {
 	mutation *UserMutation
 }
 
+// SetLogin sets the "login" field.
+func (uuo *UserUpdateOne) SetLogin(s string) *UserUpdateOne {
+	uuo.mutation.SetLogin(s)
+	return uuo
+}
+
+// SetEmail sets the "email" field.
+func (uuo *UserUpdateOne) SetEmail(s string) *UserUpdateOne {
+	uuo.mutation.SetEmail(s)
+	return uuo
+}
+
+// SetPassword sets the "password" field.
+func (uuo *UserUpdateOne) SetPassword(s string) *UserUpdateOne {
+	uuo.mutation.SetPassword(s)
+	return uuo
+}
+
 // SetName sets the "name" field.
 func (uuo *UserUpdateOne) SetName(s string) *UserUpdateOne {
 	uuo.mutation.SetName(s)
@@ -307,6 +712,206 @@ func (uuo *UserUpdateOne) SetNillableName(s *string) *UserUpdateOne {
 	if s != nil {
 		uuo.SetName(*s)
 	}
+	return uuo
+}
+
+// SetSurname sets the "surname" field.
+func (uuo *UserUpdateOne) SetSurname(s string) *UserUpdateOne {
+	uuo.mutation.SetSurname(s)
+	return uuo
+}
+
+// SetNillableSurname sets the "surname" field if the given value is not nil.
+func (uuo *UserUpdateOne) SetNillableSurname(s *string) *UserUpdateOne {
+	if s != nil {
+		uuo.SetSurname(*s)
+	}
+	return uuo
+}
+
+// ClearSurname clears the value of the "surname" field.
+func (uuo *UserUpdateOne) ClearSurname() *UserUpdateOne {
+	uuo.mutation.ClearSurname()
+	return uuo
+}
+
+// SetPatronymic sets the "patronymic" field.
+func (uuo *UserUpdateOne) SetPatronymic(s string) *UserUpdateOne {
+	uuo.mutation.SetPatronymic(s)
+	return uuo
+}
+
+// SetNillablePatronymic sets the "patronymic" field if the given value is not nil.
+func (uuo *UserUpdateOne) SetNillablePatronymic(s *string) *UserUpdateOne {
+	if s != nil {
+		uuo.SetPatronymic(*s)
+	}
+	return uuo
+}
+
+// ClearPatronymic clears the value of the "patronymic" field.
+func (uuo *UserUpdateOne) ClearPatronymic() *UserUpdateOne {
+	uuo.mutation.ClearPatronymic()
+	return uuo
+}
+
+// SetPassportSeries sets the "passport_series" field.
+func (uuo *UserUpdateOne) SetPassportSeries(s string) *UserUpdateOne {
+	uuo.mutation.SetPassportSeries(s)
+	return uuo
+}
+
+// SetNillablePassportSeries sets the "passport_series" field if the given value is not nil.
+func (uuo *UserUpdateOne) SetNillablePassportSeries(s *string) *UserUpdateOne {
+	if s != nil {
+		uuo.SetPassportSeries(*s)
+	}
+	return uuo
+}
+
+// ClearPassportSeries clears the value of the "passport_series" field.
+func (uuo *UserUpdateOne) ClearPassportSeries() *UserUpdateOne {
+	uuo.mutation.ClearPassportSeries()
+	return uuo
+}
+
+// SetPassportNumber sets the "passport_number" field.
+func (uuo *UserUpdateOne) SetPassportNumber(s string) *UserUpdateOne {
+	uuo.mutation.SetPassportNumber(s)
+	return uuo
+}
+
+// SetNillablePassportNumber sets the "passport_number" field if the given value is not nil.
+func (uuo *UserUpdateOne) SetNillablePassportNumber(s *string) *UserUpdateOne {
+	if s != nil {
+		uuo.SetPassportNumber(*s)
+	}
+	return uuo
+}
+
+// ClearPassportNumber clears the value of the "passport_number" field.
+func (uuo *UserUpdateOne) ClearPassportNumber() *UserUpdateOne {
+	uuo.mutation.ClearPassportNumber()
+	return uuo
+}
+
+// SetPassportAuthority sets the "passport_authority" field.
+func (uuo *UserUpdateOne) SetPassportAuthority(s string) *UserUpdateOne {
+	uuo.mutation.SetPassportAuthority(s)
+	return uuo
+}
+
+// SetNillablePassportAuthority sets the "passport_authority" field if the given value is not nil.
+func (uuo *UserUpdateOne) SetNillablePassportAuthority(s *string) *UserUpdateOne {
+	if s != nil {
+		uuo.SetPassportAuthority(*s)
+	}
+	return uuo
+}
+
+// ClearPassportAuthority clears the value of the "passport_authority" field.
+func (uuo *UserUpdateOne) ClearPassportAuthority() *UserUpdateOne {
+	uuo.mutation.ClearPassportAuthority()
+	return uuo
+}
+
+// SetPassportIssueDate sets the "passport_issue_date" field.
+func (uuo *UserUpdateOne) SetPassportIssueDate(t time.Time) *UserUpdateOne {
+	uuo.mutation.SetPassportIssueDate(t)
+	return uuo
+}
+
+// SetNillablePassportIssueDate sets the "passport_issue_date" field if the given value is not nil.
+func (uuo *UserUpdateOne) SetNillablePassportIssueDate(t *time.Time) *UserUpdateOne {
+	if t != nil {
+		uuo.SetPassportIssueDate(*t)
+	}
+	return uuo
+}
+
+// ClearPassportIssueDate clears the value of the "passport_issue_date" field.
+func (uuo *UserUpdateOne) ClearPassportIssueDate() *UserUpdateOne {
+	uuo.mutation.ClearPassportIssueDate()
+	return uuo
+}
+
+// SetPhone sets the "phone" field.
+func (uuo *UserUpdateOne) SetPhone(s string) *UserUpdateOne {
+	uuo.mutation.SetPhone(s)
+	return uuo
+}
+
+// SetNillablePhone sets the "phone" field if the given value is not nil.
+func (uuo *UserUpdateOne) SetNillablePhone(s *string) *UserUpdateOne {
+	if s != nil {
+		uuo.SetPhone(*s)
+	}
+	return uuo
+}
+
+// ClearPhone clears the value of the "phone" field.
+func (uuo *UserUpdateOne) ClearPhone() *UserUpdateOne {
+	uuo.mutation.ClearPhone()
+	return uuo
+}
+
+// SetIsBlocked sets the "is_blocked" field.
+func (uuo *UserUpdateOne) SetIsBlocked(b bool) *UserUpdateOne {
+	uuo.mutation.SetIsBlocked(b)
+	return uuo
+}
+
+// SetNillableIsBlocked sets the "is_blocked" field if the given value is not nil.
+func (uuo *UserUpdateOne) SetNillableIsBlocked(b *bool) *UserUpdateOne {
+	if b != nil {
+		uuo.SetIsBlocked(*b)
+	}
+	return uuo
+}
+
+// SetType sets the "type" field.
+func (uuo *UserUpdateOne) SetType(u user.Type) *UserUpdateOne {
+	uuo.mutation.SetType(u)
+	return uuo
+}
+
+// SetOrgName sets the "org_name" field.
+func (uuo *UserUpdateOne) SetOrgName(s string) *UserUpdateOne {
+	uuo.mutation.SetOrgName(s)
+	return uuo
+}
+
+// SetNillableOrgName sets the "org_name" field if the given value is not nil.
+func (uuo *UserUpdateOne) SetNillableOrgName(s *string) *UserUpdateOne {
+	if s != nil {
+		uuo.SetOrgName(*s)
+	}
+	return uuo
+}
+
+// ClearOrgName clears the value of the "org_name" field.
+func (uuo *UserUpdateOne) ClearOrgName() *UserUpdateOne {
+	uuo.mutation.ClearOrgName()
+	return uuo
+}
+
+// SetWebsite sets the "website" field.
+func (uuo *UserUpdateOne) SetWebsite(s string) *UserUpdateOne {
+	uuo.mutation.SetWebsite(s)
+	return uuo
+}
+
+// SetNillableWebsite sets the "website" field if the given value is not nil.
+func (uuo *UserUpdateOne) SetNillableWebsite(s *string) *UserUpdateOne {
+	if s != nil {
+		uuo.SetWebsite(*s)
+	}
+	return uuo
+}
+
+// ClearWebsite clears the value of the "website" field.
+func (uuo *UserUpdateOne) ClearWebsite() *UserUpdateOne {
+	uuo.mutation.ClearWebsite()
 	return uuo
 }
 
@@ -390,12 +995,18 @@ func (uuo *UserUpdateOne) Save(ctx context.Context) (*User, error) {
 		node *User
 	)
 	if len(uuo.hooks) == 0 {
+		if err = uuo.check(); err != nil {
+			return nil, err
+		}
 		node, err = uuo.sqlSave(ctx)
 	} else {
 		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
 			mutation, ok := m.(*UserMutation)
 			if !ok {
 				return nil, fmt.Errorf("unexpected mutation type %T", m)
+			}
+			if err = uuo.check(); err != nil {
+				return nil, err
 			}
 			uuo.mutation = mutation
 			node, err = uuo.sqlSave(ctx)
@@ -437,6 +1048,16 @@ func (uuo *UserUpdateOne) ExecX(ctx context.Context) {
 	}
 }
 
+// check runs all checks and user-defined validators on the builder.
+func (uuo *UserUpdateOne) check() error {
+	if v, ok := uuo.mutation.GetType(); ok {
+		if err := user.TypeValidator(v); err != nil {
+			return &ValidationError{Name: "type", err: fmt.Errorf(`ent: validator failed for field "User.type": %w`, err)}
+		}
+	}
+	return nil
+}
+
 func (uuo *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) {
 	_spec := &sqlgraph.UpdateSpec{
 		Node: &sqlgraph.NodeSpec{
@@ -472,11 +1093,163 @@ func (uuo *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) 
 			}
 		}
 	}
+	if value, ok := uuo.mutation.Login(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Value:  value,
+			Column: user.FieldLogin,
+		})
+	}
+	if value, ok := uuo.mutation.Email(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Value:  value,
+			Column: user.FieldEmail,
+		})
+	}
+	if value, ok := uuo.mutation.Password(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Value:  value,
+			Column: user.FieldPassword,
+		})
+	}
 	if value, ok := uuo.mutation.Name(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
 			Type:   field.TypeString,
 			Value:  value,
 			Column: user.FieldName,
+		})
+	}
+	if value, ok := uuo.mutation.Surname(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Value:  value,
+			Column: user.FieldSurname,
+		})
+	}
+	if uuo.mutation.SurnameCleared() {
+		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Column: user.FieldSurname,
+		})
+	}
+	if value, ok := uuo.mutation.Patronymic(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Value:  value,
+			Column: user.FieldPatronymic,
+		})
+	}
+	if uuo.mutation.PatronymicCleared() {
+		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Column: user.FieldPatronymic,
+		})
+	}
+	if value, ok := uuo.mutation.PassportSeries(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Value:  value,
+			Column: user.FieldPassportSeries,
+		})
+	}
+	if uuo.mutation.PassportSeriesCleared() {
+		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Column: user.FieldPassportSeries,
+		})
+	}
+	if value, ok := uuo.mutation.PassportNumber(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Value:  value,
+			Column: user.FieldPassportNumber,
+		})
+	}
+	if uuo.mutation.PassportNumberCleared() {
+		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Column: user.FieldPassportNumber,
+		})
+	}
+	if value, ok := uuo.mutation.PassportAuthority(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Value:  value,
+			Column: user.FieldPassportAuthority,
+		})
+	}
+	if uuo.mutation.PassportAuthorityCleared() {
+		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Column: user.FieldPassportAuthority,
+		})
+	}
+	if value, ok := uuo.mutation.PassportIssueDate(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeTime,
+			Value:  value,
+			Column: user.FieldPassportIssueDate,
+		})
+	}
+	if uuo.mutation.PassportIssueDateCleared() {
+		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
+			Type:   field.TypeTime,
+			Column: user.FieldPassportIssueDate,
+		})
+	}
+	if value, ok := uuo.mutation.Phone(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Value:  value,
+			Column: user.FieldPhone,
+		})
+	}
+	if uuo.mutation.PhoneCleared() {
+		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Column: user.FieldPhone,
+		})
+	}
+	if value, ok := uuo.mutation.IsBlocked(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeBool,
+			Value:  value,
+			Column: user.FieldIsBlocked,
+		})
+	}
+	if value, ok := uuo.mutation.GetType(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeEnum,
+			Value:  value,
+			Column: user.FieldType,
+		})
+	}
+	if value, ok := uuo.mutation.OrgName(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Value:  value,
+			Column: user.FieldOrgName,
+		})
+	}
+	if uuo.mutation.OrgNameCleared() {
+		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Column: user.FieldOrgName,
+		})
+	}
+	if value, ok := uuo.mutation.Website(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Value:  value,
+			Column: user.FieldWebsite,
+		})
+	}
+	if uuo.mutation.WebsiteCleared() {
+		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Column: user.FieldWebsite,
 		})
 	}
 	if uuo.mutation.GroupsCleared() {
