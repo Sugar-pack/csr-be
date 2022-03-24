@@ -93,6 +93,7 @@ func main() {
 	api.UsersPostUserHandler = userHandler.PostUserFunc()
 	api.UsersGetCurrentUserHandler = userHandler.GetUserFunc()
 	api.UsersPatchUserHandler = userHandler.PatchUserFunc()
+	api.UsersAssignRoleToUserHandler = userHandler.AssignRoleToUserFunc()
 
 	api.RolesGetRolesHandler = roleHandler.GetRolesFunc()
 

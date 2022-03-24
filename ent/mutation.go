@@ -2539,6 +2539,8 @@ type UserMutation struct {
 	groups        map[int]struct{}
 	removedgroups map[int]struct{}
 	clearedgroups bool
+	role          *int
+	clearedrole   bool
 	done          bool
 	oldValue      func(context.Context) (*User, error)
 	predicates    []predicate.User
@@ -2732,6 +2734,45 @@ func (m *UserMutation) ResetGroups() {
 	m.removedgroups = nil
 }
 
+// SetRoleID sets the "role" edge to the Role entity by id.
+func (m *UserMutation) SetRoleID(id int) {
+	m.role = &id
+}
+
+// ClearRole clears the "role" edge to the Role entity.
+func (m *UserMutation) ClearRole() {
+	m.clearedrole = true
+}
+
+// RoleCleared reports if the "role" edge to the Role entity was cleared.
+func (m *UserMutation) RoleCleared() bool {
+	return m.clearedrole
+}
+
+// RoleID returns the "role" edge ID in the mutation.
+func (m *UserMutation) RoleID() (id int, exists bool) {
+	if m.role != nil {
+		return *m.role, true
+	}
+	return
+}
+
+// RoleIDs returns the "role" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// RoleID instead. It exists only for internal usage by the builders.
+func (m *UserMutation) RoleIDs() (ids []int) {
+	if id := m.role; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetRole resets all changes to the "role" edge.
+func (m *UserMutation) ResetRole() {
+	m.role = nil
+	m.clearedrole = false
+}
+
 // Where appends a list predicates to the UserMutation builder.
 func (m *UserMutation) Where(ps ...predicate.User) {
 	m.predicates = append(m.predicates, ps...)
@@ -2850,9 +2891,12 @@ func (m *UserMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *UserMutation) AddedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 2)
 	if m.groups != nil {
 		edges = append(edges, user.EdgeGroups)
+	}
+	if m.role != nil {
+		edges = append(edges, user.EdgeRole)
 	}
 	return edges
 }
@@ -2867,13 +2911,17 @@ func (m *UserMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case user.EdgeRole:
+		if id := m.role; id != nil {
+			return []ent.Value{*id}
+		}
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *UserMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 2)
 	if m.removedgroups != nil {
 		edges = append(edges, user.EdgeGroups)
 	}
@@ -2896,9 +2944,12 @@ func (m *UserMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *UserMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 2)
 	if m.clearedgroups {
 		edges = append(edges, user.EdgeGroups)
+	}
+	if m.clearedrole {
+		edges = append(edges, user.EdgeRole)
 	}
 	return edges
 }
@@ -2909,6 +2960,8 @@ func (m *UserMutation) EdgeCleared(name string) bool {
 	switch name {
 	case user.EdgeGroups:
 		return m.clearedgroups
+	case user.EdgeRole:
+		return m.clearedrole
 	}
 	return false
 }
@@ -2917,6 +2970,9 @@ func (m *UserMutation) EdgeCleared(name string) bool {
 // if that edge is not defined in the schema.
 func (m *UserMutation) ClearEdge(name string) error {
 	switch name {
+	case user.EdgeRole:
+		m.ClearRole()
+		return nil
 	}
 	return fmt.Errorf("unknown User unique edge %s", name)
 }
@@ -2927,6 +2983,9 @@ func (m *UserMutation) ResetEdge(name string) error {
 	switch name {
 	case user.EdgeGroups:
 		m.ResetGroups()
+		return nil
+	case user.EdgeRole:
+		m.ResetRole()
 		return nil
 	}
 	return fmt.Errorf("unknown User edge %s", name)

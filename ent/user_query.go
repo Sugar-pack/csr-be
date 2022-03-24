@@ -14,6 +14,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/group"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/predicate"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/role"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/user"
 )
 
@@ -28,6 +29,7 @@ type UserQuery struct {
 	predicates []predicate.User
 	// eager-loading edges.
 	withGroups *GroupQuery
+	withRole   *RoleQuery
 	withFKs    bool
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
@@ -80,6 +82,28 @@ func (uq *UserQuery) QueryGroups() *GroupQuery {
 			sqlgraph.From(user.Table, user.FieldID, selector),
 			sqlgraph.To(group.Table, group.FieldID),
 			sqlgraph.Edge(sqlgraph.M2M, true, user.GroupsTable, user.GroupsPrimaryKey...),
+		)
+		fromU = sqlgraph.SetNeighbors(uq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryRole chains the current query on the "role" edge.
+func (uq *UserQuery) QueryRole() *RoleQuery {
+	query := &RoleQuery{config: uq.config}
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := uq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := uq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(user.Table, user.FieldID, selector),
+			sqlgraph.To(role.Table, role.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, user.RoleTable, user.RoleColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(uq.driver.Dialect(), step)
 		return fromU, nil
@@ -269,6 +293,7 @@ func (uq *UserQuery) Clone() *UserQuery {
 		order:      append([]OrderFunc{}, uq.order...),
 		predicates: append([]predicate.User{}, uq.predicates...),
 		withGroups: uq.withGroups.Clone(),
+		withRole:   uq.withRole.Clone(),
 		// clone intermediate query.
 		sql:    uq.sql.Clone(),
 		path:   uq.path,
@@ -284,6 +309,17 @@ func (uq *UserQuery) WithGroups(opts ...func(*GroupQuery)) *UserQuery {
 		opt(query)
 	}
 	uq.withGroups = query
+	return uq
+}
+
+// WithRole tells the query-builder to eager-load the nodes that are connected to
+// the "role" edge. The optional arguments are used to configure the query builder of the edge.
+func (uq *UserQuery) WithRole(opts ...func(*RoleQuery)) *UserQuery {
+	query := &RoleQuery{config: uq.config}
+	for _, opt := range opts {
+		opt(query)
+	}
+	uq.withRole = query
 	return uq
 }
 
@@ -353,10 +389,14 @@ func (uq *UserQuery) sqlAll(ctx context.Context) ([]*User, error) {
 		nodes       = []*User{}
 		withFKs     = uq.withFKs
 		_spec       = uq.querySpec()
-		loadedTypes = [1]bool{
+		loadedTypes = [2]bool{
 			uq.withGroups != nil,
+			uq.withRole != nil,
 		}
 	)
+	if uq.withRole != nil {
+		withFKs = true
+	}
 	if withFKs {
 		_spec.Node.Columns = append(_spec.Node.Columns, user.ForeignKeys...)
 	}
@@ -441,6 +481,35 @@ func (uq *UserQuery) sqlAll(ctx context.Context) ([]*User, error) {
 			}
 			for i := range nodes {
 				nodes[i].Edges.Groups = append(nodes[i].Edges.Groups, n)
+			}
+		}
+	}
+
+	if query := uq.withRole; query != nil {
+		ids := make([]int, 0, len(nodes))
+		nodeids := make(map[int][]*User)
+		for i := range nodes {
+			if nodes[i].role_users == nil {
+				continue
+			}
+			fk := *nodes[i].role_users
+			if _, ok := nodeids[fk]; !ok {
+				ids = append(ids, fk)
+			}
+			nodeids[fk] = append(nodeids[fk], nodes[i])
+		}
+		query.Where(role.IDIn(ids...))
+		neighbors, err := query.All(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, n := range neighbors {
+			nodes, ok := nodeids[n.ID]
+			if !ok {
+				return nil, fmt.Errorf(`unexpected foreign-key "role_users" returned %v`, n.ID)
+			}
+			for i := range nodes {
+				nodes[i].Edges.Role = n
 			}
 		}
 	}

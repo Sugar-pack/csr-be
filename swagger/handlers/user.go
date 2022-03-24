@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"fmt"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/models"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/restapi/operations/users"
@@ -33,7 +32,7 @@ func (c User) PostUserFunc() users.PostUserHandlerFunc {
 			})
 		}
 
-		id := fmt.Sprintf("%d", e.ID)
+		id := int64(e.ID)
 		return users.NewPostUserCreated().WithPayload(&models.CreateUserResponse{
 			Data: &models.CreateUserResponseData{
 				ID: &id,
@@ -51,5 +50,46 @@ func (c User) GetUserFunc() users.GetCurrentUserHandlerFunc {
 func (c User) PatchUserFunc() users.PatchUserHandlerFunc {
 	return func(p users.PatchUserParams, _ interface{}) middleware.Responder {
 		return users.NewPatchUserNoContent()
+	}
+}
+
+func (c User) AssignRoleToUserFunc() users.AssignRoleToUserHandlerFunc {
+	return func(p users.AssignRoleToUserParams) middleware.Responder {
+		context := p.HTTPRequest.Context()
+		userId := int(p.UserID)
+		roleId := int(*p.Data.RoleID)
+		user, err := c.client.User.Get(context, userId)
+		if err != nil {
+			return users.NewAssignRoleToUserDefault(http.StatusNotFound).WithPayload(&models.Error{
+				Data: &models.ErrorData{
+					Message: err.Error(),
+				},
+			})
+		}
+		role, err := c.client.Role.Get(context, roleId)
+		if err != nil {
+			return users.NewAssignRoleToUserDefault(http.StatusNotFound).WithPayload(&models.Error{
+				Data: &models.ErrorData{
+					Message: err.Error(),
+				},
+			})
+		}
+		user, err = c.client.User.UpdateOne(user).SetRole(role).Save(context)
+		if err != nil {
+			return users.NewAssignRoleToUserDefault(http.StatusNotFound).WithPayload(&models.Error{
+				Data: &models.ErrorData{
+					Message: err.Error(),
+				},
+			})
+		}
+		userIdInt64 := int64(user.ID)
+		roleIdInt64 := int64(role.ID)
+		return users.NewAssignRoleToUserOK().WithPayload(&models.GetUserResponse{
+			Data: &models.User{
+				CreateTime: nil,
+				ID:         &userIdInt64,
+				RoleID:     &roleIdInt64,
+			},
+		})
 	}
 }

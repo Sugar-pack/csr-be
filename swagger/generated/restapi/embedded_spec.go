@@ -282,6 +282,52 @@ func init() {
         }
       ]
     },
+    "/v1/management/users/{userId}/role": {
+      "post": {
+        "consumes": [
+          "application/json"
+        ],
+        "tags": [
+          "Users"
+        ],
+        "summary": "Assign role to user",
+        "operationId": "AssignRoleToUser",
+        "parameters": [
+          {
+            "description": "Role to assign to user.",
+            "name": "data",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/AssignRoleToUser"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Role has been assigned to user",
+            "schema": {
+              "$ref": "#/definitions/GetUserResponse"
+            }
+          },
+          "default": {
+            "description": "Unexpected error.",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        }
+      },
+      "parameters": [
+        {
+          "type": "integer",
+          "description": "user id",
+          "name": "userId",
+          "in": "path",
+          "required": true
+        }
+      ]
+    },
     "/v1/roles": {
       "get": {
         "tags": [
@@ -395,6 +441,17 @@ func init() {
     }
   },
   "definitions": {
+    "AssignRoleToUser": {
+      "type": "object",
+      "required": [
+        "roleId"
+      ],
+      "properties": {
+        "roleId": {
+          "type": "integer"
+        }
+      }
+    },
     "CreateNewKind": {
       "type": "object",
       "required": [
@@ -430,7 +487,7 @@ func init() {
           ],
           "properties": {
             "id": {
-              "type": "string"
+              "type": "integer"
             }
           }
         }
@@ -659,7 +716,8 @@ func init() {
       "type": "object",
       "required": [
         "id",
-        "createTime"
+        "createTime",
+        "roleId"
       ],
       "properties": {
         "createTime": {
@@ -667,7 +725,10 @@ func init() {
           "format": "date-time"
         },
         "id": {
-          "type": "string"
+          "type": "integer"
+        },
+        "roleId": {
+          "type": "integer"
         }
       }
     }
@@ -945,6 +1006,52 @@ func init() {
         }
       ]
     },
+    "/v1/management/users/{userId}/role": {
+      "post": {
+        "consumes": [
+          "application/json"
+        ],
+        "tags": [
+          "Users"
+        ],
+        "summary": "Assign role to user",
+        "operationId": "AssignRoleToUser",
+        "parameters": [
+          {
+            "description": "Role to assign to user.",
+            "name": "data",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/AssignRoleToUser"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Role has been assigned to user",
+            "schema": {
+              "$ref": "#/definitions/GetUserResponse"
+            }
+          },
+          "default": {
+            "description": "Unexpected error.",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        }
+      },
+      "parameters": [
+        {
+          "type": "integer",
+          "description": "user id",
+          "name": "userId",
+          "in": "path",
+          "required": true
+        }
+      ]
+    },
     "/v1/roles": {
       "get": {
         "tags": [
@@ -1058,6 +1165,17 @@ func init() {
     }
   },
   "definitions": {
+    "AssignRoleToUser": {
+      "type": "object",
+      "required": [
+        "roleId"
+      ],
+      "properties": {
+        "roleId": {
+          "type": "integer"
+        }
+      }
+    },
     "CreateNewKind": {
       "type": "object",
       "required": [
@@ -1093,7 +1211,7 @@ func init() {
           ],
           "properties": {
             "id": {
-              "type": "string"
+              "type": "integer"
             }
           }
         }
@@ -1106,7 +1224,7 @@ func init() {
       ],
       "properties": {
         "id": {
-          "type": "string"
+          "type": "integer"
         }
       }
     },
@@ -1357,7 +1475,8 @@ func init() {
       "type": "object",
       "required": [
         "id",
-        "createTime"
+        "createTime",
+        "roleId"
       ],
       "properties": {
         "createTime": {
@@ -1365,7 +1484,10 @@ func init() {
           "format": "date-time"
         },
         "id": {
-          "type": "string"
+          "type": "integer"
+        },
+        "roleId": {
+          "type": "integer"
         }
       }
     }

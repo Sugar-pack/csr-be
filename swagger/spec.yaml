@@ -89,6 +89,39 @@ paths:
           description: Unexpected error.
           schema:
             $ref: "#/definitions/Error"
+  /v1/management/users/{userId}/role:
+    parameters:
+      - name: userId
+        in: path
+        required: true
+        description: user id
+        type: integer
+    post:
+      # TODO: uncomment
+      # security:
+      #  - Bearer: []
+      consumes:
+        - application/json
+      parameters:
+        - name: data
+          in: body
+          description: Role to assign to user.
+          required: true
+          schema:
+            $ref: "#/definitions/AssignRoleToUser"
+      summary: Assign role to user
+      tags:
+        - Users
+      operationId: AssignRoleToUser
+      responses:
+        200:
+          description: Role has been assigned to user
+          schema:
+            $ref: "#/definitions/GetUserResponse"
+        default:
+          description: Unexpected error.
+          schema:
+            $ref: "#/definitions/Error"
   /equipment/statuses:
     post:
       summary: Creating a new status.
@@ -318,12 +351,15 @@ definitions:
     required:
       - id
       - createTime
+      - roleId
     properties:
       id:
-        type: string
+        type: integer
       createTime:
         type: string
         format: date-time
+      roleId:
+        type: integer
   CreateUserResponse:
     type: object
     required:
@@ -335,7 +371,7 @@ definitions:
           - id
         properties:
           id:
-            type: string
+            type: integer
   GetUserResponse:
     type: object
     required:
@@ -343,6 +379,13 @@ definitions:
     properties:
       data:
         $ref: "#/definitions/User"
+  AssignRoleToUser:
+    type: object
+    required:
+      - roleId
+    properties:
+      roleId:
+        type: integer
 
   #Role
   Role:
