@@ -284,6 +284,21 @@ paths:
           description: Unexpected error
           schema:
             $ref: "#/definitions/Error"
+  /v1/active_areas:
+    get:
+      summary: Get all active areas.
+      tags:
+        - Active_Areas
+      operationId: GetAllActiveAreas
+      responses:
+        200:
+          description: Success
+          schema:
+            $ref: "#/definitions/ListOfActiveAreas"
+        default:
+          description: Unexpected error.
+          schema:
+            $ref: "#/definitions/Error"            
 
 definitions:
   Error:
@@ -489,5 +504,20 @@ definitions:
     data:
       $ref: "#/definitions/Kind"
 
+  #Active Areas
+  ActiveArea:
+    type: object
+    required:
+      - id
+      - name
+    properties:
+      id:
+        type: integer
+      name:
+        type: string
+  ListOfActiveAreas:
+    type: array
+    items:
+     $ref: "#/definitions/ActiveArea"  
 
 
