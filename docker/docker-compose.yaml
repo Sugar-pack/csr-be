@@ -23,6 +23,7 @@ services:
     environment:
       - DB_HOST=database
       - SERVER_HOST=0.0.0.0
+      - JWT_SECRET_KEY=1234567890
     depends_on:
       - database
     ports:

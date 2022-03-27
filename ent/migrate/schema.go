@@ -91,7 +91,7 @@ var (
 		{Name: "passport_issue_date", Type: field.TypeTime, Nullable: true, SchemaType: map[string]string{"postgres": "timestamp"}},
 		{Name: "phone", Type: field.TypeString, Nullable: true},
 		{Name: "is_blocked", Type: field.TypeBool, Default: false},
-		{Name: "type", Type: field.TypeEnum, Enums: []string{"person", "organization"}},
+		{Name: "type", Type: field.TypeEnum, Enums: []string{"person", "organization"}, Default: "person"},
 		{Name: "org_name", Type: field.TypeString, Nullable: true},
 		{Name: "website", Type: field.TypeString, Nullable: true},
 		{Name: "active_area_users", Type: field.TypeInt, Nullable: true},
