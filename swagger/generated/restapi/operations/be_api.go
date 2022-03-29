@@ -63,6 +63,9 @@ func NewBeAPI(spec *loads.Document) *BeAPI {
 		KindsGetAllKindsHandler: kinds.GetAllKindsHandlerFunc(func(params kinds.GetAllKindsParams) middleware.Responder {
 			return middleware.NotImplemented("operation kinds.GetAllKinds has not yet been implemented")
 		}),
+		UsersGetAllUsersHandler: users.GetAllUsersHandlerFunc(func(params users.GetAllUsersParams) middleware.Responder {
+			return middleware.NotImplemented("operation users.GetAllUsers has not yet been implemented")
+		}),
 		RolesGetRolesHandler: roles.GetRolesHandlerFunc(func(params roles.GetRolesParams) middleware.Responder {
 			return middleware.NotImplemented("operation roles.GetRoles has not yet been implemented")
 		}),
@@ -71,6 +74,9 @@ func NewBeAPI(spec *loads.Document) *BeAPI {
 		}),
 		StatusGetStatusesHandler: status.GetStatusesHandlerFunc(func(params status.GetStatusesParams) middleware.Responder {
 			return middleware.NotImplemented("operation status.GetStatuses has not yet been implemented")
+		}),
+		UsersGetUserHandler: users.GetUserHandlerFunc(func(params users.GetUserParams) middleware.Responder {
+			return middleware.NotImplemented("operation users.GetUser has not yet been implemented")
 		}),
 		KindsPatchKindHandler: kinds.PatchKindHandlerFunc(func(params kinds.PatchKindParams) middleware.Responder {
 			return middleware.NotImplemented("operation kinds.PatchKind has not yet been implemented")
@@ -154,12 +160,16 @@ type BeAPI struct {
 	ActiveAreasGetAllActiveAreasHandler active_areas.GetAllActiveAreasHandler
 	// KindsGetAllKindsHandler sets the operation handler for the get all kinds operation
 	KindsGetAllKindsHandler kinds.GetAllKindsHandler
+	// UsersGetAllUsersHandler sets the operation handler for the get all users operation
+	UsersGetAllUsersHandler users.GetAllUsersHandler
 	// RolesGetRolesHandler sets the operation handler for the get roles operation
 	RolesGetRolesHandler roles.GetRolesHandler
 	// StatusGetStatusHandler sets the operation handler for the get status operation
 	StatusGetStatusHandler status.GetStatusHandler
 	// StatusGetStatusesHandler sets the operation handler for the get statuses operation
 	StatusGetStatusesHandler status.GetStatusesHandler
+	// UsersGetUserHandler sets the operation handler for the get user operation
+	UsersGetUserHandler users.GetUserHandler
 	// KindsPatchKindHandler sets the operation handler for the patch kind operation
 	KindsPatchKindHandler kinds.PatchKindHandler
 	// KindsDeleteKindHandler sets the operation handler for the delete kind operation
@@ -270,6 +280,9 @@ func (o *BeAPI) Validate() error {
 	if o.KindsGetAllKindsHandler == nil {
 		unregistered = append(unregistered, "kinds.GetAllKindsHandler")
 	}
+	if o.UsersGetAllUsersHandler == nil {
+		unregistered = append(unregistered, "users.GetAllUsersHandler")
+	}
 	if o.RolesGetRolesHandler == nil {
 		unregistered = append(unregistered, "roles.GetRolesHandler")
 	}
@@ -278,6 +291,9 @@ func (o *BeAPI) Validate() error {
 	}
 	if o.StatusGetStatusesHandler == nil {
 		unregistered = append(unregistered, "status.GetStatusesHandler")
+	}
+	if o.UsersGetUserHandler == nil {
+		unregistered = append(unregistered, "users.GetUserHandler")
 	}
 	if o.KindsPatchKindHandler == nil {
 		unregistered = append(unregistered, "kinds.PatchKindHandler")
@@ -420,6 +436,10 @@ func (o *BeAPI) initHandlerCache() {
 	if o.handlers["GET"] == nil {
 		o.handlers["GET"] = make(map[string]http.Handler)
 	}
+	o.handlers["GET"]["/management/listUsers"] = users.NewGetAllUsers(o.context, o.UsersGetAllUsersHandler)
+	if o.handlers["GET"] == nil {
+		o.handlers["GET"] = make(map[string]http.Handler)
+	}
 	o.handlers["GET"]["/v1/roles"] = roles.NewGetRoles(o.context, o.RolesGetRolesHandler)
 	if o.handlers["GET"] == nil {
 		o.handlers["GET"] = make(map[string]http.Handler)
@@ -429,6 +449,10 @@ func (o *BeAPI) initHandlerCache() {
 		o.handlers["GET"] = make(map[string]http.Handler)
 	}
 	o.handlers["GET"]["/equipment/statuses"] = status.NewGetStatuses(o.context, o.StatusGetStatusesHandler)
+	if o.handlers["GET"] == nil {
+		o.handlers["GET"] = make(map[string]http.Handler)
+	}
+	o.handlers["GET"]["/management/users/{userId}"] = users.NewGetUser(o.context, o.UsersGetUserHandler)
 	if o.handlers["PATCH"] == nil {
 		o.handlers["PATCH"] = make(map[string]http.Handler)
 	}

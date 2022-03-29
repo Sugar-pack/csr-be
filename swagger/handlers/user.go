@@ -93,3 +93,106 @@ func (c User) AssignRoleToUserFunc() users.AssignRoleToUserHandlerFunc {
 		})
 	}
 }
+
+func (c User) GetUserById() users.GetUserHandlerFunc {
+	return func(p users.GetUserParams) middleware.Responder {
+		id := int(p.UserID)
+		c, err := c.client.User.Get(p.HTTPRequest.Context(), id)
+		if err != nil {
+			return users.NewGetUserDefault(http.StatusNotFound).WithPayload(&models.Error{
+				Data: &models.ErrorData{
+					Message: err.Error(),
+				},
+			})
+		}
+
+		id64 := int64(id)
+		passportDate := c.PassportIssueDate.String()
+		typeString := c.Type.String()
+		role, err := c.QueryRole().Only(p.HTTPRequest.Context())
+		if err != nil {
+			return users.NewGetUserDefault(http.StatusNotFound).WithPayload(&models.Error{
+				Data: &models.ErrorData{
+					Message: err.Error(),
+				},
+			})
+		}
+
+		roleId := int64(role.ID)
+		roleResp := models.GetUserByIDRole{
+			ID:   roleId,
+			Name: role.Name,
+		}
+
+		return users.NewGetUserCreated().WithPayload(&models.GetUserByID{
+			Email:             &c.Email,
+			ID:                &id64,
+			IsBlocked:         &c.IsBlocked,
+			Login:             &c.Login,
+			Name:              &c.Name,
+			OrgName:           c.OrgName,
+			PassportAuthority: c.PassportAuthority,
+			PassportIssueDate: &passportDate,
+			PassportNumber:    c.PassportNumber,
+			PassportSeries:    c.PassportSeries,
+			Patronomic:        c.Patronymic,
+			PhoneNumber:       c.Phone,
+			Role:              &roleResp,
+			Surname:           c.Surname,
+			Type:              &typeString,
+		})
+	}
+}
+
+func (c User) GetUsersList() users.GetAllUsersHandlerFunc {
+	return func(p users.GetAllUsersParams) middleware.Responder {
+		all, err := c.client.User.Query().All(p.HTTPRequest.Context())
+		if err != nil {
+			return users.NewGetAllUsersDefault(http.StatusNotFound).WithPayload(&models.Error{
+				Data: &models.ErrorData{
+					Message: err.Error(),
+				},
+			})
+		}
+		listUsers := models.GetListUsers{}
+		for _, element := range all {
+
+			id64 := int64(element.ID)
+			passportDate := element.PassportIssueDate.String()
+			typeString := element.Type.String()
+
+			role, err := element.QueryRole().Only(p.HTTPRequest.Context())
+			if err != nil {
+				return users.NewGetAllUsersDefault(http.StatusNotFound).WithPayload(&models.Error{
+					Data: &models.ErrorData{
+						Message: err.Error(),
+					},
+				})
+			}
+			roleId := int64(role.ID)
+			roleResp := models.GetUserByIDRole{
+				ID:   roleId,
+				Name: role.Name,
+			}
+
+			listUsers = append(listUsers, &models.GetUserByID{
+				Email:             &element.Email,
+				ID:                &id64,
+				IsBlocked:         &element.IsBlocked,
+				Login:             &element.Login,
+				Name:              &element.Name,
+				OrgName:           element.OrgName,
+				PassportAuthority: element.PassportAuthority,
+				PassportIssueDate: &passportDate,
+				PassportNumber:    element.PassportNumber,
+				PassportSeries:    element.PassportSeries,
+				Patronomic:        element.Patronymic,
+				PhoneNumber:       element.Phone,
+				Role:              &roleResp,
+				Surname:           element.Surname,
+				Type:              &typeString,
+			})
+		}
+		return users.NewGetAllUsersCreated().WithPayload(listUsers)
+	}
+}

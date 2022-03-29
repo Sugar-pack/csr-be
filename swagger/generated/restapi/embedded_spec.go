@@ -282,6 +282,61 @@ func init() {
         }
       ]
     },
+    "/management/listUsers": {
+      "get": {
+        "tags": [
+          "Users"
+        ],
+        "summary": "Get all users",
+        "operationId": "GetAllUsers",
+        "responses": {
+          "201": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/GetListUsers"
+            }
+          },
+          "default": {
+            "description": "Unexpected error.",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        }
+      }
+    },
+    "/management/users/{userId}": {
+      "get": {
+        "tags": [
+          "Users"
+        ],
+        "summary": "Get user by ID",
+        "operationId": "GetUser",
+        "responses": {
+          "201": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/GetUserById"
+            }
+          },
+          "default": {
+            "description": "Unexpected error.",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        }
+      },
+      "parameters": [
+        {
+          "type": "integer",
+          "description": "user id",
+          "name": "userId",
+          "in": "path",
+          "required": true
+        }
+      ]
+    },
     "/v1/active_areas": {
       "get": {
         "tags": [
@@ -569,6 +624,88 @@ func init() {
       "properties": {
         "data": {
           "$ref": "#/definitions/Kind"
+        }
+      }
+    },
+    "GetListUsers": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/GetUserById"
+      }
+    },
+    "GetUserById": {
+      "type": "object",
+      "required": [
+        "id",
+        "login",
+        "role",
+        "surname",
+        "name",
+        "patronomic",
+        "passport_series",
+        "passport_number",
+        "passport_authority",
+        "passport_issue_date",
+        "phone_number",
+        "email",
+        "is_blocked",
+        "type",
+        "org_name"
+      ],
+      "properties": {
+        "email": {
+          "type": "string"
+        },
+        "id": {
+          "type": "integer"
+        },
+        "is_blocked": {
+          "type": "boolean",
+          "example": false
+        },
+        "login": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "org_name": {
+          "type": "string"
+        },
+        "passport_authority": {
+          "type": "string"
+        },
+        "passport_issue_date": {
+          "type": "string"
+        },
+        "passport_number": {
+          "type": "string"
+        },
+        "passport_series": {
+          "type": "string"
+        },
+        "patronomic": {
+          "type": "string"
+        },
+        "phone_number": {
+          "type": "string"
+        },
+        "role": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "integer"
+            },
+            "name": {
+              "type": "string"
+            }
+          }
+        },
+        "surname": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string"
         }
       }
     },
@@ -1050,6 +1187,61 @@ func init() {
         }
       ]
     },
+    "/management/listUsers": {
+      "get": {
+        "tags": [
+          "Users"
+        ],
+        "summary": "Get all users",
+        "operationId": "GetAllUsers",
+        "responses": {
+          "201": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/GetListUsers"
+            }
+          },
+          "default": {
+            "description": "Unexpected error.",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        }
+      }
+    },
+    "/management/users/{userId}": {
+      "get": {
+        "tags": [
+          "Users"
+        ],
+        "summary": "Get user by ID",
+        "operationId": "GetUser",
+        "responses": {
+          "201": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/GetUserById"
+            }
+          },
+          "default": {
+            "description": "Unexpected error.",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        }
+      },
+      "parameters": [
+        {
+          "type": "integer",
+          "description": "user id",
+          "name": "userId",
+          "in": "path",
+          "required": true
+        }
+      ]
+    },
     "/v1/active_areas": {
       "get": {
         "tags": [
@@ -1359,6 +1551,99 @@ func init() {
       "properties": {
         "data": {
           "$ref": "#/definitions/Kind"
+        }
+      }
+    },
+    "GetListUsers": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/GetUserById"
+      }
+    },
+    "GetUserByIDRole": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "integer"
+        },
+        "name": {
+          "type": "string"
+        }
+      }
+    },
+    "GetUserById": {
+      "type": "object",
+      "required": [
+        "id",
+        "login",
+        "role",
+        "surname",
+        "name",
+        "patronomic",
+        "passport_series",
+        "passport_number",
+        "passport_authority",
+        "passport_issue_date",
+        "phone_number",
+        "email",
+        "is_blocked",
+        "type",
+        "org_name"
+      ],
+      "properties": {
+        "email": {
+          "type": "string"
+        },
+        "id": {
+          "type": "integer"
+        },
+        "is_blocked": {
+          "type": "boolean",
+          "example": false
+        },
+        "login": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "org_name": {
+          "type": "string"
+        },
+        "passport_authority": {
+          "type": "string"
+        },
+        "passport_issue_date": {
+          "type": "string"
+        },
+        "passport_number": {
+          "type": "string"
+        },
+        "passport_series": {
+          "type": "string"
+        },
+        "patronomic": {
+          "type": "string"
+        },
+        "phone_number": {
+          "type": "string"
+        },
+        "role": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "integer"
+            },
+            "name": {
+              "type": "string"
+            }
+          }
+        },
+        "surname": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string"
         }
       }
     },

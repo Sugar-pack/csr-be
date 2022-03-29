@@ -119,6 +119,9 @@ var (
 // Type defines the type for the "type" enum field.
 type Type string
 
+// TypePerson is the default value of the Type enum.
+const DefaultType = TypePerson
+
 // Type values.
 const (
 	TypePerson       Type = "person"
