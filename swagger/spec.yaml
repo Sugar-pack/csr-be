@@ -6,7 +6,8 @@ info:
     The API provides CSR backend API.
 
 basePath: /api/
-schemes: 
+schemes:
+  - https
   - http
 securityDefinitions:
   Bearer:
