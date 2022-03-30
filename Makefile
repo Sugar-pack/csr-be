@@ -6,10 +6,12 @@ tag:
 	echo "TAG=${TAG}" > .env
 
 build: tag
-	DOCKER_BUILDKIT=1 docker build -t go_run:${TAG} --target run .
+	DOCKER_BUILDKIT=1 docker build --no-cache -t go_run:${TAG} --target run .
 
 up: 
 	docker-compose --env-file .env -f ./docker/docker-compose.yaml up -d
+
+run: build up
 
 stop:
 	docker-compose --env-file .env -f ./docker/docker-compose.yaml stop

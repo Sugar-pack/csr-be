@@ -246,6 +246,7 @@ linters:
     - dogsled
     - dupl
     - errcheck
+    - exportloopref
     - funlen
     - gocognit
     - goconst
@@ -253,14 +254,12 @@ linters:
     - godox
     - gofmt
     - goimports
-    - golint
     - gosec
     - gosimple
     - govet
     - ineffassign
-    - interfacer
     - misspell
-    - scopelint
+    - revive
     - staticcheck
     - structcheck
     - typecheck

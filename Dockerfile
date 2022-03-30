@@ -8,7 +8,7 @@ COPY go.mod go.sum ./
 
 RUN go get -d github.com/go-swagger/go-swagger/cmd/swagger && \
     go get -d entgo.io/ent/cmd/ent && \
-    go mod tidy
+    go mod tidy -compat=1.17
 
 RUN CGO_ENABLED=0 GOARCH=amd64 GOOS=linux go build -ldflags "-extldflags '-static'" -o /go cmd/swagger/main.go
 
@@ -16,6 +16,7 @@ RUN CGO_ENABLED=0 GOARCH=amd64 GOOS=linux go build -ldflags "-extldflags '-stati
 FROM alpine:3.15 as run
 
 WORKDIR /go
+COPY db db
 COPY --from=build /go/main ./
 
 ENTRYPOINT [ "./main" ]
