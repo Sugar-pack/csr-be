@@ -481,8 +481,56 @@ func init() {
         }
       }
     },
+    "/v1/login": {
+      "post": {
+        "description": "Returns token for authorized User",
+        "consumes": [
+          "application/json"
+        ],
+        "tags": [
+          "Users"
+        ],
+        "operationId": "Login",
+        "parameters": [
+          {
+            "description": "Login Payload",
+            "name": "login",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/LoginInfo"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful login",
+            "schema": {
+              "$ref": "#/definitions/LoginSuccessResponse"
+            }
+          },
+          "404": {
+            "description": "User not found",
+            "schema": {
+              "type": "string"
+            }
+          },
+          "default": {
+            "description": "Unexpected error.",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        }
+      }
+    },
     "/v1/management/users/{userId}/role": {
       "post": {
+        "security": [
+          {
+            "Bearer": []
+          }
+        ],
         "consumes": [
           "application/json"
         ],
@@ -557,6 +605,17 @@ func init() {
         ],
         "summary": "Register a new user.",
         "operationId": "postUser",
+        "parameters": [
+          {
+            "description": "New user data.",
+            "name": "data",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/UserRegister"
+            }
+          }
+        ],
         "responses": {
           "201": {
             "description": "Created",
@@ -914,6 +973,40 @@ func init() {
         "$ref": "#/definitions/Status"
       }
     },
+    "LoginInfo": {
+      "type": "object",
+      "required": [
+        "login",
+        "password"
+      ],
+      "properties": {
+        "login": {
+          "type": "string"
+        },
+        "password": {
+          "type": "string"
+        }
+      }
+    },
+    "LoginSuccessResponse": {
+      "type": "object",
+      "required": [
+        "data"
+      ],
+      "properties": {
+        "data": {
+          "type": "object",
+          "required": [
+            "token"
+          ],
+          "properties": {
+            "token": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
     "PatchItem": {
       "description": "A JSONPatch document as defined by RFC 6902",
       "type": "object",
@@ -1048,7 +1141,8 @@ func init() {
       "required": [
         "id",
         "createTime",
-        "roleId"
+        "roleId",
+        "login"
       ],
       "properties": {
         "createTime": {
@@ -1058,8 +1152,28 @@ func init() {
         "id": {
           "type": "integer"
         },
+        "login": {
+          "type": "string"
+        },
         "roleId": {
           "type": "integer"
+        }
+      }
+    },
+    "UserRegister": {
+      "type": "object",
+      "required": [
+        "login",
+        "password"
+      ],
+      "properties": {
+        "login": {
+          "type": "string",
+          "minLength": 3
+        },
+        "password": {
+          "type": "string",
+          "minLength": 6
         }
       }
     }
@@ -1536,8 +1650,56 @@ func init() {
         }
       }
     },
+    "/v1/login": {
+      "post": {
+        "description": "Returns token for authorized User",
+        "consumes": [
+          "application/json"
+        ],
+        "tags": [
+          "Users"
+        ],
+        "operationId": "Login",
+        "parameters": [
+          {
+            "description": "Login Payload",
+            "name": "login",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/LoginInfo"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful login",
+            "schema": {
+              "$ref": "#/definitions/LoginSuccessResponse"
+            }
+          },
+          "404": {
+            "description": "User not found",
+            "schema": {
+              "type": "string"
+            }
+          },
+          "default": {
+            "description": "Unexpected error.",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        }
+      }
+    },
     "/v1/management/users/{userId}/role": {
       "post": {
+        "security": [
+          {
+            "Bearer": []
+          }
+        ],
         "consumes": [
           "application/json"
         ],
@@ -1612,6 +1774,17 @@ func init() {
         ],
         "summary": "Register a new user.",
         "operationId": "postUser",
+        "parameters": [
+          {
+            "description": "New user data.",
+            "name": "data",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/UserRegister"
+            }
+          }
+        ],
         "responses": {
           "201": {
             "description": "Created",
@@ -1991,6 +2164,51 @@ func init() {
         "$ref": "#/definitions/Status"
       }
     },
+    "LoginInfo": {
+      "type": "object",
+      "required": [
+        "login",
+        "password"
+      ],
+      "properties": {
+        "login": {
+          "type": "string"
+        },
+        "password": {
+          "type": "string"
+        }
+      }
+    },
+    "LoginSuccessResponse": {
+      "type": "object",
+      "required": [
+        "data"
+      ],
+      "properties": {
+        "data": {
+          "type": "object",
+          "required": [
+            "token"
+          ],
+          "properties": {
+            "token": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "LoginSuccessResponseData": {
+      "type": "object",
+      "required": [
+        "token"
+      ],
+      "properties": {
+        "token": {
+          "type": "string"
+        }
+      }
+    },
     "PatchItem": {
       "description": "A JSONPatch document as defined by RFC 6902",
       "type": "object",
@@ -2138,7 +2356,8 @@ func init() {
       "required": [
         "id",
         "createTime",
-        "roleId"
+        "roleId",
+        "login"
       ],
       "properties": {
         "createTime": {
@@ -2148,8 +2367,28 @@ func init() {
         "id": {
           "type": "integer"
         },
+        "login": {
+          "type": "string"
+        },
         "roleId": {
           "type": "integer"
+        }
+      }
+    },
+    "UserRegister": {
+      "type": "object",
+      "required": [
+        "login",
+        "password"
+      ],
+      "properties": {
+        "login": {
+          "type": "string",
+          "minLength": 3
+        },
+        "password": {
+          "type": "string",
+          "minLength": 6
         }
       }
     }

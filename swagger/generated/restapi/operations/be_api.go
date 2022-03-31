@@ -49,7 +49,7 @@ func NewBeAPI(spec *loads.Document) *BeAPI {
 
 		JSONProducer: runtime.JSONProducer(),
 
-		UsersAssignRoleToUserHandler: users.AssignRoleToUserHandlerFunc(func(params users.AssignRoleToUserParams) middleware.Responder {
+		UsersAssignRoleToUserHandler: users.AssignRoleToUserHandlerFunc(func(params users.AssignRoleToUserParams, principal interface{}) middleware.Responder {
 			return middleware.NotImplemented("operation users.AssignRoleToUser has not yet been implemented")
 		}),
 		EquipmentCreateNewEquipmentHandler: equipment.CreateNewEquipmentHandlerFunc(func(params equipment.CreateNewEquipmentParams) middleware.Responder {
@@ -90,6 +90,9 @@ func NewBeAPI(spec *loads.Document) *BeAPI {
 		}),
 		StatusGetStatusesHandler: status.GetStatusesHandlerFunc(func(params status.GetStatusesParams) middleware.Responder {
 			return middleware.NotImplemented("operation status.GetStatuses has not yet been implemented")
+		}),
+		UsersLoginHandler: users.LoginHandlerFunc(func(params users.LoginParams) middleware.Responder {
+			return middleware.NotImplemented("operation users.Login has not yet been implemented")
 		}),
 		KindsPatchKindHandler: kinds.PatchKindHandlerFunc(func(params kinds.PatchKindParams) middleware.Responder {
 			return middleware.NotImplemented("operation kinds.PatchKind has not yet been implemented")
@@ -191,6 +194,8 @@ type BeAPI struct {
 	StatusGetStatusHandler status.GetStatusHandler
 	// StatusGetStatusesHandler sets the operation handler for the get statuses operation
 	StatusGetStatusesHandler status.GetStatusesHandler
+	// UsersLoginHandler sets the operation handler for the login operation
+	UsersLoginHandler users.LoginHandler
 	// KindsPatchKindHandler sets the operation handler for the patch kind operation
 	KindsPatchKindHandler kinds.PatchKindHandler
 	// KindsDeleteKindHandler sets the operation handler for the delete kind operation
@@ -327,6 +332,9 @@ func (o *BeAPI) Validate() error {
 	}
 	if o.StatusGetStatusesHandler == nil {
 		unregistered = append(unregistered, "status.GetStatusesHandler")
+	}
+	if o.UsersLoginHandler == nil {
+		unregistered = append(unregistered, "users.LoginHandler")
 	}
 	if o.KindsPatchKindHandler == nil {
 		unregistered = append(unregistered, "kinds.PatchKindHandler")
@@ -502,6 +510,10 @@ func (o *BeAPI) initHandlerCache() {
 		o.handlers["GET"] = make(map[string]http.Handler)
 	}
 	o.handlers["GET"]["/equipment/statuses"] = status.NewGetStatuses(o.context, o.StatusGetStatusesHandler)
+	if o.handlers["POST"] == nil {
+		o.handlers["POST"] = make(map[string]http.Handler)
+	}
+	o.handlers["POST"]["/v1/login"] = users.NewLogin(o.context, o.UsersLoginHandler)
 	if o.handlers["PATCH"] == nil {
 		o.handlers["PATCH"] = make(map[string]http.Handler)
 	}

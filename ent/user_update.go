@@ -222,6 +222,14 @@ func (uu *UserUpdate) SetType(u user.Type) *UserUpdate {
 	return uu
 }
 
+// SetNillableType sets the "type" field if the given value is not nil.
+func (uu *UserUpdate) SetNillableType(u *user.Type) *UserUpdate {
+	if u != nil {
+		uu.SetType(*u)
+	}
+	return uu
+}
+
 // SetOrgName sets the "org_name" field.
 func (uu *UserUpdate) SetOrgName(s string) *UserUpdate {
 	uu.mutation.SetOrgName(s)
@@ -872,6 +880,14 @@ func (uuo *UserUpdateOne) SetNillableIsBlocked(b *bool) *UserUpdateOne {
 // SetType sets the "type" field.
 func (uuo *UserUpdateOne) SetType(u user.Type) *UserUpdateOne {
 	uuo.mutation.SetType(u)
+	return uuo
+}
+
+// SetNillableType sets the "type" field if the given value is not nil.
+func (uuo *UserUpdateOne) SetNillableType(u *user.Type) *UserUpdateOne {
+	if u != nil {
+		uuo.SetType(*u)
+	}
 	return uuo
 }
 

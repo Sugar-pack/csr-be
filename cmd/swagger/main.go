@@ -97,8 +97,13 @@ func main() {
 
 	api := operations.NewBeAPI(swaggerSpec)
 	api.UseSwaggerUI()
-	api.BearerAuth = middlewares.BearerAuthenticateFunc("key", logger)
+	jwtSecretKey := os.Getenv("JWT_SECRET_KEY")
+	if jwtSecretKey == "" {
+		log.Fatalln("JWT_SECRET_KEY not specified")
+	}
+	api.BearerAuth = middlewares.BearerAuthenticateFunc(jwtSecretKey, logger)
 
+	api.UsersLoginHandler = userHandler.LoginUserFunc(jwtSecretKey)
 	api.UsersPostUserHandler = userHandler.PostUserFunc()
 	api.UsersGetCurrentUserHandler = userHandler.GetUserFunc()
 	api.UsersPatchUserHandler = userHandler.PatchUserFunc()

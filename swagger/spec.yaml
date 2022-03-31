@@ -19,13 +19,48 @@ consumes:
 produces:
   - application/json
 
-paths:  
+paths:
+  /v1/login:
+    post:
+      description: 'Returns token for authorized User'
+      tags:
+        - Users
+      operationId: Login
+      consumes:
+        - "application/json"
+      parameters:
+        - name: 'login'
+          in: 'body'
+          required: true
+          description: 'Login Payload'
+          schema:
+            $ref: '#/definitions/LoginInfo'
+      responses:
+        200:
+          description: Successful login
+          schema:
+            $ref: '#/definitions/LoginSuccessResponse'
+        404:
+          schema:
+            type: string
+          description: User not found
+        default:
+          description: Unexpected error.
+          schema:
+            $ref: "#/definitions/Error"
   /v1/users:
     post:
       summary: Register a new user.
       tags:
         - Users
       operationId: postUser
+      parameters:
+        - name: data
+          in: body
+          description: New user data.
+          required: true
+          schema:
+            $ref: "#/definitions/UserRegister"
       responses:
         201:
           description: Created
@@ -98,9 +133,8 @@ paths:
         description: user id
         type: integer
     post:
-      # TODO: uncomment
-      # security:
-      #  - Bearer: []
+      security:
+       - Bearer: []
       consumes:
         - application/json
       parameters:
@@ -479,20 +513,57 @@ definitions:
         type: object
 
   # User
+  LoginInfo:
+    type: object
+    required:
+      - login
+      - password
+    properties:
+      login:
+        type: string
+      password:
+        type: string
+  LoginSuccessResponse:
+    type: object
+    required:
+      - data
+    properties:
+      data:
+        type: object
+        required:
+          - token
+        properties:
+          token:
+            type: string
   User:
     type: object
     required:
       - id
       - createTime
       - roleId
+      - login
     properties:
       id:
         type: integer
+      login:
+        type: string
       createTime:
         type: string
         format: date-time
       roleId:
         type: integer
+  UserRegister:
+    type: object
+    required:
+      - login
+      - password
+    properties:
+      login:
+        type: string
+        minLength: 3
+      password:
+        type: string
+        minLength: 6
   CreateUserResponse:
     type: object
     required:

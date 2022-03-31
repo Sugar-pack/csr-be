@@ -172,6 +172,14 @@ func (uc *UserCreate) SetType(u user.Type) *UserCreate {
 	return uc
 }
 
+// SetNillableType sets the "type" field if the given value is not nil.
+func (uc *UserCreate) SetNillableType(u *user.Type) *UserCreate {
+	if u != nil {
+		uc.SetType(*u)
+	}
+	return uc
+}
+
 // SetOrgName sets the "org_name" field.
 func (uc *UserCreate) SetOrgName(s string) *UserCreate {
 	uc.mutation.SetOrgName(s)
@@ -312,6 +320,10 @@ func (uc *UserCreate) defaults() {
 	if _, ok := uc.mutation.IsBlocked(); !ok {
 		v := user.DefaultIsBlocked
 		uc.mutation.SetIsBlocked(v)
+	}
+	if _, ok := uc.mutation.GetType(); !ok {
+		v := user.DefaultType
+		uc.mutation.SetType(v)
 	}
 }
 
