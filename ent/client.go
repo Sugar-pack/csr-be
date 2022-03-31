@@ -10,6 +10,7 @@ import (
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/migrate"
 
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/activearea"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/equipment"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/group"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/kind"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/permission"
@@ -29,6 +30,8 @@ type Client struct {
 	Schema *migrate.Schema
 	// ActiveArea is the client for interacting with the ActiveArea builders.
 	ActiveArea *ActiveAreaClient
+	// Equipment is the client for interacting with the Equipment builders.
+	Equipment *EquipmentClient
 	// Group is the client for interacting with the Group builders.
 	Group *GroupClient
 	// Kind is the client for interacting with the Kind builders.
@@ -55,6 +58,7 @@ func NewClient(opts ...Option) *Client {
 func (c *Client) init() {
 	c.Schema = migrate.NewSchema(c.driver)
 	c.ActiveArea = NewActiveAreaClient(c.config)
+	c.Equipment = NewEquipmentClient(c.config)
 	c.Group = NewGroupClient(c.config)
 	c.Kind = NewKindClient(c.config)
 	c.Permission = NewPermissionClient(c.config)
@@ -95,6 +99,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		ctx:        ctx,
 		config:     cfg,
 		ActiveArea: NewActiveAreaClient(cfg),
+		Equipment:  NewEquipmentClient(cfg),
 		Group:      NewGroupClient(cfg),
 		Kind:       NewKindClient(cfg),
 		Permission: NewPermissionClient(cfg),
@@ -121,6 +126,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		ctx:        ctx,
 		config:     cfg,
 		ActiveArea: NewActiveAreaClient(cfg),
+		Equipment:  NewEquipmentClient(cfg),
 		Group:      NewGroupClient(cfg),
 		Kind:       NewKindClient(cfg),
 		Permission: NewPermissionClient(cfg),
@@ -157,6 +163,7 @@ func (c *Client) Close() error {
 // In order to add hooks to a specific client, call: `client.Node.Use(...)`.
 func (c *Client) Use(hooks ...Hook) {
 	c.ActiveArea.Use(hooks...)
+	c.Equipment.Use(hooks...)
 	c.Group.Use(hooks...)
 	c.Kind.Use(hooks...)
 	c.Permission.Use(hooks...)
@@ -269,6 +276,128 @@ func (c *ActiveAreaClient) QueryUsers(aa *ActiveArea) *UserQuery {
 // Hooks returns the client hooks.
 func (c *ActiveAreaClient) Hooks() []Hook {
 	return c.hooks.ActiveArea
+}
+
+// EquipmentClient is a client for the Equipment schema.
+type EquipmentClient struct {
+	config
+}
+
+// NewEquipmentClient returns a client for the Equipment from the given config.
+func NewEquipmentClient(c config) *EquipmentClient {
+	return &EquipmentClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `equipment.Hooks(f(g(h())))`.
+func (c *EquipmentClient) Use(hooks ...Hook) {
+	c.hooks.Equipment = append(c.hooks.Equipment, hooks...)
+}
+
+// Create returns a create builder for Equipment.
+func (c *EquipmentClient) Create() *EquipmentCreate {
+	mutation := newEquipmentMutation(c.config, OpCreate)
+	return &EquipmentCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of Equipment entities.
+func (c *EquipmentClient) CreateBulk(builders ...*EquipmentCreate) *EquipmentCreateBulk {
+	return &EquipmentCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for Equipment.
+func (c *EquipmentClient) Update() *EquipmentUpdate {
+	mutation := newEquipmentMutation(c.config, OpUpdate)
+	return &EquipmentUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *EquipmentClient) UpdateOne(e *Equipment) *EquipmentUpdateOne {
+	mutation := newEquipmentMutation(c.config, OpUpdateOne, withEquipment(e))
+	return &EquipmentUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *EquipmentClient) UpdateOneID(id int) *EquipmentUpdateOne {
+	mutation := newEquipmentMutation(c.config, OpUpdateOne, withEquipmentID(id))
+	return &EquipmentUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for Equipment.
+func (c *EquipmentClient) Delete() *EquipmentDelete {
+	mutation := newEquipmentMutation(c.config, OpDelete)
+	return &EquipmentDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a delete builder for the given entity.
+func (c *EquipmentClient) DeleteOne(e *Equipment) *EquipmentDeleteOne {
+	return c.DeleteOneID(e.ID)
+}
+
+// DeleteOneID returns a delete builder for the given id.
+func (c *EquipmentClient) DeleteOneID(id int) *EquipmentDeleteOne {
+	builder := c.Delete().Where(equipment.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &EquipmentDeleteOne{builder}
+}
+
+// Query returns a query builder for Equipment.
+func (c *EquipmentClient) Query() *EquipmentQuery {
+	return &EquipmentQuery{
+		config: c.config,
+	}
+}
+
+// Get returns a Equipment entity by its id.
+func (c *EquipmentClient) Get(ctx context.Context, id int) (*Equipment, error) {
+	return c.Query().Where(equipment.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *EquipmentClient) GetX(ctx context.Context, id int) *Equipment {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryKind queries the kind edge of a Equipment.
+func (c *EquipmentClient) QueryKind(e *Equipment) *KindQuery {
+	query := &KindQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := e.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(equipment.Table, equipment.FieldID, id),
+			sqlgraph.To(kind.Table, kind.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, equipment.KindTable, equipment.KindColumn),
+		)
+		fromV = sqlgraph.Neighbors(e.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryStatus queries the status edge of a Equipment.
+func (c *EquipmentClient) QueryStatus(e *Equipment) *StatusesQuery {
+	query := &StatusesQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := e.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(equipment.Table, equipment.FieldID, id),
+			sqlgraph.To(statuses.Table, statuses.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, equipment.StatusTable, equipment.StatusColumn),
+		)
+		fromV = sqlgraph.Neighbors(e.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *EquipmentClient) Hooks() []Hook {
+	return c.hooks.Equipment
 }
 
 // GroupClient is a client for the Group schema.
@@ -476,6 +605,22 @@ func (c *KindClient) GetX(ctx context.Context, id int) *Kind {
 		panic(err)
 	}
 	return obj
+}
+
+// QueryEquipments queries the equipments edge of a Kind.
+func (c *KindClient) QueryEquipments(k *Kind) *EquipmentQuery {
+	query := &EquipmentQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := k.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(kind.Table, kind.FieldID, id),
+			sqlgraph.To(equipment.Table, equipment.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, kind.EquipmentsTable, kind.EquipmentsColumn),
+		)
+		fromV = sqlgraph.Neighbors(k.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
 }
 
 // Hooks returns the client hooks.
@@ -778,6 +923,22 @@ func (c *StatusesClient) GetX(ctx context.Context, id int) *Statuses {
 		panic(err)
 	}
 	return obj
+}
+
+// QueryEquipments queries the equipments edge of a Statuses.
+func (c *StatusesClient) QueryEquipments(s *Statuses) *EquipmentQuery {
+	query := &EquipmentQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := s.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(statuses.Table, statuses.FieldID, id),
+			sqlgraph.To(equipment.Table, equipment.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, statuses.EquipmentsTable, statuses.EquipmentsColumn),
+		)
+		fromV = sqlgraph.Neighbors(s.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
 }
 
 // Hooks returns the client hooks.

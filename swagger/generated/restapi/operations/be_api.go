@@ -20,6 +20,7 @@ import (
 	"github.com/go-openapi/swag"
 
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/restapi/operations/active_areas"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/restapi/operations/equipment"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/restapi/operations/kinds"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/restapi/operations/roles"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/restapi/operations/status"
@@ -51,17 +52,35 @@ func NewBeAPI(spec *loads.Document) *BeAPI {
 		UsersAssignRoleToUserHandler: users.AssignRoleToUserHandlerFunc(func(params users.AssignRoleToUserParams) middleware.Responder {
 			return middleware.NotImplemented("operation users.AssignRoleToUser has not yet been implemented")
 		}),
+		EquipmentCreateNewEquipmentHandler: equipment.CreateNewEquipmentHandlerFunc(func(params equipment.CreateNewEquipmentParams) middleware.Responder {
+			return middleware.NotImplemented("operation equipment.CreateNewEquipment has not yet been implemented")
+		}),
 		KindsCreateNewKindHandler: kinds.CreateNewKindHandlerFunc(func(params kinds.CreateNewKindParams) middleware.Responder {
 			return middleware.NotImplemented("operation kinds.CreateNewKind has not yet been implemented")
+		}),
+		EquipmentDeleteEquipmentHandler: equipment.DeleteEquipmentHandlerFunc(func(params equipment.DeleteEquipmentParams) middleware.Responder {
+			return middleware.NotImplemented("operation equipment.DeleteEquipment has not yet been implemented")
 		}),
 		StatusDeleteStatusHandler: status.DeleteStatusHandlerFunc(func(params status.DeleteStatusParams) middleware.Responder {
 			return middleware.NotImplemented("operation status.DeleteStatus has not yet been implemented")
 		}),
+		EquipmentEditEquipmentHandler: equipment.EditEquipmentHandlerFunc(func(params equipment.EditEquipmentParams) middleware.Responder {
+			return middleware.NotImplemented("operation equipment.EditEquipment has not yet been implemented")
+		}),
+		EquipmentFindEquipmentHandler: equipment.FindEquipmentHandlerFunc(func(params equipment.FindEquipmentParams) middleware.Responder {
+			return middleware.NotImplemented("operation equipment.FindEquipment has not yet been implemented")
+		}),
 		ActiveAreasGetAllActiveAreasHandler: active_areas.GetAllActiveAreasHandlerFunc(func(params active_areas.GetAllActiveAreasParams) middleware.Responder {
 			return middleware.NotImplemented("operation active_areas.GetAllActiveAreas has not yet been implemented")
 		}),
+		EquipmentGetAllEquipmentHandler: equipment.GetAllEquipmentHandlerFunc(func(params equipment.GetAllEquipmentParams) middleware.Responder {
+			return middleware.NotImplemented("operation equipment.GetAllEquipment has not yet been implemented")
+		}),
 		KindsGetAllKindsHandler: kinds.GetAllKindsHandlerFunc(func(params kinds.GetAllKindsParams) middleware.Responder {
 			return middleware.NotImplemented("operation kinds.GetAllKinds has not yet been implemented")
+		}),
+		EquipmentGetEquipmentHandler: equipment.GetEquipmentHandlerFunc(func(params equipment.GetEquipmentParams) middleware.Responder {
+			return middleware.NotImplemented("operation equipment.GetEquipment has not yet been implemented")
 		}),
 		RolesGetRolesHandler: roles.GetRolesHandlerFunc(func(params roles.GetRolesParams) middleware.Responder {
 			return middleware.NotImplemented("operation roles.GetRoles has not yet been implemented")
@@ -146,14 +165,26 @@ type BeAPI struct {
 
 	// UsersAssignRoleToUserHandler sets the operation handler for the assign role to user operation
 	UsersAssignRoleToUserHandler users.AssignRoleToUserHandler
+	// EquipmentCreateNewEquipmentHandler sets the operation handler for the create new equipment operation
+	EquipmentCreateNewEquipmentHandler equipment.CreateNewEquipmentHandler
 	// KindsCreateNewKindHandler sets the operation handler for the create new kind operation
 	KindsCreateNewKindHandler kinds.CreateNewKindHandler
+	// EquipmentDeleteEquipmentHandler sets the operation handler for the delete equipment operation
+	EquipmentDeleteEquipmentHandler equipment.DeleteEquipmentHandler
 	// StatusDeleteStatusHandler sets the operation handler for the delete status operation
 	StatusDeleteStatusHandler status.DeleteStatusHandler
+	// EquipmentEditEquipmentHandler sets the operation handler for the edit equipment operation
+	EquipmentEditEquipmentHandler equipment.EditEquipmentHandler
+	// EquipmentFindEquipmentHandler sets the operation handler for the find equipment operation
+	EquipmentFindEquipmentHandler equipment.FindEquipmentHandler
 	// ActiveAreasGetAllActiveAreasHandler sets the operation handler for the get all active areas operation
 	ActiveAreasGetAllActiveAreasHandler active_areas.GetAllActiveAreasHandler
+	// EquipmentGetAllEquipmentHandler sets the operation handler for the get all equipment operation
+	EquipmentGetAllEquipmentHandler equipment.GetAllEquipmentHandler
 	// KindsGetAllKindsHandler sets the operation handler for the get all kinds operation
 	KindsGetAllKindsHandler kinds.GetAllKindsHandler
+	// EquipmentGetEquipmentHandler sets the operation handler for the get equipment operation
+	EquipmentGetEquipmentHandler equipment.GetEquipmentHandler
 	// RolesGetRolesHandler sets the operation handler for the get roles operation
 	RolesGetRolesHandler roles.GetRolesHandler
 	// StatusGetStatusHandler sets the operation handler for the get status operation
@@ -258,17 +289,35 @@ func (o *BeAPI) Validate() error {
 	if o.UsersAssignRoleToUserHandler == nil {
 		unregistered = append(unregistered, "users.AssignRoleToUserHandler")
 	}
+	if o.EquipmentCreateNewEquipmentHandler == nil {
+		unregistered = append(unregistered, "equipment.CreateNewEquipmentHandler")
+	}
 	if o.KindsCreateNewKindHandler == nil {
 		unregistered = append(unregistered, "kinds.CreateNewKindHandler")
+	}
+	if o.EquipmentDeleteEquipmentHandler == nil {
+		unregistered = append(unregistered, "equipment.DeleteEquipmentHandler")
 	}
 	if o.StatusDeleteStatusHandler == nil {
 		unregistered = append(unregistered, "status.DeleteStatusHandler")
 	}
+	if o.EquipmentEditEquipmentHandler == nil {
+		unregistered = append(unregistered, "equipment.EditEquipmentHandler")
+	}
+	if o.EquipmentFindEquipmentHandler == nil {
+		unregistered = append(unregistered, "equipment.FindEquipmentHandler")
+	}
 	if o.ActiveAreasGetAllActiveAreasHandler == nil {
 		unregistered = append(unregistered, "active_areas.GetAllActiveAreasHandler")
 	}
+	if o.EquipmentGetAllEquipmentHandler == nil {
+		unregistered = append(unregistered, "equipment.GetAllEquipmentHandler")
+	}
 	if o.KindsGetAllKindsHandler == nil {
 		unregistered = append(unregistered, "kinds.GetAllKindsHandler")
+	}
+	if o.EquipmentGetEquipmentHandler == nil {
+		unregistered = append(unregistered, "equipment.GetEquipmentHandler")
 	}
 	if o.RolesGetRolesHandler == nil {
 		unregistered = append(unregistered, "roles.GetRolesHandler")
@@ -404,11 +453,27 @@ func (o *BeAPI) initHandlerCache() {
 	if o.handlers["POST"] == nil {
 		o.handlers["POST"] = make(map[string]http.Handler)
 	}
+	o.handlers["POST"]["/equipment"] = equipment.NewCreateNewEquipment(o.context, o.EquipmentCreateNewEquipmentHandler)
+	if o.handlers["POST"] == nil {
+		o.handlers["POST"] = make(map[string]http.Handler)
+	}
 	o.handlers["POST"]["/equipment/kinds"] = kinds.NewCreateNewKind(o.context, o.KindsCreateNewKindHandler)
 	if o.handlers["DELETE"] == nil {
 		o.handlers["DELETE"] = make(map[string]http.Handler)
 	}
+	o.handlers["DELETE"]["/equipment/{equipmentId}"] = equipment.NewDeleteEquipment(o.context, o.EquipmentDeleteEquipmentHandler)
+	if o.handlers["DELETE"] == nil {
+		o.handlers["DELETE"] = make(map[string]http.Handler)
+	}
 	o.handlers["DELETE"]["/equipment/statuses/{statusId}"] = status.NewDeleteStatus(o.context, o.StatusDeleteStatusHandler)
+	if o.handlers["PUT"] == nil {
+		o.handlers["PUT"] = make(map[string]http.Handler)
+	}
+	o.handlers["PUT"]["/equipment/{equipmentId}"] = equipment.NewEditEquipment(o.context, o.EquipmentEditEquipmentHandler)
+	if o.handlers["POST"] == nil {
+		o.handlers["POST"] = make(map[string]http.Handler)
+	}
+	o.handlers["POST"]["/findEquipment"] = equipment.NewFindEquipment(o.context, o.EquipmentFindEquipmentHandler)
 	if o.handlers["GET"] == nil {
 		o.handlers["GET"] = make(map[string]http.Handler)
 	}
@@ -416,7 +481,15 @@ func (o *BeAPI) initHandlerCache() {
 	if o.handlers["GET"] == nil {
 		o.handlers["GET"] = make(map[string]http.Handler)
 	}
+	o.handlers["GET"]["/equipment"] = equipment.NewGetAllEquipment(o.context, o.EquipmentGetAllEquipmentHandler)
+	if o.handlers["GET"] == nil {
+		o.handlers["GET"] = make(map[string]http.Handler)
+	}
 	o.handlers["GET"]["/equipment/kinds"] = kinds.NewGetAllKinds(o.context, o.KindsGetAllKindsHandler)
+	if o.handlers["GET"] == nil {
+		o.handlers["GET"] = make(map[string]http.Handler)
+	}
+	o.handlers["GET"]["/equipment/{equipmentId}"] = equipment.NewGetEquipment(o.context, o.EquipmentGetEquipmentHandler)
 	if o.handlers["GET"] == nil {
 		o.handlers["GET"] = make(map[string]http.Handler)
 	}
