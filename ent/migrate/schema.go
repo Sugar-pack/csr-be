@@ -19,6 +19,37 @@ var (
 		Columns:    ActiveAreasColumns,
 		PrimaryKey: []*schema.Column{ActiveAreasColumns[0]},
 	}
+	// EquipmentColumns holds the columns for the "equipment" table.
+	EquipmentColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "sku", Type: field.TypeString, Default: "unknown"},
+		{Name: "name", Type: field.TypeString, Default: "unknown"},
+		{Name: "rate_hour", Type: field.TypeInt64},
+		{Name: "rate_day", Type: field.TypeInt64},
+		{Name: "description", Type: field.TypeString, Default: "unknown"},
+		{Name: "kind_equipments", Type: field.TypeInt, Nullable: true},
+		{Name: "statuses_equipments", Type: field.TypeInt, Nullable: true},
+	}
+	// EquipmentTable holds the schema information for the "equipment" table.
+	EquipmentTable = &schema.Table{
+		Name:       "equipment",
+		Columns:    EquipmentColumns,
+		PrimaryKey: []*schema.Column{EquipmentColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "equipment_kinds_equipments",
+				Columns:    []*schema.Column{EquipmentColumns[6]},
+				RefColumns: []*schema.Column{KindsColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+			{
+				Symbol:     "equipment_statuses_equipments",
+				Columns:    []*schema.Column{EquipmentColumns[7]},
+				RefColumns: []*schema.Column{StatusesColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+		},
+	}
 	// GroupsColumns holds the columns for the "groups" table.
 	GroupsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt, Increment: true},
@@ -170,6 +201,7 @@ var (
 	// Tables holds all the tables in the schema.
 	Tables = []*schema.Table{
 		ActiveAreasTable,
+		EquipmentTable,
 		GroupsTable,
 		KindsTable,
 		PermissionsTable,
@@ -182,6 +214,8 @@ var (
 )
 
 func init() {
+	EquipmentTable.ForeignKeys[0].RefTable = KindsTable
+	EquipmentTable.ForeignKeys[1].RefTable = StatusesTable
 	UsersTable.ForeignKeys[0].RefTable = ActiveAreasTable
 	UsersTable.ForeignKeys[1].RefTable = RolesTable
 	GroupUsersTable.ForeignKeys[0].RefTable = GroupsTable

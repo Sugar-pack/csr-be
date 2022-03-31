@@ -67,6 +67,11 @@ func main() {
 		return
 	}
 
+	equipmentHandler := handlers.NewEquipment(
+		client,
+		logger,
+	)
+
 	userHandler := handlers.NewUser(
 		client,
 		logger,
@@ -111,6 +116,13 @@ func main() {
 	api.StatusGetStatusesHandler = statusHandler.GetStatusesFunc()
 	api.StatusGetStatusHandler = statusHandler.GetStatusFunc()
 	api.StatusDeleteStatusHandler = statusHandler.DeleteStatusFunc()
+
+	api.EquipmentCreateNewEquipmentHandler = equipmentHandler.PostEquipmentFunc()
+	api.EquipmentGetEquipmentHandler = equipmentHandler.GetEquipmentFunc()
+	api.EquipmentDeleteEquipmentHandler = equipmentHandler.DeleteEquipmentFunc()
+	api.EquipmentGetAllEquipmentHandler = equipmentHandler.ListEquipmentFunc()
+	api.EquipmentEditEquipmentHandler = equipmentHandler.EditEquipmentFunc()
+	api.EquipmentFindEquipmentHandler = equipmentHandler.FindEquipmentFunc()
 
 	api.ActiveAreasGetAllActiveAreasHandler = activeAreasHandler.GetActiveAreasFunc()
 

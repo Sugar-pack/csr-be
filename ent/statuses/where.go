@@ -4,6 +4,7 @@ package statuses
 
 import (
 	"entgo.io/ent/dialect/sql"
+	"entgo.io/ent/dialect/sql/sqlgraph"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/predicate"
 )
 
@@ -205,6 +206,34 @@ func NameEqualFold(v string) predicate.Statuses {
 func NameContainsFold(v string) predicate.Statuses {
 	return predicate.Statuses(func(s *sql.Selector) {
 		s.Where(sql.ContainsFold(s.C(FieldName), v))
+	})
+}
+
+// HasEquipments applies the HasEdge predicate on the "equipments" edge.
+func HasEquipments() predicate.Statuses {
+	return predicate.Statuses(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(EquipmentsTable, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, EquipmentsTable, EquipmentsColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasEquipmentsWith applies the HasEdge predicate on the "equipments" edge with a given conditions (other predicates).
+func HasEquipmentsWith(preds ...predicate.Equipment) predicate.Statuses {
+	return predicate.Statuses(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(EquipmentsInverseTable, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, EquipmentsTable, EquipmentsColumn),
+		)
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
 	})
 }
 

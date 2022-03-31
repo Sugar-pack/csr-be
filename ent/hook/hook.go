@@ -22,6 +22,19 @@ func (f ActiveAreaFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, 
 	return f(ctx, mv)
 }
 
+// The EquipmentFunc type is an adapter to allow the use of ordinary
+// function as Equipment mutator.
+type EquipmentFunc func(context.Context, *ent.EquipmentMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f EquipmentFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	mv, ok := m.(*ent.EquipmentMutation)
+	if !ok {
+		return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.EquipmentMutation", m)
+	}
+	return f(ctx, mv)
+}
+
 // The GroupFunc type is an adapter to allow the use of ordinary
 // function as Group mutator.
 type GroupFunc func(context.Context, *ent.GroupMutation) (ent.Value, error)

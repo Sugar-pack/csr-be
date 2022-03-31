@@ -9,8 +9,17 @@ const (
 	FieldID = "id"
 	// FieldName holds the string denoting the name field in the database.
 	FieldName = "name"
+	// EdgeEquipments holds the string denoting the equipments edge name in mutations.
+	EdgeEquipments = "equipments"
 	// Table holds the table name of the statuses in the database.
 	Table = "statuses"
+	// EquipmentsTable is the table that holds the equipments relation/edge.
+	EquipmentsTable = "equipment"
+	// EquipmentsInverseTable is the table name for the Equipment entity.
+	// It exists in this package in order to avoid circular dependency with the "equipment" package.
+	EquipmentsInverseTable = "equipment"
+	// EquipmentsColumn is the table column denoting the equipments relation/edge.
+	EquipmentsColumn = "statuses_equipments"
 )
 
 // Columns holds all SQL columns for statuses fields.

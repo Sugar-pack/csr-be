@@ -10,6 +10,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/equipment"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/kind"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/predicate"
 )
@@ -83,9 +84,45 @@ func (ku *KindUpdate) AddMaxReservationUnits(i int64) *KindUpdate {
 	return ku
 }
 
+// AddEquipmentIDs adds the "equipments" edge to the Equipment entity by IDs.
+func (ku *KindUpdate) AddEquipmentIDs(ids ...int) *KindUpdate {
+	ku.mutation.AddEquipmentIDs(ids...)
+	return ku
+}
+
+// AddEquipments adds the "equipments" edges to the Equipment entity.
+func (ku *KindUpdate) AddEquipments(e ...*Equipment) *KindUpdate {
+	ids := make([]int, len(e))
+	for i := range e {
+		ids[i] = e[i].ID
+	}
+	return ku.AddEquipmentIDs(ids...)
+}
+
 // Mutation returns the KindMutation object of the builder.
 func (ku *KindUpdate) Mutation() *KindMutation {
 	return ku.mutation
+}
+
+// ClearEquipments clears all "equipments" edges to the Equipment entity.
+func (ku *KindUpdate) ClearEquipments() *KindUpdate {
+	ku.mutation.ClearEquipments()
+	return ku
+}
+
+// RemoveEquipmentIDs removes the "equipments" edge to Equipment entities by IDs.
+func (ku *KindUpdate) RemoveEquipmentIDs(ids ...int) *KindUpdate {
+	ku.mutation.RemoveEquipmentIDs(ids...)
+	return ku
+}
+
+// RemoveEquipments removes "equipments" edges to Equipment entities.
+func (ku *KindUpdate) RemoveEquipments(e ...*Equipment) *KindUpdate {
+	ids := make([]int, len(e))
+	for i := range e {
+		ids[i] = e[i].ID
+	}
+	return ku.RemoveEquipmentIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -195,6 +232,60 @@ func (ku *KindUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Column: kind.FieldMaxReservationUnits,
 		})
 	}
+	if ku.mutation.EquipmentsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   kind.EquipmentsTable,
+			Columns: []string{kind.EquipmentsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: equipment.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := ku.mutation.RemovedEquipmentsIDs(); len(nodes) > 0 && !ku.mutation.EquipmentsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   kind.EquipmentsTable,
+			Columns: []string{kind.EquipmentsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: equipment.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := ku.mutation.EquipmentsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   kind.EquipmentsTable,
+			Columns: []string{kind.EquipmentsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: equipment.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if n, err = sqlgraph.UpdateNodes(ctx, ku.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{kind.Label}
@@ -270,9 +361,45 @@ func (kuo *KindUpdateOne) AddMaxReservationUnits(i int64) *KindUpdateOne {
 	return kuo
 }
 
+// AddEquipmentIDs adds the "equipments" edge to the Equipment entity by IDs.
+func (kuo *KindUpdateOne) AddEquipmentIDs(ids ...int) *KindUpdateOne {
+	kuo.mutation.AddEquipmentIDs(ids...)
+	return kuo
+}
+
+// AddEquipments adds the "equipments" edges to the Equipment entity.
+func (kuo *KindUpdateOne) AddEquipments(e ...*Equipment) *KindUpdateOne {
+	ids := make([]int, len(e))
+	for i := range e {
+		ids[i] = e[i].ID
+	}
+	return kuo.AddEquipmentIDs(ids...)
+}
+
 // Mutation returns the KindMutation object of the builder.
 func (kuo *KindUpdateOne) Mutation() *KindMutation {
 	return kuo.mutation
+}
+
+// ClearEquipments clears all "equipments" edges to the Equipment entity.
+func (kuo *KindUpdateOne) ClearEquipments() *KindUpdateOne {
+	kuo.mutation.ClearEquipments()
+	return kuo
+}
+
+// RemoveEquipmentIDs removes the "equipments" edge to Equipment entities by IDs.
+func (kuo *KindUpdateOne) RemoveEquipmentIDs(ids ...int) *KindUpdateOne {
+	kuo.mutation.RemoveEquipmentIDs(ids...)
+	return kuo
+}
+
+// RemoveEquipments removes "equipments" edges to Equipment entities.
+func (kuo *KindUpdateOne) RemoveEquipments(e ...*Equipment) *KindUpdateOne {
+	ids := make([]int, len(e))
+	for i := range e {
+		ids[i] = e[i].ID
+	}
+	return kuo.RemoveEquipmentIDs(ids...)
 }
 
 // Select allows selecting one or more fields (columns) of the returned entity.
@@ -405,6 +532,60 @@ func (kuo *KindUpdateOne) sqlSave(ctx context.Context) (_node *Kind, err error) 
 			Value:  value,
 			Column: kind.FieldMaxReservationUnits,
 		})
+	}
+	if kuo.mutation.EquipmentsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   kind.EquipmentsTable,
+			Columns: []string{kind.EquipmentsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: equipment.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := kuo.mutation.RemovedEquipmentsIDs(); len(nodes) > 0 && !kuo.mutation.EquipmentsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   kind.EquipmentsTable,
+			Columns: []string{kind.EquipmentsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: equipment.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := kuo.mutation.EquipmentsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   kind.EquipmentsTable,
+			Columns: []string{kind.EquipmentsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: equipment.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	_node = &Kind{config: kuo.config}
 	_spec.Assign = _node.assignValues

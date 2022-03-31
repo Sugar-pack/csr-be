@@ -35,6 +35,64 @@ func init() {
   },
   "basePath": "/api/",
   "paths": {
+    "/equipment": {
+      "get": {
+        "tags": [
+          "Equipment"
+        ],
+        "summary": "Get all equipment",
+        "operationId": "GetAllEquipment",
+        "responses": {
+          "201": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/ListEquipment"
+            }
+          },
+          "default": {
+            "description": "Unexpected error.",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        }
+      },
+      "post": {
+        "consumes": [
+          "application/json"
+        ],
+        "tags": [
+          "Equipment"
+        ],
+        "summary": "Register a new equipment",
+        "operationId": "CreateNewEquipment",
+        "parameters": [
+          {
+            "description": "Create a new equipment",
+            "name": "newEquipment",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/Equipment"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Equipment created",
+            "schema": {
+              "$ref": "#/definitions/EquipmentResponse"
+            }
+          },
+          "default": {
+            "description": "Unexpected error.",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        }
+      }
+    },
     "/equipment/kinds": {
       "get": {
         "tags": [
@@ -281,6 +339,123 @@ func init() {
           "required": true
         }
       ]
+    },
+    "/equipment/{equipmentId}": {
+      "get": {
+        "tags": [
+          "Equipment"
+        ],
+        "summary": "Get equipment by id",
+        "operationId": "GetEquipment",
+        "responses": {
+          "201": {
+            "description": "Equipment has been found",
+            "schema": {
+              "$ref": "#/definitions/Equipment"
+            }
+          },
+          "default": {
+            "description": "Unexpected error.",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Equipment"
+        ],
+        "summary": "Edit equipment by id",
+        "operationId": "EditEquipment",
+        "parameters": [
+          {
+            "description": "Edit an equipment",
+            "name": "EditEquipment",
+            "in": "body",
+            "schema": {
+              "$ref": "#/definitions/Equipment"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Equipment edited",
+            "schema": {
+              "$ref": "#/definitions/Equipment"
+            }
+          },
+          "default": {
+            "description": "Unexpected error.",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Equipment"
+        ],
+        "summary": "Delete equipment by id",
+        "operationId": "DeleteEquipment",
+        "responses": {
+          "201": {
+            "description": "Equipment has been deleted",
+            "schema": {
+              "$ref": "#/definitions/Equipment"
+            }
+          },
+          "default": {
+            "description": "Unexpected error.",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        }
+      },
+      "parameters": [
+        {
+          "type": "string",
+          "description": "equipment id",
+          "name": "equipmentId",
+          "in": "path",
+          "required": true
+        }
+      ]
+    },
+    "/findEquipment": {
+      "post": {
+        "tags": [
+          "Equipment"
+        ],
+        "summary": "Equipment filtered list",
+        "operationId": "FindEquipment",
+        "parameters": [
+          {
+            "description": "Filtered list of an equipment",
+            "name": "FindEquipment",
+            "in": "body",
+            "schema": {
+              "$ref": "#/definitions/Equipment"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Equipment has been found",
+            "schema": {
+              "$ref": "#/definitions/ListEquipment"
+            }
+          },
+          "default": {
+            "description": "Unexpected error.",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        }
+      }
     },
     "/v1/active_areas": {
       "get": {
@@ -542,6 +717,111 @@ func init() {
         }
       }
     },
+    "Equipment": {
+      "type": "object",
+      "required": [
+        "sku",
+        "name",
+        "kind",
+        "status",
+        "rate_hour",
+        "rate_day",
+        "location",
+        "description",
+        "photo"
+      ],
+      "properties": {
+        "description": {
+          "type": "string",
+          "example": "This is a dog harness.\nWARNING: do not put on cats!"
+        },
+        "kind": {
+          "type": "integer",
+          "example": 5
+        },
+        "location": {
+          "type": "integer",
+          "example": 71
+        },
+        "name": {
+          "type": "string",
+          "example": "Dog harness 3000"
+        },
+        "photo": {
+          "type": "string",
+          "example": "https://..."
+        },
+        "rate_day": {
+          "type": "integer"
+        },
+        "rate_hour": {
+          "type": "integer"
+        },
+        "sku": {
+          "type": "string",
+          "example": "ABC012345678"
+        },
+        "status": {
+          "type": "integer",
+          "example": 1
+        }
+      }
+    },
+    "EquipmentResponse": {
+      "type": "object",
+      "required": [
+        "id",
+        "sku",
+        "name",
+        "kind",
+        "status",
+        "rate_hour",
+        "rate_day",
+        "location",
+        "description",
+        "photo"
+      ],
+      "properties": {
+        "description": {
+          "type": "string",
+          "example": "This is a dog harness.\nWARNING: do not put on cats!"
+        },
+        "id": {
+          "type": "string",
+          "example": 2
+        },
+        "kind": {
+          "type": "integer",
+          "example": 5
+        },
+        "location": {
+          "type": "integer",
+          "example": 71
+        },
+        "name": {
+          "type": "string",
+          "example": "Dog harness 3000"
+        },
+        "photo": {
+          "type": "string",
+          "example": "https://..."
+        },
+        "rate_day": {
+          "type": "integer"
+        },
+        "rate_hour": {
+          "type": "integer"
+        },
+        "sku": {
+          "type": "string",
+          "example": "ABC012345678"
+        },
+        "status": {
+          "type": "integer",
+          "example": 1
+        }
+      }
+    },
     "Error": {
       "type": "object",
       "required": [
@@ -601,6 +881,12 @@ func init() {
         "name": {
           "type": "string"
         }
+      }
+    },
+    "ListEquipment": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/EquipmentResponse"
       }
     },
     "ListOfActiveAreas": {
@@ -803,6 +1089,64 @@ func init() {
   },
   "basePath": "/api/",
   "paths": {
+    "/equipment": {
+      "get": {
+        "tags": [
+          "Equipment"
+        ],
+        "summary": "Get all equipment",
+        "operationId": "GetAllEquipment",
+        "responses": {
+          "201": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/ListEquipment"
+            }
+          },
+          "default": {
+            "description": "Unexpected error.",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        }
+      },
+      "post": {
+        "consumes": [
+          "application/json"
+        ],
+        "tags": [
+          "Equipment"
+        ],
+        "summary": "Register a new equipment",
+        "operationId": "CreateNewEquipment",
+        "parameters": [
+          {
+            "description": "Create a new equipment",
+            "name": "newEquipment",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/Equipment"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Equipment created",
+            "schema": {
+              "$ref": "#/definitions/EquipmentResponse"
+            }
+          },
+          "default": {
+            "description": "Unexpected error.",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        }
+      }
+    },
     "/equipment/kinds": {
       "get": {
         "tags": [
@@ -1049,6 +1393,123 @@ func init() {
           "required": true
         }
       ]
+    },
+    "/equipment/{equipmentId}": {
+      "get": {
+        "tags": [
+          "Equipment"
+        ],
+        "summary": "Get equipment by id",
+        "operationId": "GetEquipment",
+        "responses": {
+          "201": {
+            "description": "Equipment has been found",
+            "schema": {
+              "$ref": "#/definitions/Equipment"
+            }
+          },
+          "default": {
+            "description": "Unexpected error.",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Equipment"
+        ],
+        "summary": "Edit equipment by id",
+        "operationId": "EditEquipment",
+        "parameters": [
+          {
+            "description": "Edit an equipment",
+            "name": "EditEquipment",
+            "in": "body",
+            "schema": {
+              "$ref": "#/definitions/Equipment"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Equipment edited",
+            "schema": {
+              "$ref": "#/definitions/Equipment"
+            }
+          },
+          "default": {
+            "description": "Unexpected error.",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Equipment"
+        ],
+        "summary": "Delete equipment by id",
+        "operationId": "DeleteEquipment",
+        "responses": {
+          "201": {
+            "description": "Equipment has been deleted",
+            "schema": {
+              "$ref": "#/definitions/Equipment"
+            }
+          },
+          "default": {
+            "description": "Unexpected error.",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        }
+      },
+      "parameters": [
+        {
+          "type": "string",
+          "description": "equipment id",
+          "name": "equipmentId",
+          "in": "path",
+          "required": true
+        }
+      ]
+    },
+    "/findEquipment": {
+      "post": {
+        "tags": [
+          "Equipment"
+        ],
+        "summary": "Equipment filtered list",
+        "operationId": "FindEquipment",
+        "parameters": [
+          {
+            "description": "Filtered list of an equipment",
+            "name": "FindEquipment",
+            "in": "body",
+            "schema": {
+              "$ref": "#/definitions/Equipment"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Equipment has been found",
+            "schema": {
+              "$ref": "#/definitions/ListEquipment"
+            }
+          },
+          "default": {
+            "description": "Unexpected error.",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        }
+      }
     },
     "/v1/active_areas": {
       "get": {
@@ -1321,6 +1782,111 @@ func init() {
         }
       }
     },
+    "Equipment": {
+      "type": "object",
+      "required": [
+        "sku",
+        "name",
+        "kind",
+        "status",
+        "rate_hour",
+        "rate_day",
+        "location",
+        "description",
+        "photo"
+      ],
+      "properties": {
+        "description": {
+          "type": "string",
+          "example": "This is a dog harness.\nWARNING: do not put on cats!"
+        },
+        "kind": {
+          "type": "integer",
+          "example": 5
+        },
+        "location": {
+          "type": "integer",
+          "example": 71
+        },
+        "name": {
+          "type": "string",
+          "example": "Dog harness 3000"
+        },
+        "photo": {
+          "type": "string",
+          "example": "https://..."
+        },
+        "rate_day": {
+          "type": "integer"
+        },
+        "rate_hour": {
+          "type": "integer"
+        },
+        "sku": {
+          "type": "string",
+          "example": "ABC012345678"
+        },
+        "status": {
+          "type": "integer",
+          "example": 1
+        }
+      }
+    },
+    "EquipmentResponse": {
+      "type": "object",
+      "required": [
+        "id",
+        "sku",
+        "name",
+        "kind",
+        "status",
+        "rate_hour",
+        "rate_day",
+        "location",
+        "description",
+        "photo"
+      ],
+      "properties": {
+        "description": {
+          "type": "string",
+          "example": "This is a dog harness.\nWARNING: do not put on cats!"
+        },
+        "id": {
+          "type": "string",
+          "example": 2
+        },
+        "kind": {
+          "type": "integer",
+          "example": 5
+        },
+        "location": {
+          "type": "integer",
+          "example": 71
+        },
+        "name": {
+          "type": "string",
+          "example": "Dog harness 3000"
+        },
+        "photo": {
+          "type": "string",
+          "example": "https://..."
+        },
+        "rate_day": {
+          "type": "integer"
+        },
+        "rate_hour": {
+          "type": "integer"
+        },
+        "sku": {
+          "type": "string",
+          "example": "ABC012345678"
+        },
+        "status": {
+          "type": "integer",
+          "example": 1
+        }
+      }
+    },
     "Error": {
       "type": "object",
       "required": [
@@ -1391,6 +1957,12 @@ func init() {
         "name": {
           "type": "string"
         }
+      }
+    },
+    "ListEquipment": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/EquipmentResponse"
       }
     },
     "ListOfActiveAreas": {

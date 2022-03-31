@@ -9,6 +9,7 @@ import (
 
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/equipment"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/kind"
 )
 
@@ -59,6 +60,21 @@ func (kc *KindCreate) SetNillableMaxReservationUnits(i *int64) *KindCreate {
 		kc.SetMaxReservationUnits(*i)
 	}
 	return kc
+}
+
+// AddEquipmentIDs adds the "equipments" edge to the Equipment entity by IDs.
+func (kc *KindCreate) AddEquipmentIDs(ids ...int) *KindCreate {
+	kc.mutation.AddEquipmentIDs(ids...)
+	return kc
+}
+
+// AddEquipments adds the "equipments" edges to the Equipment entity.
+func (kc *KindCreate) AddEquipments(e ...*Equipment) *KindCreate {
+	ids := make([]int, len(e))
+	for i := range e {
+		ids[i] = e[i].ID
+	}
+	return kc.AddEquipmentIDs(ids...)
 }
 
 // Mutation returns the KindMutation object of the builder.
@@ -207,6 +223,25 @@ func (kc *KindCreate) createSpec() (*Kind, *sqlgraph.CreateSpec) {
 			Column: kind.FieldMaxReservationUnits,
 		})
 		_node.MaxReservationUnits = value
+	}
+	if nodes := kc.mutation.EquipmentsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   kind.EquipmentsTable,
+			Columns: []string{kind.EquipmentsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: equipment.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec
 }

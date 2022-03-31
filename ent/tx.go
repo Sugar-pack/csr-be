@@ -14,6 +14,8 @@ type Tx struct {
 	config
 	// ActiveArea is the client for interacting with the ActiveArea builders.
 	ActiveArea *ActiveAreaClient
+	// Equipment is the client for interacting with the Equipment builders.
+	Equipment *EquipmentClient
 	// Group is the client for interacting with the Group builders.
 	Group *GroupClient
 	// Kind is the client for interacting with the Kind builders.
@@ -162,6 +164,7 @@ func (tx *Tx) Client() *Client {
 
 func (tx *Tx) init() {
 	tx.ActiveArea = NewActiveAreaClient(tx.config)
+	tx.Equipment = NewEquipmentClient(tx.config)
 	tx.Group = NewGroupClient(tx.config)
 	tx.Kind = NewKindClient(tx.config)
 	tx.Permission = NewPermissionClient(tx.config)
