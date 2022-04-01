@@ -57,5 +57,8 @@ To generate server files from spec:
 ```
 swagger generate server -f ./swagger/spec.yaml -s swagger/generated/restapi -m swagger/generated/models --exclude-main
 ```
-
+To generate schema:
+```
+go generate ./ent
+```
 

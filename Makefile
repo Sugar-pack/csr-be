@@ -5,7 +5,7 @@ endif
 tag:
 	echo "TAG=${TAG}" > .env
 
-build: tag
+build: tag generate
 	DOCKER_BUILDKIT=1 docker build --no-cache -t go_run:${TAG} --target run .
 
 up: 
@@ -35,6 +35,9 @@ local_run:
 local_lint:
 	golangci-lint run --out-format tab
 
+generate:
+	swagger generate server -f ./swagger/spec.yaml -s swagger/generated/restapi -m swagger/generated/models --exclude-main
+	go generate ./ent
 
 
 	

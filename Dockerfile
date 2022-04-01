@@ -6,10 +6,6 @@ COPY ent ent
 COPY swagger swagger
 COPY go.mod go.sum ./
 
-RUN go get -d github.com/go-swagger/go-swagger/cmd/swagger && \
-    go get -d entgo.io/ent/cmd/ent && \
-    go mod tidy -compat=1.17
-
 RUN CGO_ENABLED=0 GOARCH=amd64 GOOS=linux go build -ldflags "-extldflags '-static'" -o /go cmd/swagger/main.go
 
 
@@ -30,7 +26,5 @@ COPY ent ent
 COPY swagger swagger
 COPY .golangci.yml .golangci.yml
 COPY go.mod go.sum ./
-
-RUN go mod tidy -compat=1.17
 
 ENTRYPOINT [ "/usr/bin/golangci-lint", "run", "--out-format", "tab" ]
