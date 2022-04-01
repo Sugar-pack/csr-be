@@ -18,11 +18,14 @@ build:
   image: golang:1.17-alpine
   stage: build
   script:
-    - apk add --update --no-cache git && rm -rf /var/cache/apk/*
+    - apk add --update --no-cache git make && rm -rf /var/cache/apk/* 
+    - go install github.com/go-swagger/go-swagger/cmd/swagger@latest && go install entgo.io/ent/cmd/ent@latest
+    - make generate
     - CGO_ENABLED=0 GOARCH=amd64 GOOS=linux go build -ldflags "-extldflags '-static'" -o $CI_PROJECT_DIR/csr $CI_PROJECT_DIR/cmd/swagger/main.go
   artifacts:
     paths:
       - csr
+      
 deploy_stage:
   image: kroniak/ssh-client
   stage: deploy
