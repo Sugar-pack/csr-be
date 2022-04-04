@@ -16,9 +16,9 @@ type User struct {
 func (User) Fields() []ent.Field {
 	return []ent.Field{
 		field.String("login").Unique(),
-		field.String("email").Unique(),
-		field.String("password"),
-		field.String("name").Default("unknown"),
+		field.String("email").NotEmpty(),
+		field.String("password").NotEmpty(),
+		field.String("name").NotEmpty(),
 		field.String("surname").Optional().Nillable(),
 		field.String("patronymic").Optional().Nillable(),
 		field.String("passport_series").Optional().Nillable(),
@@ -34,6 +34,7 @@ func (User) Fields() []ent.Field {
 		field.Enum("type").Values("person", "organization").Default("person"),
 		field.String("org_name").Optional().Nillable(),
 		field.String("website").Optional().Nillable(),
+		field.String("vk").Optional().Nillable(),
 	}
 }
 
@@ -42,6 +43,7 @@ func (User) Edges() []ent.Edge {
 	return []ent.Edge{
 		edge.From("groups", Group.Type).Ref("users"),
 		edge.From("role", Role.Type).Ref("users").Unique(),
+		edge.From("active_areas", ActiveArea.Type).Ref("users"),
 		edge.From("order", Order.Type).Ref("users"),
 	}
 }
