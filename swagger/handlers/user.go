@@ -8,6 +8,7 @@ import (
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/authentication"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/models"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/restapi/operations/users"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/repositories"
 	"github.com/go-openapi/runtime/middleware"
 	"github.com/golang-jwt/jwt"
 	"go.uber.org/zap"
@@ -137,7 +138,7 @@ func (c User) PatchUserFunc() users.PatchUserHandlerFunc {
 	}
 }
 
-func (c User) AssignRoleToUserFunc() users.AssignRoleToUserHandlerFunc {
+func (c User) AssignRoleToUserFunc(repository repositories.UserRepository) users.AssignRoleToUserHandlerFunc {
 	return func(p users.AssignRoleToUserParams, access interface{}) middleware.Responder {
 		_, err := authentication.IsAdmin(access)
 		if err != nil {
@@ -146,32 +147,14 @@ func (c User) AssignRoleToUserFunc() users.AssignRoleToUserHandlerFunc {
 		ctx := p.HTTPRequest.Context()
 		userId := int(p.UserID)
 		roleId := int(*p.Data.RoleID)
-		foundUser, err := c.client.User.Get(ctx, userId)
+
+		foundUser, err := repository.SetUserRole(ctx, userId, roleId)
 		if err != nil {
-			return users.NewAssignRoleToUserDefault(http.StatusNotFound).WithPayload(&models.Error{
-				Data: &models.ErrorData{
-					Message: err.Error(),
-				},
-			})
+			return users.NewAssignRoleToUserDefault(http.StatusNotFound).WithPayload(buildErrorPayload(err))
 		}
-		role, err := c.client.Role.Get(ctx, roleId)
-		if err != nil {
-			return users.NewAssignRoleToUserDefault(http.StatusNotFound).WithPayload(&models.Error{
-				Data: &models.ErrorData{
-					Message: err.Error(),
-				},
-			})
-		}
-		foundUser, err = c.client.User.UpdateOne(foundUser).SetRole(role).Save(ctx)
-		if err != nil {
-			return users.NewAssignRoleToUserDefault(http.StatusNotFound).WithPayload(&models.Error{
-				Data: &models.ErrorData{
-					Message: err.Error(),
-				},
-			})
-		}
+
 		userIdInt64 := int64(foundUser.ID)
-		roleIdInt64 := int64(role.ID)
+		roleIdInt64 := int64(roleId)
 		return users.NewAssignRoleToUserOK().WithPayload(&models.GetUserResponse{
 			Data: &models.User{
 				CreateTime: nil,

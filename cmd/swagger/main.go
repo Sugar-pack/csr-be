@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"database/sql"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/repositories"
 	"log"
 	"os"
 
@@ -108,7 +109,7 @@ func main() {
 	api.UsersPostUserHandler = userHandler.PostUserFunc()
 	api.UsersGetCurrentUserHandler = userHandler.GetUserFunc()
 	api.UsersPatchUserHandler = userHandler.PatchUserFunc()
-	api.UsersAssignRoleToUserHandler = userHandler.AssignRoleToUserFunc()
+	api.UsersAssignRoleToUserHandler = userHandler.AssignRoleToUserFunc(repositories.NewUserRepository(client))
 	api.UsersGetUserHandler = userHandler.GetUserById()
 	api.UsersGetAllUsersHandler = userHandler.GetUsersList()
 
