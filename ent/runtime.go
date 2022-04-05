@@ -4,6 +4,7 @@ package ent
 
 import (
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/activearea"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/equipment"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/kind"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/permission"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/role"
@@ -21,6 +22,20 @@ func init() {
 	activeareaDescName := activeareaFields[0].Descriptor()
 	// activearea.NameValidator is a validator for the "name" field. It is called by the builders before save.
 	activearea.NameValidator = activeareaDescName.Validators[0].(func(string) error)
+	equipmentFields := schema.Equipment{}.Fields()
+	_ = equipmentFields
+	// equipmentDescSku is the schema descriptor for sku field.
+	equipmentDescSku := equipmentFields[0].Descriptor()
+	// equipment.DefaultSku holds the default value on creation for the sku field.
+	equipment.DefaultSku = equipmentDescSku.Default.(string)
+	// equipmentDescName is the schema descriptor for name field.
+	equipmentDescName := equipmentFields[1].Descriptor()
+	// equipment.DefaultName holds the default value on creation for the name field.
+	equipment.DefaultName = equipmentDescName.Default.(string)
+	// equipmentDescDescription is the schema descriptor for description field.
+	equipmentDescDescription := equipmentFields[4].Descriptor()
+	// equipment.DefaultDescription holds the default value on creation for the description field.
+	equipment.DefaultDescription = equipmentDescDescription.Default.(string)
 	kindFields := schema.Kind{}.Fields()
 	_ = kindFields
 	// kindDescName is the schema descriptor for name field.

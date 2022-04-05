@@ -10,6 +10,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/equipment"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/predicate"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/statuses"
 )
@@ -33,9 +34,45 @@ func (su *StatusesUpdate) SetName(s string) *StatusesUpdate {
 	return su
 }
 
+// AddEquipmentIDs adds the "equipments" edge to the Equipment entity by IDs.
+func (su *StatusesUpdate) AddEquipmentIDs(ids ...int) *StatusesUpdate {
+	su.mutation.AddEquipmentIDs(ids...)
+	return su
+}
+
+// AddEquipments adds the "equipments" edges to the Equipment entity.
+func (su *StatusesUpdate) AddEquipments(e ...*Equipment) *StatusesUpdate {
+	ids := make([]int, len(e))
+	for i := range e {
+		ids[i] = e[i].ID
+	}
+	return su.AddEquipmentIDs(ids...)
+}
+
 // Mutation returns the StatusesMutation object of the builder.
 func (su *StatusesUpdate) Mutation() *StatusesMutation {
 	return su.mutation
+}
+
+// ClearEquipments clears all "equipments" edges to the Equipment entity.
+func (su *StatusesUpdate) ClearEquipments() *StatusesUpdate {
+	su.mutation.ClearEquipments()
+	return su
+}
+
+// RemoveEquipmentIDs removes the "equipments" edge to Equipment entities by IDs.
+func (su *StatusesUpdate) RemoveEquipmentIDs(ids ...int) *StatusesUpdate {
+	su.mutation.RemoveEquipmentIDs(ids...)
+	return su
+}
+
+// RemoveEquipments removes "equipments" edges to Equipment entities.
+func (su *StatusesUpdate) RemoveEquipments(e ...*Equipment) *StatusesUpdate {
+	ids := make([]int, len(e))
+	for i := range e {
+		ids[i] = e[i].ID
+	}
+	return su.RemoveEquipmentIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -117,6 +154,60 @@ func (su *StatusesUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Column: statuses.FieldName,
 		})
 	}
+	if su.mutation.EquipmentsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   statuses.EquipmentsTable,
+			Columns: []string{statuses.EquipmentsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: equipment.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := su.mutation.RemovedEquipmentsIDs(); len(nodes) > 0 && !su.mutation.EquipmentsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   statuses.EquipmentsTable,
+			Columns: []string{statuses.EquipmentsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: equipment.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := su.mutation.EquipmentsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   statuses.EquipmentsTable,
+			Columns: []string{statuses.EquipmentsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: equipment.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if n, err = sqlgraph.UpdateNodes(ctx, su.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{statuses.Label}
@@ -142,9 +233,45 @@ func (suo *StatusesUpdateOne) SetName(s string) *StatusesUpdateOne {
 	return suo
 }
 
+// AddEquipmentIDs adds the "equipments" edge to the Equipment entity by IDs.
+func (suo *StatusesUpdateOne) AddEquipmentIDs(ids ...int) *StatusesUpdateOne {
+	suo.mutation.AddEquipmentIDs(ids...)
+	return suo
+}
+
+// AddEquipments adds the "equipments" edges to the Equipment entity.
+func (suo *StatusesUpdateOne) AddEquipments(e ...*Equipment) *StatusesUpdateOne {
+	ids := make([]int, len(e))
+	for i := range e {
+		ids[i] = e[i].ID
+	}
+	return suo.AddEquipmentIDs(ids...)
+}
+
 // Mutation returns the StatusesMutation object of the builder.
 func (suo *StatusesUpdateOne) Mutation() *StatusesMutation {
 	return suo.mutation
+}
+
+// ClearEquipments clears all "equipments" edges to the Equipment entity.
+func (suo *StatusesUpdateOne) ClearEquipments() *StatusesUpdateOne {
+	suo.mutation.ClearEquipments()
+	return suo
+}
+
+// RemoveEquipmentIDs removes the "equipments" edge to Equipment entities by IDs.
+func (suo *StatusesUpdateOne) RemoveEquipmentIDs(ids ...int) *StatusesUpdateOne {
+	suo.mutation.RemoveEquipmentIDs(ids...)
+	return suo
+}
+
+// RemoveEquipments removes "equipments" edges to Equipment entities.
+func (suo *StatusesUpdateOne) RemoveEquipments(e ...*Equipment) *StatusesUpdateOne {
+	ids := make([]int, len(e))
+	for i := range e {
+		ids[i] = e[i].ID
+	}
+	return suo.RemoveEquipmentIDs(ids...)
 }
 
 // Select allows selecting one or more fields (columns) of the returned entity.
@@ -249,6 +376,60 @@ func (suo *StatusesUpdateOne) sqlSave(ctx context.Context) (_node *Statuses, err
 			Value:  value,
 			Column: statuses.FieldName,
 		})
+	}
+	if suo.mutation.EquipmentsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   statuses.EquipmentsTable,
+			Columns: []string{statuses.EquipmentsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: equipment.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := suo.mutation.RemovedEquipmentsIDs(); len(nodes) > 0 && !suo.mutation.EquipmentsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   statuses.EquipmentsTable,
+			Columns: []string{statuses.EquipmentsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: equipment.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := suo.mutation.EquipmentsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   statuses.EquipmentsTable,
+			Columns: []string{statuses.EquipmentsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: equipment.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	_node = &Statuses{config: suo.config}
 	_spec.Assign = _node.assignValues

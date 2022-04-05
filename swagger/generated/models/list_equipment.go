@@ -14,13 +14,13 @@ import (
 	"github.com/go-openapi/swag"
 )
 
-// GetAllKinds get all kinds
+// ListEquipment list equipment
 //
-// swagger:model GetAllKinds
-type GetAllKinds []*Kind
+// swagger:model ListEquipment
+type ListEquipment []*EquipmentResponse
 
-// Validate validates this get all kinds
-func (m GetAllKinds) Validate(formats strfmt.Registry) error {
+// Validate validates this list equipment
+func (m ListEquipment) Validate(formats strfmt.Registry) error {
 	var res []error
 
 	for i := 0; i < len(m); i++ {
@@ -47,8 +47,8 @@ func (m GetAllKinds) Validate(formats strfmt.Registry) error {
 	return nil
 }
 
-// ContextValidate validate this get all kinds based on the context it is used
-func (m GetAllKinds) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+// ContextValidate validate this list equipment based on the context it is used
+func (m ListEquipment) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
 
 	for i := 0; i < len(m); i++ {

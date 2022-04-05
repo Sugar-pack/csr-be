@@ -6,7 +6,8 @@ info:
     The API provides CSR backend API.
 
 basePath: /api/
-schemes: 
+schemes:
+  - https
   - http
 securityDefinitions:
   Bearer:
@@ -18,13 +19,48 @@ consumes:
 produces:
   - application/json
 
-paths:  
+paths:
+  /v1/login:
+    post:
+      description: 'Returns token for authorized User'
+      tags:
+        - Users
+      operationId: Login
+      consumes:
+        - "application/json"
+      parameters:
+        - name: 'login'
+          in: 'body'
+          required: true
+          description: 'Login Payload'
+          schema:
+            $ref: '#/definitions/LoginInfo'
+      responses:
+        200:
+          description: Successful login
+          schema:
+            $ref: '#/definitions/LoginSuccessResponse'
+        404:
+          schema:
+            type: string
+          description: User not found
+        default:
+          description: Unexpected error.
+          schema:
+            $ref: "#/definitions/Error"
   /v1/users:
     post:
       summary: Register a new user.
       tags:
         - Users
       operationId: postUser
+      parameters:
+        - name: data
+          in: body
+          description: New user data.
+          required: true
+          schema:
+            $ref: "#/definitions/UserRegister"
       responses:
         201:
           description: Created
@@ -74,54 +110,6 @@ paths:
           description: Unexpected error
           schema:
             $ref: "#/definitions/Error"
-  /v1/roles:
-    get:
-      summary: List all roles.
-      tags:
-        - Roles
-      operationId: GetRoles
-      responses:
-        200:
-          description: Success
-          schema:
-            $ref: "#/definitions/ListRoles"
-        default:
-          description: Unexpected error.
-          schema:
-            $ref: "#/definitions/Error"
-  /v1/management/users/{userId}/role:
-    parameters:
-      - name: userId
-        in: path
-        required: true
-        description: user id
-        type: integer
-    post:
-      # TODO: uncomment
-      # security:
-      #  - Bearer: []
-      consumes:
-        - application/json
-      parameters:
-        - name: data
-          in: body
-          description: Role to assign to user.
-          required: true
-          schema:
-            $ref: "#/definitions/AssignRoleToUser"
-      summary: Assign role to user
-      tags:
-        - Users
-      operationId: AssignRoleToUser
-      responses:
-        200:
-          description: Role has been assigned to user
-          schema:
-            $ref: "#/definitions/GetUserResponse"
-        default:
-          description: Unexpected error.
-          schema:
-            $ref: "#/definitions/Error"
   /management/users/{userId}:
     parameters:
       - name: userId
@@ -154,6 +142,53 @@ paths:
           description: Success
           schema:
             $ref: "#/definitions/GetListUsers"
+        default:
+          description: Unexpected error.
+          schema:
+            $ref: "#/definitions/Error"
+  /v1/roles:
+    get:
+      summary: List all roles.
+      tags:
+        - Roles
+      operationId: GetRoles
+      responses:
+        200:
+          description: Success
+          schema:
+            $ref: "#/definitions/ListRoles"
+        default:
+          description: Unexpected error.
+          schema:
+            $ref: "#/definitions/Error"
+  /v1/management/users/{userId}/role:
+    parameters:
+      - name: userId
+        in: path
+        required: true
+        description: user id
+        type: integer
+    post:
+      security:
+       - Bearer: []
+      consumes:
+        - application/json
+      parameters:
+        - name: data
+          in: body
+          description: Role to assign to user.
+          required: true
+          schema:
+            $ref: "#/definitions/AssignRoleToUser"
+      summary: Assign role to user
+      tags:
+        - Users
+      operationId: AssignRoleToUser
+      responses:
+        200:
+          description: Role has been assigned to user
+          schema:
+            $ref: "#/definitions/GetUserResponse"
         default:
           description: Unexpected error.
           schema:
@@ -334,7 +369,124 @@ paths:
         default:
           description: Unexpected error.
           schema:
-            $ref: "#/definitions/Error"            
+            $ref: "#/definitions/Error"
+  /equipment:
+    post:
+      summary: Register a new equipment
+      tags:
+        - Equipment
+      operationId: CreateNewEquipment
+      consumes:
+        - application/json
+      parameters:
+        - name: newEquipment
+          in: body
+          description: Create a new equipment
+          required: true
+          schema:
+            $ref: "#/definitions/Equipment"
+      responses:
+        201:
+          description: Equipment created
+          schema:
+            $ref: "#/definitions/EquipmentResponse"
+        default:
+          description: Unexpected error.
+          schema:
+            $ref: "#/definitions/Error"
+    get:
+      summary: Get all equipment
+      tags:
+        - Equipment
+      operationId: GetAllEquipment
+      responses:
+        201:
+          description: Success
+          schema:
+            $ref: "#/definitions/ListEquipment"
+        default:
+          description: Unexpected error.
+          schema:
+            $ref: "#/definitions/Error"
+
+  /equipment/{equipmentId}:
+    parameters:
+      - name: equipmentId
+        in: path
+        required: true
+        description: equipment id
+        type: string
+    get:
+      summary: Get equipment by id
+      tags:
+        - Equipment
+      operationId: GetEquipment
+      responses:
+        201:
+          description: Equipment has been found
+          schema:
+            $ref: "#/definitions/Equipment"
+        default:
+          description: Unexpected error.
+          schema:
+            $ref: "#/definitions/Error"
+    delete:
+      summary: Delete equipment by id
+      tags:
+        - Equipment
+      operationId: DeleteEquipment
+      responses:
+        201:
+          description: Equipment has been deleted
+          schema:
+            $ref: "#/definitions/Equipment"
+        default:
+          description: Unexpected error.
+          schema:
+            $ref: "#/definitions/Error"
+    put:
+      summary: Edit equipment by id
+      tags:
+        - Equipment
+      operationId: EditEquipment
+      parameters:
+        - name: EditEquipment
+          in: body
+          description: Edit an equipment
+          required: false
+          schema:
+            $ref: "#/definitions/Equipment"
+      responses:
+        201:
+          description: Equipment edited
+          schema:
+            $ref: "#/definitions/Equipment"
+        default:
+          description: Unexpected error.
+          schema:
+            $ref: "#/definitions/Error"
+  /findEquipment:
+    post:
+      summary: Equipment filtered list
+      tags:
+        - Equipment
+      operationId: FindEquipment
+      parameters:
+        - name: FindEquipment
+          in: body
+          description: Filtered list of an equipment
+          required: false
+          schema:
+            $ref: "#/definitions/Equipment"
+      responses:
+        201:
+          description: Equipment has been found
+          schema:
+            $ref: "#/definitions/ListEquipment"
+        default:
+          description: Unexpected error.
+          schema:
+            $ref: "#/definitions/Error"
 
 definitions:
   Error:
@@ -397,20 +549,57 @@ definitions:
         type: object
 
   # User
+  LoginInfo:
+    type: object
+    required:
+      - login
+      - password
+    properties:
+      login:
+        type: string
+      password:
+        type: string
+  LoginSuccessResponse:
+    type: object
+    required:
+      - data
+    properties:
+      data:
+        type: object
+        required:
+          - token
+        properties:
+          token:
+            type: string
   User:
     type: object
     required:
       - id
       - createTime
       - roleId
+      - login
     properties:
       id:
         type: integer
+      login:
+        type: string
       createTime:
         type: string
         format: date-time
       roleId:
         type: integer
+  UserRegister:
+    type: object
+    required:
+      - login
+      - password
+    properties:
+      login:
+        type: string
+        minLength: 3
+      password:
+        type: string
+        minLength: 6
   CreateUserResponse:
     type: object
     required:
@@ -614,6 +803,92 @@ definitions:
   ListOfActiveAreas:
     type: array
     items:
-     $ref: "#/definitions/ActiveArea"  
+     $ref: "#/definitions/ActiveArea"
+  # Equipment
+  Equipment:
+    type: object
+    required:
+      - sku
+      - name
+      - kind
+      - status
+      - rate_hour
+      - rate_day
+      - location
+      - description
+      - photo
+    properties:
+      sku:
+        type: string
+        example: "ABC012345678"
+      name:
+        type: string
+        example: "Dog harness 3000"
+      kind:
+        type: integer
+        example: 5
+      status:
+        type: integer
+        example: 1
+      rate_hour:
+        type: integer
+      rate_day:
+        type: integer
+      location:
+        type: integer
+        example: 71
+      description:
+        type: string
+        example: "This is a dog harness.\nWARNING: do not put on cats!"
+      photo:
+        type: string
+        example: "https://..."
+  EquipmentResponse:
+    type: object
+    required:
+      - id
+      - sku
+      - name
+      - kind
+      - status
+      - rate_hour
+      - rate_day
+      - location
+      - description
+      - photo
+    properties:
+      id:
+        type: string
+        example: 2
+      sku:
+        type: string
+        example: "ABC012345678"
+      name:
+        type: string
+        example: "Dog harness 3000"
+      kind:
+        type: integer
+        example: 5
+      status:
+        type: integer
+        example: 1
+      rate_hour:
+        type: integer
+      rate_day:
+        type: integer
+      location:
+        type: integer
+        example: 71
+      description:
+        type: string
+        example: "This is a dog harness.\nWARNING: do not put on cats!"
+      photo:
+        type: string
+        example: "https://..."
+  ListEquipment:
+    type: array
+    items:
+      $ref: "#/definitions/EquipmentResponse"
+
 
 

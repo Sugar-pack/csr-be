@@ -9,6 +9,9 @@ import (
 // ActiveArea is the predicate function for activearea builders.
 type ActiveArea func(*sql.Selector)
 
+// Equipment is the predicate function for equipment builders.
+type Equipment func(*sql.Selector)
+
 // Group is the predicate function for group builders.
 type Group func(*sql.Selector)
 

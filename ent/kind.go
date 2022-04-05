@@ -21,6 +21,27 @@ type Kind struct {
 	MaxReservationTime int64 `json:"max_reservation_time,omitempty"`
 	// MaxReservationUnits holds the value of the "max_reservation_units" field.
 	MaxReservationUnits int64 `json:"max_reservation_units,omitempty"`
+	// Edges holds the relations/edges for other nodes in the graph.
+	// The values are being populated by the KindQuery when eager-loading is set.
+	Edges KindEdges `json:"edges"`
+}
+
+// KindEdges holds the relations/edges for other nodes in the graph.
+type KindEdges struct {
+	// Equipments holds the value of the equipments edge.
+	Equipments []*Equipment `json:"equipments,omitempty"`
+	// loadedTypes holds the information for reporting if a
+	// type was loaded (or requested) in eager-loading or not.
+	loadedTypes [1]bool
+}
+
+// EquipmentsOrErr returns the Equipments value or an error if the edge
+// was not loaded in eager-loading.
+func (e KindEdges) EquipmentsOrErr() ([]*Equipment, error) {
+	if e.loadedTypes[0] {
+		return e.Equipments, nil
+	}
+	return nil, &NotLoadedError{edge: "equipments"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -74,6 +95,11 @@ func (k *Kind) assignValues(columns []string, values []interface{}) error {
 		}
 	}
 	return nil
+}
+
+// QueryEquipments queries the "equipments" edge of the Kind entity.
+func (k *Kind) QueryEquipments() *EquipmentQuery {
+	return (&KindClient{config: k.config}).QueryEquipments(k)
 }
 
 // Update returns a builder for updating this Kind.

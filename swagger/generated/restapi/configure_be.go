@@ -11,10 +11,15 @@ import (
 	"github.com/go-openapi/runtime/middleware"
 
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/restapi/operations"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/restapi/operations/active_areas"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/restapi/operations/equipment"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/restapi/operations/kinds"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/restapi/operations/roles"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/restapi/operations/status"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/restapi/operations/users"
 )
 
-//go:generate swagger generate server --target ../../../../be --name Be --spec ../../spec.yaml --server-package swagger/generated/restapi --principal interface{} --exclude-main
+//go:generate swagger generate server --target ../../../../be --name Be --spec ../../spec.yaml --model-package swagger/generated/models --server-package swagger/generated/restapi --principal interface{} --exclude-main
 
 func configureFlags(api *operations.BeAPI) {
 	// api.CommandLineOptionsGroups = []swag.CommandLineOptionsGroup{ ... }
@@ -51,14 +56,109 @@ func configureAPI(api *operations.BeAPI) http.Handler {
 	// Example:
 	// api.APIAuthorizer = security.Authorized()
 
+	if api.UsersAssignRoleToUserHandler == nil {
+		api.UsersAssignRoleToUserHandler = users.AssignRoleToUserHandlerFunc(func(params users.AssignRoleToUserParams, principal interface{}) middleware.Responder {
+			return middleware.NotImplemented("operation users.AssignRoleToUser has not yet been implemented")
+		})
+	}
+	if api.EquipmentCreateNewEquipmentHandler == nil {
+		api.EquipmentCreateNewEquipmentHandler = equipment.CreateNewEquipmentHandlerFunc(func(params equipment.CreateNewEquipmentParams) middleware.Responder {
+			return middleware.NotImplemented("operation equipment.CreateNewEquipment has not yet been implemented")
+		})
+	}
+	if api.KindsCreateNewKindHandler == nil {
+		api.KindsCreateNewKindHandler = kinds.CreateNewKindHandlerFunc(func(params kinds.CreateNewKindParams) middleware.Responder {
+			return middleware.NotImplemented("operation kinds.CreateNewKind has not yet been implemented")
+		})
+	}
+	if api.EquipmentDeleteEquipmentHandler == nil {
+		api.EquipmentDeleteEquipmentHandler = equipment.DeleteEquipmentHandlerFunc(func(params equipment.DeleteEquipmentParams) middleware.Responder {
+			return middleware.NotImplemented("operation equipment.DeleteEquipment has not yet been implemented")
+		})
+	}
+	if api.StatusDeleteStatusHandler == nil {
+		api.StatusDeleteStatusHandler = status.DeleteStatusHandlerFunc(func(params status.DeleteStatusParams) middleware.Responder {
+			return middleware.NotImplemented("operation status.DeleteStatus has not yet been implemented")
+		})
+	}
+	if api.EquipmentEditEquipmentHandler == nil {
+		api.EquipmentEditEquipmentHandler = equipment.EditEquipmentHandlerFunc(func(params equipment.EditEquipmentParams) middleware.Responder {
+			return middleware.NotImplemented("operation equipment.EditEquipment has not yet been implemented")
+		})
+	}
+	if api.EquipmentFindEquipmentHandler == nil {
+		api.EquipmentFindEquipmentHandler = equipment.FindEquipmentHandlerFunc(func(params equipment.FindEquipmentParams) middleware.Responder {
+			return middleware.NotImplemented("operation equipment.FindEquipment has not yet been implemented")
+		})
+	}
+	if api.ActiveAreasGetAllActiveAreasHandler == nil {
+		api.ActiveAreasGetAllActiveAreasHandler = active_areas.GetAllActiveAreasHandlerFunc(func(params active_areas.GetAllActiveAreasParams) middleware.Responder {
+			return middleware.NotImplemented("operation active_areas.GetAllActiveAreas has not yet been implemented")
+		})
+	}
+	if api.EquipmentGetAllEquipmentHandler == nil {
+		api.EquipmentGetAllEquipmentHandler = equipment.GetAllEquipmentHandlerFunc(func(params equipment.GetAllEquipmentParams) middleware.Responder {
+			return middleware.NotImplemented("operation equipment.GetAllEquipment has not yet been implemented")
+		})
+	}
+	if api.KindsGetAllKindsHandler == nil {
+		api.KindsGetAllKindsHandler = kinds.GetAllKindsHandlerFunc(func(params kinds.GetAllKindsParams) middleware.Responder {
+			return middleware.NotImplemented("operation kinds.GetAllKinds has not yet been implemented")
+		})
+	}
+	if api.EquipmentGetEquipmentHandler == nil {
+		api.EquipmentGetEquipmentHandler = equipment.GetEquipmentHandlerFunc(func(params equipment.GetEquipmentParams) middleware.Responder {
+			return middleware.NotImplemented("operation equipment.GetEquipment has not yet been implemented")
+		})
+	}
+	if api.RolesGetRolesHandler == nil {
+		api.RolesGetRolesHandler = roles.GetRolesHandlerFunc(func(params roles.GetRolesParams) middleware.Responder {
+			return middleware.NotImplemented("operation roles.GetRoles has not yet been implemented")
+		})
+	}
+	if api.StatusGetStatusHandler == nil {
+		api.StatusGetStatusHandler = status.GetStatusHandlerFunc(func(params status.GetStatusParams) middleware.Responder {
+			return middleware.NotImplemented("operation status.GetStatus has not yet been implemented")
+		})
+	}
+	if api.StatusGetStatusesHandler == nil {
+		api.StatusGetStatusesHandler = status.GetStatusesHandlerFunc(func(params status.GetStatusesParams) middleware.Responder {
+			return middleware.NotImplemented("operation status.GetStatuses has not yet been implemented")
+		})
+	}
+	if api.UsersLoginHandler == nil {
+		api.UsersLoginHandler = users.LoginHandlerFunc(func(params users.LoginParams) middleware.Responder {
+			return middleware.NotImplemented("operation users.Login has not yet been implemented")
+		})
+	}
+	if api.KindsPatchKindHandler == nil {
+		api.KindsPatchKindHandler = kinds.PatchKindHandlerFunc(func(params kinds.PatchKindParams) middleware.Responder {
+			return middleware.NotImplemented("operation kinds.PatchKind has not yet been implemented")
+		})
+	}
+	if api.KindsDeleteKindHandler == nil {
+		api.KindsDeleteKindHandler = kinds.DeleteKindHandlerFunc(func(params kinds.DeleteKindParams) middleware.Responder {
+			return middleware.NotImplemented("operation kinds.DeleteKind has not yet been implemented")
+		})
+	}
 	if api.UsersGetCurrentUserHandler == nil {
 		api.UsersGetCurrentUserHandler = users.GetCurrentUserHandlerFunc(func(params users.GetCurrentUserParams, principal interface{}) middleware.Responder {
 			return middleware.NotImplemented("operation users.GetCurrentUser has not yet been implemented")
 		})
 	}
+	if api.KindsGetKindByIDHandler == nil {
+		api.KindsGetKindByIDHandler = kinds.GetKindByIDHandlerFunc(func(params kinds.GetKindByIDParams) middleware.Responder {
+			return middleware.NotImplemented("operation kinds.GetKindByID has not yet been implemented")
+		})
+	}
 	if api.UsersPatchUserHandler == nil {
 		api.UsersPatchUserHandler = users.PatchUserHandlerFunc(func(params users.PatchUserParams, principal interface{}) middleware.Responder {
 			return middleware.NotImplemented("operation users.PatchUser has not yet been implemented")
+		})
+	}
+	if api.StatusPostStatusHandler == nil {
+		api.StatusPostStatusHandler = status.PostStatusHandlerFunc(func(params status.PostStatusParams) middleware.Responder {
+			return middleware.NotImplemented("operation status.PostStatus has not yet been implemented")
 		})
 	}
 	if api.UsersPostUserHandler == nil {

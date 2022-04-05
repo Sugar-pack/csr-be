@@ -9,6 +9,7 @@ import (
 
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/equipment"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/statuses"
 )
 
@@ -23,6 +24,21 @@ type StatusesCreate struct {
 func (sc *StatusesCreate) SetName(s string) *StatusesCreate {
 	sc.mutation.SetName(s)
 	return sc
+}
+
+// AddEquipmentIDs adds the "equipments" edge to the Equipment entity by IDs.
+func (sc *StatusesCreate) AddEquipmentIDs(ids ...int) *StatusesCreate {
+	sc.mutation.AddEquipmentIDs(ids...)
+	return sc
+}
+
+// AddEquipments adds the "equipments" edges to the Equipment entity.
+func (sc *StatusesCreate) AddEquipments(e ...*Equipment) *StatusesCreate {
+	ids := make([]int, len(e))
+	for i := range e {
+		ids[i] = e[i].ID
+	}
+	return sc.AddEquipmentIDs(ids...)
 }
 
 // Mutation returns the StatusesMutation object of the builder.
@@ -132,6 +148,25 @@ func (sc *StatusesCreate) createSpec() (*Statuses, *sqlgraph.CreateSpec) {
 			Column: statuses.FieldName,
 		})
 		_node.Name = value
+	}
+	if nodes := sc.mutation.EquipmentsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   statuses.EquipmentsTable,
+			Columns: []string{statuses.EquipmentsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: equipment.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec
 }

@@ -4,6 +4,7 @@ package ent
 
 import (
 	"context"
+	"database/sql/driver"
 	"errors"
 	"fmt"
 	"math"
@@ -11,6 +12,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/equipment"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/kind"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/predicate"
 )
@@ -24,6 +26,8 @@ type KindQuery struct {
 	order      []OrderFunc
 	fields     []string
 	predicates []predicate.Kind
+	// eager-loading edges.
+	withEquipments *EquipmentQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -58,6 +62,28 @@ func (kq *KindQuery) Unique(unique bool) *KindQuery {
 func (kq *KindQuery) Order(o ...OrderFunc) *KindQuery {
 	kq.order = append(kq.order, o...)
 	return kq
+}
+
+// QueryEquipments chains the current query on the "equipments" edge.
+func (kq *KindQuery) QueryEquipments() *EquipmentQuery {
+	query := &EquipmentQuery{config: kq.config}
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := kq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := kq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(kind.Table, kind.FieldID, selector),
+			sqlgraph.To(equipment.Table, equipment.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, kind.EquipmentsTable, kind.EquipmentsColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(kq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
 }
 
 // First returns the first Kind entity from the query.
@@ -236,16 +262,28 @@ func (kq *KindQuery) Clone() *KindQuery {
 		return nil
 	}
 	return &KindQuery{
-		config:     kq.config,
-		limit:      kq.limit,
-		offset:     kq.offset,
-		order:      append([]OrderFunc{}, kq.order...),
-		predicates: append([]predicate.Kind{}, kq.predicates...),
+		config:         kq.config,
+		limit:          kq.limit,
+		offset:         kq.offset,
+		order:          append([]OrderFunc{}, kq.order...),
+		predicates:     append([]predicate.Kind{}, kq.predicates...),
+		withEquipments: kq.withEquipments.Clone(),
 		// clone intermediate query.
 		sql:    kq.sql.Clone(),
 		path:   kq.path,
 		unique: kq.unique,
 	}
+}
+
+// WithEquipments tells the query-builder to eager-load the nodes that are connected to
+// the "equipments" edge. The optional arguments are used to configure the query builder of the edge.
+func (kq *KindQuery) WithEquipments(opts ...func(*EquipmentQuery)) *KindQuery {
+	query := &EquipmentQuery{config: kq.config}
+	for _, opt := range opts {
+		opt(query)
+	}
+	kq.withEquipments = query
+	return kq
 }
 
 // GroupBy is used to group vertices by one or more fields/columns.
@@ -311,8 +349,11 @@ func (kq *KindQuery) prepareQuery(ctx context.Context) error {
 
 func (kq *KindQuery) sqlAll(ctx context.Context) ([]*Kind, error) {
 	var (
-		nodes = []*Kind{}
-		_spec = kq.querySpec()
+		nodes       = []*Kind{}
+		_spec       = kq.querySpec()
+		loadedTypes = [1]bool{
+			kq.withEquipments != nil,
+		}
 	)
 	_spec.ScanValues = func(columns []string) ([]interface{}, error) {
 		node := &Kind{config: kq.config}
@@ -324,6 +365,7 @@ func (kq *KindQuery) sqlAll(ctx context.Context) ([]*Kind, error) {
 			return fmt.Errorf("ent: Assign called without calling ScanValues")
 		}
 		node := nodes[len(nodes)-1]
+		node.Edges.loadedTypes = loadedTypes
 		return node.assignValues(columns, values)
 	}
 	if err := sqlgraph.QueryNodes(ctx, kq.driver, _spec); err != nil {
@@ -332,6 +374,36 @@ func (kq *KindQuery) sqlAll(ctx context.Context) ([]*Kind, error) {
 	if len(nodes) == 0 {
 		return nodes, nil
 	}
+
+	if query := kq.withEquipments; query != nil {
+		fks := make([]driver.Value, 0, len(nodes))
+		nodeids := make(map[int]*Kind)
+		for i := range nodes {
+			fks = append(fks, nodes[i].ID)
+			nodeids[nodes[i].ID] = nodes[i]
+			nodes[i].Edges.Equipments = []*Equipment{}
+		}
+		query.withFKs = true
+		query.Where(predicate.Equipment(func(s *sql.Selector) {
+			s.Where(sql.InValues(kind.EquipmentsColumn, fks...))
+		}))
+		neighbors, err := query.All(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, n := range neighbors {
+			fk := n.kind_equipments
+			if fk == nil {
+				return nil, fmt.Errorf(`foreign-key "kind_equipments" is nil for node %v`, n.ID)
+			}
+			node, ok := nodeids[*fk]
+			if !ok {
+				return nil, fmt.Errorf(`unexpected foreign-key "kind_equipments" returned %v for node %v`, *fk, n.ID)
+			}
+			node.Edges.Equipments = append(node.Edges.Equipments, n)
+		}
+	}
+
 	return nodes, nil
 }
 

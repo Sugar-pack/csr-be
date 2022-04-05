@@ -13,8 +13,17 @@ const (
 	FieldMaxReservationTime = "max_reservation_time"
 	// FieldMaxReservationUnits holds the string denoting the max_reservation_units field in the database.
 	FieldMaxReservationUnits = "max_reservation_units"
+	// EdgeEquipments holds the string denoting the equipments edge name in mutations.
+	EdgeEquipments = "equipments"
 	// Table holds the table name of the kind in the database.
 	Table = "kinds"
+	// EquipmentsTable is the table that holds the equipments relation/edge.
+	EquipmentsTable = "equipment"
+	// EquipmentsInverseTable is the table name for the Equipment entity.
+	// It exists in this package in order to avoid circular dependency with the "equipment" package.
+	EquipmentsInverseTable = "equipment"
+	// EquipmentsColumn is the table column denoting the equipments relation/edge.
+	EquipmentsColumn = "kind_equipments"
 )
 
 // Columns holds all SQL columns for kind fields.

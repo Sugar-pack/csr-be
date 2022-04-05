@@ -25,6 +25,7 @@ type config struct {
 // hooks per client, for fast access.
 type hooks struct {
 	ActiveArea []ent.Hook
+	Equipment  []ent.Hook
 	Group      []ent.Hook
 	Kind       []ent.Hook
 	Permission []ent.Hook

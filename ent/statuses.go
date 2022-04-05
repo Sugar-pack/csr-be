@@ -17,6 +17,27 @@ type Statuses struct {
 	ID int `json:"id,omitempty"`
 	// Name holds the value of the "name" field.
 	Name string `json:"name,omitempty"`
+	// Edges holds the relations/edges for other nodes in the graph.
+	// The values are being populated by the StatusesQuery when eager-loading is set.
+	Edges StatusesEdges `json:"edges"`
+}
+
+// StatusesEdges holds the relations/edges for other nodes in the graph.
+type StatusesEdges struct {
+	// Equipments holds the value of the equipments edge.
+	Equipments []*Equipment `json:"equipments,omitempty"`
+	// loadedTypes holds the information for reporting if a
+	// type was loaded (or requested) in eager-loading or not.
+	loadedTypes [1]bool
+}
+
+// EquipmentsOrErr returns the Equipments value or an error if the edge
+// was not loaded in eager-loading.
+func (e StatusesEdges) EquipmentsOrErr() ([]*Equipment, error) {
+	if e.loadedTypes[0] {
+		return e.Equipments, nil
+	}
+	return nil, &NotLoadedError{edge: "equipments"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -58,6 +79,11 @@ func (s *Statuses) assignValues(columns []string, values []interface{}) error {
 		}
 	}
 	return nil
+}
+
+// QueryEquipments queries the "equipments" edge of the Statuses entity.
+func (s *Statuses) QueryEquipments() *EquipmentQuery {
+	return (&StatusesClient{config: s.config}).QueryEquipments(s)
 }
 
 // Update returns a builder for updating this Statuses.
