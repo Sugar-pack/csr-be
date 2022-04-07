@@ -451,6 +451,44 @@ paths:
           description: Unexpected error.
           schema:
             $ref: "#/definitions/Error"
+  /v1/managment/users/{userId}/block:
+    parameters:
+      - name: userId
+        in: path
+        required: true
+        description: user id
+        type: integer 
+    post: 
+      summary: Block user
+      tags:
+        - Users
+      operationId: blockUser
+      responses:
+        200:
+          description: Success
+        default:
+          description: Unexpected error.
+          schema:
+            $ref: "#/definitions/Error"
+  /v1/managment/users/{userId}/unblock:
+    parameters:
+      - name: userId
+        in: path
+        required: true
+        description: user id
+        type: integer 
+    post: 
+      summary: Unblock user
+      tags:
+        - Users
+      operationId: unblockUser
+      responses:
+        200:
+          description: Success
+        default:
+          description: Unexpected error.
+          schema:
+            $ref: "#/definitions/Error"  
 
 definitions:
   Error:

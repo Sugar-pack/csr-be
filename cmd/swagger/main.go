@@ -3,9 +3,10 @@ package main
 import (
 	"context"
 	"database/sql"
-	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/repositories"
 	"log"
 	"os"
+
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/repositories"
 
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/postgres"
@@ -95,6 +96,10 @@ func main() {
 		client,
 		logger,
 	)
+	blockerHandler := handlers.NewBlocker(
+		client,
+		logger,
+	)
 
 	api := operations.NewBeAPI(swaggerSpec)
 	api.UseSwaggerUI()
@@ -109,6 +114,8 @@ func main() {
 	api.UsersGetCurrentUserHandler = userHandler.GetUserFunc()
 	api.UsersPatchUserHandler = userHandler.PatchUserFunc()
 	api.UsersAssignRoleToUserHandler = userHandler.AssignRoleToUserFunc(repositories.NewUserRepository(client))
+	api.UsersBlockUserHandler = blockerHandler.BlockUserFunc()
+	api.UsersUnblockUserHandler = blockerHandler.UnblockUserFunc()
 
 	api.RolesGetRolesHandler = roleHandler.GetRolesFunc()
 
