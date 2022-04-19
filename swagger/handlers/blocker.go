@@ -6,6 +6,7 @@ import (
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/models"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/restapi/operations/users"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/repositories"
 	"github.com/go-openapi/runtime/middleware"
 	"go.uber.org/zap"
 )
@@ -22,21 +23,13 @@ func NewBlocker(client *ent.Client, logger *zap.Logger) *Blocker {
 	}
 }
 
-func (b Blocker) BlockUserFunc() users.BlockUserHandlerFunc {
+func (b Blocker) BlockUserFunc(repository repositories.BlockerRepository) users.BlockUserHandlerFunc {
 	return func(u users.BlockUserParams) middleware.Responder {
 		userId := int(u.UserID)
 		context := u.HTTPRequest.Context()
-		user, err := b.client.User.Get(context, userId)
+		err := repository.SetIsBlockedUser(context, userId, true)
 		if err != nil {
 			return users.NewBlockUserDefault(http.StatusNotFound).WithPayload(&models.Error{
-				Data: &models.ErrorData{
-					Message: err.Error(),
-				},
-			})
-		}
-		user, err = b.client.User.UpdateOne(user).SetIsBlocked(true).Save(context)
-		if err != nil {
-			return users.NewBlockUserDefault(http.StatusInternalServerError).WithPayload(&models.Error{
 				Data: &models.ErrorData{
 					Message: err.Error(),
 				},
@@ -46,19 +39,12 @@ func (b Blocker) BlockUserFunc() users.BlockUserHandlerFunc {
 	}
 }
 
-func (b Blocker) UnblockUserFunc() users.UnblockUserHandlerFunc {
+func (b Blocker) UnblockUserFunc(repository repositories.BlockerRepository) users.UnblockUserHandlerFunc {
 	return func(u users.UnblockUserParams) middleware.Responder {
 		userId := int(u.UserID)
 		context := u.HTTPRequest.Context()
-		user, err := b.client.User.Get(context, userId)
-		if err != nil {
-			return users.NewUnblockUserDefault(http.StatusNotFound).WithPayload(&models.Error{
-				Data: &models.ErrorData{
-					Message: err.Error(),
-				},
-			})
-		}
-		user, err = b.client.User.UpdateOne(user).SetIsBlocked(false).Save(context)
+
+		err := repository.SetIsBlockedUser(context, userId, false)
 		if err != nil {
 			return users.NewUnblockUserDefault(http.StatusInternalServerError).WithPayload(&models.Error{
 				Data: &models.ErrorData{

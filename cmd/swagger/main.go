@@ -114,8 +114,8 @@ func main() {
 	api.UsersGetCurrentUserHandler = userHandler.GetUserFunc()
 	api.UsersPatchUserHandler = userHandler.PatchUserFunc()
 	api.UsersAssignRoleToUserHandler = userHandler.AssignRoleToUserFunc(repositories.NewUserRepository(client))
-	api.UsersBlockUserHandler = blockerHandler.BlockUserFunc()
-	api.UsersUnblockUserHandler = blockerHandler.UnblockUserFunc()
+	api.UsersBlockUserHandler = blockerHandler.BlockUserFunc(repositories.NewBlockerRepository(client))
+	api.UsersUnblockUserHandler = blockerHandler.UnblockUserFunc(repositories.NewBlockerRepository(client))
 
 	api.RolesGetRolesHandler = roleHandler.GetRolesFunc()
 
