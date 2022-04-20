@@ -951,3 +951,24 @@ definitions:
       equipment:
         type: object
         $ref: '#/definitions/Equipment'
+  # Order Status
+  NewOrderStatus:
+    type: object
+    required:
+      - id
+      - comment
+      - status
+      - created_at
+      - order_id
+    properties:
+      id:
+        type: integer
+      comment:
+        type: string
+      status:
+        type: string
+      created_at:
+        type: string
+        format: date-time
+      order_id:
+        type: integer

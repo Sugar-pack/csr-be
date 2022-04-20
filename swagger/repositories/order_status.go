@@ -3,13 +3,16 @@ package repositories
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/statusname"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/models"
 )
 
 type OrderStatusRepository interface {
 	StatusHistory(ctx context.Context, orderId int) ([]ent.OrderStatus, error)
-	UpdateStatus(ctx context.Context, status ent.OrderStatus) error
+	UpdateStatus(ctx context.Context, userID int, status models.NewOrderStatus) error
 }
 
 type orderStatusRepository struct {
@@ -38,13 +41,26 @@ func (r *orderStatusRepository) StatusHistory(ctx context.Context, orderId int) 
 
 }
 
-func (r *orderStatusRepository) UpdateStatus(ctx context.Context, status ent.OrderStatus) error {
-	_, err := r.client.OrderStatus.Create().
-		SetComment(status.Comment).
-		SetCurrentDate(status.CurrentDate).
-		SetOrder(status.Edges.Order).
-		SetStatusName(status.Edges.StatusName).
-		SetUsers(status.Edges.Users).Save(ctx)
+func (r *orderStatusRepository) UpdateStatus(ctx context.Context, userID int, status models.NewOrderStatus) error {
+	order, err := r.client.Order.Get(ctx, int(*status.OrderID))
+	if err != nil {
+		return fmt.Errorf("status history error, failed to get order: %s", err)
+	}
+
+	statusName, err := r.client.StatusName.Query().Where(statusname.Status(*status.Status)).Only(ctx)
+	if err != nil {
+		return fmt.Errorf("status history error, failed to get status name: %s", err)
+	}
+	user, err := r.client.User.Get(ctx, userID)
+	if err != nil {
+		return fmt.Errorf("status history error, failed to get user: %s", err)
+	}
+	_, err = r.client.OrderStatus.Create().
+		SetComment(*status.Comment).
+		SetCurrentDate(time.Time(*status.CreatedAt)).
+		SetOrder(order).
+		SetStatusName(statusName).
+		SetUsers(user).Save(ctx)
 
 	if err != nil {
 		return fmt.Errorf("status history error, failed to create order status: %s", err)
