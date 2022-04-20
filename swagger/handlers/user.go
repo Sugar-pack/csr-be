@@ -59,14 +59,6 @@ func NewUser(client *ent.Client, logger *zap.Logger) *User {
 	}
 }
 
-func buildErrorPayload(err error) *models.Error {
-	return &models.Error{
-		Data: &models.ErrorData{
-			Message: err.Error(),
-		},
-	}
-}
-
 func (c User) LoginUserFunc(jwtSecretKey string) users.LoginHandlerFunc {
 	return func(p users.LoginParams) middleware.Responder {
 		login := p.Login.Login

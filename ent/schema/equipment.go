@@ -27,5 +27,6 @@ func (Equipment) Edges() []ent.Edge {
 	return []ent.Edge{
 		edge.From("kind", Kind.Type).Ref("equipments").Unique(),
 		edge.From("status", Statuses.Type).Ref("equipments").Unique(),
+		edge.From("order", Order.Type).Ref("equipments"),
 	}
 }

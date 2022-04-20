@@ -2,6 +2,7 @@ package authentication
 
 import (
 	"errors"
+	"fmt"
 )
 
 type Role struct {
@@ -10,6 +11,7 @@ type Role struct {
 }
 
 type Auth struct {
+	Id    int
 	Login string
 	Role  *Role
 }
@@ -27,6 +29,14 @@ func GetAuth(access interface{}) (*Auth, error) {
 		return nil, errors.New("unable to convert to Auth type")
 	}
 	return &auth, nil
+}
+
+func GetUserId(access interface{}) (int, error) {
+	auth, err := GetAuth(access)
+	if err != nil {
+		return 0, fmt.Errorf("get user id error, failed to get auth: %s", err)
+	}
+	return auth.Id, nil
 }
 
 func IsAdmin(access interface{}) (bool, error) {
