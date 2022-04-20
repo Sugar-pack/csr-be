@@ -22,6 +22,7 @@ func BearerAuthenticateFunc(key interface{}, _ *zap.Logger) func(string) (interf
 		}
 		if token.Valid {
 			login := claims["login"].(string)
+			id := int(claims["id"].(float64))
 			var rolePointer *authentication.Role = nil
 			if claims["role"] != nil {
 				role, ok := claims["role"].(map[string]interface{})
@@ -37,6 +38,7 @@ func BearerAuthenticateFunc(key interface{}, _ *zap.Logger) func(string) (interf
 				}
 			}
 			return authentication.Auth{
+				Id:    id,
 				Login: login,
 				Role:  rolePointer,
 			}, nil

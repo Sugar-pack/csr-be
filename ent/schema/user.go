@@ -42,6 +42,7 @@ func (User) Edges() []ent.Edge {
 	return []ent.Edge{
 		edge.From("groups", Group.Type).Ref("users"),
 		edge.From("role", Role.Type).Ref("users").Unique(),
+		edge.From("order", Order.Type).Ref("users"),
 		edge.To("order_status", OrderStatus.Type),
 	}
 }
