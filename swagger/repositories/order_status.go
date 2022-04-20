@@ -66,5 +66,35 @@ func (r *orderStatusRepository) UpdateStatus(ctx context.Context, userID int, st
 		return fmt.Errorf("status history error, failed to create order status: %s", err)
 	}
 	return nil
+}
 
+func (r *orderStatusRepository) GetListOfApprovedOrders(ctx context.Context) ([]ent.OrderStatus, error) {
+	statusApproved, err := r.client.StatusName.Query().Where(statusname.Status("approved")).Only(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("status history error, failed to get status name: %s", err)
+	}
+
+	pointersStatuses, err := statusApproved.QueryOrderStatus().All(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("status history error, failed to get order statuses: %s", err)
+	}
+	statuses := make([]ent.OrderStatus, 0, len(pointersStatuses))
+	for _, element := range pointersStatuses {
+		statuses = append(statuses, *element)
+	}
+	return statuses, nil
+}
+
+func (r *orderStatusRepository) GetOrderCurrentStatus(ctx context.Context, orderId int) (*ent.OrderStatus, error) {
+	order, err := r.client.Order.Get(ctx, orderId)
+	if err != nil {
+		return nil, fmt.Errorf("status history error, failed to get order: %s", err)
+	}
+
+	pointersStatuses, err := order.QueryOrderStatus().Order(ent.Desc("current_date")).All(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("status history error, failed to get statuses: %s", err)
+	}
+	status := pointersStatuses[0]
+	return status, nil
 }
