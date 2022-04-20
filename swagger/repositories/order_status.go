@@ -2,6 +2,7 @@ package repositories
 
 import (
 	"context"
+	"fmt"
 
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent"
 )
@@ -22,15 +23,15 @@ func NewOrderStatusRepository(client *ent.Client) OrderStatusRepository {
 func (r *orderStatusRepository) StatusHistory(ctx context.Context, orderId int) ([]ent.OrderStatus, error) {
 	order, err := r.client.Order.Get(ctx, orderId)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("status history error, failed to get order: %s", err)
 	}
 
-	pointers_statuses, err := order.QueryOrderStatus().All(ctx)
+	pointersStatuses, err := order.QueryOrderStatus().All(ctx)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("status history error, failed to get order statuses: %s", err)
 	}
-	statuses := []ent.OrderStatus{}
-	for _, element := range pointers_statuses {
+	statuses := make([]ent.OrderStatus, 0, len(pointersStatuses))
+	for _, element := range pointersStatuses {
 		statuses = append(statuses, *element)
 	}
 	return statuses, nil
@@ -46,7 +47,7 @@ func (r *orderStatusRepository) UpdateStatus(ctx context.Context, status ent.Ord
 		SetUsers(status.Edges.Users).Save(ctx)
 
 	if err != nil {
-		return err
+		return fmt.Errorf("status history error, failed to create order status: %s", err)
 	}
 	return nil
 
