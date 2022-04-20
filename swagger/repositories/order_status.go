@@ -68,13 +68,13 @@ func (r *orderStatusRepository) UpdateStatus(ctx context.Context, userID int, st
 	return nil
 }
 
-func (r *orderStatusRepository) GetListOfApprovedOrders(ctx context.Context) ([]ent.OrderStatus, error) {
-	statusApproved, err := r.client.StatusName.Query().Where(statusname.Status("approved")).Only(ctx)
+func (r *orderStatusRepository) FilterOrderStatusesByName(ctx context.Context, statusName string) ([]ent.OrderStatus, error) {
+	status, err := r.client.StatusName.Query().Where(statusname.Status(statusName)).Only(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("status history error, failed to get status name: %s", err)
 	}
 
-	pointersStatuses, err := statusApproved.QueryOrderStatus().All(ctx)
+	pointersStatuses, err := status.QueryOrderStatus().All(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("status history error, failed to get order statuses: %s", err)
 	}
@@ -97,4 +97,34 @@ func (r *orderStatusRepository) GetOrderCurrentStatus(ctx context.Context, order
 	}
 	status := pointersStatuses[0]
 	return status, nil
+}
+
+func (r *orderStatusRepository) GetUserStatusHistory(ctx context.Context, userId int) ([]ent.OrderStatus, error) {
+	user, err := r.client.User.Get(ctx, userId)
+	if err != nil {
+		return nil, fmt.Errorf("status history error, failed to get user: %s", err)
+	}
+
+	pointersStatuses, err := user.QueryOrderStatus().All(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("status history error, failed to get order statuses: %s", err)
+	}
+	statuses := make([]ent.OrderStatus, 0, len(pointersStatuses))
+	for _, element := range pointersStatuses {
+		statuses = append(statuses, *element)
+	}
+	return statuses, nil
+}
+
+func (r *orderStatusRepository) GetAllOrderStatuses(ctx context.Context, orderId int) ([]ent.OrderStatus, error) {
+	pointersStatuses, err := r.client.OrderStatus.Query().All(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("status history error, failed to get order statuses: %s", err)
+	}
+	statuses := make([]ent.OrderStatus, 0, len(pointersStatuses))
+	for _, element := range pointersStatuses {
+		statuses = append(statuses, *element)
+	}
+	return statuses, nil
+
 }
