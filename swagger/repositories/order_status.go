@@ -19,8 +19,8 @@ type orderStatusRepository struct {
 	client *ent.Client
 }
 
-func NewOrderStatusRepository(client *ent.Client) OrderStatusRepository {
-	return &orderStatusRepository{client: client}
+func NewOrderStatusRepository(client *ent.Client) orderStatusRepository {
+	return orderStatusRepository{client: client}
 }
 
 func (r *orderStatusRepository) StatusHistory(ctx context.Context, orderId int) ([]ent.OrderStatus, error) {
