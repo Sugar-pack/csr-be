@@ -319,6 +319,81 @@ paths:
           description: Unexpected error
           schema:
             $ref: "#/definitions/Error"
+  /v1/orders:
+    get:
+      tags:
+        - Orders
+      operationId: GetAllOrders
+      security:
+        - Bearer: [ ]
+      responses:
+        200:
+          description: 'List of orders'
+          schema:
+            type: object
+            properties:
+              data:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/definitions/Order'
+                  total:
+                    type: integer
+        default:
+          description: 'Unexpected error'
+          schema:
+            $ref: '#/definitions/Error'
+    post:
+      tags:
+        - Orders
+      operationId: CreateOrder
+      security:
+        - Bearer: [ ]
+      consumes:
+        - application/json
+      responses:
+        201:
+          description: 'Order created'
+          schema:
+            $ref: '#/definitions/Order'
+      parameters:
+        - name: data
+          in: body
+          description: 'Create new order'
+          required: true
+          schema:
+            $ref: '#/definitions/OrderCreateRequest'
+  /v1/orders/{orderId}:
+    put:
+      summary: Edit order by id
+      tags:
+        - Orders
+      security:
+        - Bearer: [ ]
+      operationId: UpdateOrder
+      parameters:
+        - name: orderId
+          in: path
+          required: true
+          description: order id
+          type: integer
+        - name: data
+          in: body
+          description: Edit order
+          required: true
+          schema:
+            $ref: "#/definitions/OrderUpdateRequest"
+      responses:
+        200:
+          description: Order updated
+          schema:
+            $ref: "#/definitions/Order"
+        default:
+          description: Unexpected error.
+          schema:
+            $ref: "#/definitions/Error"
   /v1/active_areas:
     get:
       summary: Get all active areas.
@@ -573,6 +648,16 @@ definitions:
         properties:
           token:
             type: string
+  UserEmbeddable:
+    type: object
+    required:
+      - id
+      - name
+    properties:
+      id:
+        type: integer
+      name:
+        type: string
   User:
     type: object
     required:
@@ -832,5 +917,75 @@ definitions:
     items:
       $ref: "#/definitions/EquipmentResponse"
 
-
-
+  # Order
+  OrderCreateRequest:
+    type: object
+    required:
+      - description
+      - quantity
+      - rent_start
+      - rent_end
+      - equipment
+    properties:
+      description:
+        type: string
+      quantity:
+        type: integer
+        minimum: 1
+      rent_start:
+        type: string
+        format: date-time
+      rent_end:
+        type: string
+        format: date-time
+      equipment:
+        type: integer
+        minimum: 1
+  OrderUpdateRequest:
+    type: object
+    required:
+      - description
+      - quantity
+      - rent_start
+      - rent_end
+    properties:
+      description:
+        type: string
+      quantity:
+        type: integer
+        minimum: 1
+      rent_start:
+        type: string
+        format: date-time
+      rent_end:
+        type: string
+        format: date-time
+  Order:
+    type: object
+    required:
+      - id
+      - description
+      - quantity
+      - rent_start
+      - rent_end
+      - user
+      - equipment
+    properties:
+      id:
+        type: integer
+      description:
+        type: string
+      quantity:
+        type: integer
+      rent_start:
+        type: string
+        format: date-time
+      rent_end:
+        type: string
+        format: date-time
+      user:
+        type: object
+        $ref: '#/definitions/UserEmbeddable'
+      equipment:
+        type: object
+        $ref: '#/definitions/Equipment'
