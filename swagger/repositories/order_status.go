@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/orderstatus"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/statusname"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/models"
 )
@@ -40,7 +41,33 @@ func (r *orderStatusRepository) StatusHistory(ctx context.Context, orderId int) 
 	return statuses, nil
 
 }
+func (r orderStatusRepository) OrdersStatusesByPeriodAndStatus(ctx context.Context, from, to time.Time, status string) ([]ent.OrderStatus, error) {
+	statusID, err := r.client.StatusName.Query().Where(statusname.StatusEQ(status)).OnlyID(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get status id: %w", err)
+	}
 
+	orderStatusesByStatusPointers, err := r.client.OrderStatus.Query().
+		Where(orderstatus.CurrentDateGT(from)).
+		Where(orderstatus.CurrentDateLTE(to)).
+		WithStatusName(func(query *ent.StatusNameQuery) {
+			query.Where(statusname.IDEQ(statusID))
+		}).All(ctx)
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to get order status by status: %w", err)
+	}
+	if len(orderStatusesByStatusPointers) == 0 {
+		return nil, fmt.Errorf("no orders with status %s", status)
+	}
+	statuses := make([]ent.OrderStatus, 0, len(orderStatusesByStatusPointers))
+	for _, element := range orderStatusesByStatusPointers {
+		statuses = append(statuses, *element)
+	}
+
+	return statuses, nil
+
+}
 func (r *orderStatusRepository) UpdateStatus(ctx context.Context, userID int, status models.NewOrderStatus) error {
 	order, err := r.client.Order.Get(ctx, int(*status.OrderID))
 	if err != nil {
