@@ -3,17 +3,18 @@ package repositories
 import (
 	"context"
 	"fmt"
+	"time"
+
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/orderstatus"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/statusname"
-	"time"
 )
 
 type OrderRepositoryWithStatusFilter interface {
 	OrdersByStatus(ctx context.Context, status string) ([]ent.Order, error)
 	OrdersByPeriodAndStatus(ctx context.Context, from, to time.Time, status string) ([]ent.Order, error)
 }
-type orderStatusRepository struct {
+type orderFilterRepository struct {
 	client *ent.Client
 }
 
