@@ -41,7 +41,7 @@ func (r *orderStatusRepository) StatusHistory(ctx context.Context, orderId int) 
 	return statuses, nil
 
 }
-func (r orderStatusRepository) OrdersStatusesByPeriodAndStatus(ctx context.Context, from, to time.Time, status string) ([]ent.OrderStatus, error) {
+func (r orderStatusRepository) FilterOrdersStatusesByPeriodAndStatus(ctx context.Context, from, to time.Time, status string) ([]ent.OrderStatus, error) {
 	statusID, err := r.client.StatusName.Query().Where(statusname.StatusEQ(status)).OnlyID(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get status id: %w", err)
@@ -66,7 +66,6 @@ func (r orderStatusRepository) OrdersStatusesByPeriodAndStatus(ctx context.Conte
 	}
 
 	return statuses, nil
-
 }
 func (r *orderStatusRepository) UpdateStatus(ctx context.Context, userID int, status models.NewOrderStatus) error {
 	order, err := r.client.Order.Get(ctx, int(*status.OrderID))
