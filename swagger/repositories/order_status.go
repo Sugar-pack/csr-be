@@ -24,6 +24,33 @@ func NewOrderStatusRepository(client *ent.Client) orderStatusRepository {
 	return orderStatusRepository{client: client}
 }
 
+func (r *orderStatusRepository) ApproveOrRejectOrder(ctx context.Context, userID int, status models.NewOrderStatus) error {
+	order, err := r.client.Order.Get(ctx, int(*status.OrderID))
+	if err != nil {
+		return fmt.Errorf("status history error, failed to get order: %s", err)
+	}
+
+	statusName, err := r.client.StatusName.Query().Where(statusname.Status(*status.Status)).Only(ctx)
+	if err != nil {
+		return fmt.Errorf("status history error, failed to get status name: %s", err)
+	}
+	user, err := r.client.User.Get(ctx, userID)
+	if err != nil {
+		return fmt.Errorf("status history error, failed to get user: %s", err)
+	}
+	_, err = r.client.OrderStatus.Create().
+		SetComment(*status.Comment).
+		SetCurrentDate(time.Time(*status.CreatedAt)).
+		SetOrder(order).
+		SetStatusName(statusName).
+		SetUsers(user).Save(ctx)
+
+	if err != nil {
+		return fmt.Errorf("status history error, failed to create order status: %s", err)
+	}
+	return nil
+}
+
 func (r *orderStatusRepository) StatusHistory(ctx context.Context, orderId int) ([]ent.OrderStatus, error) {
 	order, err := r.client.Order.Get(ctx, orderId)
 	if err != nil {
@@ -41,6 +68,7 @@ func (r *orderStatusRepository) StatusHistory(ctx context.Context, orderId int) 
 	return statuses, nil
 
 }
+
 func (r orderStatusRepository) FilterOrdersStatusesByPeriodAndStatus(ctx context.Context, from, to time.Time, status string) ([]ent.OrderStatus, error) {
 	statusID, err := r.client.StatusName.Query().Where(statusname.StatusEQ(status)).OnlyID(ctx)
 	if err != nil {
