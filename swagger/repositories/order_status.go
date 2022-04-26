@@ -3,6 +3,7 @@ package repositories
 import (
 	"context"
 	"fmt"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/order"
 	"time"
 
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent"
@@ -12,7 +13,7 @@ import (
 )
 
 type OrderStatusRepository interface {
-	StatusHistory(ctx context.Context, orderId int) ([]ent.OrderStatus, error)
+	StatusHistory(ctx context.Context, orderId int) ([]*ent.OrderStatus, error)
 	UpdateStatus(ctx context.Context, userID int, status models.NewOrderStatus) error
 }
 
@@ -51,22 +52,13 @@ func (r *orderStatusRepository) ApproveOrRejectOrder(ctx context.Context, userID
 	return nil
 }
 
-func (r *orderStatusRepository) StatusHistory(ctx context.Context, orderId int) ([]ent.OrderStatus, error) {
-	order, err := r.client.Order.Get(ctx, orderId)
-	if err != nil {
-		return nil, fmt.Errorf("status history error, failed to get order: %s", err)
-	}
+func (r *orderStatusRepository) StatusHistory(ctx context.Context, orderId int) ([]*ent.OrderStatus, error) {
 
-	pointersStatuses, err := order.QueryOrderStatus().All(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("status history error, failed to get order statuses: %s", err)
-	}
-	statuses := make([]ent.OrderStatus, 0, len(pointersStatuses))
-	for _, element := range pointersStatuses {
-		statuses = append(statuses, *element)
-	}
-	return statuses, nil
+	statuses, err := r.client.OrderStatus.Query().WithOrder(func(query *ent.OrderQuery) {
+		query.Where(order.IDEQ(orderId))
+	}).WithStatusName().WithUsers().All(ctx)
 
+	return statuses, err
 }
 
 func (r orderStatusRepository) FilterOrdersStatusesByPeriodAndStatus(ctx context.Context, from, to time.Time, status string) ([]ent.OrderStatus, error) {
@@ -96,6 +88,9 @@ func (r orderStatusRepository) FilterOrdersStatusesByPeriodAndStatus(ctx context
 	return statuses, nil
 }
 func (r *orderStatusRepository) UpdateStatus(ctx context.Context, userID int, status models.NewOrderStatus) error {
+	if status.OrderID == nil {
+		return fmt.Errorf("order id is required")
+	}
 	order, err := r.client.Order.Get(ctx, int(*status.OrderID))
 	if err != nil {
 		return fmt.Errorf("status history error, failed to get order: %s", err)

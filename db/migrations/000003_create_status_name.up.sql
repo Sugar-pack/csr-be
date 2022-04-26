@@ -1,4 +1,4 @@
-INSERT INTO status_name (id, name)
+INSERT INTO status_names (id, status)
     VALUES
         (1, 'review'),
         (2, 'approved'),

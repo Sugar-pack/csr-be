@@ -394,6 +394,108 @@ paths:
           description: Unexpected error.
           schema:
             $ref: "#/definitions/Error"
+  /v1/order_statuses/{orderId}:
+    get:
+      summary: Get full order status history.
+      tags:
+        - Orders
+      security:
+        - Bearer: [ ]
+      parameters:
+        - name: orderId
+          in: path
+          required: true
+          description: order id
+          type: integer
+      operationId: GetFullOrderHistory
+      responses:
+        200:
+          description: Success
+          schema:
+            $ref: "#/definitions/OrderStatuses"
+        default:
+          description: Unexpected error.
+          schema:
+            $ref: "#/definitions/Error"
+  /v1/order_statuses/:
+    post:
+      summary: Add new order status to order status history.
+      tags:
+        - Orders
+      security:
+        - Bearer: [ ]
+      parameters:
+        - name: data
+          in: body
+          description: 'Create new order status'
+          required: true
+          schema:
+            $ref: '#/definitions/NewOrderStatus'
+      operationId: AddNewOrderStatus
+      responses:
+        200:
+          description: Order created
+          schema:
+            type: string
+        default:
+          description: Unexpected error.
+          schema:
+            $ref: '#/definitions/Error'
+  /v1/orders/status/{status}:
+    get:
+      summary: Get orders by status.
+      tags:
+        - Orders
+      security:
+        - Bearer: [ ]
+      parameters:
+        - name: status
+          in: path
+          required: true
+          description: order status
+          type: string
+      operationId: GetOrdersByStatus
+      responses:
+        200:
+          description: Success
+          schema:
+            $ref: "#/definitions/OrderList"
+        default:
+          description: Unexpected error.
+          schema:
+            $ref: '#/definitions/Error'
+  /v1/orders/from={fromDate}&to={toDate}&status={statusName}:
+    get:
+      summary: Get orders by date and status.
+      tags:
+        - Orders
+      security:
+        - Bearer: [ ]
+      parameters:
+        - name: fromDate
+          in: path
+          required: true
+          type: string
+          format: date
+        - name: toDate
+          in: path
+          required: true
+          type: string
+          format: date
+        - name: statusName
+          in: path
+          required: true
+          type: string
+      operationId: GetOrdersByDateAndStatus
+      responses:
+        200:
+          description: Success
+          schema:
+            $ref: "#/definitions/OrderList"
+        default:
+          description: Unexpected error.
+          schema:
+            $ref: '#/definitions/Error'
   /v1/active_areas:
     get:
       summary: Get all active areas.
@@ -951,18 +1053,47 @@ definitions:
       equipment:
         type: object
         $ref: '#/definitions/Equipment'
-  # Order Status
-  NewOrderStatus:
+  OrderStatuses:
+    type: array
+    items:
+      $ref: '#/definitions/OrderStatus'
+  OrderStatus:
     type: object
     required:
       - id
       - comment
       - status
       - created_at
+      - changed_by
       - order_id
     properties:
       id:
         type: integer
+      comment:
+        type: string
+      status:
+        type: string
+      created_at:
+        type: string
+        format: date-time
+      changed_by:
+        type: object
+        $ref: '#/definitions/UserEmbeddable'
+      order_id:
+        type: integer
+  OrderList:
+    type: array
+    items:
+      $ref: "#/definitions/Order"
+  # Order Status
+  NewOrderStatus:
+    type: object
+    required:
+      - comment
+      - status
+      - created_at
+      - order_id
+    properties:
       comment:
         type: string
       status:
