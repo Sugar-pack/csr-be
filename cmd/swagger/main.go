@@ -100,6 +100,11 @@ func main() {
 		logger,
 	)
 
+	orderStatus := handlers.NewOrderStatus(
+		client,
+		logger,
+	)
+
 	api := operations.NewBeAPI(swaggerSpec)
 	api.UseSwaggerUI()
 	jwtSecretKey := os.Getenv("JWT_SECRET_KEY")
@@ -140,6 +145,14 @@ func main() {
 	api.OrdersGetAllOrdersHandler = ordersHandler.ListOrderFunc(orderRepository)
 	api.OrdersCreateOrderHandler = ordersHandler.CreateOrderFunc(orderRepository)
 	api.OrdersUpdateOrderHandler = ordersHandler.UpdateOrderFunc(orderRepository)
+
+	orderStatusRepertory := repositories.NewOrderFilter(client)
+	api.OrdersGetOrdersByStatusHandler = orderStatus.GetOrdersByStatus(orderStatusRepertory)
+	api.OrdersGetOrdersByDateAndStatusHandler = orderStatus.GetOrdersByPeriodAndStatus(orderStatusRepertory)
+
+	statusRepository := repositories.NewOrderStatusRepository(client)
+	api.OrdersAddNewOrderStatusHandler = orderStatus.AddNewStatusToOrder(statusRepository)
+	api.OrdersGetFullOrderHistoryHandler = orderStatus.OrderStatusesHistory(statusRepository)
 
 	server := restapi.NewServer(api)
 	listeners := []string{"http"}

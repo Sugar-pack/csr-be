@@ -3,15 +3,17 @@ package handlers
 import (
 	"context"
 	"errors"
+	"net/http"
+
+	"github.com/go-openapi/runtime/middleware"
+	"github.com/go-openapi/strfmt"
+	"go.uber.org/zap"
+
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/authentication"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/models"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/restapi/operations/orders"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/repositories"
-	"github.com/go-openapi/runtime/middleware"
-	"github.com/go-openapi/strfmt"
-	"go.uber.org/zap"
-	"net/http"
 )
 
 type Order struct {
@@ -50,6 +52,24 @@ func mapOrder(ctx context.Context, o *ent.Order) (*models.Order, error) {
 		statusId = int64(equipment.Edges.Status.ID)
 	}
 
+	allStatuses, err := o.QueryOrderStatus().All(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if len(allStatuses) == 0 {
+		return nil, errors.New("no statuses")
+	}
+	lastStatus := allStatuses[0]
+	for _, s := range allStatuses {
+		if s.CurrentDate.After(lastStatus.CurrentDate) {
+			lastStatus = s
+		}
+	}
+	statusToOrder, err := MapStatus(lastStatus)
+	if err != nil {
+		return nil, err
+	}
+
 	return &models.Order{
 		Description: &o.Description,
 		Equipment: &models.Equipment{
@@ -71,6 +91,7 @@ func mapOrder(ctx context.Context, o *ent.Order) (*models.Order, error) {
 			ID:   &ownerId,
 			Name: &ownerName,
 		},
+		LastStatus: statusToOrder,
 	}, nil
 }
 

@@ -18,11 +18,11 @@ type orderFilterRepository struct {
 	client *ent.Client
 }
 
-func NewStatusRepository(client *ent.Client) *orderStatusRepository {
-	return &orderStatusRepository{client: client}
+func NewOrderFilter(client *ent.Client) *orderFilterRepository {
+	return &orderFilterRepository{client: client}
 }
 
-func (r orderStatusRepository) OrdersByPeriodAndStatus(ctx context.Context, from, to time.Time, status string) ([]ent.Order, error) {
+func (r *orderFilterRepository) OrdersByPeriodAndStatus(ctx context.Context, from, to time.Time, status string) ([]ent.Order, error) {
 	statusID, err := r.client.StatusName.Query().Where(statusname.StatusEQ(status)).OnlyID(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get status id: %w", err)
@@ -31,9 +31,7 @@ func (r orderStatusRepository) OrdersByPeriodAndStatus(ctx context.Context, from
 	orderStatusByStatus, err := r.client.OrderStatus.Query().
 		Where(orderstatus.CurrentDateGT(from)).
 		Where(orderstatus.CurrentDateLTE(to)).
-		WithStatusName(func(query *ent.StatusNameQuery) {
-			query.Where(statusname.IDEQ(statusID))
-		}).All(ctx)
+		QueryStatusName().Where(statusname.IDEQ(statusID)).QueryOrderStatus().All(ctx)
 
 	if err != nil {
 		return nil, fmt.Errorf("failed to get order status by status: %w", err)
@@ -57,15 +55,14 @@ func (r orderStatusRepository) OrdersByPeriodAndStatus(ctx context.Context, from
 
 }
 
-func (r orderStatusRepository) OrdersByStatus(ctx context.Context, status string) ([]ent.Order, error) {
+func (r *orderFilterRepository) OrdersByStatus(ctx context.Context, status string) ([]ent.Order, error) {
 	statusID, err := r.client.StatusName.Query().Where(statusname.StatusEQ(status)).OnlyID(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get status id: %w", err)
 	}
 
-	orderStatusByStatus, err := r.client.OrderStatus.Query().WithStatusName(func(query *ent.StatusNameQuery) {
-		query.Where(statusname.IDEQ(statusID))
-	}).All(ctx)
+	orderStatusByStatus, err := r.client.OrderStatus.Query().
+		QueryStatusName().Where(statusname.IDEQ(statusID)).QueryOrderStatus().All(ctx)
 
 	if err != nil {
 		return nil, fmt.Errorf("failed to get order status by status: %w", err)
