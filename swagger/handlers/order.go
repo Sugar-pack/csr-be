@@ -50,6 +50,24 @@ func mapOrder(ctx context.Context, o *ent.Order) (*models.Order, error) {
 		statusId = int64(equipment.Edges.Status.ID)
 	}
 
+	allStatuses, err := o.QueryOrderStatus().All(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if len(allStatuses) == 0 {
+		return nil, errors.New("no statuses")
+	}
+	lastStatus := allStatuses[0]
+	for _, s := range allStatuses { // TODO: maybe ent should have a method to get last status
+		if s.CurrentDate.After(lastStatus.CurrentDate) {
+			lastStatus = s
+		}
+	}
+	statusToOrder, err := MapStatus(lastStatus)
+	if err != nil {
+		return nil, err
+	}
+
 	return &models.Order{
 		Description: &o.Description,
 		Equipment: &models.Equipment{
@@ -71,6 +89,7 @@ func mapOrder(ctx context.Context, o *ent.Order) (*models.Order, error) {
 			ID:   &ownerId,
 			Name: &ownerName,
 		},
+		LastStatus: statusToOrder,
 	}, nil
 }
 

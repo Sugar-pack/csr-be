@@ -1034,6 +1034,7 @@ definitions:
       - rent_end
       - user
       - equipment
+      - last_status
     properties:
       id:
         type: integer
@@ -1053,6 +1054,9 @@ definitions:
       equipment:
         type: object
         $ref: '#/definitions/Equipment'
+      last_status:
+        type: object
+        $ref: '#/definitions/OrderStatus'
   OrderStatuses:
     type: array
     items:
