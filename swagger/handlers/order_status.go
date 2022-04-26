@@ -3,16 +3,18 @@ package handlers
 import (
 	"errors"
 	"fmt"
+	"net/http"
+	"time"
+
+	"github.com/go-openapi/runtime/middleware"
+	"github.com/go-openapi/strfmt"
+	"go.uber.org/zap"
+
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/authentication"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/models"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/restapi/operations/orders"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/repositories"
-	"github.com/go-openapi/runtime/middleware"
-	"github.com/go-openapi/strfmt"
-	"go.uber.org/zap"
-	"net/http"
-	"time"
 )
 
 type OrderStatus struct {
@@ -170,7 +172,7 @@ func (h OrderStatus) GetOrdersByStatus(repository repositories.OrderRepositoryWi
 	return func(params orders.GetOrdersByStatusParams, access interface{}) middleware.Responder {
 		h.logger.Info("GetOrdersByStatus begin")
 		ctx := params.HTTPRequest.Context()
-		haveRight := rightForFilter(access)
+		haveRight := hasSearchRight(access)
 		if !haveRight {
 			h.logger.Warn("User have no right to get orders by status", zap.Any("access", access))
 			return orders.NewGetOrdersByStatusDefault(http.StatusForbidden).
@@ -201,7 +203,7 @@ func (h OrderStatus) GetOrdersByStatus(repository repositories.OrderRepositoryWi
 	}
 }
 
-func rightForFilter(access interface{}) bool {
+func hasSearchRight(access interface{}) bool {
 	isAdmin, err := authentication.IsAdmin(access)
 	if err != nil {
 		return false
@@ -213,7 +215,7 @@ func (h OrderStatus) GetOrdersByPeriodAndStatus(repository repositories.OrderRep
 	return func(params orders.GetOrdersByDateAndStatusParams, access interface{}) middleware.Responder {
 		h.logger.Info("GetOrdersByPeriodAndStatus begin")
 		ctx := params.HTTPRequest.Context()
-		haveRight := rightForFilter(access) // TODO: discuss right management
+		haveRight := hasSearchRight(access) // TODO: discuss right management
 		if !haveRight {
 			h.logger.Warn("User have no right to get orders by period and status", zap.Any("access", access))
 			return orders.NewGetOrdersByDateAndStatusDefault(http.StatusForbidden).

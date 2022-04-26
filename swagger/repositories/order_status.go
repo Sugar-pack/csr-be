@@ -3,10 +3,10 @@ package repositories
 import (
 	"context"
 	"fmt"
-	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/order"
 	"time"
 
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/order"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/orderstatus"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/statusname"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/models"
