@@ -634,7 +634,7 @@ definitions:
       - role
       - surname
       - name
-      - patronomic
+      - patronymic
       - passport_series
       - passport_number
       - passport_authority
@@ -660,7 +660,7 @@ definitions:
         type: string
       name:
         type: string
-      patronomic:
+      patronymic:
         type: string
       passport_series:
         type: string

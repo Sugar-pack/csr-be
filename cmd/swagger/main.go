@@ -24,6 +24,7 @@ import (
 )
 
 func main() {
+	os.Setenv("JWT_SECRET_KEY", "123")
 	var loggerConfig = zap.NewProductionConfig()
 	loggerConfig.Level.SetLevel(zap.DebugLevel)
 
