@@ -60,7 +60,7 @@ func mapOrder(ctx context.Context, o *ent.Order) (*models.Order, error) {
 		return nil, errors.New("no statuses")
 	}
 	lastStatus := allStatuses[0]
-	for _, s := range allStatuses { // TODO: maybe ent should have a method to get last status
+	for _, s := range allStatuses {
 		if s.CurrentDate.After(lastStatus.CurrentDate) {
 			lastStatus = s
 		}

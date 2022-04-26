@@ -149,7 +149,7 @@ func (h OrderStatus) AddNewStatusToOrder(repository repositories.OrderStatusRepo
 		}
 		h.logger.Info("AddNewStatusToOrder end")
 
-		return orders.NewAddNewOrderStatusOK().WithPayload("all ok") // TODO: think about return values
+		return orders.NewAddNewOrderStatusOK().WithPayload("all ok")
 	}
 }
 
@@ -164,7 +164,6 @@ func rightForStatusCreation(access interface{}, status *string) bool {
 	if status == nil {
 		return false
 	}
-	// TODO: check other options
 	return false
 }
 
@@ -208,14 +207,14 @@ func hasSearchRight(access interface{}) bool {
 	if err != nil {
 		return false
 	}
-	return isAdmin //TODO: discuss other options
+	return isAdmin
 }
 
 func (h OrderStatus) GetOrdersByPeriodAndStatus(repository repositories.OrderRepositoryWithStatusFilter) orders.GetOrdersByDateAndStatusHandlerFunc {
 	return func(params orders.GetOrdersByDateAndStatusParams, access interface{}) middleware.Responder {
 		h.logger.Info("GetOrdersByPeriodAndStatus begin")
 		ctx := params.HTTPRequest.Context()
-		haveRight := hasSearchRight(access) // TODO: discuss right management
+		haveRight := hasSearchRight(access)
 		if !haveRight {
 			h.logger.Warn("User have no right to get orders by period and status", zap.Any("access", access))
 			return orders.NewGetOrdersByDateAndStatusDefault(http.StatusForbidden).
