@@ -21,8 +21,8 @@ type orderStatusRepository struct {
 	client *ent.Client
 }
 
-func NewOrderStatusRepository(client *ent.Client) orderStatusRepository {
-	return orderStatusRepository{client: client}
+func NewOrderStatusRepository(client *ent.Client) *orderStatusRepository {
+	return &orderStatusRepository{client: client}
 }
 
 func (r *orderStatusRepository) ApproveOrRejectOrder(ctx context.Context, userID int, status models.NewOrderStatus) error {
@@ -53,10 +53,9 @@ func (r *orderStatusRepository) ApproveOrRejectOrder(ctx context.Context, userID
 }
 
 func (r *orderStatusRepository) StatusHistory(ctx context.Context, orderId int) ([]*ent.OrderStatus, error) {
-
-	statuses, err := r.client.OrderStatus.Query().WithOrder(func(query *ent.OrderQuery) {
-		query.Where(order.IDEQ(orderId))
-	}).WithStatusName().WithUsers().All(ctx)
+	statuses, err := r.client.OrderStatus.Query().
+		QueryOrder().Where(order.IDEQ(orderId)).QueryOrderStatus().
+		WithOrder().WithStatusName().WithUsers().All(ctx)
 
 	return statuses, err
 }

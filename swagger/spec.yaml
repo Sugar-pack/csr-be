@@ -413,6 +413,10 @@ paths:
           description: Success
           schema:
             $ref: "#/definitions/OrderStatuses"
+        404:
+          description: Order not found
+          schema:
+            type: string
         default:
           description: Unexpected error.
           schema:
@@ -460,6 +464,10 @@ paths:
           description: Success
           schema:
             $ref: "#/definitions/OrderList"
+        404:
+          description: No orders found
+          schema:
+            type: string
         default:
           description: Unexpected error.
           schema:
@@ -492,6 +500,10 @@ paths:
           description: Success
           schema:
             $ref: "#/definitions/OrderList"
+        404:
+          description: No orders found
+          schema:
+            type: string
         default:
           description: Unexpected error.
           schema:

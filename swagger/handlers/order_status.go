@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"errors"
+	"fmt"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/authentication"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/models"
@@ -42,6 +43,10 @@ func (h OrderStatus) OrderStatusesHistory(repository repositories.OrderStatusRep
 			h.logger.Warn("User have no right to get order history", zap.Any("access", access))
 			return orders.NewGetFullOrderHistoryDefault(http.StatusForbidden).
 				WithPayload(&models.Error{Data: &models.ErrorData{Message: "You don't have rights to see this order"}})
+		}
+		if len(history) == 0 {
+			h.logger.Info("No order with such id", zap.Int("order_id", orderID))
+			return orders.NewGetFullOrderHistoryNotFound().WithPayload("No order with such id")
 		}
 		result := make([]*models.OrderStatus, len(history))
 		for index, status := range history {
@@ -175,7 +180,11 @@ func (h OrderStatus) GetOrdersByStatus(repository repositories.OrderRepositoryWi
 		if err != nil {
 			h.logger.Error("GetOrdersByStatus error", zap.Error(err))
 			return orders.NewGetOrdersByStatusDefault(http.StatusInternalServerError).
-				WithPayload(&models.Error{Data: &models.ErrorData{Message: "Can't get orders by status"}})
+				WithPayload(&models.Error{Data: &models.ErrorData{Message: fmt.Sprintf("Can't get orders by status. error: %s", err.Error())}})
+		}
+		if ordersByStatus == nil {
+			h.logger.Warn("No orders by status", zap.Any("access", access))
+			return orders.NewGetOrdersByStatusNotFound().WithPayload("no orders by status found")
 		}
 		ordersResult := make([]*models.Order, len(ordersByStatus))
 		for index, order := range ordersByStatus {

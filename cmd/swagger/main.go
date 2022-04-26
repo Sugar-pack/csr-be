@@ -146,11 +146,11 @@ func main() {
 	api.OrdersCreateOrderHandler = ordersHandler.CreateOrderFunc(orderRepository)
 	api.OrdersUpdateOrderHandler = ordersHandler.UpdateOrderFunc(orderRepository)
 
-	orderStatusRepertory := repositories.NewOrderStatusRepository(client)
+	orderStatusRepertory := repositories.NewOrderFilter(client)
 	api.OrdersGetOrdersByStatusHandler = orderStatus.GetOrdersByStatus(orderStatusRepertory)
 	api.OrdersGetOrdersByDateAndStatusHandler = orderStatus.GetOrdersByPeriodAndStatus(orderStatusRepertory)
 
-	statusRepository := repositories.NewStatusRepository(client)
+	statusRepository := repositories.NewOrderStatusRepository(client)
 	api.OrdersAddNewOrderStatusHandler = orderStatus.AddNewStatusToOrder(statusRepository)
 	api.OrdersGetFullOrderHistoryHandler = orderStatus.OrderStatusesHistory(statusRepository)
 
