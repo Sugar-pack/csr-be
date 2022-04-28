@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"fmt"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/models"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/restapi/operations/equipment"
@@ -30,9 +29,14 @@ func (c Equipment) PostEquipmentFunc() equipment.CreateNewEquipmentHandlerFunc {
 		e, err := c.client.Equipment.Create().
 			SetName(*s.NewEquipment.Name).
 			SetDescription(*s.NewEquipment.Description).
-			SetSku(*s.NewEquipment.Sku).
-			SetRateDay(*s.NewEquipment.RateDay).
-			SetRateHour(*s.NewEquipment.RateHour).
+			SetCategory(*s.NewEquipment.Category).
+			SetCompensationСost(*s.NewEquipment.CompensationСost).
+			SetCondition(*s.NewEquipment.Condition).
+			SetInventoryNumber(*s.NewEquipment.InventoryNumber).
+			SetSupplier(*s.NewEquipment.Supplier).
+			SetReceiptDate(*s.NewEquipment.ReceiptDate).
+			SetMaximumAmount(*s.NewEquipment.MaximumAmount).
+			SetMaximumDays(*s.NewEquipment.MaximumDays).
 			SetKind(&ent.Kind{ID: int(*s.NewEquipment.Kind)}).
 			SetStatus(&ent.Statuses{ID: int(*s.NewEquipment.Status)}).
 			Save(s.HTTPRequest.Context())
@@ -65,16 +69,20 @@ func (c Equipment) PostEquipmentFunc() equipment.CreateNewEquipmentHandlerFunc {
 		}
 		statusId := int64(status.ID)
 
-		id := fmt.Sprintf("%d", e.ID)
+		id := int64(e.ID)
 		return equipment.NewCreateNewEquipmentCreated().WithPayload(&models.EquipmentResponse{
-			ID:          &id,
-			Description: &e.Description,
-			Name:        &e.Name,
-			RateDay:     &e.RateDay,
-			RateHour:    &e.RateHour,
-			Sku:         &e.Sku,
-			Kind:        &kindId,
-			Status:      &statusId,
+			ID:               &id,
+			Description:      &e.Description,
+			Name:             &e.Name,
+			CompensationСost: &e.CompensationСost,
+			Condition:        &e.Condition,
+			InventoryNumber:  &e.InventoryNumber,
+			Supplier:         &e.Supplier,
+			ReceiptDate:      &e.ReceiptDate,
+			MaximumAmount:    &e.MaximumAmount,
+			MaximumDays:      &e.MaximumDays,
+			Kind:             &kindId,
+			Status:           &statusId,
 		})
 	}
 }
@@ -118,13 +126,17 @@ func (c Equipment) GetEquipmentFunc() equipment.GetEquipmentHandlerFunc {
 		}
 		statusId := int64(status.ID)
 		return equipment.NewGetEquipmentCreated().WithPayload(&models.Equipment{
-			Description: &e.Description,
-			Name:        &e.Name,
-			RateDay:     &e.RateDay,
-			RateHour:    &e.RateHour,
-			Sku:         &e.Sku,
-			Kind:        &kindId,
-			Status:      &statusId,
+			Description:      &e.Description,
+			Name:             &e.Name,
+			CompensationСost: &e.CompensationСost,
+			Condition:        &e.Condition,
+			InventoryNumber:  &e.InventoryNumber,
+			Supplier:         &e.Supplier,
+			ReceiptDate:      &e.ReceiptDate,
+			MaximumAmount:    &e.MaximumAmount,
+			MaximumDays:      &e.MaximumDays,
+			Kind:             &kindId,
+			Status:           &statusId,
 		})
 	}
 }
@@ -177,13 +189,17 @@ func (c Equipment) DeleteEquipmentFunc() equipment.DeleteEquipmentHandlerFunc {
 		statusId := int64(status.ID)
 
 		return equipment.NewDeleteEquipmentCreated().WithPayload(&models.Equipment{
-			Description: &e.Description,
-			Name:        &e.Name,
-			RateDay:     &e.RateDay,
-			RateHour:    &e.RateHour,
-			Sku:         &e.Sku,
-			Kind:        &kindId,
-			Status:      &statusId,
+			Description:      &e.Description,
+			Name:             &e.Name,
+			CompensationСost: &e.CompensationСost,
+			Condition:        &e.Condition,
+			InventoryNumber:  &e.InventoryNumber,
+			Supplier:         &e.Supplier,
+			ReceiptDate:      &e.ReceiptDate,
+			MaximumAmount:    &e.MaximumAmount,
+			MaximumDays:      &e.MaximumDays,
+			Kind:             &kindId,
+			Status:           &statusId,
 		})
 	}
 }

@@ -14,10 +14,15 @@ type Equipment struct {
 // Fields of the Equipment.
 func (Equipment) Fields() []ent.Field {
 	return []ent.Field{
-		field.String("sku").Default("unknown"),
+		field.String("category").Default("unknown"),
 		field.String("name").Default("unknown"),
-		field.Int64("rate_hour"),
-		field.Int64("rate_day"),
+		field.Int64("compensationСost"),
+		field.String("condition").Default("unknown"),
+		field.Int64("InventoryNumber"),
+		field.String("supplier").Default("unknown"),
+		field.String("receiptDate").Default("unknown"),
+		field.Int64("maximumAmount"),
+		field.Int64("maximumDays"),
 		field.String("description").Default("unknown"),
 	}
 }

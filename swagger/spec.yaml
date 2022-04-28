@@ -134,7 +134,7 @@ paths:
         type: integer
     post:
       security:
-       - Bearer: []
+        - Bearer: []
       consumes:
         - application/json
       parameters:
@@ -173,8 +173,8 @@ paths:
       responses:
         201:
           description: Status has been created
-          schema: 
-            $ref: "#/definitions/SuccessStatusOperationResponse" 
+          schema:
+            $ref: "#/definitions/SuccessStatusOperationResponse"
         default:
           description: Unexpected error.
           schema:
@@ -208,8 +208,8 @@ paths:
       responses:
         201:
           description: Status has been created
-          schema: 
-            $ref: "#/definitions/SuccessStatusOperationResponse" 
+          schema:
+            $ref: "#/definitions/SuccessStatusOperationResponse"
         default:
           description: Unexpected error.
           schema:
@@ -222,12 +222,12 @@ paths:
       responses:
         201:
           description: Status has been created
-          schema: 
-            $ref: "#/definitions/SuccessStatusOperationResponse" 
+          schema:
+            $ref: "#/definitions/SuccessStatusOperationResponse"
         default:
           description: Unexpected error.
           schema:
-            $ref: "#/definitions/Error"  
+            $ref: "#/definitions/Error"
   /equipment/kinds:
     get:
       summary: Get all kinds.
@@ -254,7 +254,7 @@ paths:
           description: Name of a kind
           required: true
           schema:
-            $ref: "#/definitions/CreateNewKind"      
+            $ref: "#/definitions/CreateNewKind"
       responses:
         201:
           description: Success
@@ -292,7 +292,7 @@ paths:
       operationId: deleteKind
       responses:
         201:
-          description: kind of equipment successfully deleted from db 
+          description: kind of equipment successfully deleted from db
           schema:
             $ref: "#/definitions/DeleteKindResponse"
         default:
@@ -314,7 +314,7 @@ paths:
         201:
           description: Success
           schema:
-           $ref: "#/definitions/PatchKindResponse"
+            $ref: "#/definitions/PatchKindResponse"
         default:
           description: Unexpected error
           schema:
@@ -657,7 +657,7 @@ definitions:
   PatchTask:
     type: object
     required:
-      - data  
+      - data
     description: Patch task object (adding max reservation time and max reservation units)
     properties:
       data:
@@ -827,16 +827,16 @@ definitions:
   SuccessStatusOperationResponse:
     type: object
     required:
-      - data 
+      - data
     properties:
       data:
         $ref: "#/definitions/Status"
-  StatusName:          
+  StatusName:
     type: object
-    required: 
+    required:
       - name
     properties:
-      name: 
+      name:
         type: string
   # Kind
   Kind:
@@ -855,7 +855,7 @@ definitions:
   ListOfKinds:
     type: array
     items:
-     $ref: "#/definitions/Kind"
+      $ref: "#/definitions/Kind"
   GetKindByIDResponse:
     type: object
     required:
@@ -864,33 +864,33 @@ definitions:
       data:
         $ref: "#/definitions/Kind"
   DeleteKindResponse:
-   type: object
-   required:
-    - data
-   properties:
-    data:
-      $ref: "#/definitions/Kind"
+    type: object
+    required:
+      - data
+    properties:
+      data:
+        $ref: "#/definitions/Kind"
   CreateNewKind:
-   type: object  
-   required:
-    - data
-   properties:
-    data:
-      $ref: "#/definitions/Kind"    
+    type: object
+    required:
+      - data
+    properties:
+      data:
+        $ref: "#/definitions/Kind"
   CreateNewKindResponse:
-   type: object  
-   required:
-    - data
-   properties:
-    data:
-      $ref: "#/definitions/Kind"
+    type: object
+    required:
+      - data
+    properties:
+      data:
+        $ref: "#/definitions/Kind"
   PatchKindResponse:
-   type: object  
-   required:
-    - data
-   properties:
-    data:
-      $ref: "#/definitions/Kind"
+    type: object
+    required:
+      - data
+    properties:
+      data:
+        $ref: "#/definitions/Kind"
 
   #Active Areas
   ActiveArea:
@@ -906,37 +906,63 @@ definitions:
   ListOfActiveAreas:
     type: array
     items:
-     $ref: "#/definitions/ActiveArea"
+      $ref: "#/definitions/ActiveArea"
   # Equipment
   Equipment:
     type: object
     required:
-      - sku
+      - category
       - name
       - kind
       - status
-      - rate_hour
-      - rate_day
+      - compensationСost
+      - condition
+      - InventoryNumber
+      - supplier
+      - receiptDate
+      - maximumAmount
+      - maximumDays
+      - order
       - location
       - description
       - photo
     properties:
-      sku:
+      category:
         type: string
-        example: "ABC012345678"
+        example: "Клетки"
       name:
         type: string
         example: "Dog harness 3000"
       kind:
         type: integer
-        example: 5
+        example: 1
       status:
         type: integer
         example: 1
-      rate_hour:
+      compensationСost:
         type: integer
-      rate_day:
+        example: 3900
+      condition:
+        type: string
+        example: "удовлетворительное, местами облупляется краска"
+      InventoryNumber:
         type: integer
+        example: "1"
+      supplier:
+        type: string
+        example: "ИП Григорьев Виталий Васильевич"
+      receiptDate:
+        type: string
+        example: "2018"
+      maximumAmount:
+        type: integer
+        example: 3
+      maximumDays:
+        type: integer
+        example: 30
+      order:
+        type: integer
+        example: 1
       location:
         type: integer
         example: 71
@@ -950,35 +976,61 @@ definitions:
     type: object
     required:
       - id
-      - sku
+      - category
       - name
       - kind
       - status
-      - rate_hour
-      - rate_day
+      - compensationСost
+      - condition
+      - InventoryNumber
+      - supplier
+      - receiptDate
+      - maximumAmount
+      - maximumDays
+      - order
       - location
       - description
       - photo
     properties:
       id:
+        type: integer
+        example: 1
+      category:
         type: string
-        example: 2
-      sku:
-        type: string
-        example: "ABC012345678"
+        example: "Клетки"
       name:
         type: string
         example: "Dog harness 3000"
       kind:
         type: integer
-        example: 5
+        example: 1
       status:
         type: integer
         example: 1
-      rate_hour:
+      compensationСost:
         type: integer
-      rate_day:
+        example: 3900
+      condition:
+        type: string
+        example: "удовлетворительное, местами облупляется краска"
+      InventoryNumber:
         type: integer
+        example: "1"
+      supplier:
+        type: string
+        example: "ИП Григорьев Виталий Васильевич"
+      receiptDate:
+        type: string
+        example: "2018"
+      maximumAmount:
+        type: integer
+        example: 3
+      maximumDays:
+        type: integer
+        example: 30
+      order:
+        type: integer
+        example: 1
       location:
         type: integer
         example: 71
