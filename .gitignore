@@ -4,3 +4,4 @@ equipment-kind-db-controller-api/
 !/ent/schema/
 !/ent/generate.go
 /swagger/generated/
+.idea
