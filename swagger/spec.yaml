@@ -830,6 +830,7 @@ definitions:
     required:
       - login
       - password
+      - type
     properties:
       login:
         type: string
@@ -837,6 +838,41 @@ definitions:
       password:
         type: string
         minLength: 6
+      email:
+        type: string
+        format: email
+      type:
+        type: string
+        enum:
+          - person
+          - organization
+      name:
+        type: string
+      surname:
+        type: string
+      patronymic:
+        type: string
+      passport_series:
+        type: string
+      passport_number:
+        type: string
+      passport_authority:
+        type: string
+      passport_issue_date:
+        type: string
+        format: date
+      phone_number:
+        type: string
+      org_name:
+        type: string
+      website:
+        type: string
+      vk:
+        type: string
+      active_areas:
+        type: array
+        items:
+          type: integer
   CreateUserResponse:
     type: object
     required:
@@ -846,9 +882,12 @@ definitions:
         type: object
         required:
           - id
+          - login
         properties:
           id:
             type: integer
+          login:
+            type: string
   GetUserResponse:
     type: object
     required:

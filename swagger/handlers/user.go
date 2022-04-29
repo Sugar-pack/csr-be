@@ -85,21 +85,9 @@ func (c User) LoginUserFunc(jwtSecretKey string) users.LoginHandlerFunc {
 	}
 }
 
-func (c User) PostUserFunc() users.PostUserHandlerFunc {
+func (c User) PostUserFunc(repository repositories.UserRepository) users.PostUserHandlerFunc {
 	return func(p users.PostUserParams) middleware.Responder {
-		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(*p.Data.Password), bcrypt.DefaultCost)
-		if err != nil {
-			return users.NewPostUserDefault(http.StatusInternalServerError).WithPayload(buildErrorPayload(err))
-		}
-		login := *p.Data.Login
-		createdUser, err := c.client.User.
-			Create().
-			SetEmail(login).
-			SetLogin(login).
-			SetName(login).
-			SetType(user.TypePerson).
-			SetPassword(string(hashedPassword)).
-			Save(p.HTTPRequest.Context())
+		createdUser, err := repository.CreateUser(p.HTTPRequest.Context(), p.Data)
 		if err != nil {
 			if ent.IsConstraintError(err) {
 				return users.NewPostUserDefault(http.StatusExpectationFailed).WithPayload(
@@ -112,7 +100,8 @@ func (c User) PostUserFunc() users.PostUserHandlerFunc {
 		id := int64(createdUser.ID)
 		return users.NewPostUserCreated().WithPayload(&models.CreateUserResponse{
 			Data: &models.CreateUserResponseData{
-				ID: &id,
+				ID:    &id,
+				Login: &createdUser.Login,
 			},
 		})
 	}
