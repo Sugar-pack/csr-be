@@ -2,20 +2,25 @@ package repositories
 
 import (
 	"context"
-	"entgo.io/ent/dialect/sql"
 	"fmt"
+	"time"
+
+	"entgo.io/ent/dialect/sql"
+	"golang.org/x/crypto/bcrypt"
+
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/activearea"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/role"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/user"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/models"
-	"golang.org/x/crypto/bcrypt"
-	"time"
 )
 
 type UserRepository interface {
 	SetUserRole(ctx context.Context, userId int, roleId int) (*ent.User, error)
 	CreateUser(ctx context.Context, data *models.UserRegister) (*ent.User, error)
 }
+
+const defaultRoleSlug = "user"
 
 type userRepository struct {
 	client *ent.Client
@@ -57,6 +62,15 @@ func (r *userRepository) SetUserRole(ctx context.Context, userId int, roleId int
 	return foundUser, nil
 }
 
+func DefaultUserRole(ctx context.Context, client *ent.Client) (*ent.Role, error) {
+	role, err := client.Role.Query().Where(role.Slug(defaultRoleSlug)).Only(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return role, nil
+}
+
 func (r *userRepository) CreateUser(ctx context.Context, data *models.UserRegister) (createdUser *ent.User, err error) {
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(*data.Password), bcrypt.DefaultCost)
 	if err != nil {
@@ -80,6 +94,10 @@ func (r *userRepository) CreateUser(ctx context.Context, data *models.UserRegist
 
 	userType := user.Type(*data.Type)
 	passportIssueDate := time.Time(data.PassportIssueDate)
+	defaultRole, err := DefaultUserRole(ctx, r.client)
+	if err != nil {
+		return nil, fmt.Errorf("unable to find default role, %w", err)
+	}
 	createdUser, err = r.client.User.
 		Create().
 		SetEmail(string(data.Email)).
@@ -97,6 +115,7 @@ func (r *userRepository) CreateUser(ctx context.Context, data *models.UserRegist
 		SetVk(data.Vk).
 		AddActiveAreas(activeAreas...).
 		SetPassword(string(hashedPassword)).
+		SetRole(defaultRole).
 		Save(ctx)
 	return
 }
