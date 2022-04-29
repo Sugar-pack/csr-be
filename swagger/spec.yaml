@@ -110,6 +110,42 @@ paths:
           description: Unexpected error
           schema:
             $ref: "#/definitions/Error"
+  /management/users/{userId}:
+    parameters:
+      - name: userId
+        in: path
+        required: true
+        description: user id
+        type: integer
+    get:
+      summary: Get user by ID
+      tags:
+        - Users
+      operationId: GetUser
+      responses:
+        201:
+          description: Success
+          schema:
+            $ref: "#/definitions/GetUserById"
+        default:
+          description: Unexpected error.
+          schema:
+            $ref: "#/definitions/Error"
+  /management/listUsers:
+    get:
+      summary: Get all users
+      tags:
+        - Users
+      operationId: GetAllUsers
+      responses:
+        201:
+          description: Success
+          schema:
+            $ref: "#/definitions/GetListUsers"
+        default:
+          description: Unexpected error.
+          schema:
+            $ref: "#/definitions/Error"
   /v1/roles:
     get:
       summary: List all roles.
@@ -789,6 +825,66 @@ definitions:
     properties:
       roleId:
         type: integer
+  GetUserById:
+    type: object
+    required:
+      - id
+      - login
+      - role
+      - surname
+      - name
+      - patronymic
+      - passport_series
+      - passport_number
+      - passport_authority
+      - passport_issue_date
+      - phone_number
+      - email
+      - is_blocked
+      - type
+      - org_name
+    properties:
+      id:
+        type: integer
+      login:
+        type: string
+      role:
+        type: object
+        properties:
+          id:
+            type: integer
+          name:
+            type: string
+      surname:
+        type: string
+      name:
+        type: string
+      patronymic:
+        type: string
+      passport_series:
+        type: string
+      passport_number:
+        type: string
+      passport_authority:
+        type: string
+      passport_issue_date:
+        type: string
+      phone_number:
+        type: string
+      email:
+        type: string
+      is_blocked:
+        type: boolean
+        example: false
+      type:
+        type: string
+      org_name:
+        type: string
+
+  GetListUsers:
+    type: array
+    items:
+      $ref: "#/definitions/GetUserById"
 
   #Role
   Role:
