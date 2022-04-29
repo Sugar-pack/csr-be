@@ -6,7 +6,7 @@ import (
 	"log"
 	"os"
 
-	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/repositories"
+
 
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/postgres"
@@ -106,6 +106,11 @@ func main() {
 		logger,
 	)
 
+	orderStatus := handlers.NewOrderStatus(
+		client,
+		logger,
+	)
+
 	api := operations.NewBeAPI(swaggerSpec)
 	api.UseSwaggerUI()
 	jwtSecretKey := os.Getenv("JWT_SECRET_KEY")
@@ -119,6 +124,8 @@ func main() {
 	api.UsersGetCurrentUserHandler = userHandler.GetUserFunc()
 	api.UsersPatchUserHandler = userHandler.PatchUserFunc()
 	api.UsersAssignRoleToUserHandler = userHandler.AssignRoleToUserFunc(repositories.NewUserRepository(client))
+	api.UsersGetUserHandler = userHandler.GetUserById()
+	api.UsersGetAllUsersHandler = userHandler.GetUsersList()
 	api.UsersBlockUserHandler = blockerHandler.BlockUserFunc(repositories.NewBlockerRepository(client))
 	api.UsersUnblockUserHandler = blockerHandler.UnblockUserFunc(repositories.NewBlockerRepository(client))
 
@@ -148,6 +155,14 @@ func main() {
 	api.OrdersGetAllOrdersHandler = ordersHandler.ListOrderFunc(orderRepository)
 	api.OrdersCreateOrderHandler = ordersHandler.CreateOrderFunc(orderRepository)
 	api.OrdersUpdateOrderHandler = ordersHandler.UpdateOrderFunc(orderRepository)
+
+	orderStatusRepertory := repositories.NewOrderFilter(client)
+	api.OrdersGetOrdersByStatusHandler = orderStatus.GetOrdersByStatus(orderStatusRepertory)
+	api.OrdersGetOrdersByDateAndStatusHandler = orderStatus.GetOrdersByPeriodAndStatus(orderStatusRepertory)
+
+	statusRepository := repositories.NewOrderStatusRepository(client)
+	api.OrdersAddNewOrderStatusHandler = orderStatus.AddNewStatusToOrder(statusRepository)
+	api.OrdersGetFullOrderHistoryHandler = orderStatus.OrderStatusesHistory(statusRepository)
 
 	server := restapi.NewServer(api)
 	listeners := []string{"http"}
