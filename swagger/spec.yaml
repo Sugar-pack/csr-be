@@ -110,6 +110,42 @@ paths:
           description: Unexpected error
           schema:
             $ref: "#/definitions/Error"
+  /management/users/{userId}:
+    parameters:
+      - name: userId
+        in: path
+        required: true
+        description: user id
+        type: integer
+    get:
+      summary: Get user by ID
+      tags:
+        - Users
+      operationId: GetUser
+      responses:
+        201:
+          description: Success
+          schema:
+            $ref: "#/definitions/GetUserById"
+        default:
+          description: Unexpected error.
+          schema:
+            $ref: "#/definitions/Error"
+  /management/listUsers:
+    get:
+      summary: Get all users
+      tags:
+        - Users
+      operationId: GetAllUsers
+      responses:
+        201:
+          description: Success
+          schema:
+            $ref: "#/definitions/GetListUsers"
+        default:
+          description: Unexpected error.
+          schema:
+            $ref: "#/definitions/Error"
   /v1/roles:
     get:
       summary: List all roles.
@@ -394,6 +430,120 @@ paths:
           description: Unexpected error.
           schema:
             $ref: "#/definitions/Error"
+  /v1/order_statuses/{orderId}:
+    get:
+      summary: Get full order status history.
+      tags:
+        - Orders
+      security:
+        - Bearer: [ ]
+      parameters:
+        - name: orderId
+          in: path
+          required: true
+          description: order id
+          type: integer
+      operationId: GetFullOrderHistory
+      responses:
+        200:
+          description: Success
+          schema:
+            $ref: "#/definitions/OrderStatuses"
+        404:
+          description: Order not found
+          schema:
+            type: string
+        default:
+          description: Unexpected error.
+          schema:
+            $ref: "#/definitions/Error"
+  /v1/order_statuses/:
+    post:
+      summary: Add new order status to order status history.
+      tags:
+        - Orders
+      security:
+        - Bearer: [ ]
+      parameters:
+        - name: data
+          in: body
+          description: 'Create new order status'
+          required: true
+          schema:
+            $ref: '#/definitions/NewOrderStatus'
+      operationId: AddNewOrderStatus
+      responses:
+        200:
+          description: Order created
+          schema:
+            type: string
+        default:
+          description: Unexpected error.
+          schema:
+            $ref: '#/definitions/Error'
+  /v1/orders/status/{status}:
+    get:
+      summary: Get orders by status.
+      tags:
+        - Orders
+      security:
+        - Bearer: [ ]
+      parameters:
+        - name: status
+          in: path
+          required: true
+          description: order status
+          type: string
+      operationId: GetOrdersByStatus
+      responses:
+        200:
+          description: Success
+          schema:
+            $ref: "#/definitions/OrderList"
+        404:
+          description: No orders found
+          schema:
+            type: string
+        default:
+          description: Unexpected error.
+          schema:
+            $ref: '#/definitions/Error'
+  /v1/orders/from={fromDate}&to={toDate}&status={statusName}:
+    get:
+      summary: Get orders by date and status.
+      tags:
+        - Orders
+      security:
+        - Bearer: [ ]
+      parameters:
+        - name: fromDate
+          in: path
+          required: true
+          type: string
+          format: date
+        - name: toDate
+          in: path
+          required: true
+          type: string
+          format: date
+        - name: statusName
+          in: path
+          required: true
+          type: string
+      operationId: GetOrdersByDateAndStatus
+      responses:
+        200:
+          description: Success
+          schema:
+            $ref: "#/definitions/OrderList"
+        404:
+          description: No orders found
+          schema:
+            type: string
+        default:
+          description: Unexpected error.
+          schema:
+            $ref: '#/definitions/Error'
   /v1/active_areas:
     get:
       summary: Get all active areas.
@@ -526,6 +676,44 @@ paths:
           description: Unexpected error.
           schema:
             $ref: "#/definitions/Error"
+  /v1/managment/users/{userId}/block:
+    parameters:
+      - name: userId
+        in: path
+        required: true
+        description: user id
+        type: integer 
+    post: 
+      summary: Block user
+      tags:
+        - Users
+      operationId: blockUser
+      responses:
+        200:
+          description: Success
+        default:
+          description: Unexpected error.
+          schema:
+            $ref: "#/definitions/Error"
+  /v1/managment/users/{userId}/unblock:
+    parameters:
+      - name: userId
+        in: path
+        required: true
+        description: user id
+        type: integer 
+    post: 
+      summary: Unblock user
+      tags:
+        - Users
+      operationId: unblockUser
+      responses:
+        200:
+          description: Success
+        default:
+          description: Unexpected error.
+          schema:
+            $ref: "#/definitions/Error"  
 
 definitions:
   Error:
@@ -714,6 +902,66 @@ definitions:
     properties:
       roleId:
         type: integer
+  GetUserById:
+    type: object
+    required:
+      - id
+      - login
+      - role
+      - surname
+      - name
+      - patronymic
+      - passport_series
+      - passport_number
+      - passport_authority
+      - passport_issue_date
+      - phone_number
+      - email
+      - is_blocked
+      - type
+      - org_name
+    properties:
+      id:
+        type: integer
+      login:
+        type: string
+      role:
+        type: object
+        properties:
+          id:
+            type: integer
+          name:
+            type: string
+      surname:
+        type: string
+      name:
+        type: string
+      patronymic:
+        type: string
+      passport_series:
+        type: string
+      passport_number:
+        type: string
+      passport_authority:
+        type: string
+      passport_issue_date:
+        type: string
+      phone_number:
+        type: string
+      email:
+        type: string
+      is_blocked:
+        type: boolean
+        example: false
+      type:
+        type: string
+      org_name:
+        type: string
+
+  GetListUsers:
+    type: array
+    items:
+      $ref: "#/definitions/GetUserById"
 
   #Role
   Role:
@@ -971,6 +1219,7 @@ definitions:
       - rent_end
       - user
       - equipment
+      - last_status
     properties:
       id:
         type: integer
@@ -990,3 +1239,56 @@ definitions:
       equipment:
         type: object
         $ref: '#/definitions/Equipment'
+      last_status:
+        type: object
+        $ref: '#/definitions/OrderStatus'
+  OrderStatuses:
+    type: array
+    items:
+      $ref: '#/definitions/OrderStatus'
+  OrderStatus:
+    type: object
+    required:
+      - id
+      - comment
+      - status
+      - created_at
+      - changed_by
+      - order_id
+    properties:
+      id:
+        type: integer
+      comment:
+        type: string
+      status:
+        type: string
+      created_at:
+        type: string
+        format: date-time
+      changed_by:
+        type: object
+        $ref: '#/definitions/UserEmbeddable'
+      order_id:
+        type: integer
+  OrderList:
+    type: array
+    items:
+      $ref: "#/definitions/Order"
+  # Order Status
+  NewOrderStatus:
+    type: object
+    required:
+      - comment
+      - status
+      - created_at
+      - order_id
+    properties:
+      comment:
+        type: string
+      status:
+        type: string
+      created_at:
+        type: string
+        format: date-time
+      order_id:
+        type: integer
