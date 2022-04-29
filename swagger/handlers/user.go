@@ -181,7 +181,18 @@ func (c User) GetUserById() users.GetUserHandlerFunc {
 		id64 := int64(id)
 		passportDate := user.PassportIssueDate.String()
 		typeString := user.Type.String()
-		role := c.GetUserRole(user)
+		role, err := user.QueryRole().Only(p.HTTPRequest.Context())
+		if err != nil {
+			return users.NewGetAllUsersDefault(http.StatusNotFound).WithPayload(&models.Error{
+				Data: &models.ErrorData{
+					Message: err.Error(),
+				},
+			})
+		}
+		roleResp := models.GetUserByIDRole{
+			ID:   int64(role.ID),
+			Name: role.Name,
+		}
 
 		return users.NewGetUserCreated().WithPayload(&models.GetUserByID{
 			Email:             &user.Email,
@@ -196,7 +207,7 @@ func (c User) GetUserById() users.GetUserHandlerFunc {
 			PassportSeries:    user.PassportSeries,
 			Patronymic:        user.Patronymic,
 			PhoneNumber:       user.Phone,
-			Role:              &role,
+			Role:              &roleResp,
 			Surname:           user.Surname,
 			Type:              &typeString,
 		})
@@ -220,7 +231,18 @@ func (c User) GetUsersList() users.GetAllUsersHandlerFunc {
 			passportDate := element.PassportIssueDate.String()
 			typeString := element.Type.String()
 
-			role := c.GetUserRole(element)
+			role, err := element.QueryRole().Only(p.HTTPRequest.Context())
+			if err != nil {
+				return users.NewGetAllUsersDefault(http.StatusNotFound).WithPayload(&models.Error{
+					Data: &models.ErrorData{
+						Message: err.Error(),
+					},
+				})
+			}
+			roleResp := models.GetUserByIDRole{
+				ID:   int64(role.ID),
+				Name: role.Name,
+			}
 
 			listUsers = append(listUsers, &models.GetUserByID{
 				Email:             &element.Email,
@@ -235,30 +257,12 @@ func (c User) GetUsersList() users.GetAllUsersHandlerFunc {
 				PassportSeries:    element.PassportSeries,
 				Patronymic:        element.Patronymic,
 				PhoneNumber:       element.Phone,
-				Role:              &role,
+				Role:              &roleResp,
 				Surname:           element.Surname,
 				Type:              &typeString,
 			})
 		}
 
 		return users.NewGetAllUsersCreated().WithPayload(listUsers)
-	}
-}
-
-func (c User) GetUserRole(u *ent.User) models.GetUserByIDRole {
-	role, err := u.QueryRole().Only(context.Background())
-	if err != nil {
-		roleResp := models.GetUserByIDRole{
-			ID:   0,
-			Name: "no role",
-		}
-		return roleResp
-	} else {
-		roleId := int64(role.ID)
-		roleResp := models.GetUserByIDRole{
-			ID:   roleId,
-			Name: role.Name,
-		}
-		return roleResp
 	}
 }
