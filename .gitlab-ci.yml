@@ -1,6 +1,23 @@
 stages:
+  - test
   - build
   - deploy
+
+test:
+  image: golang:1.17-alpine
+  stage: test
+  coverage: '/total:\s+\(statements\)\s+(\d+.\d+\%)/'
+  variables:
+    min_coverage: 80
+    coverage_result: '/total:\s+\(statements\)\s+(\d+.\d+)\%/'
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+  script:
+    - apk add --update --no-cache git build-base && rm -rf /var/cache/apk/* 
+    - go install github.com/go-swagger/go-swagger/cmd/swagger@latest && go install entgo.io/ent/cmd/ent@latest
+    - make generate
+    - go test -race ./... -coverprofile=coverage.out
+    - go tool cover -func=coverage.out
 
 lint:
   image: registry.gitlab.com/gitlab-org/gitlab-build-images:golangci-lint-alpine
