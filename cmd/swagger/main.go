@@ -101,7 +101,6 @@ func main() {
 	)
 
 	orderStatus := handlers.NewOrderStatus(
-		client,
 		logger,
 	)
 

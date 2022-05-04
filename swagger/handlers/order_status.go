@@ -18,13 +18,11 @@ import (
 )
 
 type OrderStatus struct {
-	client *ent.Client
 	logger *zap.Logger
 }
 
-func NewOrderStatus(client *ent.Client, logger *zap.Logger) *OrderStatus {
+func NewOrderStatus(logger *zap.Logger) *OrderStatus {
 	return &OrderStatus{
-		client: client,
 		logger: logger,
 	}
 }
@@ -257,6 +255,8 @@ func (h *OrderStatus) GetAllStatusNames(repository repositories.StatusNameReposi
 			tmpStatusName, errMap := MapOrderStatusName(statusName)
 			if errMap != nil {
 				h.logger.Error("Cant map ent order status name to model order status name", zap.Error(errMap))
+				return orders.NewGetAllStatusNamesDefault(http.StatusInternalServerError).
+					WithPayload(&models.Error{Data: &models.ErrorData{Message: "Can't map order status name"}})
 			}
 			statusNamesResult[index] = tmpStatusName
 		}
