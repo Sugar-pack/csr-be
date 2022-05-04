@@ -18,18 +18,16 @@ import (
 )
 
 type OrderStatus struct {
-	client *ent.Client
 	logger *zap.Logger
 }
 
-func NewOrderStatus(client *ent.Client, logger *zap.Logger) *OrderStatus {
+func NewOrderStatus(logger *zap.Logger) *OrderStatus {
 	return &OrderStatus{
-		client: client,
 		logger: logger,
 	}
 }
 
-func (h OrderStatus) OrderStatusesHistory(repository repositories.OrderStatusRepository) orders.GetFullOrderHistoryHandlerFunc {
+func (h *OrderStatus) OrderStatusesHistory(repository repositories.OrderStatusRepository) orders.GetFullOrderHistoryHandlerFunc {
 	return func(p orders.GetFullOrderHistoryParams, access interface{}) middleware.Responder {
 		h.logger.Info("ListOrderStatus begin")
 		ctx := p.HTTPRequest.Context()
@@ -118,7 +116,7 @@ func rightForHistory(access interface{}, history []*ent.OrderStatus) bool {
 	return false
 }
 
-func (h OrderStatus) AddNewStatusToOrder(repository repositories.OrderStatusRepository) orders.AddNewOrderStatusHandlerFunc {
+func (h *OrderStatus) AddNewStatusToOrder(repository repositories.OrderStatusRepository) orders.AddNewOrderStatusHandlerFunc {
 	return func(params orders.AddNewOrderStatusParams, access interface{}) middleware.Responder {
 		h.logger.Info("AddNewStatusToOrder begin")
 		ctx := params.HTTPRequest.Context()
@@ -167,7 +165,7 @@ func rightForStatusCreation(access interface{}, status *string) bool {
 	return false
 }
 
-func (h OrderStatus) GetOrdersByStatus(repository repositories.OrderRepositoryWithStatusFilter) orders.GetOrdersByStatusHandlerFunc {
+func (h *OrderStatus) GetOrdersByStatus(repository repositories.OrderRepositoryWithStatusFilter) orders.GetOrdersByStatusHandlerFunc {
 	return func(params orders.GetOrdersByStatusParams, access interface{}) middleware.Responder {
 		h.logger.Info("GetOrdersByStatus begin")
 		ctx := params.HTTPRequest.Context()
@@ -210,7 +208,7 @@ func hasSearchRight(access interface{}) bool {
 	return isAdmin
 }
 
-func (h OrderStatus) GetOrdersByPeriodAndStatus(repository repositories.OrderRepositoryWithStatusFilter) orders.GetOrdersByDateAndStatusHandlerFunc {
+func (h *OrderStatus) GetOrdersByPeriodAndStatus(repository repositories.OrderRepositoryWithStatusFilter) orders.GetOrdersByDateAndStatusHandlerFunc {
 	return func(params orders.GetOrdersByDateAndStatusParams, access interface{}) middleware.Responder {
 		h.logger.Info("GetOrdersByPeriodAndStatus begin")
 		ctx := params.HTTPRequest.Context()
@@ -240,4 +238,40 @@ func (h OrderStatus) GetOrdersByPeriodAndStatus(repository repositories.OrderRep
 		return orders.NewGetOrdersByDateAndStatusOK().WithPayload(ordersResult)
 
 	}
+}
+
+func (h *OrderStatus) GetAllStatusNames(repository repositories.StatusNameRepository) orders.GetAllStatusNamesHandlerFunc {
+	return func(params orders.GetAllStatusNamesParams, access interface{}) middleware.Responder {
+		h.logger.Info("GetAllStatusNames begin")
+		ctx := params.HTTPRequest.Context()
+		statusNames, err := repository.ListOfStatuses(ctx)
+		if err != nil {
+			h.logger.Error("GetAllStatusNames error", zap.Error(err))
+			return orders.NewGetAllStatusNamesDefault(http.StatusInternalServerError).
+				WithPayload(&models.Error{Data: &models.ErrorData{Message: "Can't get all status names"}})
+		}
+		statusNamesResult := make([]*models.OrderStatusName, len(statusNames))
+		for index, statusName := range statusNames {
+			tmpStatusName, errMap := MapOrderStatusName(statusName)
+			if errMap != nil {
+				h.logger.Error("Cant map ent order status name to model order status name", zap.Error(errMap))
+				return orders.NewGetAllStatusNamesDefault(http.StatusInternalServerError).
+					WithPayload(&models.Error{Data: &models.ErrorData{Message: "Can't map order status name"}})
+			}
+			statusNamesResult[index] = tmpStatusName
+		}
+		h.logger.Info("GetAllStatusNames end")
+		return orders.NewGetAllStatusNamesOK().WithPayload(statusNamesResult)
+	}
+}
+
+func MapOrderStatusName(status *ent.StatusName) (*models.OrderStatusName, error) {
+	if status == nil {
+		return nil, errors.New("status is nil")
+	}
+	id := int64(status.ID)
+	return &models.OrderStatusName{
+		ID:   &id,
+		Name: &status.Status,
+	}, nil
 }

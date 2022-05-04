@@ -108,7 +108,6 @@ func main() {
 	)
 
 	orderStatus := handlers.NewOrderStatus(
-		client,
 		logger,
 	)
 
@@ -165,6 +164,9 @@ func main() {
 	statusRepository := repositories.NewOrderStatusRepository(client)
 	api.OrdersAddNewOrderStatusHandler = orderStatus.AddNewStatusToOrder(statusRepository)
 	api.OrdersGetFullOrderHistoryHandler = orderStatus.OrderStatusesHistory(statusRepository)
+
+	orderStatusNameRepository := repositories.NewStatusNameRepository(client)
+	api.OrdersGetAllStatusNamesHandler = orderStatus.GetAllStatusNames(orderStatusNameRepository)
 
 	server := restapi.NewServer(api)
 	listeners := []string{"http"}

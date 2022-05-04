@@ -544,6 +544,23 @@ paths:
           description: Unexpected error.
           schema:
             $ref: '#/definitions/Error'
+  /v1/status_names:
+    get:
+      summary: Get all status names.
+      tags:
+        - Orders
+      security:
+        - Bearer: [ ]
+      operationId: GetAllStatusNames
+      responses:
+        200:
+          description: Success
+          schema:
+            $ref: "#/definitions/OrderStatusNames"
+        default:
+          description: Unexpected error.
+          schema:
+            $ref: '#/definitions/Error'
   /v1/active_areas:
     get:
       summary: Get all active areas.
@@ -1292,3 +1309,17 @@ definitions:
         format: date-time
       order_id:
         type: integer
+  OrderStatusNames:
+    type: array
+    items:
+      $ref: '#/definitions/OrderStatusName'
+  OrderStatusName:
+    type: object
+    required:
+      - id
+      - name
+    properties:
+      id:
+        type: integer
+      name:
+        type: string
