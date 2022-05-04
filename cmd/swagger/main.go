@@ -16,6 +16,7 @@ import (
 	"go.uber.org/zap"
 
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent"
+	entMigrate "git.epam.com/epm-lstr/epm-lstr-lc/be/ent/migrate"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/restapi"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/restapi/operations"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/handlers"
@@ -47,7 +48,7 @@ func main() {
 	ctx := context.Background()
 
 	// Run the auto migration tool.
-	if err := client.Schema.Create(ctx); err != nil {
+	if err := client.Schema.Create(ctx, entMigrate.WithDropIndex(true)); err != nil {
 		log.Fatalf("failed creating schema resources: %v", err)
 	}
 
@@ -95,6 +96,12 @@ func main() {
 		client,
 		logger,
 	)
+	blockerHandler := handlers.NewBlocker(
+		client,
+		logger,
+	)
+
+	userRepository := repositories.NewUserRepository(client)
 	ordersHandler := handlers.NewOrder(
 		client,
 		logger,
@@ -113,10 +120,15 @@ func main() {
 	api.BearerAuth = middlewares.BearerAuthenticateFunc(jwtSecretKey, logger)
 
 	api.UsersLoginHandler = userHandler.LoginUserFunc(jwtSecretKey)
-	api.UsersPostUserHandler = userHandler.PostUserFunc()
+	api.UsersPostUserHandler = userHandler.PostUserFunc(userRepository)
 	api.UsersGetCurrentUserHandler = userHandler.GetUserFunc()
 	api.UsersPatchUserHandler = userHandler.PatchUserFunc()
 	api.UsersAssignRoleToUserHandler = userHandler.AssignRoleToUserFunc(repositories.NewUserRepository(client))
+	api.UsersGetUserHandler = userHandler.GetUserById()
+	api.UsersGetAllUsersHandler = userHandler.GetUsersList()
+	api.UsersBlockUserHandler = blockerHandler.BlockUserFunc(repositories.NewBlockerRepository(client))
+	api.UsersUnblockUserHandler = blockerHandler.UnblockUserFunc(repositories.NewBlockerRepository(client))
+	api.UsersAssignRoleToUserHandler = userHandler.AssignRoleToUserFunc(userRepository)
 
 	api.RolesGetRolesHandler = roleHandler.GetRolesFunc()
 

@@ -85,21 +85,9 @@ func (c User) LoginUserFunc(jwtSecretKey string) users.LoginHandlerFunc {
 	}
 }
 
-func (c User) PostUserFunc() users.PostUserHandlerFunc {
+func (c User) PostUserFunc(repository repositories.UserRepository) users.PostUserHandlerFunc {
 	return func(p users.PostUserParams) middleware.Responder {
-		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(*p.Data.Password), bcrypt.DefaultCost)
-		if err != nil {
-			return users.NewPostUserDefault(http.StatusInternalServerError).WithPayload(buildErrorPayload(err))
-		}
-		login := *p.Data.Login
-		createdUser, err := c.client.User.
-			Create().
-			SetEmail(login).
-			SetLogin(login).
-			SetName(login).
-			SetType(user.TypePerson).
-			SetPassword(string(hashedPassword)).
-			Save(p.HTTPRequest.Context())
+		createdUser, err := repository.CreateUser(p.HTTPRequest.Context(), p.Data)
 		if err != nil {
 			if ent.IsConstraintError(err) {
 				return users.NewPostUserDefault(http.StatusExpectationFailed).WithPayload(
@@ -112,7 +100,8 @@ func (c User) PostUserFunc() users.PostUserHandlerFunc {
 		id := int64(createdUser.ID)
 		return users.NewPostUserCreated().WithPayload(&models.CreateUserResponse{
 			Data: &models.CreateUserResponseData{
-				ID: &id,
+				ID:    &id,
+				Login: &createdUser.Login,
 			},
 		})
 	}
@@ -155,5 +144,106 @@ func (c User) AssignRoleToUserFunc(repository repositories.UserRepository) users
 				Login:      &foundUser.Login,
 			},
 		})
+	}
+}
+
+func (c User) GetUserById() users.GetUserHandlerFunc {
+	return func(p users.GetUserParams) middleware.Responder {
+		id := int(p.UserID)
+		user, err := c.client.User.Get(p.HTTPRequest.Context(), id)
+		if err != nil {
+			return users.NewGetUserDefault(http.StatusNotFound).WithPayload(&models.Error{
+				Data: &models.ErrorData{
+					Message: err.Error(),
+				},
+			})
+		}
+
+		id64 := int64(id)
+		passportDate := user.PassportIssueDate.String()
+		typeString := user.Type.String()
+		role, err := user.QueryRole().Only(p.HTTPRequest.Context())
+		if err != nil {
+			return users.NewGetAllUsersDefault(http.StatusNotFound).WithPayload(&models.Error{
+				Data: &models.ErrorData{
+					Message: err.Error(),
+				},
+			})
+		}
+		roleResp := models.GetUserByIDRole{
+			ID:   int64(role.ID),
+			Name: role.Name,
+		}
+
+		return users.NewGetUserCreated().WithPayload(&models.GetUserByID{
+			Email:             &user.Email,
+			ID:                &id64,
+			IsBlocked:         &user.IsBlocked,
+			Login:             &user.Login,
+			Name:              &user.Name,
+			OrgName:           user.OrgName,
+			PassportAuthority: user.PassportAuthority,
+			PassportIssueDate: &passportDate,
+			PassportNumber:    user.PassportNumber,
+			PassportSeries:    user.PassportSeries,
+			Patronymic:        user.Patronymic,
+			PhoneNumber:       user.Phone,
+			Role:              &roleResp,
+			Surname:           user.Surname,
+			Type:              &typeString,
+		})
+	}
+}
+
+func (c User) GetUsersList() users.GetAllUsersHandlerFunc {
+	return func(p users.GetAllUsersParams) middleware.Responder {
+		all, err := c.client.User.Query().All(p.HTTPRequest.Context())
+		if err != nil {
+			return users.NewGetAllUsersDefault(http.StatusNotFound).WithPayload(&models.Error{
+				Data: &models.ErrorData{
+					Message: err.Error(),
+				},
+			})
+		}
+		listUsers := models.GetListUsers{}
+		for _, element := range all {
+
+			id64 := int64(element.ID)
+			passportDate := element.PassportIssueDate.String()
+			typeString := element.Type.String()
+
+			role, err := element.QueryRole().Only(p.HTTPRequest.Context())
+			if err != nil {
+				return users.NewGetAllUsersDefault(http.StatusNotFound).WithPayload(&models.Error{
+					Data: &models.ErrorData{
+						Message: err.Error(),
+					},
+				})
+			}
+			roleResp := models.GetUserByIDRole{
+				ID:   int64(role.ID),
+				Name: role.Name,
+			}
+
+			listUsers = append(listUsers, &models.GetUserByID{
+				Email:             &element.Email,
+				ID:                &id64,
+				IsBlocked:         &element.IsBlocked,
+				Login:             &element.Login,
+				Name:              &element.Name,
+				OrgName:           element.OrgName,
+				PassportAuthority: element.PassportAuthority,
+				PassportIssueDate: &passportDate,
+				PassportNumber:    element.PassportNumber,
+				PassportSeries:    element.PassportSeries,
+				Patronymic:        element.Patronymic,
+				PhoneNumber:       element.Phone,
+				Role:              &roleResp,
+				Surname:           element.Surname,
+				Type:              &typeString,
+			})
+		}
+
+		return users.NewGetAllUsersCreated().WithPayload(listUsers)
 	}
 }

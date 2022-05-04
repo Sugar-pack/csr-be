@@ -39,6 +39,12 @@ generate:
 	swagger generate server -f ./swagger/spec.yaml -s swagger/generated/restapi -m swagger/generated/models --exclude-main
 	go generate ./ent
 
+test:
+	go test -race ./... -coverprofile=coverage.out
+
+coverage:
+	go tool cover -func=coverage.out
+
 gen-repo-mock:
 	@docker run -v `pwd`:/src -w /src vektra/mockery --case snake --dir swagger/repositories --output internal/mocks/repositories --outpkg repositories --all
 
