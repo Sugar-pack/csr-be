@@ -78,7 +78,7 @@ func MapStatus(status *ent.OrderStatus) (*models.OrderStatus, error) {
 		return nil, errors.New("user is nil")
 	}
 	userID := int64(status.Edges.Users.ID)
-	userName := status.Edges.Users.Name
+	userName := status.Edges.Users.Login
 	user := models.UserEmbeddable{
 		ID:   &userID,
 		Name: &userName,
@@ -165,7 +165,7 @@ func rightForStatusCreation(access interface{}, status *string) bool {
 	return false
 }
 
-func (h *OrderStatus) GetOrdersByStatus(repository repositories.OrderRepositoryWithStatusFilter) orders.GetOrdersByStatusHandlerFunc {
+func (h *OrderStatus) GetOrdersByStatus(repository repositories.OrderRepositoryWithFilter) orders.GetOrdersByStatusHandlerFunc {
 	return func(params orders.GetOrdersByStatusParams, access interface{}) middleware.Responder {
 		h.logger.Info("GetOrdersByStatus begin")
 		ctx := params.HTTPRequest.Context()
@@ -187,7 +187,7 @@ func (h *OrderStatus) GetOrdersByStatus(repository repositories.OrderRepositoryW
 		}
 		ordersResult := make([]*models.Order, len(ordersByStatus))
 		for index, order := range ordersByStatus {
-			tmpOrder, errMap := mapOrder(ctx, &order)
+			tmpOrder, errMap := mapOrder(&order)
 			if errMap != nil {
 				h.logger.Error("GetOrdersByStatus error", zap.Error(errMap))
 				return orders.NewGetOrdersByStatusDefault(http.StatusInternalServerError).
@@ -208,7 +208,7 @@ func hasSearchRight(access interface{}) bool {
 	return isAdmin
 }
 
-func (h *OrderStatus) GetOrdersByPeriodAndStatus(repository repositories.OrderRepositoryWithStatusFilter) orders.GetOrdersByDateAndStatusHandlerFunc {
+func (h *OrderStatus) GetOrdersByPeriodAndStatus(repository repositories.OrderRepositoryWithFilter) orders.GetOrdersByDateAndStatusHandlerFunc {
 	return func(params orders.GetOrdersByDateAndStatusParams, access interface{}) middleware.Responder {
 		h.logger.Info("GetOrdersByPeriodAndStatus begin")
 		ctx := params.HTTPRequest.Context()
@@ -226,7 +226,7 @@ func (h *OrderStatus) GetOrdersByPeriodAndStatus(repository repositories.OrderRe
 		}
 		ordersResult := make([]*models.Order, len(ordersByPeriodAndStatus))
 		for index, order := range ordersByPeriodAndStatus {
-			tmpOrder, errMap := mapOrder(ctx, &order)
+			tmpOrder, errMap := mapOrder(&order)
 			if errMap != nil {
 				h.logger.Error("GetOrdersByPeriodAndStatus error", zap.Error(errMap))
 				return orders.NewGetOrdersByDateAndStatusDefault(http.StatusInternalServerError).

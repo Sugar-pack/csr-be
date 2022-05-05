@@ -4,12 +4,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
+
+	"github.com/go-openapi/strfmt"
+
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/order"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/user"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/models"
-	"github.com/go-openapi/strfmt"
-	"time"
 )
 
 type OrderAccessDenied struct {
@@ -64,7 +66,8 @@ func getQuantity(quantity int, maxQuantity int) (*int, error) {
 }
 
 func (r *orderRepository) List(ctx context.Context, ownerId int) (items []*ent.Order, total int, err error) {
-	items, err = r.client.Order.Query().Where(order.HasUsersWith(user.ID(ownerId))).Order(ent.Desc("id")).All(ctx)
+	items, err = r.client.Order.Query().Where(order.HasUsersWith(user.ID(ownerId))).Order(ent.Desc("id")).
+		WithUsers().WithOrderStatus().WithEquipments().All(ctx)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -77,7 +80,7 @@ func (r *orderRepository) List(ctx context.Context, ownerId int) (items []*ent.O
 	return
 }
 
-func (r *orderRepository) Create(ctx context.Context, data *models.OrderCreateRequest, ownerId int) (order *ent.Order, err error) {
+func (r *orderRepository) Create(ctx context.Context, data *models.OrderCreateRequest, ownerId int) (*ent.Order, error) {
 	equipment, err := r.client.Equipment.Get(ctx, int(*data.Equipment))
 	if err != nil {
 		return nil, err
@@ -103,7 +106,7 @@ func (r *orderRepository) Create(ctx context.Context, data *models.OrderCreateRe
 		return nil, err
 	}
 
-	order, err = r.client.Order.
+	createdOrder, err := r.client.Order.
 		Create().
 		SetDescription(*data.Description).
 		SetQuantity(*quantity).
@@ -112,21 +115,26 @@ func (r *orderRepository) Create(ctx context.Context, data *models.OrderCreateRe
 		AddUsers(owner).
 		AddEquipments(equipment).
 		Save(ctx)
-
 	if err != nil {
 		return nil, err
 	}
 
-	return
+	returnOrder, err := r.client.Order.Query().Where(order.IDEQ(createdOrder.ID)).
+		WithUsers().WithOrderStatus().WithEquipments().Only(ctx) // get order with relations
+	if err != nil {
+		return nil, err
+	}
+
+	return returnOrder, nil
 }
 
-func (r *orderRepository) Update(ctx context.Context, id int, data *models.OrderUpdateRequest, userId int) (order *ent.Order, err error) {
-	order, err = r.client.Order.Get(ctx, id)
+func (r *orderRepository) Update(ctx context.Context, id int, data *models.OrderUpdateRequest, userId int) (*ent.Order, error) {
+	foundOrder, err := r.client.Order.Get(ctx, id)
 	if err != nil {
 		return nil, err
 	}
 
-	owner, err := order.QueryUsers().First(ctx)
+	owner, err := foundOrder.QueryUsers().First(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -135,7 +143,7 @@ func (r *orderRepository) Update(ctx context.Context, id int, data *models.Order
 		return nil, OrderAccessDenied{Err: errors.New("permission denied")}
 	}
 
-	equipment, err := order.QueryEquipments().First(ctx)
+	equipment, err := foundOrder.QueryEquipments().First(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -155,12 +163,31 @@ func (r *orderRepository) Update(ctx context.Context, id int, data *models.Order
 		return nil, err
 	}
 
-	order, err = r.client.Order.UpdateOne(order).
+	createdOrder, err := r.client.Order.UpdateOne(foundOrder).
 		SetRentStart(*rentStart).
 		SetRentEnd(*rentEnd).
 		SetDescription(*data.Description).
 		SetQuantity(*quantity).
 		Save(ctx)
 
-	return
+	returnOrder, err := r.client.Order.Query().Where(order.IDEQ(createdOrder.ID)). // get order with relations
+											WithUsers().WithOrderStatus().WithEquipments().Only(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	for i := range returnOrder.Edges.OrderStatus { // get order status relations
+		statusName, errStatusName := returnOrder.Edges.OrderStatus[i].QueryStatusName().Only(ctx)
+		if errStatusName != nil {
+			return nil, errStatusName
+		}
+		returnOrder.Edges.OrderStatus[i].Edges.StatusName = statusName
+		statusUser, errStatusUser := returnOrder.Edges.OrderStatus[i].QueryUsers().Only(ctx)
+		if errStatusUser != nil {
+			return nil, errStatusUser
+		}
+		returnOrder.Edges.OrderStatus[i].Edges.Users = statusUser
+	}
+
+	return returnOrder, nil
 }
