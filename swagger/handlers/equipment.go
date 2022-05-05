@@ -30,7 +30,7 @@ func (c Equipment) PostEquipmentFunc() equipment.CreateNewEquipmentHandlerFunc {
 			SetName(*s.NewEquipment.Name).
 			SetDescription(*s.NewEquipment.Description).
 			SetCategory(*s.NewEquipment.Category).
-			SetCompensationСost(*s.NewEquipment.CompensationСost).
+			SetCompensationCost(*s.NewEquipment.CompensationСost).
 			SetCondition(*s.NewEquipment.Condition).
 			SetInventoryNumber(*s.NewEquipment.InventoryNumber).
 			SetSupplier(*s.NewEquipment.Supplier).
@@ -75,7 +75,7 @@ func (c Equipment) PostEquipmentFunc() equipment.CreateNewEquipmentHandlerFunc {
 			Description:      &e.Description,
 			Name:             &e.Name,
 			Category:         &e.Category,
-			CompensationСost: &e.CompensationСost,
+			CompensationСost: &e.CompensationCost,
 			Condition:        &e.Condition,
 			InventoryNumber:  &e.InventoryNumber,
 			Supplier:         &e.Supplier,
@@ -130,7 +130,7 @@ func (c Equipment) GetEquipmentFunc() equipment.GetEquipmentHandlerFunc {
 			Description:      &e.Description,
 			Name:             &e.Name,
 			Category:         &e.Category,
-			CompensationСost: &e.CompensationСost,
+			CompensationСost: &e.CompensationCost,
 			Condition:        &e.Condition,
 			InventoryNumber:  &e.InventoryNumber,
 			Supplier:         &e.Supplier,
@@ -186,7 +186,7 @@ func (c Equipment) DeleteEquipmentFunc() equipment.DeleteEquipmentHandlerFunc {
 			Description:      &e.Description,
 			Name:             &e.Name,
 			Category:         &e.Category,
-			CompensationСost: &e.CompensationСost,
+			CompensationСost: &e.CompensationCost,
 			Condition:        &e.Condition,
 			InventoryNumber:  &e.InventoryNumber,
 			Supplier:         &e.Supplier,
@@ -250,7 +250,7 @@ func (c Equipment) ListEquipmentFunc() equipment.GetAllEquipmentHandlerFunc {
 				Description:      &element.Description,
 				Name:             &element.Name,
 				Category:         &element.Category,
-				CompensationСost: &element.CompensationСost,
+				CompensationСost: &element.CompensationCost,
 				Condition:        &element.Condition,
 				InventoryNumber:  &element.InventoryNumber,
 				Supplier:         &element.Supplier,
@@ -294,7 +294,7 @@ func (c Equipment) EditEquipmentFunc() equipment.EditEquipmentHandlerFunc {
 			edit.SetDescription(*s.EditEquipment.Description)
 		}
 		if *s.EditEquipment.CompensationСost != 0 {
-			edit.SetCompensationСost(*s.EditEquipment.CompensationСost)
+			edit.SetCompensationCost(*s.EditEquipment.CompensationСost)
 		}
 		if *s.EditEquipment.Condition != "" {
 			edit.SetCondition(*s.EditEquipment.Condition)
@@ -355,7 +355,7 @@ func (c Equipment) EditEquipmentFunc() equipment.EditEquipmentHandlerFunc {
 			Description:      &res.Description,
 			Name:             &res.Name,
 			Category:         &res.Category,
-			CompensationСost: &res.CompensationСost,
+			CompensationСost: &res.CompensationCost,
 			Condition:        &res.Condition,
 			InventoryNumber:  &res.InventoryNumber,
 			Supplier:         &res.Supplier,
@@ -404,7 +404,7 @@ func (c Equipment) FindEquipmentFunc() equipment.FindEquipmentHandlerFunc {
 			if (element.Name == *s.FindEquipment.Name || *s.FindEquipment.Name == "") &&
 				(element.Description == *s.FindEquipment.Description || *s.FindEquipment.Description == "") &&
 				(element.Category == *s.FindEquipment.Category || *s.FindEquipment.Category == "") &&
-				(element.CompensationСost == *s.FindEquipment.CompensationСost || *s.FindEquipment.CompensationСost == 0) &&
+				(element.CompensationCost == *s.FindEquipment.CompensationСost || *s.FindEquipment.CompensationСost == 0) &&
 				(element.Condition == *s.FindEquipment.Condition || *s.FindEquipment.Condition == "") &&
 				(element.InventoryNumber == *s.FindEquipment.InventoryNumber || *s.FindEquipment.InventoryNumber == 0) &&
 				(element.Supplier == *s.FindEquipment.Supplier || *s.FindEquipment.Supplier == "") &&
@@ -419,7 +419,7 @@ func (c Equipment) FindEquipmentFunc() equipment.FindEquipmentHandlerFunc {
 					Description:      &element.Description,
 					Name:             &element.Name,
 					Category:         &element.Category,
-					CompensationСost: &element.CompensationСost,
+					CompensationСost: &element.CompensationCost,
 					Condition:        &element.Condition,
 					InventoryNumber:  &element.InventoryNumber,
 					Supplier:         &element.Supplier,

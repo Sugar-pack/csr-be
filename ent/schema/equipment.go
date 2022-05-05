@@ -16,13 +16,13 @@ func (Equipment) Fields() []ent.Field {
 	return []ent.Field{
 		field.String("category").Default("unknown"),
 		field.String("name").Default("unknown"),
-		field.Int64("compensationСost"),
+		field.Int64("compensationCost").Optional(),
 		field.String("condition").Default("unknown"),
-		field.Int64("InventoryNumber"),
+		field.Int64("inventoryNumber").Optional(),
 		field.String("supplier").Default("unknown"),
 		field.String("receiptDate").Default("unknown"),
-		field.Int64("maximumAmount"),
-		field.Int64("maximumDays"),
+		field.Int64("maximumAmount").Optional(),
+		field.Int64("maximumDays").Optional(),
 		field.String("description").Default("unknown"),
 	}
 }
