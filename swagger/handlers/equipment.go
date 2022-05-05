@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"fmt"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/models"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/restapi/operations/equipment"
@@ -30,9 +29,14 @@ func (c Equipment) PostEquipmentFunc() equipment.CreateNewEquipmentHandlerFunc {
 		e, err := c.client.Equipment.Create().
 			SetName(*s.NewEquipment.Name).
 			SetDescription(*s.NewEquipment.Description).
-			SetSku(*s.NewEquipment.Sku).
-			SetRateDay(*s.NewEquipment.RateDay).
-			SetRateHour(*s.NewEquipment.RateHour).
+			SetCategory(*s.NewEquipment.Category).
+			SetCompensationСost(*s.NewEquipment.CompensationСost).
+			SetCondition(*s.NewEquipment.Condition).
+			SetInventoryNumber(*s.NewEquipment.InventoryNumber).
+			SetSupplier(*s.NewEquipment.Supplier).
+			SetReceiptDate(*s.NewEquipment.ReceiptDate).
+			SetMaximumAmount(*s.NewEquipment.MaximumAmount).
+			SetMaximumDays(*s.NewEquipment.MaximumDays).
 			SetKind(&ent.Kind{ID: int(*s.NewEquipment.Kind)}).
 			SetStatus(&ent.Statuses{ID: int(*s.NewEquipment.Status)}).
 			Save(s.HTTPRequest.Context())
@@ -65,16 +69,21 @@ func (c Equipment) PostEquipmentFunc() equipment.CreateNewEquipmentHandlerFunc {
 		}
 		statusId := int64(status.ID)
 
-		id := fmt.Sprintf("%d", e.ID)
+		id := int64(e.ID)
 		return equipment.NewCreateNewEquipmentCreated().WithPayload(&models.EquipmentResponse{
-			ID:          &id,
-			Description: &e.Description,
-			Name:        &e.Name,
-			RateDay:     &e.RateDay,
-			RateHour:    &e.RateHour,
-			Sku:         &e.Sku,
-			Kind:        &kindId,
-			Status:      &statusId,
+			ID:               &id,
+			Description:      &e.Description,
+			Name:             &e.Name,
+			Category:         &e.Category,
+			CompensationСost: &e.CompensationСost,
+			Condition:        &e.Condition,
+			InventoryNumber:  &e.InventoryNumber,
+			Supplier:         &e.Supplier,
+			ReceiptDate:      &e.ReceiptDate,
+			MaximumAmount:    &e.MaximumAmount,
+			MaximumDays:      &e.MaximumDays,
+			Kind:             &kindId,
+			Status:           &statusId,
 		})
 	}
 }
@@ -118,13 +127,18 @@ func (c Equipment) GetEquipmentFunc() equipment.GetEquipmentHandlerFunc {
 		}
 		statusId := int64(status.ID)
 		return equipment.NewGetEquipmentCreated().WithPayload(&models.Equipment{
-			Description: &e.Description,
-			Name:        &e.Name,
-			RateDay:     &e.RateDay,
-			RateHour:    &e.RateHour,
-			Sku:         &e.Sku,
-			Kind:        &kindId,
-			Status:      &statusId,
+			Description:      &e.Description,
+			Name:             &e.Name,
+			Category:         &e.Category,
+			CompensationСost: &e.CompensationСost,
+			Condition:        &e.Condition,
+			InventoryNumber:  &e.InventoryNumber,
+			Supplier:         &e.Supplier,
+			ReceiptDate:      &e.ReceiptDate,
+			MaximumAmount:    &e.MaximumAmount,
+			MaximumDays:      &e.MaximumDays,
+			Kind:             &kindId,
+			Status:           &statusId,
 		})
 	}
 }
@@ -147,18 +161,10 @@ func (c Equipment) DeleteEquipmentFunc() equipment.DeleteEquipmentHandlerFunc {
 				},
 			})
 		}
-		err = c.client.Equipment.DeleteOne(e).Exec(s.HTTPRequest.Context())
-		if err != nil {
-			return equipment.NewDeleteEquipmentDefault(http.StatusInternalServerError).WithPayload(&models.Error{
-				Data: &models.ErrorData{
-					Message: err.Error(),
-				},
-			})
-		}
 
 		kind, err := e.QueryKind().Only(s.HTTPRequest.Context())
 		if err != nil {
-			return equipment.NewGetAllEquipmentDefault(http.StatusInternalServerError).WithPayload(&models.Error{
+			return equipment.NewDeleteEquipmentDefault(http.StatusInternalServerError).WithPayload(&models.Error{
 				Data: &models.ErrorData{
 					Message: err.Error(),
 				},
@@ -176,15 +182,30 @@ func (c Equipment) DeleteEquipmentFunc() equipment.DeleteEquipmentHandlerFunc {
 		}
 		statusId := int64(status.ID)
 
-		return equipment.NewDeleteEquipmentCreated().WithPayload(&models.Equipment{
-			Description: &e.Description,
-			Name:        &e.Name,
-			RateDay:     &e.RateDay,
-			RateHour:    &e.RateHour,
-			Sku:         &e.Sku,
-			Kind:        &kindId,
-			Status:      &statusId,
-		})
+		forReturn := &models.Equipment{
+			Description:      &e.Description,
+			Name:             &e.Name,
+			Category:         &e.Category,
+			CompensationСost: &e.CompensationСost,
+			Condition:        &e.Condition,
+			InventoryNumber:  &e.InventoryNumber,
+			Supplier:         &e.Supplier,
+			ReceiptDate:      &e.ReceiptDate,
+			MaximumAmount:    &e.MaximumAmount,
+			MaximumDays:      &e.MaximumDays,
+			Kind:             &kindId,
+			Status:           &statusId,
+		}
+		err = c.client.Equipment.DeleteOne(e).Exec(s.HTTPRequest.Context())
+		if err != nil {
+			return equipment.NewDeleteEquipmentDefault(http.StatusInternalServerError).WithPayload(&models.Error{
+				Data: &models.ErrorData{
+					Message: err.Error(),
+				},
+			})
+		}
+
+		return equipment.NewDeleteEquipmentCreated().WithPayload(forReturn)
 	}
 }
 
@@ -200,7 +221,8 @@ func (c Equipment) ListEquipmentFunc() equipment.GetAllEquipmentHandlerFunc {
 		}
 		listEquipment := models.ListEquipment{}
 		for _, element := range e {
-			id := strconv.Itoa(element.ID)
+
+			id := int64(element.ID)
 
 			kind, err := element.QueryKind().Only(s.HTTPRequest.Context())
 			if err != nil {
@@ -220,16 +242,23 @@ func (c Equipment) ListEquipmentFunc() equipment.GetAllEquipmentHandlerFunc {
 					},
 				})
 			}
+
 			statusId := int64(status.ID)
+
 			listEquipment = append(listEquipment, &models.EquipmentResponse{
-				ID:          &id,
-				Name:        &element.Name,
-				Description: &element.Description,
-				Sku:         &element.Sku,
-				RateDay:     &element.RateDay,
-				RateHour:    &element.RateHour,
-				Kind:        &kindId,
-				Status:      &statusId,
+				ID:               &id,
+				Description:      &element.Description,
+				Name:             &element.Name,
+				Category:         &element.Category,
+				CompensationСost: &element.CompensationСost,
+				Condition:        &element.Condition,
+				InventoryNumber:  &element.InventoryNumber,
+				Supplier:         &element.Supplier,
+				ReceiptDate:      &element.ReceiptDate,
+				MaximumAmount:    &element.MaximumAmount,
+				MaximumDays:      &element.MaximumDays,
+				Kind:             &kindId,
+				Status:           &statusId,
 			})
 		}
 		return equipment.NewGetAllEquipmentCreated().WithPayload(listEquipment)
@@ -258,17 +287,32 @@ func (c Equipment) EditEquipmentFunc() equipment.EditEquipmentHandlerFunc {
 		if *s.EditEquipment.Name != "" {
 			edit.SetName(*s.EditEquipment.Name)
 		}
-		if *s.EditEquipment.Sku != "" {
-			edit.SetSku(*s.EditEquipment.Sku)
+		if *s.EditEquipment.Category != "" {
+			edit.SetCategory(*s.EditEquipment.Category)
 		}
 		if *s.EditEquipment.Description != "" {
 			edit.SetDescription(*s.EditEquipment.Description)
 		}
-		if *s.EditEquipment.RateDay != 0 {
-			edit.SetRateDay(*s.EditEquipment.RateDay)
+		if *s.EditEquipment.CompensationСost != 0 {
+			edit.SetCompensationСost(*s.EditEquipment.CompensationСost)
 		}
-		if *s.EditEquipment.RateHour != 0 {
-			edit.SetRateHour(*s.EditEquipment.RateHour)
+		if *s.EditEquipment.Condition != "" {
+			edit.SetCondition(*s.EditEquipment.Condition)
+		}
+		if *s.EditEquipment.InventoryNumber != 0 {
+			edit.SetInventoryNumber(*s.EditEquipment.InventoryNumber)
+		}
+		if *s.EditEquipment.Supplier != "" {
+			edit.SetSupplier(*s.EditEquipment.Supplier)
+		}
+		if *s.EditEquipment.ReceiptDate != "" {
+			edit.SetReceiptDate(*s.EditEquipment.ReceiptDate)
+		}
+		if *s.EditEquipment.MaximumAmount != 0 {
+			edit.SetMaximumAmount(*s.EditEquipment.MaximumAmount)
+		}
+		if *s.EditEquipment.MaximumDays != 0 {
+			edit.SetMaximumDays(*s.EditEquipment.MaximumDays)
 		}
 		if *s.EditEquipment.Kind != 0 {
 			edit.SetKind(&ent.Kind{ID: int(*s.EditEquipment.Kind)})
@@ -287,7 +331,7 @@ func (c Equipment) EditEquipmentFunc() equipment.EditEquipmentHandlerFunc {
 			})
 		}
 
-		kind, err := e.QueryKind().Only(s.HTTPRequest.Context())
+		kind, err := res.QueryKind().Only(s.HTTPRequest.Context())
 		if err != nil {
 			return equipment.NewGetAllEquipmentDefault(http.StatusInternalServerError).WithPayload(&models.Error{
 				Data: &models.ErrorData{
@@ -297,7 +341,7 @@ func (c Equipment) EditEquipmentFunc() equipment.EditEquipmentHandlerFunc {
 		}
 		kindId := int64(kind.ID)
 
-		status, err := e.QueryStatus().Only(s.HTTPRequest.Context())
+		status, err := res.QueryStatus().Only(s.HTTPRequest.Context())
 		if err != nil {
 			return equipment.NewGetAllEquipmentDefault(http.StatusInternalServerError).WithPayload(&models.Error{
 				Data: &models.ErrorData{
@@ -308,13 +352,18 @@ func (c Equipment) EditEquipmentFunc() equipment.EditEquipmentHandlerFunc {
 		statusId := int64(status.ID)
 
 		return equipment.NewEditEquipmentCreated().WithPayload(&models.Equipment{
-			Description: &res.Description,
-			Name:        &res.Name,
-			RateDay:     &res.RateDay,
-			RateHour:    &res.RateHour,
-			Sku:         &res.Sku,
-			Kind:        &kindId,
-			Status:      &statusId,
+			Description:      &res.Description,
+			Name:             &res.Name,
+			Category:         &res.Category,
+			CompensationСost: &res.CompensationСost,
+			Condition:        &res.Condition,
+			InventoryNumber:  &res.InventoryNumber,
+			Supplier:         &res.Supplier,
+			ReceiptDate:      &res.ReceiptDate,
+			MaximumAmount:    &res.MaximumAmount,
+			MaximumDays:      &res.MaximumDays,
+			Kind:             &kindId,
+			Status:           &statusId,
 		})
 	}
 }
@@ -354,20 +403,31 @@ func (c Equipment) FindEquipmentFunc() equipment.FindEquipmentHandlerFunc {
 
 			if (element.Name == *s.FindEquipment.Name || *s.FindEquipment.Name == "") &&
 				(element.Description == *s.FindEquipment.Description || *s.FindEquipment.Description == "") &&
-				(element.Sku == *s.FindEquipment.Sku || *s.FindEquipment.Sku == "") &&
-				(element.RateDay == *s.FindEquipment.RateDay || *s.FindEquipment.RateDay == 0) &&
-				(element.RateHour == *s.FindEquipment.RateHour || *s.FindEquipment.RateHour == 0) &&
+				(element.Category == *s.FindEquipment.Category || *s.FindEquipment.Category == "") &&
+				(element.CompensationСost == *s.FindEquipment.CompensationСost || *s.FindEquipment.CompensationСost == 0) &&
+				(element.Condition == *s.FindEquipment.Condition || *s.FindEquipment.Condition == "") &&
+				(element.InventoryNumber == *s.FindEquipment.InventoryNumber || *s.FindEquipment.InventoryNumber == 0) &&
+				(element.Supplier == *s.FindEquipment.Supplier || *s.FindEquipment.Supplier == "") &&
+				(element.ReceiptDate == *s.FindEquipment.ReceiptDate || *s.FindEquipment.ReceiptDate == "") &&
+				(element.MaximumAmount == *s.FindEquipment.MaximumAmount || *s.FindEquipment.MaximumAmount == 0) &&
+				(element.MaximumDays == *s.FindEquipment.MaximumDays || *s.FindEquipment.MaximumDays == 0) &&
 				(kindId == *s.FindEquipment.Kind || *s.FindEquipment.Kind == 0) &&
 				(statusId == *s.FindEquipment.Status || *s.FindEquipment.Status == 0) {
-				id := strconv.Itoa(element.ID)
+				id := int64(element.ID)
 				res = append(res, &models.EquipmentResponse{
-					ID:          &id,
-					Name:        &element.Name,
-					Description: &element.Description,
-					Sku:         &element.Sku,
-					RateDay:     &element.RateDay,
-					RateHour:    &element.RateHour,
-					Kind:        &kindId,
+					ID:               &id,
+					Description:      &element.Description,
+					Name:             &element.Name,
+					Category:         &element.Category,
+					CompensationСost: &element.CompensationСost,
+					Condition:        &element.Condition,
+					InventoryNumber:  &element.InventoryNumber,
+					Supplier:         &element.Supplier,
+					ReceiptDate:      &element.ReceiptDate,
+					MaximumAmount:    &element.MaximumAmount,
+					MaximumDays:      &element.MaximumDays,
+					Kind:             &kindId,
+					Status:           &statusId,
 				})
 			}
 		}
