@@ -10,7 +10,7 @@ import (
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/statusname"
 )
 
-type OrderRepositoryWithStatusFilter interface {
+type OrderRepositoryWithFilter interface {
 	OrdersByStatus(ctx context.Context, status string) ([]ent.Order, error)
 	OrdersByPeriodAndStatus(ctx context.Context, from, to time.Time, status string) ([]ent.Order, error)
 }

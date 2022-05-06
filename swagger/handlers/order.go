@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"context"
 	"errors"
 	"net/http"
 
@@ -28,21 +27,27 @@ func NewOrder(client *ent.Client, logger *zap.Logger) *Order {
 	}
 }
 
-func mapOrder(ctx context.Context, o *ent.Order) (*models.Order, error) {
+func mapOrder(o *ent.Order) (*models.Order, error) {
 	id := int64(o.ID)
 	quantity := int64(o.Quantity)
 	rentEnd := strfmt.DateTime(o.RentEnd)
 	rentStart := strfmt.DateTime(o.RentStart)
-	owner, err := o.QueryUsers().Only(ctx)
-	if err != nil {
-		return nil, err
+	if o == nil {
+		return nil, errors.New("order is nil")
 	}
-	equipment, err := o.QueryEquipments().Only(ctx)
-	if err != nil {
-		return nil, err
+	owners := o.Edges.Users
+	if owners == nil {
+		return nil, errors.New("this order has no owners")
 	}
+	owner := owners[0]
+
+	equipments := o.Edges.Equipments
+	if equipments == nil {
+		return nil, errors.New("this order has no equipments")
+	}
+	equipment := equipments[0]
 	ownerId := int64(owner.ID)
-	ownerName := owner.Name
+	ownerName := owner.Login
 	var kindId int64
 	if equipment.Edges.Kind != nil {
 		kindId = int64(equipment.Edges.Kind.ID)
@@ -52,22 +57,20 @@ func mapOrder(ctx context.Context, o *ent.Order) (*models.Order, error) {
 		statusId = int64(equipment.Edges.Status.ID)
 	}
 
-	allStatuses, err := o.QueryOrderStatus().All(ctx)
-	if err != nil {
-		return nil, err
-	}
-	if len(allStatuses) == 0 {
-		return nil, errors.New("no statuses")
-	}
-	lastStatus := allStatuses[0]
-	for _, s := range allStatuses {
-		if s.CurrentDate.After(lastStatus.CurrentDate) {
-			lastStatus = s
+	allStatuses := o.Edges.OrderStatus
+	var statusToOrder *models.OrderStatus
+	if len(allStatuses) != 0 {
+		lastStatus := allStatuses[0]
+		for _, s := range allStatuses {
+			if s.CurrentDate.After(lastStatus.CurrentDate) {
+				lastStatus = s
+			}
 		}
-	}
-	statusToOrder, err := MapStatus(lastStatus)
-	if err != nil {
-		return nil, err
+		mappedStatus, err := MapStatus(lastStatus)
+		if err != nil {
+			return nil, err
+		}
+		statusToOrder = mappedStatus
 	}
 
 	return &models.Order{
@@ -92,10 +95,10 @@ func mapOrder(ctx context.Context, o *ent.Order) (*models.Order, error) {
 	}, nil
 }
 
-func mapOrdersToResponse(ctx context.Context, entOrders []*ent.Order) ([]*models.Order, error) {
+func mapOrdersToResponse(entOrders []*ent.Order) ([]*models.Order, error) {
 	modelOrders := make([]*models.Order, len(entOrders))
 	for i, o := range entOrders {
-		order, err := mapOrder(ctx, o)
+		order, err := mapOrder(o)
 		if err != nil {
 			return nil, err
 		}
@@ -121,7 +124,7 @@ func (o Order) ListOrderFunc(repository repositories.OrderRepository) orders.Get
 			return orders.NewGetAllOrdersDefault(http.StatusInternalServerError).WithPayload(buildErrorPayload(err))
 		}
 
-		mappedOrders, err := mapOrdersToResponse(ctx, items)
+		mappedOrders, err := mapOrdersToResponse(items)
 		if err != nil {
 			return orders.NewGetAllOrdersDefault(http.StatusInternalServerError).WithPayload(buildErrorPayload(err))
 		}
@@ -145,7 +148,7 @@ func (o Order) CreateOrderFunc(repository repositories.OrderRepository) orders.C
 			return orders.NewGetAllOrdersDefault(http.StatusInternalServerError).WithPayload(buildErrorPayload(err))
 		}
 
-		mappedOrder, err := mapOrder(ctx, order)
+		mappedOrder, err := mapOrder(order)
 		if err != nil {
 			return orders.NewGetAllOrdersDefault(http.StatusInternalServerError).WithPayload(buildErrorPayload(err))
 		}
@@ -167,7 +170,7 @@ func (o Order) UpdateOrderFunc(repository repositories.OrderRepository) orders.U
 			return orders.NewUpdateOrderDefault(http.StatusInternalServerError).WithPayload(buildErrorPayload(err))
 		}
 
-		mappedOrder, err := mapOrder(ctx, order)
+		mappedOrder, err := mapOrder(order)
 		if err != nil {
 			return orders.NewUpdateOrderDefault(http.StatusInternalServerError).WithPayload(buildErrorPayload(err))
 		}

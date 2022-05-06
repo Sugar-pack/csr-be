@@ -10,6 +10,8 @@ type Role struct {
 	Slug string
 }
 
+const AdminSlug = "administrator"
+
 type Auth struct {
 	Id    int
 	Login string
@@ -20,7 +22,7 @@ func (a *Auth) IsAmin() bool {
 	if a.Role == nil {
 		return false
 	}
-	return a.Role.Slug == "administrator"
+	return a.Role.Slug == AdminSlug
 }
 
 func GetAuth(access interface{}) (*Auth, error) {
