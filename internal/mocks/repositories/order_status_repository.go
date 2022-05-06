@@ -16,6 +16,52 @@ type OrderStatusRepository struct {
 	mock.Mock
 }
 
+// GetOrderCurrentStatus provides a mock function with given fields: ctx, orderId
+func (_m *OrderStatusRepository) GetOrderCurrentStatus(ctx context.Context, orderId int) (*ent.OrderStatus, error) {
+	ret := _m.Called(ctx, orderId)
+
+	var r0 *ent.OrderStatus
+	if rf, ok := ret.Get(0).(func(context.Context, int) *ent.OrderStatus); ok {
+		r0 = rf(ctx, orderId)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*ent.OrderStatus)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, int) error); ok {
+		r1 = rf(ctx, orderId)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// GetUserStatusHistory provides a mock function with given fields: ctx, userId
+func (_m *OrderStatusRepository) GetUserStatusHistory(ctx context.Context, userId int) ([]*ent.OrderStatus, error) {
+	ret := _m.Called(ctx, userId)
+
+	var r0 []*ent.OrderStatus
+	if rf, ok := ret.Get(0).(func(context.Context, int) []*ent.OrderStatus); ok {
+		r0 = rf(ctx, userId)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*ent.OrderStatus)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, int) error); ok {
+		r1 = rf(ctx, userId)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // StatusHistory provides a mock function with given fields: ctx, orderId
 func (_m *OrderStatusRepository) StatusHistory(ctx context.Context, orderId int) ([]*ent.OrderStatus, error) {
 	ret := _m.Called(ctx, orderId)
