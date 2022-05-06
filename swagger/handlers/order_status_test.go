@@ -21,7 +21,7 @@ import (
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/restapi/operations/orders"
 )
 
-type OrderStatusNameTestSuite struct {
+type OrderStatusTestSuite struct {
 	suite.Suite
 	logger                *zap.Logger
 	statusNameRepository  *repomock.StatusNameRepository
@@ -69,11 +69,11 @@ func orderWithEdges(t *testing.T) ent.Order {
 }
 
 func TestOrderStatusSuite(t *testing.T) {
-	s := new(OrderStatusNameTestSuite)
+	s := new(OrderStatusTestSuite)
 	suite.Run(t, s)
 }
 
-func (s *OrderStatusNameTestSuite) SetupTest() {
+func (s *OrderStatusTestSuite) SetupTest() {
 	s.logger = zap.NewExample()
 	s.statusNameRepository = &repomock.StatusNameRepository{}
 	s.orderStatusRepository = &repomock.OrderStatusRepository{}
@@ -81,7 +81,7 @@ func (s *OrderStatusNameTestSuite) SetupTest() {
 	s.orderStatus = NewOrderStatus(s.logger)
 }
 
-func (s *OrderStatusNameTestSuite) TestOrderStatus_GetAllStatusNames_OK() {
+func (s *OrderStatusTestSuite) TestOrderStatus_GetAllStatusNames_OK() {
 	t := s.T()
 	request := http.Request{}
 	ctx := request.Context()
@@ -113,7 +113,7 @@ func (s *OrderStatusNameTestSuite) TestOrderStatus_GetAllStatusNames_OK() {
 	assert.Equal(t, statusName, *expectedStatuses[0].Name)
 }
 
-func (s *OrderStatusNameTestSuite) TestOrderStatus_GetAllStatusNames_RepoErr() {
+func (s *OrderStatusTestSuite) TestOrderStatus_GetAllStatusNames_RepoErr() {
 	t := s.T()
 	request := http.Request{}
 	ctx := request.Context()
@@ -130,7 +130,7 @@ func (s *OrderStatusNameTestSuite) TestOrderStatus_GetAllStatusNames_RepoErr() {
 	assert.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
 }
 
-func (s *OrderStatusNameTestSuite) TestOrderStatus_GetAllStatusNames_MapError() {
+func (s *OrderStatusTestSuite) TestOrderStatus_GetAllStatusNames_MapError() {
 	t := s.T()
 	request := http.Request{}
 	ctx := request.Context()
@@ -148,7 +148,7 @@ func (s *OrderStatusNameTestSuite) TestOrderStatus_GetAllStatusNames_MapError() 
 	assert.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
 }
 
-func (s *OrderStatusNameTestSuite) TestOrderStatus_OrderStatusesHistory_RepoErr() {
+func (s *OrderStatusTestSuite) TestOrderStatus_OrderStatusesHistory_RepoErr() {
 	t := s.T()
 	request := http.Request{}
 	ctx := request.Context()
@@ -170,7 +170,7 @@ func (s *OrderStatusNameTestSuite) TestOrderStatus_OrderStatusesHistory_RepoErr(
 	s.orderStatusRepository.AssertExpectations(t)
 }
 
-func (s *OrderStatusNameTestSuite) TestOrderStatus_OrderStatusesHistory_CantAccess() {
+func (s *OrderStatusTestSuite) TestOrderStatus_OrderStatusesHistory_CantAccess() {
 	t := s.T()
 	request := http.Request{}
 	ctx := request.Context()
@@ -192,7 +192,7 @@ func (s *OrderStatusNameTestSuite) TestOrderStatus_OrderStatusesHistory_CantAcce
 	s.orderStatusRepository.AssertExpectations(t)
 }
 
-func (s *OrderStatusNameTestSuite) TestOrderStatus_OrderStatusesHistory_EmptyHistory() {
+func (s *OrderStatusTestSuite) TestOrderStatus_OrderStatusesHistory_EmptyHistory() {
 	t := s.T()
 	request := http.Request{}
 	ctx := request.Context()
@@ -224,7 +224,7 @@ func (s *OrderStatusNameTestSuite) TestOrderStatus_OrderStatusesHistory_EmptyHis
 	s.orderStatusRepository.AssertExpectations(t)
 }
 
-func (s *OrderStatusNameTestSuite) TestOrderStatus_OrderStatusesHistory_MapError() {
+func (s *OrderStatusTestSuite) TestOrderStatus_OrderStatusesHistory_MapError() {
 	t := s.T()
 	request := http.Request{}
 	ctx := request.Context()
@@ -259,7 +259,7 @@ func (s *OrderStatusNameTestSuite) TestOrderStatus_OrderStatusesHistory_MapError
 	s.orderStatusRepository.AssertExpectations(t)
 }
 
-func (s *OrderStatusNameTestSuite) TestOrderStatus_OrderStatusesHistory_OK() {
+func (s *OrderStatusTestSuite) TestOrderStatus_OrderStatusesHistory_OK() {
 	t := s.T()
 	request := http.Request{}
 	ctx := request.Context()
@@ -320,7 +320,7 @@ func (s *OrderStatusNameTestSuite) TestOrderStatus_OrderStatusesHistory_OK() {
 	s.orderStatusRepository.AssertExpectations(t)
 }
 
-func (s *OrderStatusNameTestSuite) TestOrderStatus_AddNewStatusToOrder_EmptyData() {
+func (s *OrderStatusTestSuite) TestOrderStatus_AddNewStatusToOrder_EmptyData() {
 	t := s.T()
 	request := http.Request{}
 	userID := 1
@@ -347,7 +347,7 @@ func (s *OrderStatusNameTestSuite) TestOrderStatus_AddNewStatusToOrder_EmptyData
 	assert.Equal(t, http.StatusBadRequest, responseRecorder.Code)
 }
 
-func (s *OrderStatusNameTestSuite) TestOrderStatus_AddNewStatusToOrder_NoAccess() {
+func (s *OrderStatusTestSuite) TestOrderStatus_AddNewStatusToOrder_NoAccess() {
 	t := s.T()
 	request := http.Request{}
 	userID := 1
@@ -375,7 +375,7 @@ func (s *OrderStatusNameTestSuite) TestOrderStatus_AddNewStatusToOrder_NoAccess(
 	assert.Equal(t, http.StatusForbidden, responseRecorder.Code)
 }
 
-func (s *OrderStatusNameTestSuite) TestOrderStatus_AddNewStatusToOrder_RepoError() {
+func (s *OrderStatusTestSuite) TestOrderStatus_AddNewStatusToOrder_RepoError() {
 	t := s.T()
 	request := http.Request{}
 	ctx := request.Context()
@@ -408,7 +408,7 @@ func (s *OrderStatusNameTestSuite) TestOrderStatus_AddNewStatusToOrder_RepoError
 	s.orderStatusRepository.AssertExpectations(t)
 }
 
-func (s *OrderStatusNameTestSuite) TestOrderStatus_AddNewStatusToOrder_OK() {
+func (s *OrderStatusTestSuite) TestOrderStatus_AddNewStatusToOrder_OK() {
 	t := s.T()
 	request := http.Request{}
 	ctx := request.Context()
@@ -440,7 +440,7 @@ func (s *OrderStatusNameTestSuite) TestOrderStatus_AddNewStatusToOrder_OK() {
 	s.orderStatusRepository.AssertExpectations(t)
 }
 
-func (s *OrderStatusNameTestSuite) TestOrderStatus_GetOrdersByStatus_NoAccess() {
+func (s *OrderStatusTestSuite) TestOrderStatus_GetOrdersByStatus_NoAccess() {
 	t := s.T()
 	request := http.Request{}
 	userID := 1
@@ -468,7 +468,7 @@ func (s *OrderStatusNameTestSuite) TestOrderStatus_GetOrdersByStatus_NoAccess() 
 	assert.Equal(t, http.StatusForbidden, responseRecorder.Code)
 }
 
-func (s *OrderStatusNameTestSuite) TestOrderStatus_GetOrdersByStatus_RepoErr() {
+func (s *OrderStatusTestSuite) TestOrderStatus_GetOrdersByStatus_RepoErr() {
 	t := s.T()
 	request := http.Request{}
 	ctx := request.Context()
@@ -500,7 +500,7 @@ func (s *OrderStatusNameTestSuite) TestOrderStatus_GetOrdersByStatus_RepoErr() {
 	assert.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
 }
 
-func (s *OrderStatusNameTestSuite) TestOrderStatus_GetOrdersByStatus_EmptyResult() {
+func (s *OrderStatusTestSuite) TestOrderStatus_GetOrdersByStatus_EmptyResult() {
 	t := s.T()
 	request := http.Request{}
 	ctx := request.Context()
@@ -532,7 +532,7 @@ func (s *OrderStatusNameTestSuite) TestOrderStatus_GetOrdersByStatus_EmptyResult
 	s.orderFilterRepository.AssertExpectations(t)
 }
 
-func (s *OrderStatusNameTestSuite) TestOrderStatus_GetOrdersByStatus_MapErr() {
+func (s *OrderStatusTestSuite) TestOrderStatus_GetOrdersByStatus_MapErr() {
 	t := s.T()
 	request := http.Request{}
 	ctx := request.Context()
@@ -567,7 +567,7 @@ func (s *OrderStatusNameTestSuite) TestOrderStatus_GetOrdersByStatus_MapErr() {
 	s.orderFilterRepository.AssertExpectations(t)
 }
 
-func (s *OrderStatusNameTestSuite) TestOrderStatus_GetOrdersByStatus_OK() {
+func (s *OrderStatusTestSuite) TestOrderStatus_GetOrdersByStatus_OK() {
 	t := s.T()
 	request := http.Request{}
 	ctx := request.Context()
@@ -617,7 +617,7 @@ func (s *OrderStatusNameTestSuite) TestOrderStatus_GetOrdersByStatus_OK() {
 	s.orderFilterRepository.AssertExpectations(t)
 }
 
-func (s *OrderStatusNameTestSuite) TestOrderStatus_GetOrdersByPeriodAndStatus_NoAccess() {
+func (s *OrderStatusTestSuite) TestOrderStatus_GetOrdersByPeriodAndStatus_NoAccess() {
 	t := s.T()
 	request := http.Request{}
 	userID := 1
@@ -644,7 +644,7 @@ func (s *OrderStatusNameTestSuite) TestOrderStatus_GetOrdersByPeriodAndStatus_No
 	s.orderFilterRepository.AssertExpectations(t)
 }
 
-func (s *OrderStatusNameTestSuite) TestOrderStatus_GetOrdersByPeriodAndStatus_RepoErr() {
+func (s *OrderStatusTestSuite) TestOrderStatus_GetOrdersByPeriodAndStatus_RepoErr() {
 	t := s.T()
 	request := http.Request{}
 	ctx := request.Context()
@@ -680,7 +680,7 @@ func (s *OrderStatusNameTestSuite) TestOrderStatus_GetOrdersByPeriodAndStatus_Re
 	s.orderFilterRepository.AssertExpectations(t)
 }
 
-func (s *OrderStatusNameTestSuite) TestOrderStatus_GetOrdersByPeriodAndStatus_MapErr() {
+func (s *OrderStatusTestSuite) TestOrderStatus_GetOrdersByPeriodAndStatus_MapErr() {
 	t := s.T()
 	request := http.Request{}
 	ctx := request.Context()
@@ -719,7 +719,7 @@ func (s *OrderStatusNameTestSuite) TestOrderStatus_GetOrdersByPeriodAndStatus_Ma
 	s.orderFilterRepository.AssertExpectations(t)
 }
 
-func (s *OrderStatusNameTestSuite) TestOrderStatus_GetOrdersByPeriodAndStatus_OK() {
+func (s *OrderStatusTestSuite) TestOrderStatus_GetOrdersByPeriodAndStatus_OK() {
 	t := s.T()
 	request := http.Request{}
 	ctx := request.Context()
