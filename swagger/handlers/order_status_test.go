@@ -308,7 +308,7 @@ func (s *OrderStatusTestSuite) TestOrderStatus_OrderStatusesHistory_OK() {
 	response := &models.OrderStatuses{}
 	err := json.Unmarshal(responseRecorder.Body.Bytes(), response)
 	if err != nil {
-		t.Error(err)
+		t.Fatal(err)
 	}
 	assert.Equal(t, count, len(*response))
 	assert.Equal(t, history[0].ID, int(*(*response)[0].ID))
