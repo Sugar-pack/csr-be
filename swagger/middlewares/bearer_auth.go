@@ -2,10 +2,12 @@ package middlewares
 
 import (
 	"fmt"
-	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/authentication"
+
 	"github.com/go-openapi/errors"
 	"github.com/golang-jwt/jwt"
 	"go.uber.org/zap"
+
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/authentication"
 )
 
 func BearerAuthenticateFunc(key interface{}, _ *zap.Logger) func(string) (interface{}, error) {

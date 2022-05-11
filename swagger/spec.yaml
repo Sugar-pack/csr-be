@@ -39,11 +39,40 @@ paths:
         200:
           description: Successful login
           schema:
-            $ref: '#/definitions/LoginSuccessResponse'
+            $ref: '#/definitions/AccessToken'
         404:
           schema:
             type: string
           description: User not found
+        default:
+          description: Unexpected error.
+          schema:
+            $ref: "#/definitions/Error"
+  /v1/refresh:
+    post:
+      description: 'Returns new access token for an authorized User'
+      tags:
+        - Users
+      operationId: Refresh
+      consumes:
+        - "application/json"
+      parameters:
+        - name: 'Refresh token'
+          in: 'body'
+          required: true
+          description: 'Refresh payload'
+          schema:
+            $ref: '#/definitions/RefreshToken'
+
+      responses:
+        200:
+          description: Successful refresh.
+          schema:
+            $ref: '#/definitions/AccessToken'
+        404:
+          description: Refresh token not found.
+          schema:
+            $ref: "#/definitions/Error"
         default:
           description: Unexpected error.
           schema:
@@ -614,7 +643,6 @@ paths:
           description: Unexpected error.
           schema:
             $ref: "#/definitions/Error"
-
   /equipment/{equipmentId}:
     parameters:
       - name: equipmentId
@@ -803,18 +831,20 @@ definitions:
         type: string
       password:
         type: string
-  LoginSuccessResponse:
+  AccessToken:
     type: object
     required:
-      - data
+      - accessToken
     properties:
-      data:
-        type: object
-        required:
-          - token
-        properties:
-          token:
-            type: string
+     accessToken:
+       type: string
+  RefreshToken:
+    type: object
+    required:
+      - refreshToken
+    properties:
+      refreshToken:
+        type: string
   UserEmbeddable:
     type: object
     required:

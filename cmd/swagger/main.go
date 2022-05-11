@@ -118,6 +118,7 @@ func main() {
 		log.Fatalln("JWT_SECRET_KEY not specified")
 	}
 	api.BearerAuth = middlewares.BearerAuthenticateFunc(jwtSecretKey, logger)
+	api.UsersRefreshHandler = userHandler.Refresh(jwtSecretKey)
 
 	api.UsersLoginHandler = userHandler.LoginUserFunc(jwtSecretKey)
 	api.UsersPostUserHandler = userHandler.PostUserFunc(userRepository)
