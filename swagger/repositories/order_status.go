@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"time"
 
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/orderstatus"
+
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/order"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/statusname"
@@ -97,7 +99,7 @@ func (r *orderStatusRepository) GetOrderCurrentStatus(ctx context.Context, order
 		return nil, fmt.Errorf("status history error, failed to get order: %s", err)
 	}
 
-	status, err := order.QueryOrderStatus().Order(ent.Desc("current_date")).Only(ctx)
+	status, err := order.QueryOrderStatus().Order(ent.Desc(orderstatus.FieldCurrentDate)).Only(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("status history error, failed to get statuses: %s", err)
 	}

@@ -7,17 +7,14 @@ import (
 
 	"github.com/go-openapi/strfmt"
 	"github.com/stretchr/testify/assert"
-
-	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/models"
-
 	"github.com/stretchr/testify/suite"
 
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent"
-
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/enttest"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/models"
 )
 
-type OrderStatusTestSuite struct {
+type orderStatusTestSuite struct {
 	suite.Suite
 	ctx           context.Context
 	client        *ent.Client
@@ -28,11 +25,11 @@ type OrderStatusTestSuite struct {
 }
 
 func TestOrderStatusSuite(t *testing.T) {
-	s := new(OrderStatusTestSuite)
+	s := new(orderStatusTestSuite)
 	suite.Run(t, s)
 }
 
-func (s *OrderStatusTestSuite) SetupTest() {
+func (s *orderStatusTestSuite) SetupTest() {
 	t := s.T()
 	s.ctx = context.Background()
 	client := enttest.Open(t, "sqlite3", "file:orderstatus?mode=memory&cache=shared&_fk=1")
@@ -85,11 +82,11 @@ func (s *OrderStatusTestSuite) SetupTest() {
 	s.repository = NewOrderStatusRepository(client)
 }
 
-func (s *OrderStatusTestSuite) TearDownSuite() {
+func (s *orderStatusTestSuite) TearDownSuite() {
 	s.client.Close()
 }
 
-func (s *OrderStatusTestSuite) TestOrderStatusRepository_UpdateStatus() {
+func (s *orderStatusTestSuite) TestOrderStatusRepository_UpdateStatus() {
 	t := s.T()
 	userID := s.adminUser.ID
 	comment := "test comment"
@@ -113,7 +110,7 @@ func (s *OrderStatusTestSuite) TestOrderStatusRepository_UpdateStatus() {
 	}
 }
 
-func (s *OrderStatusTestSuite) TestOrderStatusRepository_StatusHistory_Empty() {
+func (s *orderStatusTestSuite) TestOrderStatusRepository_StatusHistory_Empty() {
 	t := s.T()
 	orderID := s.order.ID
 	statuses, err := s.repository.StatusHistory(s.ctx, orderID)
@@ -121,7 +118,7 @@ func (s *OrderStatusTestSuite) TestOrderStatusRepository_StatusHistory_Empty() {
 	assert.Empty(t, statuses)
 }
 
-func (s *OrderStatusTestSuite) TestOrderStatusRepository_StatusHistory() {
+func (s *orderStatusTestSuite) TestOrderStatusRepository_StatusHistory() {
 	t := s.T()
 	orderID := s.order.ID
 	// create order status
@@ -144,7 +141,7 @@ func (s *OrderStatusTestSuite) TestOrderStatusRepository_StatusHistory() {
 	}
 }
 
-func (s *OrderStatusTestSuite) TestOrderStatusRepository_GetOrderCurrentStatus() {
+func (s *orderStatusTestSuite) TestOrderStatusRepository_GetOrderCurrentStatus() {
 	t := s.T()
 	orderID := s.order.ID
 	// create order status
@@ -165,7 +162,7 @@ func (s *OrderStatusTestSuite) TestOrderStatusRepository_GetOrderCurrentStatus()
 	}
 }
 
-func (s *OrderStatusTestSuite) TestOrderStatusRepository_GetUserStatusHistory() {
+func (s *orderStatusTestSuite) TestOrderStatusRepository_GetUserStatusHistory() {
 	t := s.T()
 	userID := s.adminUser.ID
 	// create order status
