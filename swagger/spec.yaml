@@ -1153,7 +1153,7 @@ definitions:
       name:
         type: string
         example: "Dog harness 3000"
-      name_substring:
+      nameSubstring:
         type: string
         example: "box"
         description: "Substring of name for case in-sensitive search"
