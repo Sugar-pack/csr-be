@@ -699,7 +699,7 @@ paths:
           description: Unexpected error.
           schema:
             $ref: "#/definitions/Error"
-  /findEquipment:
+  /equipment/search:
     post:
       summary: Equipment filtered list
       tags:
@@ -711,7 +711,7 @@ paths:
           description: Filtered list of an equipment
           required: false
           schema:
-            $ref: "#/definitions/Equipment"
+            $ref: "#/definitions/EquipmentFilter"
       responses:
         201:
           description: Equipment has been found
@@ -1137,7 +1137,7 @@ definitions:
       - status
       - compensationСost
       - condition
-      - InventoryNumber
+      - inventoryNumber
       - supplier
       - receiptDate
       - maximumAmount
@@ -1153,6 +1153,10 @@ definitions:
       name:
         type: string
         example: "Dog harness 3000"
+      name_substring:
+        type: string
+        example: "box"
+        description: "Substring of name for case in-sensitive search"
       kind:
         type: integer
         example: 1
@@ -1165,7 +1169,7 @@ definitions:
       condition:
         type: string
         example: "удовлетворительное, местами облупляется краска"
-      InventoryNumber:
+      inventoryNumber:
         type: integer
         example: "1"
       supplier:
@@ -1192,6 +1196,60 @@ definitions:
       photo:
         type: string
         example: "https://..."
+
+  EquipmentFilter:
+    type: object
+    properties:
+      category:
+        type: string
+        example: "Клетки"
+      name:
+        type: string
+        example: "Dog harness 3000"
+      name_substring:
+        type: string
+        example: "box"
+        description: "Substring of name for case in-sensitive search"
+      kind:
+        type: integer
+        example: 1
+      status:
+        type: integer
+        example: 1
+      compensationСost:
+        type: integer
+        example: 3900
+      condition:
+        type: string
+        example: "удовлетворительное, местами облупляется краска"
+      inventoryNumber:
+        type: integer
+        example: "1"
+      supplier:
+        type: string
+        example: "ИП Григорьев Виталий Васильевич"
+      receiptDate:
+        type: string
+        example: "2018"
+      maximumAmount:
+        type: integer
+        example: 3
+      maximumDays:
+        type: integer
+        example: 30
+      order:
+        type: integer
+        example: 1
+      location:
+        type: integer
+        example: 71
+      description:
+        type: string
+        example: "This is a dog harness.\nWARNING: do not put on cats!"
+      photo:
+        type: string
+        example: "https://..."
+
   EquipmentResponse:
     type: object
     required:
@@ -1202,7 +1260,7 @@ definitions:
       - status
       - compensationСost
       - condition
-      - InventoryNumber
+      - inventoryNumber
       - supplier
       - receiptDate
       - maximumAmount
@@ -1233,7 +1291,7 @@ definitions:
       condition:
         type: string
         example: "удовлетворительное, местами облупляется краска"
-      InventoryNumber:
+      inventoryNumber:
         type: integer
         example: "1"
       supplier:

@@ -9,6 +9,7 @@ import (
 	"go.uber.org/zap"
 	"net/http"
 	"strconv"
+	"strings"
 )
 
 type Equipment struct {
@@ -401,18 +402,20 @@ func (c Equipment) FindEquipmentFunc() equipment.FindEquipmentHandlerFunc {
 			}
 			statusId := int64(status.ID)
 
-			if (element.Name == *s.FindEquipment.Name || *s.FindEquipment.Name == "") &&
-				(element.Description == *s.FindEquipment.Description || *s.FindEquipment.Description == "") &&
-				(element.Category == *s.FindEquipment.Category || *s.FindEquipment.Category == "") &&
-				(element.CompensationCost == *s.FindEquipment.CompensationСost || *s.FindEquipment.CompensationСost == 0) &&
-				(element.Condition == *s.FindEquipment.Condition || *s.FindEquipment.Condition == "") &&
-				(element.InventoryNumber == *s.FindEquipment.InventoryNumber || *s.FindEquipment.InventoryNumber == 0) &&
-				(element.Supplier == *s.FindEquipment.Supplier || *s.FindEquipment.Supplier == "") &&
-				(element.ReceiptDate == *s.FindEquipment.ReceiptDate || *s.FindEquipment.ReceiptDate == "") &&
-				(element.MaximumAmount == *s.FindEquipment.MaximumAmount || *s.FindEquipment.MaximumAmount == 0) &&
-				(element.MaximumDays == *s.FindEquipment.MaximumDays || *s.FindEquipment.MaximumDays == 0) &&
-				(kindId == *s.FindEquipment.Kind || *s.FindEquipment.Kind == 0) &&
-				(statusId == *s.FindEquipment.Status || *s.FindEquipment.Status == 0) {
+			if (s.FindEquipment.Name == "" || element.Name == s.FindEquipment.Name) &&
+				(s.FindEquipment.NameSubstring == "" || strings.Contains(strings.ToLower(element.Name), strings.ToLower(s.FindEquipment.NameSubstring))) &&
+				(s.FindEquipment.Description == "" || element.Description == s.FindEquipment.Description) &&
+				(s.FindEquipment.Category == "" || element.Category == s.FindEquipment.Category) &&
+				(s.FindEquipment.CompensationСost == 0 || element.CompensationCost == s.FindEquipment.CompensationСost) &&
+				(s.FindEquipment.Condition == "" || element.Condition == s.FindEquipment.Condition) &&
+				(s.FindEquipment.InventoryNumber == 0 || element.InventoryNumber == s.FindEquipment.InventoryNumber) &&
+				(s.FindEquipment.Supplier == "" || element.Supplier == s.FindEquipment.Supplier) &&
+				(s.FindEquipment.ReceiptDate == "" || element.ReceiptDate == s.FindEquipment.ReceiptDate) &&
+				(s.FindEquipment.MaximumAmount == 0 || element.MaximumAmount == s.FindEquipment.MaximumAmount) &&
+				(s.FindEquipment.MaximumDays == 0 || element.MaximumDays == s.FindEquipment.MaximumDays) &&
+				(s.FindEquipment.Kind == 0 || kindId == s.FindEquipment.Kind) &&
+				(s.FindEquipment.Status == 0 || statusId == s.FindEquipment.Status) {
+
 				id := int64(element.ID)
 				res = append(res, &models.EquipmentResponse{
 					ID:               &id,
