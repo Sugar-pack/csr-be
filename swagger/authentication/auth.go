@@ -18,7 +18,7 @@ type Auth struct {
 	Role  *Role
 }
 
-func (a *Auth) IsAmin() bool {
+func (a *Auth) IsAdmin() bool {
 	if a.Role == nil {
 		return false
 	}
@@ -46,8 +46,8 @@ func IsAdmin(access interface{}) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	if !auth.IsAmin() {
-		return false, errors.New("User is not admin")
+	if !auth.IsAdmin() {
+		return false, errors.New("user is not admin")
 	}
 	return true, nil
 }

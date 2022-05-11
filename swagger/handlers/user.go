@@ -3,18 +3,28 @@ package handlers
 import (
 	"context"
 	"errors"
+	"fmt"
+	"log"
+	"net/http"
+	"time"
+
+	"github.com/go-openapi/runtime/middleware"
+	"github.com/golang-jwt/jwt/v4"
+	"go.uber.org/zap"
+	"golang.org/x/crypto/bcrypt"
+
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/token"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/user"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/authentication"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/models"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/restapi/operations/users"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/repositories"
-	"github.com/go-openapi/runtime/middleware"
-	"github.com/golang-jwt/jwt"
-	"go.uber.org/zap"
-	"golang.org/x/crypto/bcrypt"
-	"net/http"
-	"time"
+)
+
+const (
+	accessExpireTime  = 15 * time.Minute
+	refreshExpireTime = 148 * time.Hour
 )
 
 type User struct {
@@ -22,7 +32,7 @@ type User struct {
 	logger *zap.Logger
 }
 
-func generateJWT(user *ent.User, jwtSecretKey string, ctx context.Context) (string, error) {
+func generateJWT(ctx context.Context, user *ent.User, jwtSecretKey string) (string, error) {
 	token := jwt.New(jwt.SigningMethodHS256)
 	claims := token.Claims.(jwt.MapClaims)
 
@@ -43,13 +53,27 @@ func generateJWT(user *ent.User, jwtSecretKey string, ctx context.Context) (stri
 			"id": group.ID,
 		}
 	}
-	claims["exp"] = time.Now().Add(time.Minute * 300).Unix()
+	claims["exp"] = time.Now().Add(accessExpireTime).Unix()
 
 	tokenString, err := token.SignedString([]byte(jwtSecretKey))
 	if err != nil {
 		return "", err
 	}
 	return tokenString, nil
+}
+
+func generateRefreshToken(user *ent.User, jwtSecretKey string) (string, error) {
+	refreshToken := jwt.New(jwt.SigningMethodHS256)
+	claims := refreshToken.Claims.(jwt.MapClaims)
+
+	claims["id"] = user.ID
+	claims["exp"] = time.Now().Add(refreshExpireTime).Unix()
+
+	signedToken, err := refreshToken.SignedString([]byte(jwtSecretKey))
+	if err != nil {
+		return "", err
+	}
+	return signedToken, nil
 }
 
 func NewUser(client *ent.Client, logger *zap.Logger) *User {
@@ -61,8 +85,9 @@ func NewUser(client *ent.Client, logger *zap.Logger) *User {
 
 func (c User) LoginUserFunc(jwtSecretKey string) users.LoginHandlerFunc {
 	return func(p users.LoginParams) middleware.Responder {
+		ctx := p.HTTPRequest.Context()
 		login := p.Login.Login
-		foundUser, err := c.client.User.Query().Where(user.Login(*login)).First(p.HTTPRequest.Context())
+		foundUser, err := c.client.User.Query().Where(user.Login(*login)).First(ctx)
 		if ent.IsNotFound(err) {
 			return users.NewLoginNotFound()
 		}
@@ -74,14 +99,22 @@ func (c User) LoginUserFunc(jwtSecretKey string) users.LoginHandlerFunc {
 			return users.NewLoginNotFound()
 		}
 
-		token, err := generateJWT(foundUser, jwtSecretKey, p.HTTPRequest.Context())
+		accessToken, err := generateJWT(ctx, foundUser, jwtSecretKey)
 		if err != nil {
 			return users.NewLoginDefault(http.StatusInternalServerError).WithPayload(buildErrorPayload(err))
 		}
 
-		return users.NewLoginOK().WithPayload(&models.LoginSuccessResponse{
-			Data: &models.LoginSuccessResponseData{Token: &token},
-		})
+		refreshToken, err := generateRefreshToken(foundUser, jwtSecretKey)
+		if err != nil {
+			return users.NewLoginDefault(http.StatusInternalServerError).WithPayload(buildErrorPayload(err))
+		}
+
+		_, err = c.client.Token.Create().SetOwner(foundUser).SetAccessToken(accessToken).SetRefreshToken(refreshToken).Save(ctx)
+		if err != nil {
+			return users.NewLoginDefault(http.StatusInternalServerError).WithPayload(buildErrorPayload(err))
+		}
+
+		return users.NewLoginOK().WithPayload(&models.AccessToken{AccessToken: &accessToken})
 	}
 }
 
@@ -91,19 +124,97 @@ func (c User) PostUserFunc(repository repositories.UserRepository) users.PostUse
 		if err != nil {
 			if ent.IsConstraintError(err) {
 				return users.NewPostUserDefault(http.StatusExpectationFailed).WithPayload(
-					buildErrorPayload(errors.New("This login is already used")),
+					buildErrorPayload(errors.New("login is already used")),
 				)
 			}
 			return users.NewPostUserDefault(http.StatusInternalServerError).WithPayload(buildErrorPayload(err))
 		}
 
 		id := int64(createdUser.ID)
+
 		return users.NewPostUserCreated().WithPayload(&models.CreateUserResponse{
 			Data: &models.CreateUserResponseData{
 				ID:    &id,
 				Login: &createdUser.Login,
 			},
 		})
+	}
+}
+
+func (c User) Refresh(jwtSecretKey string) users.RefreshHandlerFunc {
+	return func(p users.RefreshParams) middleware.Responder {
+		ctx := p.HTTPRequest.Context()
+		claims := jwt.MapClaims{}
+		refreshToken, err := jwt.ParseWithClaims(*p.RefreshToken.RefreshToken, claims, func(token *jwt.Token) (interface{}, error) {
+			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+				return nil, fmt.Errorf("error decoding token")
+			}
+			return []byte(jwtSecretKey), nil
+		})
+
+		if errors.Is(err, jwt.ErrTokenExpired) {
+			_, err = c.client.Token.Delete().Where(token.RefreshToken(refreshToken.Raw)).Exec(ctx)
+			if err != nil {
+				log.Printf("delete tokens error: %v", err)
+				return users.NewRefreshDefault(http.StatusInternalServerError).WithPayload(&models.Error{Data: &models.ErrorData{
+					Message: "delete tokens error",
+				}})
+			}
+
+			c.logger.Error("refresh token is expired", zap.Error(err))
+			return users.NewRefreshDefault(http.StatusInternalServerError).WithPayload(&models.Error{Data: &models.ErrorData{
+				Message: "refresh token is expired",
+			}})
+		}
+
+		if err != nil {
+			c.logger.Error("not valid refresh token", zap.Error(err))
+			return users.NewRefreshDefault(http.StatusInternalServerError).WithPayload(&models.Error{Data: &models.ErrorData{
+				Message: "not valid refresh token",
+			}})
+		}
+
+		if refreshToken.Valid {
+			if refreshToken.Raw != *p.RefreshToken.RefreshToken {
+				c.logger.Error("invalid refresh token")
+				return users.NewRefreshDefault(http.StatusInternalServerError).WithPayload(&models.Error{Data: &models.ErrorData{
+					Message: "invalid refresh token",
+				}})
+			}
+
+			userID := int(claims["id"].(float64))
+
+			currentUser, err := c.client.User.Get(ctx, userID) // get current user
+			if err != nil {
+				c.logger.Error("user not found", zap.Error(err))
+				return users.NewRefreshDefault(http.StatusInternalServerError).WithPayload(&models.Error{Data: &models.ErrorData{
+					Message: "user not found",
+				}})
+			}
+
+			newAccessToken, err := generateJWT(ctx, currentUser, jwtSecretKey)
+			if err != nil {
+				c.logger.Error("generate JWT token error")
+				return users.NewRefreshDefault(http.StatusInternalServerError).WithPayload(&models.Error{Data: &models.ErrorData{
+					Message: "generate JWT token error",
+				}})
+			}
+
+			_, err = c.client.Token.Update().Where(token.RefreshToken(refreshToken.Raw)).SetAccessToken(newAccessToken).Save(ctx)
+			if err != nil {
+				log.Printf("update JWT token error: %v", err)
+				return users.NewRefreshDefault(http.StatusInternalServerError).WithPayload(&models.Error{Data: &models.ErrorData{
+					Message: "update JWT token error",
+				}})
+			}
+
+			return users.NewRefreshOK().WithPayload(&models.AccessToken{AccessToken: &newAccessToken})
+		}
+
+		c.logger.Error("validating refresh token token error", zap.Error(err))
+		return users.NewRefreshDefault(http.StatusInternalServerError).WithPayload(&models.Error{Data: &models.ErrorData{
+			Message: "validating refresh token error",
+		}})
 	}
 }
 
