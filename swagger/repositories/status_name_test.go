@@ -12,11 +12,11 @@ import (
 
 func TestStatusNameRepository_ListOfStatuses(t *testing.T) {
 	ctx := context.Background()
-	client := enttest.Open(t, "sqlite3", "file:ent?mode=memory&cache=shared&_fk=1")
+	client := enttest.Open(t, "sqlite3", "file:statusname?mode=memory&cache=shared&_fk=1")
 	statusName := "test"
 	_, err := client.StatusName.Create().SetStatus(statusName).Save(ctx)
 	if err != nil {
-		t.Error(err)
+		t.Fatal(err)
 	}
 	defer client.Close()
 
@@ -25,4 +25,8 @@ func TestStatusNameRepository_ListOfStatuses(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, 1, statuses[0].ID)
 	assert.Equal(t, statusName, statuses[0].Status)
+	_, err = client.StatusName.Delete().Exec(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
 }
