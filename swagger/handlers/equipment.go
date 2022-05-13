@@ -1,15 +1,17 @@
 package handlers
 
 import (
+	"net/http"
+	"strconv"
+	"strings"
+
+	"github.com/go-openapi/runtime/middleware"
+	"go.uber.org/zap"
+
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/models"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/restapi/operations/equipment"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/restapi/operations/status"
-	"github.com/go-openapi/runtime/middleware"
-	"go.uber.org/zap"
-	"net/http"
-	"strconv"
-	"strings"
 )
 
 type Equipment struct {

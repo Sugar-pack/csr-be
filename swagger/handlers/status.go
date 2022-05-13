@@ -5,11 +5,12 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/go-openapi/runtime/middleware"
+	"go.uber.org/zap"
+
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/models"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/restapi/operations/status"
-	"github.com/go-openapi/runtime/middleware"
-	"go.uber.org/zap"
 )
 
 type Status struct {
@@ -26,8 +27,10 @@ func NewStatus(client *ent.Client, logger *zap.Logger) *Status {
 
 func (c Status) PostStatusFunc() status.PostStatusHandlerFunc {
 	return func(s status.PostStatusParams) middleware.Responder {
-		e, err := c.client.Statuses.Create().SetName(*s.Name.Name).Save(s.HTTPRequest.Context())
+		ctx := s.HTTPRequest.Context()
+		e, err := c.client.Statuses.Create().SetName(*s.Name.Name).Save(ctx)
 		if err != nil {
+			c.logger.Error("create status failed", zap.Error(err))
 			return status.NewPostStatusDefault(http.StatusInternalServerError).WithPayload(&models.Error{
 				Data: &models.ErrorData{
 					Message: err.Error(),
@@ -49,6 +52,7 @@ func (c Status) GetStatusesFunc() status.GetStatusesHandlerFunc {
 	return func(s status.GetStatusesParams) middleware.Responder {
 		e, err := c.client.Statuses.Query().All(s.HTTPRequest.Context())
 		if err != nil {
+			c.logger.Error("get statuses failed", zap.Error(err))
 			return status.NewGetStatusesDefault(http.StatusInternalServerError).WithPayload(&models.Error{
 				Data: &models.ErrorData{
 					Message: err.Error(),
@@ -66,16 +70,19 @@ func (c Status) GetStatusesFunc() status.GetStatusesHandlerFunc {
 
 func (c Status) GetStatusFunc() status.GetStatusHandlerFunc {
 	return func(s status.GetStatusParams) middleware.Responder {
+		ctx := s.HTTPRequest.Context()
 		statusId, err := strconv.Atoi(s.StatusID)
 		if err != nil {
+			c.logger.Error("failed to convert statusID to int", zap.Error(err))
 			return status.NewGetStatusDefault(http.StatusInternalServerError).WithPayload(&models.Error{
 				Data: &models.ErrorData{
 					Message: err.Error(),
 				},
 			})
 		}
-		e, err := c.client.Statuses.Get(s.HTTPRequest.Context(), statusId)
+		e, err := c.client.Statuses.Get(ctx, statusId)
 		if err != nil {
+			c.logger.Error("get status failed")
 			return status.NewGetStatusDefault(http.StatusInternalServerError).WithPayload(&models.Error{
 				Data: &models.ErrorData{
 					Message: err.Error(),
@@ -94,24 +101,28 @@ func (c Status) GetStatusFunc() status.GetStatusHandlerFunc {
 
 func (c Status) DeleteStatusFunc() status.DeleteStatusHandlerFunc {
 	return func(s status.DeleteStatusParams) middleware.Responder {
+		ctx := s.HTTPRequest.Context()
 		statusId, err := strconv.Atoi(s.StatusID)
 		if err != nil {
+			c.logger.Error("failed to convert statusID to int", zap.Error(err))
 			return status.NewDeleteStatusDefault(http.StatusInternalServerError).WithPayload(&models.Error{
 				Data: &models.ErrorData{
 					Message: err.Error(),
 				},
 			})
 		}
-		e, err := c.client.Statuses.Get(s.HTTPRequest.Context(), statusId)
+		e, err := c.client.Statuses.Get(ctx, statusId)
 		if err != nil {
+			c.logger.Error("get status failed")
 			return status.NewDeleteStatusDefault(http.StatusInternalServerError).WithPayload(&models.Error{
 				Data: &models.ErrorData{
 					Message: err.Error(),
 				},
 			})
 		}
-		err = c.client.Statuses.DeleteOne(e).Exec(s.HTTPRequest.Context())
+		err = c.client.Statuses.DeleteOne(e).Exec(ctx)
 		if err != nil {
+			c.logger.Error("delete status failed")
 			return status.NewDeleteStatusDefault(http.StatusInternalServerError).WithPayload(&models.Error{
 				Data: &models.ErrorData{
 					Message: err.Error(),

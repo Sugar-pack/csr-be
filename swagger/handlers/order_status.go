@@ -187,7 +187,7 @@ func (h *OrderStatus) GetOrdersByStatus(repository repositories.OrderRepositoryW
 		}
 		ordersResult := make([]*models.Order, len(ordersByStatus))
 		for index, order := range ordersByStatus {
-			tmpOrder, errMap := mapOrder(&order)
+			tmpOrder, errMap := mapOrder(&order, h.logger)
 			if errMap != nil {
 				h.logger.Error("GetOrdersByStatus error", zap.Error(errMap))
 				return orders.NewGetOrdersByStatusDefault(http.StatusInternalServerError).
@@ -226,7 +226,7 @@ func (h *OrderStatus) GetOrdersByPeriodAndStatus(repository repositories.OrderRe
 		}
 		ordersResult := make([]*models.Order, len(ordersByPeriodAndStatus))
 		for index, order := range ordersByPeriodAndStatus {
-			tmpOrder, errMap := mapOrder(&order)
+			tmpOrder, errMap := mapOrder(&order, h.logger)
 			if errMap != nil {
 				h.logger.Error("GetOrdersByPeriodAndStatus error", zap.Error(errMap))
 				return orders.NewGetOrdersByDateAndStatusDefault(http.StatusInternalServerError).
