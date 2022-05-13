@@ -3,12 +3,13 @@ package handlers
 import (
 	"net/http"
 
+	"github.com/go-openapi/runtime/middleware"
+	"go.uber.org/zap"
+
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/models"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/restapi/operations/users"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/repositories"
-	"github.com/go-openapi/runtime/middleware"
-	"go.uber.org/zap"
 )
 
 type Blocker struct {
@@ -29,6 +30,7 @@ func (b Blocker) BlockUserFunc(repository repositories.BlockerRepository) users.
 		context := u.HTTPRequest.Context()
 		err := repository.SetIsBlockedUser(context, userId, true)
 		if err != nil {
+			b.logger.Error("block user failed", zap.Error(err))
 			return users.NewBlockUserDefault(http.StatusNotFound).WithPayload(&models.Error{
 				Data: &models.ErrorData{
 					Message: err.Error(),
@@ -46,6 +48,7 @@ func (b Blocker) UnblockUserFunc(repository repositories.BlockerRepository) user
 
 		err := repository.SetIsBlockedUser(context, userId, false)
 		if err != nil {
+			b.logger.Error("unblock user failed", zap.Error(err))
 			return users.NewUnblockUserDefault(http.StatusInternalServerError).WithPayload(&models.Error{
 				Data: &models.ErrorData{
 					Message: err.Error(),

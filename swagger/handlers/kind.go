@@ -4,11 +4,12 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/go-openapi/runtime/middleware"
+	"go.uber.org/zap"
+
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/models"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/restapi/operations/kinds"
-	"github.com/go-openapi/runtime/middleware"
-	"go.uber.org/zap"
 )
 
 type Kind struct {
@@ -27,6 +28,7 @@ func (c Kind) CreateNewKindFunc() kinds.CreateNewKindHandlerFunc {
 	return func(s kinds.CreateNewKindParams) middleware.Responder {
 		e, err := c.client.Kind.Create().SetName(*s.Name.Data.Name).Save(s.HTTPRequest.Context())
 		if err != nil {
+			c.logger.Error("cant create new kind", zap.Error(err))
 			return kinds.NewCreateNewKindDefault(http.StatusInternalServerError).WithPayload(&models.Error{
 				Data: &models.ErrorData{
 					Message: err.Error(),
@@ -44,8 +46,10 @@ func (c Kind) CreateNewKindFunc() kinds.CreateNewKindHandlerFunc {
 
 func (c Kind) GetAllKindsFunc() kinds.GetAllKindsHandlerFunc {
 	return func(s kinds.GetAllKindsParams) middleware.Responder {
-		e, err := c.client.Kind.Query().All(s.HTTPRequest.Context())
+		ctx := s.HTTPRequest.Context()
+		e, err := c.client.Kind.Query().All(ctx)
 		if err != nil {
+			c.logger.Error("query all kind error", zap.Error(err))
 			return kinds.NewGetAllKindsDefault(http.StatusInternalServerError).WithPayload(&models.Error{
 				Data: &models.ErrorData{
 					Message: err.Error(),
@@ -62,16 +66,19 @@ func (c Kind) GetAllKindsFunc() kinds.GetAllKindsHandlerFunc {
 
 func (c Kind) GetKindByIDFunc() kinds.GetKindByIDHandlerFunc {
 	return func(s kinds.GetKindByIDParams) middleware.Responder {
+		ctx := s.HTTPRequest.Context()
 		id, err := strconv.Atoi(s.KindID)
 		if err != nil {
+			c.logger.Error("failed to convert kindID into string", zap.Error(err))
 			return kinds.NewGetKindByIDDefault(http.StatusInternalServerError).WithPayload(&models.Error{
 				Data: &models.ErrorData{
 					Message: err.Error(),
 				},
 			})
 		}
-		e, err := c.client.Kind.Get(s.HTTPRequest.Context(), id)
+		e, err := c.client.Kind.Get(ctx, id)
 		if err != nil {
+			c.logger.Error("failed to get kind", zap.Error(err))
 			return kinds.NewGetKindByIDDefault(http.StatusInternalServerError).WithPayload(&models.Error{
 				Data: &models.ErrorData{
 					Message: err.Error(),
@@ -91,16 +98,19 @@ func (c Kind) GetKindByIDFunc() kinds.GetKindByIDHandlerFunc {
 
 func (c Kind) DeleteKindFunc() kinds.DeleteKindHandlerFunc {
 	return func(s kinds.DeleteKindParams) middleware.Responder {
+		ctx := s.HTTPRequest.Context()
 		id, err := strconv.Atoi(s.KindID)
 		if err != nil {
+			c.logger.Error("parse KindID into string failed", zap.Error(err))
 			return kinds.NewDeleteKindDefault(http.StatusInternalServerError).WithPayload(&models.Error{
 				Data: &models.ErrorData{
 					Message: err.Error(),
 				},
 			})
 		}
-		e, err := c.client.Kind.Get(s.HTTPRequest.Context(), id)
+		e, err := c.client.Kind.Get(ctx, id)
 		if err != nil {
+			c.logger.Error("get kind failed", zap.Error(err))
 			return kinds.NewDeleteKindDefault(http.StatusInternalServerError).WithPayload(&models.Error{
 				Data: &models.ErrorData{
 					Message: err.Error(),
@@ -108,8 +118,9 @@ func (c Kind) DeleteKindFunc() kinds.DeleteKindHandlerFunc {
 			})
 		}
 
-		err = c.client.Kind.DeleteOneID(e.ID).Exec(s.HTTPRequest.Context())
+		err = c.client.Kind.DeleteOneID(e.ID).Exec(ctx)
 		if err != nil {
+			c.logger.Error("delete kind failed", zap.Error(err))
 			return kinds.NewDeleteKindDefault(http.StatusInternalServerError).WithPayload(&models.Error{
 				Data: &models.ErrorData{
 					Message: err.Error(),
@@ -129,8 +140,10 @@ func (c Kind) DeleteKindFunc() kinds.DeleteKindHandlerFunc {
 
 func (c Kind) PatchKindFunc() kinds.PatchKindHandlerFunc {
 	return func(s kinds.PatchKindParams) middleware.Responder {
+		ctx := s.HTTPRequest.Context()
 		id, err := strconv.Atoi(s.KindID)
 		if err != nil {
+			c.logger.Error("parse KindID into string failed", zap.Error(err))
 			return kinds.NewPatchKindDefault(http.StatusInternalServerError).WithPayload(&models.Error{
 				Data: &models.ErrorData{
 					Message: err.Error(),
@@ -138,8 +151,9 @@ func (c Kind) PatchKindFunc() kinds.PatchKindHandlerFunc {
 			})
 		}
 
-		e, err := c.client.Kind.Get(s.HTTPRequest.Context(), id)
+		e, err := c.client.Kind.Get(ctx, id)
 		if err != nil {
+			c.logger.Error("get kind failed", zap.Error(err))
 			return kinds.NewGetKindByIDDefault(http.StatusInternalServerError).WithPayload(&models.Error{
 				Data: &models.ErrorData{
 					Message: err.Error(),
@@ -151,8 +165,9 @@ func (c Kind) PatchKindFunc() kinds.PatchKindHandlerFunc {
 		maxUnits := s.PatchTask.Data.MaxReservationUnits
 
 		if maxTime != 0 {
-			e, err = c.client.Kind.UpdateOneID(id).SetMaxReservationTime(maxTime).Save(s.HTTPRequest.Context())
+			e, err = c.client.Kind.UpdateOneID(id).SetMaxReservationTime(maxTime).Save(ctx)
 			if err != nil {
+				c.logger.Error("update kind failed", zap.Error(err))
 				return kinds.NewPatchKindDefault(http.StatusInternalServerError).WithPayload(&models.Error{
 					Data: &models.ErrorData{
 						Message: err.Error(),
@@ -161,8 +176,9 @@ func (c Kind) PatchKindFunc() kinds.PatchKindHandlerFunc {
 			}
 		}
 		if maxUnits != 0 {
-			e, err = c.client.Kind.UpdateOneID(id).SetMaxReservationUnits(maxUnits).Save(s.HTTPRequest.Context())
+			e, err = c.client.Kind.UpdateOneID(id).SetMaxReservationUnits(maxUnits).Save(ctx)
 			if err != nil {
+				c.logger.Error("update kind failed", zap.Error(err))
 				return kinds.NewPatchKindDefault(http.StatusInternalServerError).WithPayload(&models.Error{
 					Data: &models.ErrorData{
 						Message: err.Error(),

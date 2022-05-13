@@ -3,7 +3,7 @@ package main
 import (
 	"context"
 	"database/sql"
-	"log"
+	"fmt"
 	"os"
 
 	"entgo.io/ent/dialect"
@@ -30,15 +30,15 @@ func main() {
 
 	logger, err := loggerConfig.Build()
 	if err != nil {
-		log.Fatalln(err)
+		logger.Fatal("load config error", zap.Error(err))
 	}
 
 	dbHost := getEnv("DB_HOST", "localhost")
 
-	connectionString := "host=" + dbHost + " user=csr password=csr dbname=csr sslmode=disable"
+	connectionString := fmt.Sprintf("host=%s user=csr password=csr dbname=csr sslmode=disable", dbHost)
 	db, err := sql.Open("pgx", connectionString)
 	if err != nil {
-		log.Fatal(err)
+		logger.Fatal("cant open db", zap.Error(err))
 	}
 
 	// Create an ent.Driver from `db`.
@@ -49,7 +49,7 @@ func main() {
 
 	// Run the auto migration tool.
 	if err := client.Schema.Create(ctx, entMigrate.WithDropIndex(true)); err != nil {
-		log.Fatalf("failed creating schema resources: %v", err)
+		logger.Fatal("failed creating schema resources", zap.Error(err))
 	}
 
 	driver, err := postgres.WithInstance(db, &postgres.Config{})
@@ -58,9 +58,9 @@ func main() {
 		"csr", driver)
 	if err := m.Up(); err != nil {
 		if err != migrate.ErrNoChange {
-			log.Fatal(err)
+			logger.Fatal("migration failed", zap.Error(err))
 		}
-		log.Println(err)
+		logger.Error("migration error", zap.Error(err))
 	}
 
 	swaggerSpec, err := loads.Analyzed(restapi.SwaggerJSON, "")
@@ -115,7 +115,7 @@ func main() {
 	api.UseSwaggerUI()
 	jwtSecretKey := os.Getenv("JWT_SECRET_KEY")
 	if jwtSecretKey == "" {
-		log.Fatalln("JWT_SECRET_KEY not specified")
+		logger.Error("JWT_SECRET_KEY not specified", zap.Error(err))
 	}
 	api.BearerAuth = middlewares.BearerAuthenticateFunc(jwtSecretKey, logger)
 	api.UsersRefreshHandler = userHandler.Refresh(jwtSecretKey)

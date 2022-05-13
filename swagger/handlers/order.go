@@ -27,23 +27,26 @@ func NewOrder(client *ent.Client, logger *zap.Logger) *Order {
 	}
 }
 
-func mapOrder(o *ent.Order) (*models.Order, error) {
+func mapOrder(o *ent.Order, log *zap.Logger) (*models.Order, error) {
 	id := int64(o.ID)
 	quantity := int64(o.Quantity)
 	rentEnd := strfmt.DateTime(o.RentEnd)
 	rentStart := strfmt.DateTime(o.RentStart)
 	if o == nil {
+		log.Warn("order is nil")
 		return nil, errors.New("order is nil")
 	}
 	owners := o.Edges.Users
 	if owners == nil {
+		log.Warn("order has no owners")
 		return nil, errors.New("this order has no owners")
 	}
 	owner := owners[0]
 
 	equipments := o.Edges.Equipments
 	if equipments == nil {
-		return nil, errors.New("this order has no equipments")
+		log.Warn("order has no equipments")
+		return nil, errors.New("order has no equipments")
 	}
 	equipment := equipments[0]
 	ownerId := int64(owner.ID)
@@ -68,6 +71,7 @@ func mapOrder(o *ent.Order) (*models.Order, error) {
 		}
 		mappedStatus, err := MapStatus(lastStatus)
 		if err != nil {
+			log.Error("failed to map status", zap.Error(err))
 			return nil, err
 		}
 		statusToOrder = mappedStatus
@@ -95,11 +99,12 @@ func mapOrder(o *ent.Order) (*models.Order, error) {
 	}, nil
 }
 
-func mapOrdersToResponse(entOrders []*ent.Order) ([]*models.Order, error) {
+func mapOrdersToResponse(entOrders []*ent.Order, log *zap.Logger) ([]*models.Order, error) {
 	modelOrders := make([]*models.Order, len(entOrders))
 	for i, o := range entOrders {
-		order, err := mapOrder(o)
+		order, err := mapOrder(o, log)
 		if err != nil {
+			log.Error("failed to map order", zap.Error(err))
 			return nil, err
 		}
 		modelOrders[i] = order
@@ -110,22 +115,27 @@ func mapOrdersToResponse(entOrders []*ent.Order) ([]*models.Order, error) {
 
 func (o Order) ListOrderFunc(repository repositories.OrderRepository) orders.GetAllOrdersHandlerFunc {
 	return func(p orders.GetAllOrdersParams, access interface{}) middleware.Responder {
+		ctx := p.HTTPRequest.Context()
+
 		ownerId, err := authentication.GetUserId(access)
 		if err != nil {
+			o.logger.Error("get user id failed", zap.Error(err))
 			status := http.StatusInternalServerError
 			if errors.Is(err, repositories.OrderAccessDenied{}) {
 				status = http.StatusForbidden
 			}
 			return orders.NewGetAllOrdersDefault(status).WithPayload(buildErrorPayload(err))
 		}
-		ctx := p.HTTPRequest.Context()
+
 		items, total, err := repository.List(ctx, ownerId)
 		if err != nil {
+			o.logger.Error("list items failed", zap.Error(err))
 			return orders.NewGetAllOrdersDefault(http.StatusInternalServerError).WithPayload(buildErrorPayload(err))
 		}
 
-		mappedOrders, err := mapOrdersToResponse(items)
+		mappedOrders, err := mapOrdersToResponse(items, o.logger)
 		if err != nil {
+			o.logger.Error("map orders to response failed", zap.Error(err))
 			return orders.NewGetAllOrdersDefault(http.StatusInternalServerError).WithPayload(buildErrorPayload(err))
 		}
 
@@ -138,18 +148,23 @@ func (o Order) ListOrderFunc(repository repositories.OrderRepository) orders.Get
 
 func (o Order) CreateOrderFunc(repository repositories.OrderRepository) orders.CreateOrderHandlerFunc {
 	return func(p orders.CreateOrderParams, access interface{}) middleware.Responder {
+		ctx := p.HTTPRequest.Context()
+
 		ownerId, err := authentication.GetUserId(access)
 		if err != nil {
-			return orders.NewGetAllOrdersDefault(http.StatusInternalServerError).WithPayload(buildErrorPayload(err))
-		}
-		ctx := p.HTTPRequest.Context()
-		order, err := repository.Create(ctx, p.Data, ownerId)
-		if err != nil {
+			o.logger.Error("get user ID failed", zap.Error(err))
 			return orders.NewGetAllOrdersDefault(http.StatusInternalServerError).WithPayload(buildErrorPayload(err))
 		}
 
-		mappedOrder, err := mapOrder(order)
+		order, err := repository.Create(ctx, p.Data, ownerId)
 		if err != nil {
+			o.logger.Error("map orders to response failed", zap.Error(err))
+			return orders.NewGetAllOrdersDefault(http.StatusInternalServerError).WithPayload(buildErrorPayload(err))
+		}
+
+		mappedOrder, err := mapOrder(order, o.logger)
+		if err != nil {
+			o.logger.Error("failed to map order", zap.Error(err))
 			return orders.NewGetAllOrdersDefault(http.StatusInternalServerError).WithPayload(buildErrorPayload(err))
 		}
 
@@ -159,19 +174,24 @@ func (o Order) CreateOrderFunc(repository repositories.OrderRepository) orders.C
 
 func (o Order) UpdateOrderFunc(repository repositories.OrderRepository) orders.UpdateOrderHandlerFunc {
 	return func(p orders.UpdateOrderParams, access interface{}) middleware.Responder {
+		ctx := p.HTTPRequest.Context()
+
 		ownerId, err := authentication.GetUserId(access)
 		if err != nil {
+			o.logger.Error("get userID failed", zap.Error(err))
 			return orders.NewGetAllOrdersDefault(http.StatusInternalServerError).WithPayload(buildErrorPayload(err))
 		}
-		ctx := p.HTTPRequest.Context()
+
 		id := int(p.OrderID)
 		order, err := repository.Update(ctx, id, p.Data, ownerId)
 		if err != nil {
+			o.logger.Error("update order failed", zap.Error(err))
 			return orders.NewUpdateOrderDefault(http.StatusInternalServerError).WithPayload(buildErrorPayload(err))
 		}
 
-		mappedOrder, err := mapOrder(order)
+		mappedOrder, err := mapOrder(order, o.logger)
 		if err != nil {
+			o.logger.Error("failed to map order", zap.Error(err))
 			return orders.NewUpdateOrderDefault(http.StatusInternalServerError).WithPayload(buildErrorPayload(err))
 		}
 

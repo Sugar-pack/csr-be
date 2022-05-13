@@ -155,7 +155,7 @@ func (c User) Refresh(jwtSecretKey string) users.RefreshHandlerFunc {
 		if errors.Is(err, jwt.ErrTokenExpired) {
 			_, err = c.client.Token.Delete().Where(token.RefreshToken(refreshToken.Raw)).Exec(ctx)
 			if err != nil {
-				log.Printf("delete tokens error: %v", err)
+				c.logger.Error("delete tokens error", zap.Error(err))
 				return users.NewRefreshDefault(http.StatusInternalServerError).WithPayload(&models.Error{Data: &models.ErrorData{
 					Message: "delete tokens error",
 				}})
@@ -260,8 +260,9 @@ func (c User) AssignRoleToUserFunc(repository repositories.UserRepository) users
 
 func (c User) GetUserById() users.GetUserHandlerFunc {
 	return func(p users.GetUserParams) middleware.Responder {
+		ctx := p.HTTPRequest.Context()
 		id := int(p.UserID)
-		user, err := c.client.User.Get(p.HTTPRequest.Context(), id)
+		user, err := c.client.User.Get(ctx, id)
 		if err != nil {
 			return users.NewGetUserDefault(http.StatusNotFound).WithPayload(&models.Error{
 				Data: &models.ErrorData{
@@ -273,7 +274,7 @@ func (c User) GetUserById() users.GetUserHandlerFunc {
 		id64 := int64(id)
 		passportDate := user.PassportIssueDate.String()
 		typeString := user.Type.String()
-		role, err := user.QueryRole().Only(p.HTTPRequest.Context())
+		role, err := user.QueryRole().Only(ctx)
 		if err != nil {
 			return users.NewGetAllUsersDefault(http.StatusNotFound).WithPayload(&models.Error{
 				Data: &models.ErrorData{
@@ -308,8 +309,10 @@ func (c User) GetUserById() users.GetUserHandlerFunc {
 
 func (c User) GetUsersList() users.GetAllUsersHandlerFunc {
 	return func(p users.GetAllUsersParams) middleware.Responder {
-		all, err := c.client.User.Query().All(p.HTTPRequest.Context())
+		ctx := p.HTTPRequest.Context()
+		all, err := c.client.User.Query().All(ctx)
 		if err != nil {
+			c.logger.Error("failed to query users")
 			return users.NewGetAllUsersDefault(http.StatusNotFound).WithPayload(&models.Error{
 				Data: &models.ErrorData{
 					Message: err.Error(),
@@ -323,8 +326,9 @@ func (c User) GetUsersList() users.GetAllUsersHandlerFunc {
 			passportDate := element.PassportIssueDate.String()
 			typeString := element.Type.String()
 
-			role, err := element.QueryRole().Only(p.HTTPRequest.Context())
+			role, err := element.QueryRole().Only(ctx)
 			if err != nil {
+				c.logger.Error("failed to query role")
 				return users.NewGetAllUsersDefault(http.StatusNotFound).WithPayload(&models.Error{
 					Data: &models.ErrorData{
 						Message: err.Error(),
