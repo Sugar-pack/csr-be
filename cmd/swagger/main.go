@@ -144,12 +144,13 @@ func main() {
 	api.StatusGetStatusHandler = statusHandler.GetStatusFunc()
 	api.StatusDeleteStatusHandler = statusHandler.DeleteStatusFunc()
 
+	equipmentRepository := repositories.NewEquipmentRepository(client)
 	api.EquipmentCreateNewEquipmentHandler = equipmentHandler.PostEquipmentFunc()
 	api.EquipmentGetEquipmentHandler = equipmentHandler.GetEquipmentFunc()
 	api.EquipmentDeleteEquipmentHandler = equipmentHandler.DeleteEquipmentFunc()
 	api.EquipmentGetAllEquipmentHandler = equipmentHandler.ListEquipmentFunc()
 	api.EquipmentEditEquipmentHandler = equipmentHandler.EditEquipmentFunc()
-	api.EquipmentFindEquipmentHandler = equipmentHandler.FindEquipmentFunc()
+	api.EquipmentFindEquipmentHandler = equipmentHandler.FindEquipmentFunc(equipmentRepository)
 
 	api.ActiveAreasGetAllActiveAreasHandler = activeAreasHandler.GetActiveAreasFunc()
 

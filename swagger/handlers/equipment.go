@@ -1,9 +1,9 @@
 package handlers
 
 import (
+	"errors"
 	"net/http"
 	"strconv"
-	"strings"
 
 	"github.com/go-openapi/runtime/middleware"
 	"go.uber.org/zap"
@@ -12,6 +12,7 @@ import (
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/models"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/restapi/operations/equipment"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/restapi/operations/status"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/repositories"
 )
 
 type Equipment struct {
@@ -371,71 +372,71 @@ func (c Equipment) EditEquipmentFunc() equipment.EditEquipmentHandlerFunc {
 	}
 }
 
-func (c Equipment) FindEquipmentFunc() equipment.FindEquipmentHandlerFunc {
+func (c Equipment) FindEquipmentFunc(EquipmentRepo repositories.EquipmentRepository) equipment.FindEquipmentHandlerFunc {
 	return func(s equipment.FindEquipmentParams) middleware.Responder {
-		all, err := c.client.Equipment.Query().All(s.HTTPRequest.Context())
+		ctx := s.HTTPRequest.Context()
+		equipmentFilter := *s.FindEquipment
+		foundEquipment, err := EquipmentRepo.EquipmentsByFilter(ctx, equipmentFilter)
 		if err != nil {
+			c.logger.Error("Error while finding equipment", zap.Error(err))
 			return equipment.NewFindEquipmentDefault(http.StatusInternalServerError).WithPayload(&models.Error{
 				Data: &models.ErrorData{
-					Message: err.Error(),
+					Message: "Error while finding equipment",
 				},
 			})
 		}
-		res := models.ListEquipment{}
-		for _, element := range all {
-
-			kind, err := element.QueryKind().Only(s.HTTPRequest.Context())
-			if err != nil {
-				return equipment.NewGetAllEquipmentDefault(http.StatusInternalServerError).WithPayload(&models.Error{
-					Data: &models.ErrorData{
-						Message: err.Error(),
-					},
-				})
-			}
-			kindId := int64(kind.ID)
-
-			status, err := element.QueryStatus().Only(s.HTTPRequest.Context())
-			if err != nil {
-				return equipment.NewGetAllEquipmentDefault(http.StatusInternalServerError).WithPayload(&models.Error{
-					Data: &models.ErrorData{
-						Message: err.Error(),
-					},
-				})
-			}
-			statusId := int64(status.ID)
-
-			if (s.FindEquipment.Name == "" || element.Name == s.FindEquipment.Name) &&
-				(s.FindEquipment.NameSubstring == "" || strings.Contains(strings.ToLower(element.Name), strings.ToLower(s.FindEquipment.NameSubstring))) &&
-				(s.FindEquipment.Description == "" || element.Description == s.FindEquipment.Description) &&
-				(s.FindEquipment.Category == "" || element.Category == s.FindEquipment.Category) &&
-				(s.FindEquipment.CompensationСost == 0 || element.CompensationCost == s.FindEquipment.CompensationСost) &&
-				(s.FindEquipment.Condition == "" || element.Condition == s.FindEquipment.Condition) &&
-				(s.FindEquipment.InventoryNumber == 0 || element.InventoryNumber == s.FindEquipment.InventoryNumber) &&
-				(s.FindEquipment.Supplier == "" || element.Supplier == s.FindEquipment.Supplier) &&
-				(s.FindEquipment.ReceiptDate == "" || element.ReceiptDate == s.FindEquipment.ReceiptDate) &&
-				(s.FindEquipment.MaximumAmount == 0 || element.MaximumAmount == s.FindEquipment.MaximumAmount) &&
-				(s.FindEquipment.MaximumDays == 0 || element.MaximumDays == s.FindEquipment.MaximumDays) &&
-				(s.FindEquipment.Kind == 0 || kindId == s.FindEquipment.Kind) &&
-				(s.FindEquipment.Status == 0 || statusId == s.FindEquipment.Status) {
-
-				id := int64(element.ID)
-				res = append(res, &models.EquipmentResponse{
-					ID:               &id,
-					Description:      &element.Description,
-					Name:             &element.Name,
-					Category:         &element.Category,
-					CompensationСost: &element.CompensationCost,
-					Condition:        &element.Condition,
-					InventoryNumber:  &element.InventoryNumber,
-					Supplier:         &element.Supplier,
-					ReceiptDate:      &element.ReceiptDate,
-					MaximumAmount:    &element.MaximumAmount,
-					MaximumDays:      &element.MaximumDays,
-					Kind:             &kindId,
-					Status:           &statusId,
-				})
-			}
+		if len(foundEquipment) == 0 {
+			c.logger.Info("Equipment not found")
+			return equipment.NewFindEquipmentDefault(http.StatusNotFound).WithPayload(&models.Error{
+				Data: &models.ErrorData{
+					Message: "Equipment not found",
+				},
+			})
 		}
-		return equipment.NewFindEquipmentCreated().WithPayload(res)
+		returnEquipment := make([]*models.EquipmentResponse, len(foundEquipment))
+		for i, eq := range foundEquipment {
+			tmpEq, errMap := equipmentMap(eq)
+			if errMap != nil {
+				c.logger.Error("Error while mapping equipment", zap.Error(errMap))
+				return equipment.NewFindEquipmentDefault(http.StatusInternalServerError).WithPayload(&models.Error{
+					Data: &models.ErrorData{
+						Message: "Error while finding equipment",
+					},
+				})
+			}
+			returnEquipment[i] = tmpEq
+		}
+		return equipment.NewFindEquipmentCreated().WithPayload(returnEquipment)
+
 	}
+}
+
+func equipmentMap(eq *ent.Equipment) (*models.EquipmentResponse, error) {
+	if eq == nil {
+		return nil, errors.New("equipment is nil")
+	}
+	id := int64(eq.ID)
+	if eq.Edges.Kind == nil {
+		return nil, errors.New("equipment kind is nil")
+	}
+	kindID := int64(eq.Edges.Kind.ID)
+	if eq.Edges.Status == nil {
+		return nil, errors.New("equipment status is nil")
+	}
+	statusID := int64(eq.Edges.Status.ID)
+	return &models.EquipmentResponse{
+		Category:         &eq.Category,
+		CompensationСost: &eq.CompensationCost,
+		Condition:        &eq.Condition,
+		Description:      &eq.Description,
+		ID:               &id,
+		InventoryNumber:  &eq.InventoryNumber,
+		Kind:             &kindID,
+		MaximumAmount:    &eq.MaximumAmount,
+		MaximumDays:      &eq.MaximumDays,
+		Name:             &eq.Name,
+		ReceiptDate:      &eq.ReceiptDate,
+		Status:           &statusID,
+		Supplier:         &eq.Supplier,
+	}, nil
 }
