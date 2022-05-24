@@ -33,6 +33,7 @@ func (c Equipment) PostEquipmentFunc() equipment.CreateNewEquipmentHandlerFunc {
 			SetName(*s.NewEquipment.Name).
 			SetDescription(*s.NewEquipment.Description).
 			SetCategory(*s.NewEquipment.Category).
+			SetTitle(*s.NewEquipment.Title).
 			SetCompensationCost(*s.NewEquipment.CompensationСost).
 			SetCondition(*s.NewEquipment.Condition).
 			SetInventoryNumber(*s.NewEquipment.InventoryNumber).
@@ -77,6 +78,7 @@ func (c Equipment) PostEquipmentFunc() equipment.CreateNewEquipmentHandlerFunc {
 			ID:               &id,
 			Description:      &e.Description,
 			Name:             &e.Name,
+			Title:            &e.Title,
 			Category:         &e.Category,
 			CompensationСost: &e.CompensationCost,
 			Condition:        &e.Condition,
@@ -132,6 +134,7 @@ func (c Equipment) GetEquipmentFunc() equipment.GetEquipmentHandlerFunc {
 		return equipment.NewGetEquipmentCreated().WithPayload(&models.Equipment{
 			Description:      &e.Description,
 			Name:             &e.Name,
+			Title:            &e.Title,
 			Category:         &e.Category,
 			CompensationСost: &e.CompensationCost,
 			Condition:        &e.Condition,
@@ -188,6 +191,7 @@ func (c Equipment) DeleteEquipmentFunc() equipment.DeleteEquipmentHandlerFunc {
 		forReturn := &models.Equipment{
 			Description:      &e.Description,
 			Name:             &e.Name,
+			Title:            &e.Title,
 			Category:         &e.Category,
 			CompensationСost: &e.CompensationCost,
 			Condition:        &e.Condition,
@@ -252,6 +256,7 @@ func (c Equipment) ListEquipmentFunc() equipment.GetAllEquipmentHandlerFunc {
 				ID:               &id,
 				Description:      &element.Description,
 				Name:             &element.Name,
+				Title:            &element.Title,
 				Category:         &element.Category,
 				CompensationСost: &element.CompensationCost,
 				Condition:        &element.Condition,
@@ -289,6 +294,9 @@ func (c Equipment) EditEquipmentFunc() equipment.EditEquipmentHandlerFunc {
 		edit := e.Update()
 		if *s.EditEquipment.Name != "" {
 			edit.SetName(*s.EditEquipment.Name)
+		}
+		if *s.EditEquipment.Title != "" {
+			edit.SetTitle(*s.EditEquipment.Title)
 		}
 		if *s.EditEquipment.Category != "" {
 			edit.SetCategory(*s.EditEquipment.Category)
@@ -357,6 +365,7 @@ func (c Equipment) EditEquipmentFunc() equipment.EditEquipmentHandlerFunc {
 		return equipment.NewEditEquipmentCreated().WithPayload(&models.Equipment{
 			Description:      &res.Description,
 			Name:             &res.Name,
+			Title:            &res.Title,
 			Category:         &res.Category,
 			CompensationСost: &res.CompensationCost,
 			Condition:        &res.Condition,
@@ -406,6 +415,7 @@ func (c Equipment) FindEquipmentFunc() equipment.FindEquipmentHandlerFunc {
 
 			if (s.FindEquipment.Name == "" || element.Name == s.FindEquipment.Name) &&
 				(s.FindEquipment.NameSubstring == "" || strings.Contains(strings.ToLower(element.Name), strings.ToLower(s.FindEquipment.NameSubstring))) &&
+				(s.FindEquipment.Title == "" || element.Title == s.FindEquipment.Title) &&
 				(s.FindEquipment.Description == "" || element.Description == s.FindEquipment.Description) &&
 				(s.FindEquipment.Category == "" || element.Category == s.FindEquipment.Category) &&
 				(s.FindEquipment.CompensationСost == 0 || element.CompensationCost == s.FindEquipment.CompensationСost) &&
@@ -423,6 +433,7 @@ func (c Equipment) FindEquipmentFunc() equipment.FindEquipmentHandlerFunc {
 					ID:               &id,
 					Description:      &element.Description,
 					Name:             &element.Name,
+					Title:            &element.Title,
 					Category:         &element.Category,
 					CompensationСost: &element.CompensationCost,
 					Condition:        &element.Condition,
