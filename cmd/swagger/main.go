@@ -96,10 +96,7 @@ func main() {
 		client,
 		logger,
 	)
-	blockerHandler := handlers.NewBlocker(
-		client,
-		logger,
-	)
+	blockerHandler := handlers.NewBlocker(logger)
 
 	userRepository := repositories.NewUserRepository(client)
 	ordersHandler := handlers.NewOrder(

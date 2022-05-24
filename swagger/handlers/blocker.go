@@ -6,20 +6,17 @@ import (
 	"github.com/go-openapi/runtime/middleware"
 	"go.uber.org/zap"
 
-	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/models"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/restapi/operations/users"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/repositories"
 )
 
 type Blocker struct {
-	client *ent.Client
 	logger *zap.Logger
 }
 
-func NewBlocker(client *ent.Client, logger *zap.Logger) *Blocker {
+func NewBlocker(logger *zap.Logger) *Blocker {
 	return &Blocker{
-		client: client,
 		logger: logger,
 	}
 }
@@ -31,7 +28,7 @@ func (b Blocker) BlockUserFunc(repository repositories.BlockerRepository) users.
 		err := repository.SetIsBlockedUser(context, userId, true)
 		if err != nil {
 			b.logger.Error("block user failed", zap.Error(err))
-			return users.NewBlockUserDefault(http.StatusNotFound).WithPayload(&models.Error{
+			return users.NewBlockUserDefault(http.StatusInternalServerError).WithPayload(&models.Error{
 				Data: &models.ErrorData{
 					Message: err.Error(),
 				},
