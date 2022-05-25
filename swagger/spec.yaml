@@ -40,10 +40,10 @@ paths:
           description: Successful login
           schema:
             $ref: '#/definitions/AccessToken'
-        404:
+        401:
           schema:
             type: string
-          description: User not found
+          description: Unauthorized
         default:
           description: Unexpected error.
           schema:

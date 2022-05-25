@@ -18,12 +18,17 @@ import (
 type UserRepository interface {
 	SetUserRole(ctx context.Context, userId int, roleId int) (*ent.User, error)
 	CreateUser(ctx context.Context, data *models.UserRegister) (*ent.User, error)
+	GetUserByLogin(ctx context.Context, login string) (*ent.User, error)
 }
 
 const defaultRoleSlug = "user"
 
 type userRepository struct {
 	client *ent.Client
+}
+
+func (r *userRepository) GetUserByLogin(ctx context.Context, login string) (*ent.User, error) {
+	return r.client.User.Query().Where(user.Login(login)).Only(ctx)
 }
 
 func NewUserRepository(client *ent.Client) UserRepository {

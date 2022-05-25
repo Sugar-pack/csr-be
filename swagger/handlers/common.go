@@ -9,3 +9,11 @@ func buildErrorPayload(err error) *models.Error {
 		},
 	}
 }
+
+func buildStringPayload(msg string) *models.Error {
+	return &models.Error{
+		Data: &models.ErrorData{
+			Message: msg,
+		},
+	}
+}

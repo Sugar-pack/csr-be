@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"os"
 
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/services"
+
 	"entgo.io/ent/dialect"
 	entsql "entgo.io/ent/dialect/sql"
 	"github.com/go-openapi/loads"
@@ -101,7 +103,6 @@ func main() {
 		logger,
 	)
 
-	userRepository := repositories.NewUserRepository(client)
 	ordersHandler := handlers.NewOrder(
 		client,
 		logger,
@@ -120,7 +121,11 @@ func main() {
 	api.BearerAuth = middlewares.BearerAuthenticateFunc(jwtSecretKey, logger)
 	api.UsersRefreshHandler = userHandler.Refresh(jwtSecretKey)
 
-	api.UsersLoginHandler = userHandler.LoginUserFunc(jwtSecretKey)
+	userRepository := repositories.NewUserRepository(client)
+	tokenRepository := repositories.NewTokenRepository(client)
+	userService := services.NewUserService(userRepository, tokenRepository, jwtSecretKey, logger)
+	api.UsersLoginHandler = userHandler.LoginUserFunc(userService)
+
 	api.UsersPostUserHandler = userHandler.PostUserFunc(userRepository)
 	api.UsersGetCurrentUserHandler = userHandler.GetUserFunc()
 	api.UsersPatchUserHandler = userHandler.PatchUserFunc()
