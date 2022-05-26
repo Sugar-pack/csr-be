@@ -8,8 +8,6 @@ import (
 	"net/http"
 	"time"
 
-	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/services"
-
 	"github.com/go-openapi/runtime/middleware"
 	"github.com/golang-jwt/jwt/v4"
 	"go.uber.org/zap"
@@ -20,11 +18,11 @@ import (
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/models"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/restapi/operations/users"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/repositories"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/services"
 )
 
 const (
-	accessExpireTime  = 15 * time.Minute
-	refreshExpireTime = 148 * time.Hour
+	accessExpireTime = 15 * time.Minute
 )
 
 type User struct {

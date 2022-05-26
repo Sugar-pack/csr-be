@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"github.com/golang-jwt/jwt/v4"
@@ -42,7 +43,7 @@ func NewUserService(userRepository repositories.UserRepository, tokenRepository 
 func (u *userService) GenerateAccessToken(ctx context.Context, login, password string) (string, bool, error) {
 	user, err := u.userRepository.GetUserByLogin(ctx, login)
 	if ent.IsNotFound(err) {
-		return "", false, nil
+		return "", false, err
 	}
 	if err != nil {
 		return "", true, err
@@ -52,7 +53,7 @@ func (u *userService) GenerateAccessToken(ctx context.Context, login, password s
 		return "", false, err
 	}
 
-	accessToken, err := generateJWT(ctx, user, u.jwtSecret)
+	accessToken, err := generateJWT(user, u.jwtSecret)
 	if err != nil {
 		return "", true, err
 	}
@@ -70,7 +71,7 @@ func (u *userService) GenerateAccessToken(ctx context.Context, login, password s
 	return accessToken, false, nil
 }
 
-func generateJWT(ctx context.Context, user *ent.User, jwtSecretKey string) (string, error) {
+func generateJWT(user *ent.User, jwtSecretKey string) (string, error) {
 	token := jwt.New(jwt.SigningMethodHS256)
 	claims := token.Claims.(jwt.MapClaims)
 
@@ -78,19 +79,28 @@ func generateJWT(ctx context.Context, user *ent.User, jwtSecretKey string) (stri
 	claims["login"] = user.Login
 	claims["role"] = nil
 	claims["group"] = nil
-	role, err := user.QueryRole().First(ctx)
-	if err == nil {
-		claims["role"] = map[string]interface{}{
-			"id":   role.ID,
-			"slug": role.Slug,
-		}
+	role := user.Edges.Role
+	if role == nil {
+		return "", errors.New("role is nil")
 	}
-	group, err := user.QueryGroups().First(ctx)
-	if err == nil {
-		claims["group"] = map[string]interface{}{
-			"id": group.ID,
-		}
+	claims["role"] = map[string]interface{}{
+		"id":   role.ID,
+		"slug": role.Slug,
 	}
+
+	groups := user.Edges.Groups
+	if groups == nil {
+		return "", errors.New("groups is nil")
+	}
+	groupsIDs := make([]int, len(groups))
+	for i, group := range groups {
+		groupsIDs[i] = group.ID
+	}
+	claims["group"] = map[string]interface{}{
+
+		"ids": groupsIDs,
+	}
+
 	claims["exp"] = time.Now().Add(accessExpireTime).Unix()
 
 	tokenString, err := token.SignedString([]byte(jwtSecretKey))

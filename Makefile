@@ -48,4 +48,5 @@ coverage:
 gen-repo-mock:
 	@docker run -v `pwd`:/src -w /src vektra/mockery --case snake --dir swagger/repositories --output internal/mocks/repositories --outpkg repositories --all
 
-	
+gen-password-service-mock:
+	@docker run -v `pwd`:/src -w /src vektra/mockery --case snake --dir swagger/services --output internal/mocks/services --outpkg services --all

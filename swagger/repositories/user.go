@@ -28,7 +28,7 @@ type userRepository struct {
 }
 
 func (r *userRepository) GetUserByLogin(ctx context.Context, login string) (*ent.User, error) {
-	return r.client.User.Query().Where(user.Login(login)).Only(ctx)
+	return r.client.User.Query().Where(user.Login(login)).WithGroups().WithRole().Only(ctx)
 }
 
 func NewUserRepository(client *ent.Client) UserRepository {
