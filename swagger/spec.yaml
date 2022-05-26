@@ -1133,6 +1133,7 @@ definitions:
     required:
       - category
       - name
+      - title
       - kind
       - status
       - compensationСost
@@ -1157,6 +1158,9 @@ definitions:
         type: string
         example: "box"
         description: "Substring of name for case in-sensitive search"
+      title:
+        type: string
+        example: "клетка midwest icrate 1"
       kind:
         type: integer
         example: 1
@@ -1210,6 +1214,9 @@ definitions:
         type: string
         example: "box"
         description: "Substring of name for case in-sensitive search"
+      title:
+        type: string
+        example: "клетка midwest icrate 1"
       kind:
         type: integer
         example: 1
@@ -1256,6 +1263,7 @@ definitions:
       - id
       - category
       - name
+      - title
       - kind
       - status
       - compensationСost
@@ -1279,6 +1287,9 @@ definitions:
       name:
         type: string
         example: "Dog harness 3000"
+      title:
+        type: string
+        example: "клетка midwest icrate 1"
       kind:
         type: integer
         example: 1
