@@ -69,10 +69,7 @@ func main() {
 		return
 	}
 
-	equipmentHandler := handlers.NewEquipment(
-		client,
-		logger,
-	)
+	equipmentHandler := handlers.NewEquipment(logger)
 
 	userHandler := handlers.NewUser(
 		client,
@@ -104,9 +101,7 @@ func main() {
 		logger,
 	)
 
-	orderStatus := handlers.NewOrderStatus(
-		logger,
-	)
+	orderStatus := handlers.NewOrderStatus(logger)
 
 	api := operations.NewBeAPI(swaggerSpec)
 	api.UseSwaggerUI()
@@ -141,12 +136,13 @@ func main() {
 	api.StatusGetStatusHandler = statusHandler.GetStatusFunc()
 	api.StatusDeleteStatusHandler = statusHandler.DeleteStatusFunc()
 
-	api.EquipmentCreateNewEquipmentHandler = equipmentHandler.PostEquipmentFunc()
-	api.EquipmentGetEquipmentHandler = equipmentHandler.GetEquipmentFunc()
-	api.EquipmentDeleteEquipmentHandler = equipmentHandler.DeleteEquipmentFunc()
-	api.EquipmentGetAllEquipmentHandler = equipmentHandler.ListEquipmentFunc()
-	api.EquipmentEditEquipmentHandler = equipmentHandler.EditEquipmentFunc()
-	api.EquipmentFindEquipmentHandler = equipmentHandler.FindEquipmentFunc()
+	equipmentRepository := repositories.NewEquipmentRepository(client)
+	api.EquipmentCreateNewEquipmentHandler = equipmentHandler.PostEquipmentFunc(equipmentRepository)
+	api.EquipmentGetEquipmentHandler = equipmentHandler.GetEquipmentFunc(equipmentRepository)
+	api.EquipmentDeleteEquipmentHandler = equipmentHandler.DeleteEquipmentFunc(equipmentRepository)
+	api.EquipmentGetAllEquipmentHandler = equipmentHandler.ListEquipmentFunc(equipmentRepository)
+	api.EquipmentEditEquipmentHandler = equipmentHandler.EditEquipmentFunc(equipmentRepository)
+	api.EquipmentFindEquipmentHandler = equipmentHandler.FindEquipmentFunc(equipmentRepository)
 
 	api.ActiveAreasGetAllActiveAreasHandler = activeAreasHandler.GetActiveAreasFunc()
 
