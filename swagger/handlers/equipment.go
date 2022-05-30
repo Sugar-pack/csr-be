@@ -220,6 +220,7 @@ func mapEquipmentResponse(eq *ent.Equipment) (*models.EquipmentResponse, error) 
 		ReceiptDate:      &eq.ReceiptDate,
 		Status:           &statusID,
 		Supplier:         &eq.Supplier,
+		Title:            &eq.Title,
 	}, nil
 }
 
@@ -248,5 +249,6 @@ func mapEquipment(eq *ent.Equipment) (*models.Equipment, error) {
 		ReceiptDate:      &eq.ReceiptDate,
 		Status:           &statusID,
 		Supplier:         &eq.Supplier,
+		Title:            &eq.Title,
 	}, nil
 }

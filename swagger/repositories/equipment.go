@@ -52,6 +52,7 @@ func (r *equipmentRepository) EquipmentsByFilter(ctx context.Context, filter mod
 			OptionalStringEquipment(filter.ReceiptDate, equipment.FieldReceiptDate),
 			OptionalIntEquipment(filter.MaximumAmount, equipment.FieldMaximumAmount),
 			OptionalIntEquipment(filter.MaximumDays, equipment.FieldMaximumDays),
+			OptionalStringEquipment(filter.Title, equipment.FieldTitle),
 		).
 		WithKind().
 		WithStatus().
@@ -78,6 +79,7 @@ func (r *equipmentRepository) CreateEquipment(ctx context.Context, NewEquipment 
 		SetStatus(&ent.Statuses{ID: int(*NewEquipment.Status)}).
 		SetKindID(int(*NewEquipment.Kind)).
 		SetStatusID(int(*NewEquipment.Status)).
+		SetTitle(*NewEquipment.Title).
 		Save(ctx)
 	if err != nil {
 		return nil, err
@@ -151,6 +153,10 @@ func (r *equipmentRepository) UpdateEquipmentByID(ctx context.Context, id int, e
 	}
 	if *eq.Kind != 0 {
 		edit.SetKind(&ent.Kind{ID: int(*eq.Kind)})
+	}
+
+	if *eq.Title != "" {
+		edit.SetTitle(*eq.Title)
 	}
 
 	if *eq.Status != 0 {
