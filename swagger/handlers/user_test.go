@@ -11,17 +11,19 @@ import (
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/zap"
 
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent"
+	repomock "git.epam.com/epm-lstr/epm-lstr-lc/be/internal/mocks/repositories"
+	servicemock "git.epam.com/epm-lstr/epm-lstr-lc/be/internal/mocks/services"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/models"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/restapi/operations/users"
-
-	servicemock "git.epam.com/epm-lstr/epm-lstr-lc/be/internal/mocks/services"
 )
 
 type UserTestSuite struct {
 	suite.Suite
-	logger  *zap.Logger
-	service *servicemock.UserService
-	user    *User
+	logger         *zap.Logger
+	service        *servicemock.UserService
+	user           *User
+	userRepository *repomock.UserRepository
 }
 
 func TestUserSuite(t *testing.T) {
@@ -31,6 +33,7 @@ func TestUserSuite(t *testing.T) {
 func (s *UserTestSuite) SetupTest() {
 	s.logger, _ = zap.NewDevelopment()
 	s.service = &servicemock.UserService{}
+	s.userRepository = &repomock.UserRepository{}
 	s.user = &User{
 		logger: s.logger,
 	} // it will be rewritten after full user handler refactoring
@@ -111,4 +114,85 @@ func (s *UserTestSuite) TestUser_LoginUserFunc_OK() {
 	resp.WriteResponse(responseRecorder, producer)
 	assert.Equal(t, http.StatusOK, responseRecorder.Code)
 	s.service.AssertExpectations(t)
+}
+
+func (s *UserTestSuite) TestUser_PostUserFunc_LoginExistErr() {
+	t := s.T()
+	request := http.Request{}
+	ctx := request.Context()
+
+	login := "login"
+	password := "password"
+	handlerFunc := s.user.PostUserFunc(s.userRepository)
+	data := users.PostUserParams{
+		HTTPRequest: &request,
+		Data: &models.UserRegister{
+			Login:    &login,
+			Password: &password,
+		},
+	}
+	err := &ent.ConstraintError{}
+	s.userRepository.On("CreateUser", ctx, data.Data).Return(nil, err)
+
+	resp := handlerFunc(data)
+	responseRecorder := httptest.NewRecorder()
+	producer := runtime.JSONProducer()
+	resp.WriteResponse(responseRecorder, producer)
+	assert.Equal(t, http.StatusExpectationFailed, responseRecorder.Code)
+	s.userRepository.AssertExpectations(t)
+}
+
+func (s *UserTestSuite) TestUser_PostUserFunc_RepoErr() {
+	t := s.T()
+	request := http.Request{}
+	ctx := request.Context()
+
+	login := "login"
+	password := "password"
+	handlerFunc := s.user.PostUserFunc(s.userRepository)
+	data := users.PostUserParams{
+		HTTPRequest: &request,
+		Data: &models.UserRegister{
+			Login:    &login,
+			Password: &password,
+		},
+	}
+	err := errors.New("some error")
+	s.userRepository.On("CreateUser", ctx, data.Data).Return(nil, err)
+
+	resp := handlerFunc(data)
+	responseRecorder := httptest.NewRecorder()
+	producer := runtime.JSONProducer()
+	resp.WriteResponse(responseRecorder, producer)
+	assert.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
+	s.userRepository.AssertExpectations(t)
+}
+
+func (s *UserTestSuite) TestUser_PostUserFunc_OK() {
+	t := s.T()
+	request := http.Request{}
+	ctx := request.Context()
+
+	login := "login"
+	password := "password"
+	handlerFunc := s.user.PostUserFunc(s.userRepository)
+	data := users.PostUserParams{
+		HTTPRequest: &request,
+		Data: &models.UserRegister{
+			Login:    &login,
+			Password: &password,
+		},
+	}
+	user := &ent.User{
+		ID:    1,
+		Login: login,
+	}
+	s.userRepository.On("CreateUser", ctx, data.Data).Return(user, nil)
+
+	resp := handlerFunc(data)
+	responseRecorder := httptest.NewRecorder()
+	producer := runtime.JSONProducer()
+	resp.WriteResponse(responseRecorder, producer)
+	assert.Equal(t, http.StatusCreated, responseRecorder.Code)
+	s.userRepository.AssertExpectations(t)
 }
