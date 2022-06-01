@@ -62,3 +62,9 @@ To generate schema:
 go generate ./ent
 ```
 
+To draw entities relationships diagram:
+```
+go get -u github.com/a8m/enter
+enter ./ent/schema
+```
+

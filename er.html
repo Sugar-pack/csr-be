@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+</head>
+<body>
+		<div class="mermaid" id="er-diagram">
+erDiagram
+    ActiveArea {
+        int id
+        string name
+    }
+    Equipment {
+        int id
+        string category
+        string name
+        string title
+        int64 compensationCost
+        string condition
+        int64 inventoryNumber
+        string supplier
+        string receiptDate
+        int64 maximumAmount
+        int64 maximumDays
+        string description
+    }
+    Group {
+        int id
+    }
+    Kind {
+        int id
+        string name
+        int64 max_reservation_time
+        int64 max_reservation_units
+    }
+    Order {
+        int id
+        string description
+        int quantity
+        timeDOTTime rent_start
+        timeDOTTime rent_end
+        timeDOTTime created_at
+    }
+    OrderStatus {
+        int id
+        string comment
+        timeDOTTime current_date
+    }
+    Permission {
+        int id
+        string name
+    }
+    Role {
+        int id
+        string name
+        string slug
+    }
+    StatusName {
+        int id
+        string status
+    }
+    Statuses {
+        int id
+        string name
+    }
+    Token {
+        int id
+        string accessToken
+        string refreshToken
+    }
+    User {
+        int id
+        string login
+        string email
+        string password
+        string name
+        string surname
+        string patronymic
+        string passport_series
+        string passport_number
+        string passport_authority
+        timeDOTTime passport_issue_date
+        string phone
+        bool is_blocked
+        userDOTType type
+        string org_name
+        string website
+        string vk
+    }
+    	ActiveArea }o--o{ User : "users/active_areas"
+    	Group }o--o{ User : "users/groups"
+    	Group }o--o{ Permission : "permissions/groups"
+    	Kind |o--o{ Equipment : "equipments/kind"
+    	Order }o--o{ User : "users/order"
+    	Order }o--o{ Equipment : "equipments/order"
+    	Order |o--o{ OrderStatus : "order_status/order"
+    	Role |o--o{ User : "users/role"
+    	StatusName |o--o{ OrderStatus : "order_status/status_name"
+    	Statuses |o--o{ Equipment : "equipments/status"
+    	User |o--o{ Token : "tokens/owner"
+    	User |o--o{ OrderStatus : "order_status/users"
+		</div>
+	<script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+	<script>
+		mermaid.mermaidAPI.initialize({
+			startOnLoad: true,
+		});
+		var observer = new MutationObserver((event) => {
+			document.querySelectorAll('text[id^=entity]').forEach(text => {
+				text.textContent = text.textContent.replace('DOT', '.');
+				text.textContent = text.textContent.replace('STAR', '*');
+				text.textContent = text.textContent.replace('LBRACK', '[');
+				text.textContent = text.textContent.replace('RBRACK', ']');
+			});
+			observer.disconnect();
+		});
+		observer.observe(document.getElementById('er-diagram'), { attributes: true, childList: true });
+	</script>
+</body>
+</html>

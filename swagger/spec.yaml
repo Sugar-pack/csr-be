@@ -635,7 +635,7 @@ paths:
         - Equipment
       operationId: GetAllEquipment
       responses:
-        201:
+        200:
           description: Success
           schema:
             $ref: "#/definitions/ListEquipment"
@@ -649,14 +649,14 @@ paths:
         in: path
         required: true
         description: equipment id
-        type: string
+        type: integer
     get:
       summary: Get equipment by id
       tags:
         - Equipment
       operationId: GetEquipment
       responses:
-        201:
+        200:
           description: Equipment has been found
           schema:
             $ref: "#/definitions/Equipment"
@@ -670,10 +670,10 @@ paths:
         - Equipment
       operationId: DeleteEquipment
       responses:
-        201:
+        200:
           description: Equipment has been deleted
           schema:
-            $ref: "#/definitions/Equipment"
+            type: string
         default:
           description: Unexpected error.
           schema:
@@ -691,7 +691,7 @@ paths:
           schema:
             $ref: "#/definitions/Equipment"
       responses:
-        201:
+        200:
           description: Equipment edited
           schema:
             $ref: "#/definitions/Equipment"
@@ -713,7 +713,7 @@ paths:
           schema:
             $ref: "#/definitions/EquipmentFilter"
       responses:
-        201:
+        200:
           description: Equipment has been found
           schema:
             $ref: "#/definitions/ListEquipment"
@@ -1133,6 +1133,7 @@ definitions:
     required:
       - category
       - name
+      - title
       - kind
       - status
       - compensationСost
@@ -1157,6 +1158,9 @@ definitions:
         type: string
         example: "box"
         description: "Substring of name for case in-sensitive search"
+      title:
+        type: string
+        example: "клетка midwest icrate 1"
       kind:
         type: integer
         example: 1
@@ -1210,6 +1214,9 @@ definitions:
         type: string
         example: "box"
         description: "Substring of name for case in-sensitive search"
+      title:
+        type: string
+        example: "клетка midwest icrate 1"
       kind:
         type: integer
         example: 1
@@ -1256,6 +1263,7 @@ definitions:
       - id
       - category
       - name
+      - title
       - kind
       - status
       - compensationСost
@@ -1279,6 +1287,9 @@ definitions:
       name:
         type: string
         example: "Dog harness 3000"
+      title:
+        type: string
+        example: "клетка midwest icrate 1"
       kind:
         type: integer
         example: 1
