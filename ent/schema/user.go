@@ -47,5 +47,6 @@ func (User) Edges() []ent.Edge {
 		edge.From("active_areas", ActiveArea.Type).Ref("users"),
 		edge.From("order", Order.Type).Ref("users"),
 		edge.To("order_status", OrderStatus.Type),
+		edge.To("password_reset", PasswordReset.Type),
 	}
 }

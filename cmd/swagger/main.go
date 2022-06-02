@@ -4,7 +4,10 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"log"
 	"os"
+	"strconv"
+	"time"
 
 	"entgo.io/ent/dialect"
 	entsql "entgo.io/ent/dialect/sql"
@@ -17,11 +20,13 @@ import (
 
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent"
 	entMigrate "git.epam.com/epm-lstr/epm-lstr-lc/be/ent/migrate"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/email"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/restapi"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/restapi/operations"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/handlers"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/middlewares"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/repositories"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/services"
 )
 
 func main() {
@@ -69,6 +74,51 @@ func main() {
 		return
 	}
 
+	emailSenderServerHost := os.Getenv("EMAIL_SENDER_SERVER_HOST")
+	if emailSenderServerHost == "" {
+		log.Fatalln("EMAIL_SENDER_SERVER_HOST not specified")
+	}
+	emailSenderServerPort := os.Getenv("EMAIL_SENDER_SERVER_PORT")
+	if emailSenderServerPort == "" {
+		log.Fatalln("EMAIL_SENDER_SERVER_PORT not specified")
+	}
+	emailSenderPassword := os.Getenv("EMAIL_SENDER_PASSWORD")
+	if emailSenderPassword == "" {
+		log.Fatalln("EMAIL_SENDER_PASSWORD not specified")
+	}
+	emailSenderFromAddress := os.Getenv("EMAIL_SENDER_FROM_ADDRESS")
+	if emailSenderFromAddress == "" {
+		log.Fatalln("EMAIL_SENDER_FROM_ADDRESS not specified")
+	}
+	emailSenderFromName := os.Getenv("EMAIL_SENDER_FROM_NAME")
+	if emailSenderFromName == "" {
+		log.Fatalln("EMAIL_SENDER_FROM_NAME not specified")
+	}
+
+	passwordResetExpirationMinutes := os.Getenv("PASSWORD_RESET_EXPIRATION_MINUTES")
+	if passwordResetExpirationMinutes == "" {
+		log.Fatalln("PASSWORD_RESET_EXPIRATION_MINUTES not specified")
+	}
+	passwordResetExpirationMinutesInt, err := strconv.Atoi(passwordResetExpirationMinutes)
+	if err != nil {
+		log.Fatalln("PASSWORD_RESET_EXPIRATION_MINUTES not a number")
+	}
+
+	passwordRepo := repositories.NewPasswordResetRepository(client)
+
+	host := getEnv("SERVER_HOST", "127.0.0.1")
+	if host == "" {
+		log.Fatalln("HOST not specified")
+	}
+
+	mailSendClient := email.NewSenderSmtp(
+		host,
+		emailSenderServerHost,
+		emailSenderServerPort,
+		emailSenderPassword,
+		emailSenderFromAddress,
+		emailSenderFromName)
+
 	equipmentHandler := handlers.NewEquipment(logger)
 
 	userHandler := handlers.NewUser(
@@ -93,9 +143,17 @@ func main() {
 		client,
 		logger,
 	)
-	blockerHandler := handlers.NewBlocker(logger)
 
 	userRepository := repositories.NewUserRepository(client)
+	ttl := time.Duration(passwordResetExpirationMinutesInt) * time.Minute
+	passwordService := services.NewPasswordResetService(mailSendClient, userRepository, passwordRepo, logger, &ttl)
+	passwordResetHandler := handlers.NewPasswordReset(
+		logger,
+		passwordService,
+	)
+
+	blockerHandler := handlers.NewBlocker(logger)
+
 	ordersHandler := handlers.NewOrder(
 		client,
 		logger,
@@ -116,7 +174,6 @@ func main() {
 	api.UsersPostUserHandler = userHandler.PostUserFunc(userRepository)
 	api.UsersGetCurrentUserHandler = userHandler.GetUserFunc()
 	api.UsersPatchUserHandler = userHandler.PatchUserFunc()
-	api.UsersAssignRoleToUserHandler = userHandler.AssignRoleToUserFunc(repositories.NewUserRepository(client))
 	api.UsersGetUserHandler = userHandler.GetUserById()
 	api.UsersGetAllUsersHandler = userHandler.GetUsersList()
 	api.UsersBlockUserHandler = blockerHandler.BlockUserFunc(repositories.NewBlockerRepository(client))
@@ -145,6 +202,9 @@ func main() {
 	api.EquipmentFindEquipmentHandler = equipmentHandler.FindEquipmentFunc(equipmentRepository)
 
 	api.ActiveAreasGetAllActiveAreasHandler = activeAreasHandler.GetActiveAreasFunc()
+
+	api.PasswordResetSendLinkByLoginHandler = passwordResetHandler.SendLinkByLoginFunc()
+	api.PasswordResetGetPasswordResetLinkHandler = passwordResetHandler.GetPasswordResetLinkFunc()
 
 	orderRepository := repositories.NewOrderRepository(client)
 	api.OrdersGetAllOrdersHandler = ordersHandler.ListOrderFunc(orderRepository)
