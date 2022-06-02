@@ -222,6 +222,39 @@ paths:
           description: Unexpected error.
           schema:
             $ref: "#/definitions/Error"
+
+  /v1/users/{userId}:
+    parameters:
+      - name: userId
+        in: path
+        required: true
+        description: user id
+        type: integer
+    post:
+      consumes:
+        - application/json
+      parameters:
+        - name: UpdateUserTask
+          in: body
+          description: Data to update.
+          required: true
+          schema:
+            $ref: "#/definitions/UpdateUserTask"
+      tags:
+        - Users
+      operationId: UserUpdate
+      summary: Updates user information by its id.
+      responses:
+        200:
+          description: User information has been updated.
+          schema:
+            $ref: "#/definitions/SuccessUserUpdateResponse"
+        default:
+          description: Unexpected error.
+          schema:
+            $ref: "#/definitions/Error"
+
+
   /equipment/statuses:
     post:
       summary: Creating a new status.
@@ -760,6 +793,49 @@ paths:
           schema:
             $ref: "#/definitions/Error"  
 
+  /password_reset/:
+    post:
+      summary: Create password reset link by login.
+      tags:
+        - Password_Reset
+      operationId: SendLinkByLogin
+      parameters:
+        - name: login
+          in: body
+          required: true
+          schema:
+            $ref: "#/definitions/SendPasswordResetLinkRequest"
+      responses:
+        200:
+          description: Success
+          schema:
+            $ref: "#/definitions/PasswordResetResponse"
+        default:
+          description: Unexpected error.
+          schema:
+            $ref: "#/definitions/Error"
+
+  /password_reset/{token}:
+    get:
+      summary: Get password reset link.
+      tags:
+        - Password_Reset
+      operationId: GetPasswordResetLink
+      parameters:
+        - name: token
+          in: path
+          required: true
+          type: string
+      responses:
+        200:
+          description: Success
+          schema:
+            $ref: "#/definitions/PasswordResetResponse"
+        default:
+          description: Unexpected error.
+          schema:
+            $ref: "#/definitions/Error"
+
 definitions:
   Error:
     type: object
@@ -788,6 +864,48 @@ definitions:
           max_reservation_units:
             type: integer
             description: max reservation units field
+
+  UpdateUserTask:
+    type: object
+    required:
+      - data
+    description: Update user object
+    properties:
+      data:
+        type: object
+        properties:
+          name:
+            type: string
+            description: Name of user.
+          surname:
+            type: string
+            description: Surname of user.
+          patronymic:
+            type: string
+            description: Patronymyc data.
+          passport_series:
+            type: string
+          passport_number:
+            type: string
+          passport_authority:
+            type: string
+          passport_issue_date:
+            type: string
+          phone_number:
+            type: string
+            description: Phone number.
+          email:
+            type: string
+          type:
+            type: string
+          active_areas:
+            type: array
+            items:
+              type: integer
+          org_name:
+            type: string
+          vk:
+            type: string
 
   PatchRequest:
     type: array
@@ -872,6 +990,37 @@ definitions:
         format: date-time
       roleId:
         type: integer
+      name:
+        type: string
+        description: Name of user.
+      surname:
+        type: string
+        description: Surname of user.
+      patronymic:
+        type: string
+        description: Patronymyc data.
+      passport_series:
+        type: string
+      passport_number:
+        type: string
+      passport_authority:
+        type: string
+      passport_issue_date:
+        type: string
+      phone_number:
+        type: string
+        description: Phone number.
+      email:
+        type: string
+      type:
+        type: string
+      active_areas:
+        type: array
+        items:
+          type: integer
+      org_name:
+        type: string
+
   UserRegister:
     type: object
     required:
@@ -1010,6 +1159,13 @@ definitions:
     items:
       $ref: "#/definitions/GetUserById"
 
+  SuccessUserUpdateResponse:
+   type: object
+   required:
+    - data
+   properties:
+    data:
+      $ref: "#/definitions/User"
   #Role
   Role:
     type: object
@@ -1333,6 +1489,45 @@ definitions:
     type: array
     items:
       $ref: "#/definitions/EquipmentResponse"
+
+
+#PasswordReset
+  PasswordReset:
+    type: object
+    required:
+      - id
+      - created_at
+      - user_id
+      - hash
+    properties:
+      id:
+        type: integer
+      created_at:
+        type: string
+      user_id:
+        type: integer
+      hash:
+        type: string
+  SendPasswordResetLinkRequest:
+   type: object
+   required:
+    - data
+   properties:
+    data:
+      $ref: "#/definitions/Login"
+  PasswordResetResponse:
+    type: string
+
+  Login:
+    type: object
+    required:
+      - login
+    properties:
+      login:
+        type: string
+
+
+
 
   # Order
   OrderCreateRequest:
