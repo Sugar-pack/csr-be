@@ -5,15 +5,15 @@ import (
 	"github.com/matcornic/hermes/v2"
 )
 
-func GenerateSendLinkReset(userName, host, token string) (string, error) {
-	return generateHtml(generateSendLinkReset(userName, host, token))
+func GenerateSendLinkReset(userName, websiteUrl, token string) (string, error) {
+	return generateHtml(generateSendLinkReset(userName, websiteUrl, token))
 }
 
 func GenerateGetPasswordReset(userName, password string) (string, error) {
 	return generateHtml(generateGetPasswordReset(userName, password))
 }
 
-func generateSendLinkReset(userName, host, token string) hermes.Email {
+func generateSendLinkReset(userName, websiteUrl, token string) hermes.Email {
 	return hermes.Email{
 		Body: hermes.Body{
 			Name: userName,
@@ -26,7 +26,7 @@ func generateSendLinkReset(userName, host, token string) hermes.Email {
 					Button: hermes.Button{
 						Color: "#DC4D2F",
 						Text:  "Reset your password",
-						Link:  fmt.Sprintf("https://%s/api/password_reset/%s", host, token),
+						Link:  fmt.Sprintf("%sapi/password_reset/%s", websiteUrl, token),
 					},
 				},
 			},

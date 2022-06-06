@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/utils"
 	"time"
 
 	"github.com/google/uuid"
@@ -76,7 +77,11 @@ func (p *passwordReset) VerifyTokenAndSendPassword(ctx context.Context, tokenToV
 		return errors.New("token expired")
 	}
 	login := token.Edges.Users.Login
-	password := uuid.New().String()
+	password, err := utils.GenerateRandomResetPassword()
+	if err != nil {
+		p.logger.Error("Error while generating password", zap.Error(err))
+		return err
+	}
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
 		p.logger.Error("Error while hashing password", zap.String("password", password), zap.Error(err))
