@@ -106,13 +106,13 @@ func main() {
 
 	passwordRepo := repositories.NewPasswordResetRepository(client)
 
-	host := getEnv("SERVER_HOST", "127.0.0.1")
-	if host == "" {
-		log.Fatalln("HOST not specified")
+	emailSenderWebsiteUrl := getEnv("EMAIL_SENDER_WEBSITE_URL", "https://csr.golangforall.com/")
+	if emailSenderWebsiteUrl == "" {
+		log.Fatalln("EMAIL_SENDER_WEBSITE_URL not specified")
 	}
 
 	mailSendClient := email.NewSenderSmtp(
-		host,
+		emailSenderWebsiteUrl,
 		emailSenderServerHost,
 		emailSenderServerPort,
 		emailSenderPassword,
@@ -226,7 +226,7 @@ func main() {
 	listeners := []string{"http"}
 
 	server.EnabledListeners = listeners
-	server.Host = getEnv("SERVER_HOST", "127.0.0.1")
+	server.Host = getEnv("SERVER_HOST", "0.0.0.0")
 	server.Port = 8080
 
 	if err := server.Serve(); err != nil {

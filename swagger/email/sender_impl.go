@@ -5,16 +5,16 @@ import (
 )
 
 type senderImpl struct {
-	host        string
+	websiteUrl  string
 	senderName  string
 	senderEmail string
 	client      *wrapperSmtp
 }
 
-func NewSenderSmtp(serverHost, smtpHost, smtpPort, smtpPassword, senderEmail, senderName string) Sender {
+func NewSenderSmtp(websiteUrl, smtpHost, smtpPort, smtpPassword, senderEmail, senderName string) Sender {
 
 	return &senderImpl{
-		host:        serverHost,
+		websiteUrl:  websiteUrl,
 		senderName:  senderName,
 		senderEmail: senderEmail,
 		client:      NewWrapperSmtp(smtpHost, smtpPort, smtpPassword),
@@ -22,7 +22,7 @@ func NewSenderSmtp(serverHost, smtpHost, smtpPort, smtpPassword, senderEmail, se
 }
 
 func (c *senderImpl) SendResetLink(email string, userName string, token string) error {
-	text, err := GenerateSendLinkReset(userName, c.host, token)
+	text, err := GenerateSendLinkReset(userName, c.websiteUrl, token)
 	if err != nil {
 		return fmt.Errorf("cant generate email %w", err)
 	}
