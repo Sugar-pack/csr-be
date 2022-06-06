@@ -170,7 +170,10 @@ func main() {
 	api.BearerAuth = middlewares.BearerAuthenticateFunc(jwtSecretKey, logger)
 	api.UsersRefreshHandler = userHandler.Refresh(jwtSecretKey)
 
-	api.UsersLoginHandler = userHandler.LoginUserFunc(jwtSecretKey)
+	tokenRepository := repositories.NewTokenRepository(client)
+	userService := services.NewUserService(userRepository, tokenRepository, jwtSecretKey, logger)
+	api.UsersLoginHandler = userHandler.LoginUserFunc(userService)
+
 	api.UsersPostUserHandler = userHandler.PostUserFunc(userRepository)
 	api.UsersGetCurrentUserHandler = userHandler.GetUserFunc()
 	api.UsersPatchUserHandler = userHandler.PatchUserFunc()

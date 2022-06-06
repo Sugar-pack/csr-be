@@ -11,20 +11,18 @@ import (
 	"github.com/go-openapi/runtime/middleware"
 	"github.com/golang-jwt/jwt/v4"
 	"go.uber.org/zap"
-	"golang.org/x/crypto/bcrypt"
 
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/token"
-	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/user"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/authentication"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/models"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/restapi/operations/users"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/repositories"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/services"
 )
 
 const (
-	accessExpireTime  = 15 * time.Minute
-	refreshExpireTime = 148 * time.Hour
+	accessExpireTime = 15 * time.Minute
 )
 
 type User struct {
@@ -62,20 +60,6 @@ func generateJWT(ctx context.Context, user *ent.User, jwtSecretKey string) (stri
 	return tokenString, nil
 }
 
-func generateRefreshToken(user *ent.User, jwtSecretKey string) (string, error) {
-	refreshToken := jwt.New(jwt.SigningMethodHS256)
-	claims := refreshToken.Claims.(jwt.MapClaims)
-
-	claims["id"] = user.ID
-	claims["exp"] = time.Now().Add(refreshExpireTime).Unix()
-
-	signedToken, err := refreshToken.SignedString([]byte(jwtSecretKey))
-	if err != nil {
-		return "", err
-	}
-	return signedToken, nil
-}
-
 func NewUser(client *ent.Client, logger *zap.Logger) *User {
 	return &User{
 		client: client,
@@ -83,37 +67,18 @@ func NewUser(client *ent.Client, logger *zap.Logger) *User {
 	}
 }
 
-func (c User) LoginUserFunc(jwtSecretKey string) users.LoginHandlerFunc {
+func (c User) LoginUserFunc(service services.UserService) users.LoginHandlerFunc {
 	return func(p users.LoginParams) middleware.Responder {
 		ctx := p.HTTPRequest.Context()
-		login := p.Login.Login
-		foundUser, err := c.client.User.Query().Where(user.Login(*login)).First(ctx)
-		if ent.IsNotFound(err) {
-			return users.NewLoginNotFound()
-		}
+		login := *p.Login.Login
+		password := *p.Login.Password
+		accessToken, isInternalErr, err := service.GenerateAccessToken(ctx, login, password)
 		if err != nil {
-			return users.NewLoginDefault(http.StatusInternalServerError).WithPayload(buildErrorPayload(err))
+			if isInternalErr {
+				return users.NewLoginDefault(http.StatusInternalServerError)
+			}
+			return users.NewLoginUnauthorized().WithPayload("Invalid login or password")
 		}
-		err = bcrypt.CompareHashAndPassword([]byte(foundUser.Password), []byte(*p.Login.Password))
-		if err != nil {
-			return users.NewLoginNotFound()
-		}
-
-		accessToken, err := generateJWT(ctx, foundUser, jwtSecretKey)
-		if err != nil {
-			return users.NewLoginDefault(http.StatusInternalServerError).WithPayload(buildErrorPayload(err))
-		}
-
-		refreshToken, err := generateRefreshToken(foundUser, jwtSecretKey)
-		if err != nil {
-			return users.NewLoginDefault(http.StatusInternalServerError).WithPayload(buildErrorPayload(err))
-		}
-
-		_, err = c.client.Token.Create().SetOwner(foundUser).SetAccessToken(accessToken).SetRefreshToken(refreshToken).Save(ctx)
-		if err != nil {
-			return users.NewLoginDefault(http.StatusInternalServerError).WithPayload(buildErrorPayload(err))
-		}
-
 		return users.NewLoginOK().WithPayload(&models.AccessToken{AccessToken: &accessToken})
 	}
 }

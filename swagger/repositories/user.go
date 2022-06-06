@@ -20,12 +20,17 @@ type UserRepository interface {
 	UserByLogin(ctx context.Context, login string) (*ent.User, error)
 	ChangePasswordByLogin(ctx context.Context, login string, password string) (Transaction, error)
 	CreateUser(ctx context.Context, data *models.UserRegister) (*ent.User, error)
+	GetUserByLogin(ctx context.Context, login string) (*ent.User, error)
 }
 
 const defaultRoleSlug = "user"
 
 type userRepository struct {
 	client *ent.Client
+}
+
+func (r *userRepository) GetUserByLogin(ctx context.Context, login string) (*ent.User, error) {
+	return r.client.User.Query().Where(user.Login(login)).WithGroups().WithRole().Only(ctx)
 }
 
 func (r *userRepository) UserByLogin(ctx context.Context, login string) (*ent.User, error) {
