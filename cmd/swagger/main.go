@@ -163,6 +163,7 @@ func main() {
 
 	api := operations.NewBeAPI(swaggerSpec)
 	api.UseSwaggerUI()
+
 	jwtSecretKey := os.Getenv("JWT_SECRET_KEY")
 	if jwtSecretKey == "" {
 		logger.Error("JWT_SECRET_KEY not specified", zap.Error(err))

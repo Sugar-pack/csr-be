@@ -32,7 +32,8 @@ services:
       - EMAIL_SENDER_FROM_ADDRESS=noreply.lkot@yandex.ru
       - EMAIL_SENDER_FROM_NAME="Lyonkin Kot"
     depends_on:
-      - database
+      database:
+        condition: service_healthy
     ports:
       - 8080:8080
     restart: on-failure:3

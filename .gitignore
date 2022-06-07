@@ -6,4 +6,4 @@ equipment-kind-db-controller-api/
 /swagger/generated/
 coverage.out
 .idea
-
+.vscode
