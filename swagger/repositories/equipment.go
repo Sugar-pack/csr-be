@@ -56,6 +56,7 @@ func (r *equipmentRepository) EquipmentsByFilter(ctx context.Context, filter mod
 		).
 		WithKind().
 		WithStatus().
+		WithPetKinds().
 		All(ctx)
 	if err != nil {
 		return nil, err
@@ -64,6 +65,11 @@ func (r *equipmentRepository) EquipmentsByFilter(ctx context.Context, filter mod
 }
 
 func (r *equipmentRepository) CreateEquipment(ctx context.Context, NewEquipment models.Equipment) (*ent.Equipment, error) {
+	var petKinds []int
+	for _, id := range NewEquipment.PetKinds {
+		petKinds = append(petKinds, int(id))
+	}
+
 	eq, err := r.client.Equipment.Create().
 		SetName(*NewEquipment.Name).
 		SetDescription(*NewEquipment.Description).
@@ -79,12 +85,13 @@ func (r *equipmentRepository) CreateEquipment(ctx context.Context, NewEquipment 
 		SetStatus(&ent.Statuses{ID: int(*NewEquipment.Status)}).
 		SetKindID(int(*NewEquipment.Kind)).
 		SetStatusID(int(*NewEquipment.Status)).
+		AddPetKindIDs(petKinds...).
 		SetTitle(*NewEquipment.Title).
 		Save(ctx)
 	if err != nil {
 		return nil, err
 	}
-	result, err := r.client.Equipment.Query().Where(equipment.ID(eq.ID)).WithKind().WithStatus().Only(ctx)
+	result, err := r.client.Equipment.Query().Where(equipment.ID(eq.ID)).WithKind().WithStatus().WithPetKinds().Only(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -92,7 +99,7 @@ func (r *equipmentRepository) CreateEquipment(ctx context.Context, NewEquipment 
 }
 
 func (r *equipmentRepository) EquipmentByID(ctx context.Context, id int) (*ent.Equipment, error) {
-	result, err := r.client.Equipment.Query().Where(equipment.ID(id)).WithKind().WithStatus().Only(ctx)
+	result, err := r.client.Equipment.Query().Where(equipment.ID(id)).WithKind().WithStatus().WithPetKinds().Only(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -108,7 +115,7 @@ func (r *equipmentRepository) DeleteEquipmentByID(ctx context.Context, id int) e
 }
 
 func (r *equipmentRepository) AllEquipments(ctx context.Context) ([]*ent.Equipment, error) {
-	result, err := r.client.Equipment.Query().WithKind().WithStatus().All(ctx)
+	result, err := r.client.Equipment.Query().WithKind().WithStatus().WithPetKinds().All(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -154,7 +161,12 @@ func (r *equipmentRepository) UpdateEquipmentByID(ctx context.Context, id int, e
 	if *eq.Kind != 0 {
 		edit.SetKind(&ent.Kind{ID: int(*eq.Kind)})
 	}
-
+	if pks := []int{}; len(eq.PetKinds) != 0 {
+		for _, petKind := range eq.PetKinds {
+			pks = append(pks, int(petKind))
+		}
+		edit.AddPetKindIDs(pks...)
+	}
 	if *eq.Title != "" {
 		edit.SetTitle(*eq.Title)
 	}

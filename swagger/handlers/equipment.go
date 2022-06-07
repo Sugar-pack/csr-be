@@ -63,7 +63,7 @@ func (c Equipment) GetEquipmentFunc(repository repositories.EquipmentRepository)
 				},
 			})
 		}
-		returnEq, err := mapEquipment(eq)
+		returnEq, err := mapEquipmentResponse(eq)
 		if err != nil {
 			c.logger.Error("Error while mapping equipment", zap.Error(err))
 			return equipment.NewGetEquipmentDefault(http.StatusInternalServerError).WithPayload(&models.Error{
@@ -205,6 +205,14 @@ func mapEquipmentResponse(eq *ent.Equipment) (*models.EquipmentResponse, error) 
 	if eq.Edges.Status == nil {
 		return nil, errors.New("equipment status is nil")
 	}
+
+	var petKinds []*models.PetKind
+	for _, petKindEdge := range eq.Edges.PetKinds {
+		id := int64(petKindEdge.ID)
+		petKind := models.PetKind{ID: &id, Name: petKindEdge.Name}
+		petKinds = append(petKinds, &petKind)
+	}
+
 	statusID := int64(eq.Edges.Status.ID)
 	return &models.EquipmentResponse{
 		Category:         &eq.Category,
@@ -221,6 +229,7 @@ func mapEquipmentResponse(eq *ent.Equipment) (*models.EquipmentResponse, error) 
 		Status:           &statusID,
 		Supplier:         &eq.Supplier,
 		Title:            &eq.Title,
+		PetKinds:         petKinds,
 	}, nil
 }
 
@@ -235,6 +244,13 @@ func mapEquipment(eq *ent.Equipment) (*models.Equipment, error) {
 	if eq.Edges.Status == nil {
 		return nil, errors.New("equipment status is nil")
 	}
+
+	var petKinds []int64
+	for _, petKindEdge := range eq.Edges.PetKinds {
+		id := int64(petKindEdge.ID)
+		petKinds = append(petKinds, id)
+	}
+
 	statusID := int64(eq.Edges.Status.ID)
 	return &models.Equipment{
 		Category:         &eq.Category,
@@ -250,5 +266,6 @@ func mapEquipment(eq *ent.Equipment) (*models.Equipment, error) {
 		Status:           &statusID,
 		Supplier:         &eq.Supplier,
 		Title:            &eq.Title,
+		PetKinds:         petKinds,
 	}, nil
 }

@@ -692,7 +692,7 @@ paths:
         200:
           description: Equipment has been found
           schema:
-            $ref: "#/definitions/Equipment"
+            $ref: "#/definitions/EquipmentResponse"
         default:
           description: Unexpected error.
           schema:
@@ -837,6 +837,15 @@ paths:
             $ref: "#/definitions/Error"
 
 definitions:
+  PetKind:
+    type: object
+    required:
+      - id
+    properties:
+      id:
+        type: integer
+      name:
+        type: string
   Error:
     type: object
     required:
@@ -1283,6 +1292,7 @@ definitions:
     type: array
     items:
       $ref: "#/definitions/ActiveArea"
+
   # Equipment
   Equipment:
     type: object
@@ -1356,6 +1366,10 @@ definitions:
       photo:
         type: string
         example: "https://..."
+      petKinds:
+        type: array
+        items:
+          type: integer
 
   EquipmentFilter:
     type: object
@@ -1412,6 +1426,10 @@ definitions:
       photo:
         type: string
         example: "https://..."
+      petKinds:
+        type: array
+        items:
+          $ref: "#/definitions/PetKind"
 
   EquipmentResponse:
     type: object
@@ -1485,6 +1503,10 @@ definitions:
       photo:
         type: string
         example: "https://..."
+      petKinds:
+        type: array
+        items:
+          $ref: "#/definitions/PetKind"
   ListEquipment:
     type: array
     items:
