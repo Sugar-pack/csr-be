@@ -4,6 +4,7 @@ WORKDIR /go/src
 COPY cmd cmd
 COPY ent ent
 COPY swagger swagger
+COPY utils utils
 COPY go.mod go.sum ./
 
 RUN CGO_ENABLED=0 GOARCH=amd64 GOOS=linux go build -ldflags "-extldflags '-static'" -o /go cmd/swagger/main.go
@@ -24,6 +25,7 @@ WORKDIR /go/src
 COPY cmd cmd
 COPY ent ent
 COPY swagger swagger
+COPY utils utils
 COPY .golangci.yml .golangci.yml
 COPY go.mod go.sum ./
 
