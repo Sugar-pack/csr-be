@@ -7,17 +7,25 @@ import (
 )
 
 const (
-	MinPassLen = 4
-	MaxPassLen = 32
+	MinPasswordLen                    = 4
+	MaxPasswordLen                    = 32
+	AllowedRandomResetPasswordSymbols = "abcdefghijklmnopqrstuvwxyz"
+	GeneratedRandomResetPasswordLen   = 8
 )
 
 var UnsupportedPasswordLengthErr = fmt.Errorf(
 	"length should be within the interval [%d : %d]",
-	MinPassLen,
-	MaxPassLen)
+	MinPasswordLen,
+	MaxPasswordLen)
+
+func GenerateRandomResetPassword() (string, error) {
+	return generateRandomPassword(
+		GeneratedRandomResetPasswordLen,
+		AllowedRandomResetPasswordSymbols)
+}
 
 func generateRandomString(n int, symbols string) (string, error) {
-	if n < MinPassLen || n > MaxPassLen {
+	if n < MinPasswordLen || n > MaxPasswordLen {
 		return "", UnsupportedPasswordLengthErr
 	}
 
@@ -33,12 +41,6 @@ func generateRandomString(n int, symbols string) (string, error) {
 	return string(ret), nil
 }
 
-func GenerateRandomResetPassword() (string, error) {
-	symbols := "abcdefghijklmnopqrstuvwxyz"
-
-	return generateRandomResetPassword(8, symbols)
-}
-
-func generateRandomResetPassword(length int, symbols string) (string, error) {
+func generateRandomPassword(length int, symbols string) (string, error) {
 	return generateRandomString(length, symbols)
 }
