@@ -119,6 +119,8 @@ func main() {
 		emailSenderFromAddress,
 		emailSenderFromName)
 
+	petSizeHandler := handlers.NewPetSize(logger)
+
 	equipmentHandler := handlers.NewEquipment(logger)
 
 	userHandler := handlers.NewUser(
@@ -225,6 +227,13 @@ func main() {
 
 	orderStatusNameRepository := repositories.NewStatusNameRepository(client)
 	api.OrdersGetAllStatusNamesHandler = orderStatus.GetAllStatusNames(orderStatusNameRepository)
+
+	petSizeRepo := repositories.NewPetSizeRepository(client)
+	api.PetSizeGetAllPetSizeHandler = petSizeHandler.GetAllPetSizeFunc(petSizeRepo)
+	api.PetSizeEditPetSizeHandler = petSizeHandler.UpdatePetSizeByID(petSizeRepo)
+	api.PetSizeDeletePetSizeHandler = petSizeHandler.DeletePetSizeByID(petSizeRepo)
+	api.PetSizeCreateNewPetSizeHandler = petSizeHandler.CreatePetSizeFunc(petSizeRepo)
+	api.PetSizeGetPetSizeHandler = petSizeHandler.GetPetSizeByID(petSizeRepo)
 
 	server := restapi.NewServer(api)
 	listeners := []string{"http"}
