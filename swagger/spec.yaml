@@ -754,6 +754,100 @@ paths:
           description: Unexpected error.
           schema:
             $ref: "#/definitions/Error"
+  /pet_size:
+    post:
+      summary: Register a new pet size
+      tags:
+        - PetSize
+      operationId: CreateNewPetSize
+      consumes:
+        - application/json
+      parameters:
+        - name: newPetSize
+          in: body
+          description: Create a new pet size
+          required: true
+          schema:
+            $ref: "#/definitions/PetSize"
+      responses:
+        201:
+          description: Pet size created
+          schema:
+            $ref: "#/definitions/PetSizeResponse"
+        default:
+          description: Unexpected error.
+          schema:
+            $ref: "#/definitions/Error"
+    get:
+      summary: Get all pet size
+      tags:
+        - PetSize
+      operationId: GetAllPetSize
+      responses:
+        200:
+          description: Success
+          schema:
+            $ref: "#/definitions/ListOfPetSizes"
+        default:
+          description: Unexpected error.
+          schema:
+            $ref: "#/definitions/Error"
+  /pet_size/{petSizeId}:
+    parameters:
+      - name: petSizeId
+        in: path
+        required: true
+        description: pet size id
+        type: integer
+    get:
+      summary: Get pet size by id
+      tags:
+        - PetSize
+      operationId: GetPetSize
+      responses:
+        200:
+          description: Pet size has been found
+          schema:
+            $ref: "#/definitions/PetSizeResponse"
+        default:
+          description: Unexpected error.
+          schema:
+            $ref: "#/definitions/Error"
+    delete:
+      summary: Delete pet size by id
+      tags:
+        - PetSize
+      operationId: DeletePetSize
+      responses:
+        200:
+          description: Pet size has been deleted
+          schema:
+            type: string
+        default:
+          description: Unexpected error.
+          schema:
+            $ref: "#/definitions/Error"
+    put:
+      summary: Edit pet size by id
+      tags:
+        - PetSize
+      operationId: EditPetSize
+      parameters:
+        - name: EditPetSize
+          in: body
+          description: Edit an pet size
+          required: true
+          schema:
+            $ref: "#/definitions/PetSize"
+      responses:
+        200:
+          description: Pet size edited
+          schema:
+            $ref: "#/definitions/PetSizeResponse"
+        default:
+          description: Unexpected error.
+          schema:
+            $ref: "#/definitions/Error"
   /v1/managment/users/{userId}/block:
     parameters:
       - name: userId
@@ -1276,6 +1370,39 @@ definitions:
     properties:
       data:
         $ref: "#/definitions/Kind"
+  # PetSize
+  PetSize:
+    type: object
+    required:
+      - name
+      - size
+    properties:
+      id:
+        type: integer
+      name:
+        type: string
+        example: "big"
+      size:
+        type: string
+        example: "76x48x53"
+  ListOfPetSizes:
+    type: array
+    items:
+      $ref: "#/definitions/PetSize"
+  PetSizeResponse:
+    type: object
+    required:
+      - id
+      - name
+      - size
+    properties:
+      id:
+        type: integer
+      name:
+        type: string
+      size:
+        type: string
+
 
   #Active Areas
   ActiveArea:
@@ -1302,6 +1429,7 @@ definitions:
       - title
       - kind
       - status
+      - petSize
       - compensationСost
       - condition
       - inventoryNumber
@@ -1331,6 +1459,9 @@ definitions:
         type: integer
         example: 1
       status:
+        type: integer
+        example: 1
+      petSize:
         type: integer
         example: 1
       compensationСost:
@@ -1393,6 +1524,9 @@ definitions:
       status:
         type: integer
         example: 1
+      petSize:
+        type: integer
+        example: 1
       compensationСost:
         type: integer
         example: 3900
@@ -1440,6 +1574,7 @@ definitions:
       - title
       - kind
       - status
+      - petSize
       - compensationСost
       - condition
       - inventoryNumber
@@ -1468,6 +1603,9 @@ definitions:
         type: integer
         example: 1
       status:
+        type: integer
+        example: 1
+      petSize:
         type: integer
         example: 1
       compensationСost:

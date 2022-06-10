@@ -54,6 +54,7 @@ func (r *equipmentRepository) EquipmentsByFilter(ctx context.Context, filter mod
 			OptionalIntEquipment(filter.MaximumDays, equipment.FieldMaximumDays),
 			OptionalStringEquipment(filter.Title, equipment.FieldTitle),
 		).
+		WithPetSize().
 		WithKind().
 		WithStatus().
 		WithPetKinds().
@@ -87,11 +88,12 @@ func (r *equipmentRepository) CreateEquipment(ctx context.Context, NewEquipment 
 		SetStatusID(int(*NewEquipment.Status)).
 		AddPetKindIDs(petKinds...).
 		SetTitle(*NewEquipment.Title).
+		SetPetSizeID(int(*NewEquipment.PetSize)).
 		Save(ctx)
 	if err != nil {
 		return nil, err
 	}
-	result, err := r.client.Equipment.Query().Where(equipment.ID(eq.ID)).WithKind().WithStatus().WithPetKinds().Only(ctx)
+	result, err := r.client.Equipment.Query().Where(equipment.ID(eq.ID)).WithKind().WithStatus().WithPetKinds().WithPetSize().Only(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -99,7 +101,7 @@ func (r *equipmentRepository) CreateEquipment(ctx context.Context, NewEquipment 
 }
 
 func (r *equipmentRepository) EquipmentByID(ctx context.Context, id int) (*ent.Equipment, error) {
-	result, err := r.client.Equipment.Query().Where(equipment.ID(id)).WithKind().WithStatus().WithPetKinds().Only(ctx)
+	result, err := r.client.Equipment.Query().Where(equipment.ID(id)).WithKind().WithStatus().WithPetKinds().WithPetSize().Only(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -115,7 +117,7 @@ func (r *equipmentRepository) DeleteEquipmentByID(ctx context.Context, id int) e
 }
 
 func (r *equipmentRepository) AllEquipments(ctx context.Context) ([]*ent.Equipment, error) {
-	result, err := r.client.Equipment.Query().WithKind().WithStatus().WithPetKinds().All(ctx)
+	result, err := r.client.Equipment.Query().WithKind().WithStatus().WithPetKinds().WithPetSize().All(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -161,6 +163,9 @@ func (r *equipmentRepository) UpdateEquipmentByID(ctx context.Context, id int, e
 	if *eq.Kind != 0 {
 		edit.SetKind(&ent.Kind{ID: int(*eq.Kind)})
 	}
+	if *eq.PetSize != 0 {
+		edit.SetPetSizeID(int(*eq.PetSize))
+	}
 	if pks := []int{}; len(eq.PetKinds) != 0 {
 		for _, petKind := range eq.PetKinds {
 			pks = append(pks, int(petKind))
@@ -170,7 +175,6 @@ func (r *equipmentRepository) UpdateEquipmentByID(ctx context.Context, id int, e
 	if *eq.Title != "" {
 		edit.SetTitle(*eq.Title)
 	}
-
 	if *eq.Status != 0 {
 		edit.SetStatus(&ent.Statuses{ID: int(*eq.Status)})
 	}
@@ -178,7 +182,7 @@ func (r *equipmentRepository) UpdateEquipmentByID(ctx context.Context, id int, e
 	if err != nil {
 		return nil, err
 	}
-	result, err := r.client.Equipment.Query().Where(equipment.ID(eqToUpdate.ID)).WithKind().WithStatus().Only(ctx)
+	result, err := r.client.Equipment.Query().Where(equipment.ID(eqToUpdate.ID)).WithKind().WithStatus().WithPetSize().Only(ctx)
 	if err != nil {
 		return nil, err
 	}

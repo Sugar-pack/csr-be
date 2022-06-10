@@ -205,6 +205,8 @@ func mapEquipmentResponse(eq *ent.Equipment) (*models.EquipmentResponse, error) 
 	if eq.Edges.Status == nil {
 		return nil, errors.New("equipment status is nil")
 	}
+	statusID := int64(eq.Edges.Status.ID)
+
 
 	var petKinds []*models.PetKind
 	for _, petKindEdge := range eq.Edges.PetKinds {
@@ -213,7 +215,12 @@ func mapEquipmentResponse(eq *ent.Equipment) (*models.EquipmentResponse, error) 
 		petKinds = append(petKinds, &petKind)
 	}
 
-	statusID := int64(eq.Edges.Status.ID)
+	var petSizeID *int64
+	if eq.Edges.PetSize != nil {
+		idInt64 := int64(eq.Edges.PetSize.ID)
+		petSizeID = &idInt64
+	}
+
 	return &models.EquipmentResponse{
 		Category:         &eq.Category,
 		CompensationСost: &eq.CompensationCost,
@@ -229,6 +236,7 @@ func mapEquipmentResponse(eq *ent.Equipment) (*models.EquipmentResponse, error) 
 		Status:           &statusID,
 		Supplier:         &eq.Supplier,
 		Title:            &eq.Title,
+		PetSize:          petSizeID,
 		PetKinds:         petKinds,
 	}, nil
 }
@@ -244,6 +252,7 @@ func mapEquipment(eq *ent.Equipment) (*models.Equipment, error) {
 	if eq.Edges.Status == nil {
 		return nil, errors.New("equipment status is nil")
 	}
+	statusID := int64(eq.Edges.Status.ID)
 
 	var petKinds []int64
 	for _, petKindEdge := range eq.Edges.PetKinds {
@@ -251,7 +260,12 @@ func mapEquipment(eq *ent.Equipment) (*models.Equipment, error) {
 		petKinds = append(petKinds, id)
 	}
 
-	statusID := int64(eq.Edges.Status.ID)
+	var petSizeID *int64
+	if eq.Edges.PetSize != nil {
+		idInt64 := int64(eq.Edges.PetSize.ID)
+		petSizeID = &idInt64
+	}
+
 	return &models.Equipment{
 		Category:         &eq.Category,
 		CompensationСost: &eq.CompensationCost,
@@ -266,6 +280,7 @@ func mapEquipment(eq *ent.Equipment) (*models.Equipment, error) {
 		Status:           &statusID,
 		Supplier:         &eq.Supplier,
 		Title:            &eq.Title,
+		PetSize:          petSizeID,
 		PetKinds:         petKinds,
 	}, nil
 }
