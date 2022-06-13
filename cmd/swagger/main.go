@@ -141,10 +141,7 @@ func main() {
 		client,
 		logger,
 	)
-	activeAreasHandler := handlers.NewActiveArea(
-		client,
-		logger,
-	)
+	activeAreasHandler := handlers.NewActiveArea(logger)
 
 	userRepository := repositories.NewUserRepository(client)
 	ttl := time.Duration(passwordResetExpirationMinutesInt) * time.Minute
@@ -207,7 +204,8 @@ func main() {
 	api.EquipmentEditEquipmentHandler = equipmentHandler.EditEquipmentFunc(equipmentRepository)
 	api.EquipmentFindEquipmentHandler = equipmentHandler.FindEquipmentFunc(equipmentRepository)
 
-	api.ActiveAreasGetAllActiveAreasHandler = activeAreasHandler.GetActiveAreasFunc()
+	activeAreasRepository := repositories.NewActiveAreaRepository(client)
+	api.ActiveAreasGetAllActiveAreasHandler = activeAreasHandler.GetActiveAreasFunc(activeAreasRepository)
 
 	api.PasswordResetSendLinkByLoginHandler = passwordResetHandler.SendLinkByLoginFunc()
 	api.PasswordResetGetPasswordResetLinkHandler = passwordResetHandler.GetPasswordResetLinkFunc()

@@ -6,27 +6,25 @@ import (
 	"github.com/go-openapi/runtime/middleware"
 	"go.uber.org/zap"
 
-	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/models"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/restapi/operations/active_areas"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/repositories"
 )
 
 type ActiveArea struct {
-	client *ent.Client
 	logger *zap.Logger
 }
 
-func NewActiveArea(client *ent.Client, logger *zap.Logger) *ActiveArea {
+func NewActiveArea(logger *zap.Logger) *ActiveArea {
 	return &ActiveArea{
-		client: client,
 		logger: logger,
 	}
 }
 
-func (area ActiveArea) GetActiveAreasFunc() active_areas.GetAllActiveAreasHandlerFunc {
+func (area ActiveArea) GetActiveAreasFunc(repository repositories.ActiveAreaRepository) active_areas.GetAllActiveAreasHandlerFunc {
 	return func(a active_areas.GetAllActiveAreasParams) middleware.Responder {
 		ctx := a.HTTPRequest.Context()
-		e, err := area.client.ActiveArea.Query().Order(ent.Asc("id")).All(ctx)
+		e, err := repository.AllActiveAreas(ctx)
 		if err != nil {
 			area.logger.Error("failed to query active areas", zap.Error(err))
 			return active_areas.NewGetAllActiveAreasDefault(http.StatusInternalServerError).WithPayload(&models.Error{
