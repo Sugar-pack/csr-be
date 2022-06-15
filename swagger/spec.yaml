@@ -347,7 +347,7 @@ paths:
         - Kinds
       operationId: CreateNewKind
       parameters:
-        - name: name
+        - name: NewKind
           in: body
           description: Name of a kind
           required: true
@@ -368,7 +368,7 @@ paths:
         in: path
         required: true
         description: kind id
-        type: string
+        type: integer
     get:
       summary: Get information about the kind of equipment by id.
       tags:
@@ -389,10 +389,10 @@ paths:
         - Kinds
       operationId: deleteKind
       responses:
-        201:
+        200:
           description: kind of equipment successfully deleted from db
           schema:
-            $ref: "#/definitions/DeleteKindResponse"
+            type: string
         default:
           description: Unexpected error.
           schema:
@@ -403,13 +403,13 @@ paths:
         - Kinds
       operationId: PatchKind
       parameters:
-        - name: patchTask
+        - name: patchKind
           in: body
           required: true
           schema:
-            $ref: '#/definitions/PatchTask'
+            $ref: '#/definitions/PatchKind'
       responses:
-        201:
+        200:
           description: Success
           schema:
             $ref: "#/definitions/PatchKindResponse"
@@ -952,21 +952,16 @@ definitions:
             type: string
           message:
             type: string
-  PatchTask:
+  PatchKind:
     type: object
-    required:
-      - data
-    description: Patch task object (adding max reservation time and max reservation units)
+    description: Patch task object (changing kind properties)
     properties:
-      data:
-        type: object
-        properties:
-          max_reservation_time:
+        name:
+          type: string
+        maxReservationTime:
             type: integer
-            description: max reservation time field
-          max_reservation_units:
+        maxReservationUnits:
             type: integer
-            description: max reservation units field
 
   UpdateUserTask:
     type: object
@@ -1352,10 +1347,16 @@ definitions:
   CreateNewKind:
     type: object
     required:
-      - data
+      - name
+      - max_reservation_time
+      - max_reservation_units
     properties:
-      data:
-        $ref: "#/definitions/Kind"
+        name:
+            type: string
+        max_reservation_time:
+            type: integer
+        max_reservation_units:
+            type: integer
   CreateNewKindResponse:
     type: object
     required:

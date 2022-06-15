@@ -3,7 +3,7 @@ module git.epam.com/epm-lstr/epm-lstr-lc/be
 go 1.17
 
 require (
-	entgo.io/ent v0.10.2-0.20220502113020-4ac82f5bb3f0
+	entgo.io/ent v0.10.1
 	github.com/go-openapi/errors v0.20.2
 	github.com/go-openapi/loads v0.21.1
 	github.com/go-openapi/runtime v0.23.3
@@ -23,7 +23,7 @@ require (
 )
 
 require (
-	ariga.io/atlas v0.4.1 // indirect
+	ariga.io/atlas v0.3.7 // indirect
 	github.com/Masterminds/semver v1.4.2 // indirect
 	github.com/Masterminds/sprig v2.16.0+incompatible // indirect
 	github.com/PuerkitoBio/goquery v1.5.0 // indirect
