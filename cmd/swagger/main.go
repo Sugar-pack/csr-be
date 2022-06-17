@@ -133,10 +133,7 @@ func main() {
 		logger,
 	)
 
-	kindsHandler := handlers.NewKind(
-		client,
-		logger,
-	)
+	kindsHandler := handlers.NewKind(logger)
 	statusHandler := handlers.NewStatus(
 		client,
 		logger,
@@ -185,11 +182,12 @@ func main() {
 
 	api.RolesGetRolesHandler = roleHandler.GetRolesFunc()
 
-	api.KindsCreateNewKindHandler = kindsHandler.CreateNewKindFunc()
-	api.KindsGetKindByIDHandler = kindsHandler.GetKindByIDFunc()
-	api.KindsDeleteKindHandler = kindsHandler.DeleteKindFunc()
-	api.KindsGetAllKindsHandler = kindsHandler.GetAllKindsFunc()
-	api.KindsPatchKindHandler = kindsHandler.PatchKindFunc()
+	kindRepository := repositories.NewKindRepository(client)
+	api.KindsCreateNewKindHandler = kindsHandler.CreateNewKindFunc(kindRepository)
+	api.KindsGetKindByIDHandler = kindsHandler.GetKindByIDFunc(kindRepository)
+	api.KindsDeleteKindHandler = kindsHandler.DeleteKindFunc(kindRepository)
+	api.KindsGetAllKindsHandler = kindsHandler.GetAllKindsFunc(kindRepository)
+	api.KindsPatchKindHandler = kindsHandler.PatchKindFunc(kindRepository)
 
 	api.StatusPostStatusHandler = statusHandler.PostStatusFunc()
 	api.StatusGetStatusesHandler = statusHandler.GetStatusesFunc()
