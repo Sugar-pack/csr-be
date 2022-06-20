@@ -16,26 +16,24 @@ import (
 )
 
 type Order struct {
-	client *ent.Client
 	logger *zap.Logger
 }
 
-func NewOrder(client *ent.Client, logger *zap.Logger) *Order {
+func NewOrder(logger *zap.Logger) *Order {
 	return &Order{
-		client: client,
 		logger: logger,
 	}
 }
 
 func mapOrder(o *ent.Order, log *zap.Logger) (*models.Order, error) {
-	id := int64(o.ID)
-	quantity := int64(o.Quantity)
-	rentEnd := strfmt.DateTime(o.RentEnd)
-	rentStart := strfmt.DateTime(o.RentStart)
 	if o == nil {
 		log.Warn("order is nil")
 		return nil, errors.New("order is nil")
 	}
+	id := int64(o.ID)
+	quantity := int64(o.Quantity)
+	rentEnd := strfmt.DateTime(o.RentEnd)
+	rentStart := strfmt.DateTime(o.RentStart)
 	owners := o.Edges.Users
 	if owners == nil {
 		log.Warn("order has no owners")
@@ -182,8 +180,8 @@ func (o Order) UpdateOrderFunc(repository repositories.OrderRepository) orders.U
 			return orders.NewGetAllOrdersDefault(http.StatusInternalServerError).WithPayload(buildErrorPayload(err))
 		}
 
-		id := int(p.OrderID)
-		order, err := repository.Update(ctx, id, p.Data, ownerId)
+		orderID := int(p.OrderID)
+		order, err := repository.Update(ctx, orderID, p.Data, ownerId)
 		if err != nil {
 			o.logger.Error("update order failed", zap.Error(err))
 			return orders.NewUpdateOrderDefault(http.StatusInternalServerError).WithPayload(buildErrorPayload(err))

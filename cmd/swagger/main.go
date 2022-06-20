@@ -147,10 +147,7 @@ func main() {
 
 	blockerHandler := handlers.NewBlocker(logger)
 
-	ordersHandler := handlers.NewOrder(
-		client,
-		logger,
-	)
+	ordersHandler := handlers.NewOrder(logger)
 
 	orderStatus := handlers.NewOrderStatus(logger)
 
