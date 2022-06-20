@@ -128,10 +128,7 @@ func main() {
 		logger,
 	)
 
-	roleHandler := handlers.NewRole(
-		client,
-		logger,
-	)
+	roleHandler := handlers.NewRole(logger)
 
 	kindsHandler := handlers.NewKind(logger)
 	statusHandler := handlers.NewStatus(
@@ -180,7 +177,8 @@ func main() {
 	api.UsersUnblockUserHandler = blockerHandler.UnblockUserFunc(repositories.NewBlockerRepository(client))
 	api.UsersAssignRoleToUserHandler = userHandler.AssignRoleToUserFunc(userRepository)
 
-	api.RolesGetRolesHandler = roleHandler.GetRolesFunc()
+	roleRepository := repositories.NewRoleRepository(client)
+	api.RolesGetRolesHandler = roleHandler.GetRolesFunc(roleRepository)
 
 	kindRepository := repositories.NewKindRepository(client)
 	api.KindsCreateNewKindHandler = kindsHandler.CreateNewKindFunc(kindRepository)
