@@ -6,16 +6,13 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/models"
-
-	"github.com/stretchr/testify/assert"
-
 	"github.com/go-openapi/runtime"
-
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/zap"
 
-	psmock "git.epam.com/epm-lstr/epm-lstr-lc/be/internal/mocks/passwordservice"
+	psmock "git.epam.com/epm-lstr/epm-lstr-lc/be/internal/mocks/services"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/models"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/restapi/operations/password_reset"
 )
 

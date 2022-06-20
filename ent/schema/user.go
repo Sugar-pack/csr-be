@@ -35,6 +35,7 @@ func (User) Fields() []ent.Field {
 		field.String("org_name").Optional().Nillable(),
 		field.String("website").Optional().Nillable(),
 		field.String("vk").Optional().Nillable(),
+		field.Bool("is_confirmed").Default(false),
 	}
 }
 
@@ -48,5 +49,6 @@ func (User) Edges() []ent.Edge {
 		edge.From("order", Order.Type).Ref("users"),
 		edge.To("order_status", OrderStatus.Type),
 		edge.To("password_reset", PasswordReset.Type),
+		edge.To("registration_confirm", RegistrationConfirm.Type),
 	}
 }

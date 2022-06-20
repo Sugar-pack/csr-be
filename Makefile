@@ -51,5 +51,5 @@ gen-repo-mock:
 gen-email-client-mock:
 	@docker run -v `pwd`:/src -w /src vektra/mockery --case snake --dir swagger/email --output internal/mocks/email --outpkg email --all
 
-gen-password-service-mock:
-	@docker run -v `pwd`:/src -w /src vektra/mockery --case snake --dir swagger/services --output internal/mocks/passwordservice --outpkg passwordservice --all
+gen-services-mocks:
+	@docker run -v `pwd`:/src -w /src vektra/mockery --case snake --dir swagger/services --output internal/mocks/services --all

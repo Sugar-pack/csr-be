@@ -20,10 +20,11 @@ import (
 
 type UserTestSuite struct {
 	suite.Suite
-	logger         *zap.Logger
-	service        *servicemock.UserService
-	user           *User
-	userRepository *repomock.UserRepository
+	logger            *zap.Logger
+	service           *servicemock.UserService
+	regConfirmService *servicemock.RegistrationConfirm
+	user              *User
+	userRepository    *repomock.UserRepository
 }
 
 func TestUserSuite(t *testing.T) {
@@ -33,6 +34,7 @@ func TestUserSuite(t *testing.T) {
 func (s *UserTestSuite) SetupTest() {
 	s.logger, _ = zap.NewDevelopment()
 	s.service = &servicemock.UserService{}
+	s.regConfirmService = &servicemock.RegistrationConfirm{}
 	s.userRepository = &repomock.UserRepository{}
 	s.user = &User{
 		logger: s.logger,
@@ -123,7 +125,7 @@ func (s *UserTestSuite) TestUser_PostUserFunc_LoginExistErr() {
 
 	login := "login"
 	password := "password"
-	handlerFunc := s.user.PostUserFunc(s.userRepository)
+	handlerFunc := s.user.PostUserFunc(s.userRepository, s.regConfirmService)
 	data := users.PostUserParams{
 		HTTPRequest: &request,
 		Data: &models.UserRegister{
@@ -149,7 +151,7 @@ func (s *UserTestSuite) TestUser_PostUserFunc_RepoErr() {
 
 	login := "login"
 	password := "password"
-	handlerFunc := s.user.PostUserFunc(s.userRepository)
+	handlerFunc := s.user.PostUserFunc(s.userRepository, s.regConfirmService)
 	data := users.PostUserParams{
 		HTTPRequest: &request,
 		Data: &models.UserRegister{
@@ -175,7 +177,7 @@ func (s *UserTestSuite) TestUser_PostUserFunc_OK() {
 
 	login := "login"
 	password := "password"
-	handlerFunc := s.user.PostUserFunc(s.userRepository)
+	handlerFunc := s.user.PostUserFunc(s.userRepository, s.regConfirmService)
 	data := users.PostUserParams{
 		HTTPRequest: &request,
 		Data: &models.UserRegister{
@@ -188,6 +190,7 @@ func (s *UserTestSuite) TestUser_PostUserFunc_OK() {
 		Login: login,
 	}
 	s.userRepository.On("CreateUser", ctx, data.Data).Return(user, nil)
+	s.regConfirmService.On("SendConfirmationLink", ctx, login).Return(nil)
 
 	resp := handlerFunc(data)
 	responseRecorder := httptest.NewRecorder()

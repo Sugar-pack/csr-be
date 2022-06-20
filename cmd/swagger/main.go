@@ -105,6 +105,7 @@ func main() {
 	}
 
 	passwordRepo := repositories.NewPasswordResetRepository(client)
+	regConfirmRepo := repositories.NewRegistrationConfirmRepository(client)
 
 	emailSenderWebsiteUrl := getEnv("EMAIL_SENDER_WEBSITE_URL", "https://csr.golangforall.com/")
 	if emailSenderWebsiteUrl == "" {
@@ -145,6 +146,12 @@ func main() {
 		passwordService,
 	)
 
+	regConfirmService := services.NewRegistrationConfirmService(mailSendClient, userRepository, regConfirmRepo, logger, &ttl)
+	regConfirmHandler := handlers.NewRegistrationConfirmHandler(
+		logger,
+		regConfirmService,
+	)
+
 	blockerHandler := handlers.NewBlocker(logger)
 
 	ordersHandler := handlers.NewOrder(logger)
@@ -165,7 +172,7 @@ func main() {
 	userService := services.NewUserService(userRepository, tokenRepository, jwtSecretKey, logger)
 	api.UsersLoginHandler = userHandler.LoginUserFunc(userService)
 
-	api.UsersPostUserHandler = userHandler.PostUserFunc(userRepository)
+	api.UsersPostUserHandler = userHandler.PostUserFunc(userRepository, regConfirmService)
 	api.UsersGetCurrentUserHandler = userHandler.GetUserFunc()
 	api.UsersPatchUserHandler = userHandler.PatchUserFunc()
 	api.UsersGetUserHandler = userHandler.GetUserById()
@@ -202,6 +209,9 @@ func main() {
 
 	api.PasswordResetSendLinkByLoginHandler = passwordResetHandler.SendLinkByLoginFunc()
 	api.PasswordResetGetPasswordResetLinkHandler = passwordResetHandler.GetPasswordResetLinkFunc()
+
+	api.RegistrationConfirmSendRegistrationConfirmLinkByLoginHandler = regConfirmHandler.SendRegistrationConfirmLinkByLoginFunc()
+	api.RegistrationConfirmVerifyRegistrationConfirmTokenHandler = regConfirmHandler.VerifyRegistrationConfirmTokenFunc()
 
 	orderRepository := repositories.NewOrderRepository(client)
 	api.OrdersGetAllOrdersHandler = ordersHandler.ListOrderFunc(orderRepository)

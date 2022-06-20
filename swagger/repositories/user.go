@@ -21,6 +21,7 @@ type UserRepository interface {
 	ChangePasswordByLogin(ctx context.Context, login string, password string) (Transaction, error)
 	CreateUser(ctx context.Context, data *models.UserRegister) (*ent.User, error)
 	GetUserByLogin(ctx context.Context, login string) (*ent.User, error)
+	ConfirmRegistration(ctx context.Context, login string) error
 }
 
 const defaultRoleSlug = "user"
@@ -141,4 +142,13 @@ func (r *userRepository) CreateUser(ctx context.Context, data *models.UserRegist
 		SetRole(defaultRole).
 		Save(ctx)
 	return
+}
+
+func (r *userRepository) ConfirmRegistration(ctx context.Context, login string) error {
+
+	_, err := r.client.User.Update().Where(user.LoginEQ(login)).SetIsConfirmed(true).Save(ctx)
+	if err != nil {
+		return err
+	}
+	return nil
 }
