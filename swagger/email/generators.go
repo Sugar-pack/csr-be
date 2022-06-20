@@ -13,6 +13,9 @@ func GenerateGetPasswordReset(userName, password string) (string, error) {
 	return generateHtml(generateGetPasswordReset(userName, password))
 }
 
+func GenerateRegistrationConfirmMessage(userName, websiteUrl, token string) (string, error) {
+	return generateHtml(generateRegistrationConfirmMessage(userName, websiteUrl, token))
+}
 func generateSendLinkReset(userName, websiteUrl, token string) hermes.Email {
 	return hermes.Email{
 		Body: hermes.Body{
@@ -49,6 +52,31 @@ func generateGetPasswordReset(userName, password string) hermes.Email {
 			},
 			Outros: []string{
 				"If you did not request a password reset, no further action is required on your part.",
+			},
+			Signature: "Thanks",
+		},
+	}
+}
+
+func generateRegistrationConfirmMessage(userName, websiteUrl, token string) hermes.Email {
+	return hermes.Email{
+		Body: hermes.Body{
+			Name: userName,
+			Intros: []string{
+				"You have received this email because you've registered Lyonkin Kot account.",
+			},
+			Actions: []hermes.Action{
+				{
+					Instructions: "Click the button below to confirm registration:",
+					Button: hermes.Button{
+						Color: "#DC4D2F",
+						Text:  "Confirm",
+						Link:  fmt.Sprintf("%sapi/registration_confirm/%s", websiteUrl, token),
+					},
+				},
+			},
+			Outros: []string{
+				"If you did not register, no further action is required on your part.",
 			},
 			Signature: "Thanks",
 		},

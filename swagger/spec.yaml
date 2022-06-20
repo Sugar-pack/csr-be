@@ -930,6 +930,49 @@ paths:
           schema:
             $ref: "#/definitions/Error"
 
+  /registration_confirm/:
+    post:
+      summary: Create registration confirm link by login.
+      tags:
+        - Registration_Confirm
+      operationId: SendRegistrationConfirmLinkByLogin
+      parameters:
+        - name: login
+          in: body
+          required: true
+          schema:
+            $ref: "#/definitions/SendRegistrationConfirmLinkRequest"
+      responses:
+        200:
+          description: Success
+          schema:
+            $ref: "#/definitions/RegistrationConfirmResponse"
+        default:
+          description: Unexpected error.
+          schema:
+            $ref: "#/definitions/Error"
+
+  /registration_confirm/{token}:
+    get:
+      summary: Verify registration confirmation token.
+      tags:
+        - Registration_Confirm
+      operationId: VerifyRegistrationConfirmToken
+      parameters:
+        - name: token
+          in: path
+          required: true
+          type: string
+      responses:
+        200:
+          description: Success
+          schema:
+            $ref: "#/definitions/RegistrationConfirmResponse"
+        default:
+          description: Unexpected error.
+          schema:
+            $ref: "#/definitions/Error"
+
 definitions:
   PetKind:
     type: object
@@ -1677,6 +1720,33 @@ definitions:
     data:
       $ref: "#/definitions/Login"
   PasswordResetResponse:
+    type: string
+
+  #RegistrationConfirm
+  RegistrationConfirm:
+    type: object
+    required:
+      - id
+      - created_at
+      - user_id
+      - hash
+    properties:
+      id:
+        type: integer
+      created_at:
+        type: string
+      user_id:
+        type: integer
+      hash:
+        type: string
+  SendRegistrationConfirmLinkRequest:
+    type: object
+    required:
+      - data
+    properties:
+      data:
+        $ref: "#/definitions/Login"
+  RegistrationConfirmResponse:
     type: string
 
   Login:

@@ -60,3 +60,23 @@ func (c *senderImpl) SendNewPassword(email string, userName string, password str
 
 	return nil
 }
+
+func (c *senderImpl) SendRegistrationConfirmLink(email string, userName string, token string) error {
+	text, err := GenerateRegistrationConfirmMessage(userName, c.websiteUrl, token)
+	if err != nil {
+		return fmt.Errorf("cant generate email %w", err)
+	}
+	sendData := &SendData{
+		FromName: c.senderName,
+		FromAddr: c.senderEmail,
+		Subject:  "Registration confirmation",
+		ToAddr:   email,
+		Text:     text,
+	}
+	err = c.client.Send(sendData)
+	if err != nil {
+		return fmt.Errorf("cant send email %w", err)
+	}
+
+	return err
+}

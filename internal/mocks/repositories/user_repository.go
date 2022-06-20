@@ -40,6 +40,20 @@ func (_m *UserRepository) ChangePasswordByLogin(ctx context.Context, login strin
 	return r0, r1
 }
 
+// ConfirmRegistration provides a mock function with given fields: ctx, login
+func (_m *UserRepository) ConfirmRegistration(ctx context.Context, login string) error {
+	ret := _m.Called(ctx, login)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) error); ok {
+		r0 = rf(ctx, login)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // CreateUser provides a mock function with given fields: ctx, data
 func (_m *UserRepository) CreateUser(ctx context.Context, data *models.UserRegister) (*ent.User, error) {
 	ret := _m.Called(ctx, data)

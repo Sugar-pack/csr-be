@@ -83,9 +83,10 @@ func (c User) LoginUserFunc(service services.UserService) users.LoginHandlerFunc
 	}
 }
 
-func (c User) PostUserFunc(repository repositories.UserRepository) users.PostUserHandlerFunc {
+func (c User) PostUserFunc(repository repositories.UserRepository, regConfirmService services.RegistrationConfirm) users.PostUserHandlerFunc {
 	return func(p users.PostUserParams) middleware.Responder {
-		createdUser, err := repository.CreateUser(p.HTTPRequest.Context(), p.Data)
+		ctx := p.HTTPRequest.Context()
+		createdUser, err := repository.CreateUser(ctx, p.Data)
 		if err != nil {
 			if ent.IsConstraintError(err) {
 				return users.NewPostUserDefault(http.StatusExpectationFailed).WithPayload(
@@ -96,6 +97,11 @@ func (c User) PostUserFunc(repository repositories.UserRepository) users.PostUse
 		}
 
 		id := int64(createdUser.ID)
+
+		err = regConfirmService.SendConfirmationLink(ctx, createdUser.Login)
+		if err != nil {
+			c.logger.Error("error sending registration confirmation link", zap.Error(err))
+		}
 
 		return users.NewPostUserCreated().WithPayload(&models.CreateUserResponse{
 			Data: &models.CreateUserResponseData{
