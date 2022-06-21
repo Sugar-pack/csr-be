@@ -8,6 +8,7 @@ import (
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/equipment"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/kind"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/photo"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/predicate"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/statuses"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/models"
@@ -18,6 +19,7 @@ type EquipmentRepository interface {
 	CreateEquipment(ctx context.Context, eq models.Equipment) (*ent.Equipment, error)
 	EquipmentByID(ctx context.Context, id int) (*ent.Equipment, error)
 	DeleteEquipmentByID(ctx context.Context, id int) error
+	DeleteEquipmentPhoto(ctx context.Context, id string) error
 	AllEquipments(ctx context.Context) ([]*ent.Equipment, error)
 	UpdateEquipmentByID(ctx context.Context, id int, eq *models.Equipment) (*ent.Equipment, error)
 }
@@ -57,6 +59,7 @@ func (r *equipmentRepository) EquipmentsByFilter(ctx context.Context, filter mod
 		WithPetSize().
 		WithKind().
 		WithStatus().
+		WithPhoto().
 		WithPetKinds().
 		All(ctx)
 	if err != nil {
@@ -88,12 +91,13 @@ func (r *equipmentRepository) CreateEquipment(ctx context.Context, NewEquipment 
 		SetStatusID(int(*NewEquipment.Status)).
 		AddPetKindIDs(petKinds...).
 		SetTitle(*NewEquipment.Title).
+		SetPhoto(&ent.Photo{ID: *NewEquipment.PhotoID}).
 		SetPetSizeID(int(*NewEquipment.PetSize)).
 		Save(ctx)
 	if err != nil {
 		return nil, err
 	}
-	result, err := r.client.Equipment.Query().Where(equipment.ID(eq.ID)).WithKind().WithStatus().WithPetKinds().WithPetSize().Only(ctx)
+	result, err := r.client.Equipment.Query().Where(equipment.ID(eq.ID)).WithKind().WithStatus().WithPhoto().WithPetKinds().WithPetSize().Only(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -101,7 +105,7 @@ func (r *equipmentRepository) CreateEquipment(ctx context.Context, NewEquipment 
 }
 
 func (r *equipmentRepository) EquipmentByID(ctx context.Context, id int) (*ent.Equipment, error) {
-	result, err := r.client.Equipment.Query().Where(equipment.ID(id)).WithKind().WithStatus().WithPetKinds().WithPetSize().Only(ctx)
+	result, err := r.client.Equipment.Query().Where(equipment.ID(id)).WithKind().WithStatus().WithPetKinds().WithPetSize().WithPhoto().Only(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -116,8 +120,16 @@ func (r *equipmentRepository) DeleteEquipmentByID(ctx context.Context, id int) e
 	return nil
 }
 
+func (r *equipmentRepository) DeleteEquipmentPhoto(ctx context.Context, id string) error {
+	_, err := r.client.Photo.Delete().Where(photo.ID(id)).Exec(ctx)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func (r *equipmentRepository) AllEquipments(ctx context.Context) ([]*ent.Equipment, error) {
-	result, err := r.client.Equipment.Query().WithKind().WithStatus().WithPetKinds().WithPetSize().All(ctx)
+	result, err := r.client.Equipment.Query().WithKind().WithStatus().WithPetKinds().WithPetSize().WithPhoto().All(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -178,11 +190,14 @@ func (r *equipmentRepository) UpdateEquipmentByID(ctx context.Context, id int, e
 	if *eq.Status != 0 {
 		edit.SetStatus(&ent.Statuses{ID: int(*eq.Status)})
 	}
+	if *eq.PhotoID != "" {
+		edit.SetPhoto(&ent.Photo{ID: *eq.PhotoID})
+	}
 	_, err = edit.Save(ctx)
 	if err != nil {
 		return nil, err
 	}
-	result, err := r.client.Equipment.Query().Where(equipment.ID(eqToUpdate.ID)).WithKind().WithStatus().WithPetSize().Only(ctx)
+	result, err := r.client.Equipment.Query().Where(equipment.ID(eqToUpdate.ID)).WithKind().WithStatus().WithPetSize().WithPhoto().Only(ctx)
 	if err != nil {
 		return nil, err
 	}

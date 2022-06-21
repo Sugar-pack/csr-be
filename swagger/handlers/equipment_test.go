@@ -41,6 +41,7 @@ func ValidEquipment(t *testing.T) *ent.Equipment {
 		Edges: ent.EquipmentEdges{
 			Kind:   &ent.Kind{},
 			Status: &ent.Statuses{},
+			Photo:  &ent.Photo{},
 		},
 	}
 }
@@ -228,6 +229,8 @@ func (s *EquipmentTestSuite) TestEquipment_DeleteEquipmentFunc_RepoErr() {
 	}
 	err := errors.New("test error")
 
+	equipmentToReturn := ValidEquipment(t)
+	s.equipmentRepo.On("EquipmentByID", ctx, int(equipmentId)).Return(equipmentToReturn, nil)
 	s.equipmentRepo.On("DeleteEquipmentByID", ctx, int(equipmentId)).Return(err)
 
 	resp := handlerFunc(data)
@@ -250,7 +253,10 @@ func (s *EquipmentTestSuite) TestEquipment_DeleteEquipmentFunc_OK() {
 		EquipmentID: equipmentId,
 	}
 
+	equipmentToReturn := ValidEquipment(t)
+	s.equipmentRepo.On("EquipmentByID", ctx, int(equipmentId)).Return(equipmentToReturn, nil)
 	s.equipmentRepo.On("DeleteEquipmentByID", ctx, int(equipmentId)).Return(nil)
+	s.equipmentRepo.On("DeleteEquipmentPhoto", ctx, equipmentToReturn.Edges.Photo.ID).Return(nil)
 
 	resp := handlerFunc(data)
 	responseRecorder := httptest.NewRecorder()

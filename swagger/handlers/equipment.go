@@ -65,12 +65,28 @@ func (c Equipment) GetEquipmentFunc(repository repositories.EquipmentRepository)
 func (c Equipment) DeleteEquipmentFunc(repository repositories.EquipmentRepository) equipment.DeleteEquipmentHandlerFunc {
 	return func(s equipment.DeleteEquipmentParams) middleware.Responder {
 		ctx := s.HTTPRequest.Context()
-		err := repository.DeleteEquipmentByID(ctx, int(s.EquipmentID))
+		eq, err := repository.EquipmentByID(ctx, int(s.EquipmentID))
+		if err != nil {
+			c.logger.Error("Error while getting equipment", zap.Error(err))
+			return equipment.NewDeleteEquipmentDefault(http.StatusInternalServerError).WithPayload(&models.Error{
+				Data: &models.ErrorData{
+					Message: "Error while getting equipment",
+				},
+			})
+		}
+		err = repository.DeleteEquipmentByID(ctx, int(s.EquipmentID))
 		if err != nil {
 			c.logger.Error("Error while deleting equipment", zap.Error(err))
 			return equipment.NewDeleteEquipmentDefault(http.StatusInternalServerError).
 				WithPayload(buildStringPayload("Error while deleting equipment"))
 		}
+
+		if err := repository.DeleteEquipmentPhoto(ctx, eq.Edges.Photo.ID); err != nil {
+			c.logger.Error("Error while deleting photo from db", zap.Error(err))
+		} else if err := deletePhotoFile(eq.Edges.Photo.ID); err != nil {
+			c.logger.Error("Error while deleting photo file", zap.Error(err))
+		}
+
 		return equipment.NewDeleteEquipmentOK().WithPayload("Equipment deleted")
 	}
 }
@@ -112,7 +128,7 @@ func (c Equipment) EditEquipmentFunc(repository repositories.EquipmentRepository
 			return equipment.NewEditEquipmentDefault(http.StatusInternalServerError).
 				WithPayload(buildStringPayload("Error while updating equipment"))
 		}
-		returnEq, err := mapEquipment(eq)
+		returnEq, err := mapEquipmentResponse(eq)
 		if err != nil {
 			c.logger.Error("Error while mapping equipment", zap.Error(err))
 			return equipment.NewEditEquipmentDefault(http.StatusInternalServerError).
@@ -179,6 +195,11 @@ func mapEquipmentResponse(eq *ent.Equipment) (*models.EquipmentResponse, error) 
 		petSizeID = &idInt64
 	}
 
+	if eq.Edges.Photo == nil {
+		return nil, errors.New("equipment photo is nil")
+	}
+	photoURL := eq.Edges.Photo.URL
+
 	return &models.EquipmentResponse{
 		Category:         &eq.Category,
 		CompensationСost: &eq.CompensationCost,
@@ -195,50 +216,7 @@ func mapEquipmentResponse(eq *ent.Equipment) (*models.EquipmentResponse, error) 
 		Supplier:         &eq.Supplier,
 		Title:            &eq.Title,
 		PetSize:          petSizeID,
-		PetKinds:         petKinds,
-	}, nil
-}
-
-func mapEquipment(eq *ent.Equipment) (*models.Equipment, error) {
-	if eq == nil {
-		return nil, errors.New("equipment is nil")
-	}
-	if eq.Edges.Kind == nil {
-		return nil, errors.New("equipment kind is nil")
-	}
-	kindID := int64(eq.Edges.Kind.ID)
-	if eq.Edges.Status == nil {
-		return nil, errors.New("equipment status is nil")
-	}
-	statusID := int64(eq.Edges.Status.ID)
-
-	var petKinds []int64
-	for _, petKindEdge := range eq.Edges.PetKinds {
-		id := int64(petKindEdge.ID)
-		petKinds = append(petKinds, id)
-	}
-
-	var petSizeID *int64
-	if eq.Edges.PetSize != nil {
-		idInt64 := int64(eq.Edges.PetSize.ID)
-		petSizeID = &idInt64
-	}
-
-	return &models.Equipment{
-		Category:         &eq.Category,
-		CompensationСost: &eq.CompensationCost,
-		Condition:        &eq.Condition,
-		Description:      &eq.Description,
-		InventoryNumber:  &eq.InventoryNumber,
-		Kind:             &kindID,
-		MaximumAmount:    &eq.MaximumAmount,
-		MaximumDays:      &eq.MaximumDays,
-		Name:             &eq.Name,
-		ReceiptDate:      &eq.ReceiptDate,
-		Status:           &statusID,
-		Supplier:         &eq.Supplier,
-		Title:            &eq.Title,
-		PetSize:          petSizeID,
+		Photo:            &photoURL,
 		PetKinds:         petKinds,
 	}, nil
 }

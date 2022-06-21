@@ -417,6 +417,91 @@ paths:
           description: Unexpected error
           schema:
             $ref: "#/definitions/Error"
+  /equipment/photos:
+    post:
+      summary: Upload a new equipment photo
+      tags:
+        - Photos
+      operationId: CreateNewPhoto
+      consumes:
+        - multipart/form-data
+      parameters:
+        - name: file
+          in: formData
+          type: file
+          description: Upload a new equipment photo
+          required: true
+      responses:
+        201:
+          description: Equipment photo uploaded
+          schema:
+            $ref: "#/definitions/CreateNewPhotoResponse"
+        default:
+          description: Unexpected error.
+          schema:
+            $ref: "#/definitions/Error"
+  /equipment/photos/{photoId}:
+    parameters:
+      - name: photoId
+        in: path
+        required: true
+        description: photo id
+        type: string
+    get:
+      summary: Get photo by id
+      tags:
+        - Photos
+      operationId: GetPhoto
+      produces:
+        - image/jpg
+        - application/json
+      responses:
+        200:
+          description: Photo has been found
+          schema:
+            type: file
+        default:
+          description: Unexpected error.
+          schema:
+            $ref: "#/definitions/Error"
+    delete:
+      summary: Delete photo by id
+      tags:
+        - Photos
+      operationId: DeletePhoto
+      responses:
+        200:
+          description: Equipment photo has been deleted
+          schema:
+            $ref: "#/definitions/DeletePhotoResponse"
+        default:
+          description: Unexpected error.
+          schema:
+            $ref: "#/definitions/Error"
+  /equipment/photos/{photoId}/download:
+    parameters:
+      - name: photoId
+        in: path
+        required: true
+        description: photo id
+        type: string
+    get:
+      summary: Download photo by id
+      tags:
+        - Photos
+      operationId: DownloadPhoto
+      produces:
+        - application/octet-stream
+        - application/json
+      responses:
+        200:
+          description: Photo has been found
+          schema:
+            type: file
+        default:
+          description: Unexpected error.
+          schema:
+            $ref: "#/definitions/Error"
   /v1/orders:
     get:
       tags:
@@ -727,7 +812,7 @@ paths:
         200:
           description: Equipment edited
           schema:
-            $ref: "#/definitions/Equipment"
+            $ref: "#/definitions/EquipmentResponse"
         default:
           description: Unexpected error.
           schema:
@@ -1348,6 +1433,37 @@ definitions:
     properties:
       name:
         type: string
+  # Photo
+  Photo:
+    type: object
+    required:
+      - url
+    properties:
+      id:
+        type: string
+      url:
+        type: string
+  DeletePhotoResponse:
+    type: object
+    required:
+      - data
+    properties:
+      data:
+        $ref: "#/definitions/Photo"
+  CreateNewPhoto:
+    type: object
+    required:
+      - data
+    properties:
+      data:
+        $ref: "#/definitions/Photo"
+  CreateNewPhotoResponse:
+    type: object
+    required:
+      - data
+    properties:
+      data:
+        $ref: "#/definitions/Photo"
   # Kind
   Kind:
     type: object
@@ -1477,7 +1593,7 @@ definitions:
       - order
       - location
       - description
-      - photo
+      - photoID
     properties:
       category:
         type: string
@@ -1531,9 +1647,9 @@ definitions:
       description:
         type: string
         example: "This is a dog harness.\nWARNING: do not put on cats!"
-      photo:
+      photoID:
         type: string
-        example: "https://..."
+        example: ""
       petKinds:
         type: array
         items:
@@ -1825,7 +1941,7 @@ definitions:
         $ref: '#/definitions/UserEmbeddable'
       equipment:
         type: object
-        $ref: '#/definitions/Equipment'
+        $ref: '#/definitions/EquipmentResponse'
       last_status:
         type: object
         $ref: '#/definitions/OrderStatus'
