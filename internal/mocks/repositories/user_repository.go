@@ -8,7 +8,9 @@ import (
 	mock "github.com/stretchr/testify/mock"
 
 	ent "git.epam.com/epm-lstr/epm-lstr-lc/be/ent"
+
 	models "git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/models"
+
 	repositories "git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/repositories"
 )
 
