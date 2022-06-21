@@ -283,7 +283,7 @@ paths:
         - Status
       operationId: GetStatuses
       responses:
-        201:
+        200:
           description: Success
           schema:
             $ref: "#/definitions/ListStatuses"
@@ -297,14 +297,14 @@ paths:
         in: path
         required: true
         description: status id
-        type: string
+        type: integer
     get:
       summary: Get status by id
       tags:
         - Status
       operationId: GetStatus
       responses:
-        201:
+        200:
           description: Status has been created
           schema:
             $ref: "#/definitions/SuccessStatusOperationResponse"
@@ -318,7 +318,7 @@ paths:
         - Status
       operationId: DeleteStatus
       responses:
-        201:
+        200:
           description: Status has been created
           schema:
             $ref: "#/definitions/SuccessStatusOperationResponse"
@@ -1334,7 +1334,7 @@ definitions:
       - name
     properties:
       id:
-        type: string
+        type: integer
       name:
         type: string
   ListStatuses:
