@@ -5,9 +5,8 @@ package repositories
 import (
 	context "context"
 
-	mock "github.com/stretchr/testify/mock"
-
 	ent "git.epam.com/epm-lstr/epm-lstr-lc/be/ent"
+	mock "github.com/stretchr/testify/mock"
 
 	models "git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/models"
 
@@ -79,6 +78,29 @@ func (_m *UserRepository) CreateUser(ctx context.Context, data *models.UserRegis
 	return r0, r1
 }
 
+// GetUserByID provides a mock function with given fields: ctx, id
+func (_m *UserRepository) GetUserByID(ctx context.Context, id int) (*ent.User, error) {
+	ret := _m.Called(ctx, id)
+
+	var r0 *ent.User
+	if rf, ok := ret.Get(0).(func(context.Context, int) *ent.User); ok {
+		r0 = rf(ctx, id)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*ent.User)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, int) error); ok {
+		r1 = rf(ctx, id)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // GetUserByLogin provides a mock function with given fields: ctx, login
 func (_m *UserRepository) GetUserByLogin(ctx context.Context, login string) (*ent.User, error) {
 	ret := _m.Called(ctx, login)
@@ -103,26 +125,31 @@ func (_m *UserRepository) GetUserByLogin(ctx context.Context, login string) (*en
 }
 
 // SetUserRole provides a mock function with given fields: ctx, userId, roleId
-func (_m *UserRepository) SetUserRole(ctx context.Context, userId int, roleId int) (*ent.User, error) {
+func (_m *UserRepository) SetUserRole(ctx context.Context, userId int, roleId int) error {
 	ret := _m.Called(ctx, userId, roleId)
 
-	var r0 *ent.User
-	if rf, ok := ret.Get(0).(func(context.Context, int, int) *ent.User); ok {
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, int, int) error); ok {
 		r0 = rf(ctx, userId, roleId)
 	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*ent.User)
-		}
+		r0 = ret.Error(0)
 	}
 
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, int, int) error); ok {
-		r1 = rf(ctx, userId, roleId)
+	return r0
+}
+
+// UpdateUserByID provides a mock function with given fields: ctx, id, patch
+func (_m *UserRepository) UpdateUserByID(ctx context.Context, id int, patch *models.PatchUserRequest) error {
+	ret := _m.Called(ctx, id, patch)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, int, *models.PatchUserRequest) error); ok {
+		r0 = rf(ctx, id, patch)
 	} else {
-		r1 = ret.Error(1)
+		r0 = ret.Error(0)
 	}
 
-	return r0, r1
+	return r0
 }
 
 // UserByLogin provides a mock function with given fields: ctx, login
@@ -141,6 +168,29 @@ func (_m *UserRepository) UserByLogin(ctx context.Context, login string) (*ent.U
 	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = rf(ctx, login)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// UserList provides a mock function with given fields: ctx
+func (_m *UserRepository) UserList(ctx context.Context) ([]*ent.User, error) {
+	ret := _m.Called(ctx)
+
+	var r0 []*ent.User
+	if rf, ok := ret.Get(0).(func(context.Context) []*ent.User); ok {
+		r0 = rf(ctx)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*ent.User)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
+		r1 = rf(ctx)
 	} else {
 		r1 = ret.Error(1)
 	}

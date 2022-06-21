@@ -3,6 +3,8 @@ package services
 import (
 	"context"
 	"errors"
+	"fmt"
+	"log"
 	"time"
 
 	"github.com/golang-jwt/jwt/v4"
@@ -18,20 +20,72 @@ const (
 	refreshExpireTime = 148 * time.Hour
 )
 
-type UserService interface {
+type TokenManager interface {
 	GenerateAccessToken(ctx context.Context, login, password string) (string, bool, error)
+	RefreshToken(ctx context.Context, token string) (string, bool, error)
 }
 
-type userService struct {
+type tokenManager struct {
 	userRepository  repositories.UserRepository
 	tokenRepository repositories.TokenRepository
 	jwtSecret       string
 	logger          *zap.Logger
 }
 
-func NewUserService(userRepository repositories.UserRepository, tokenRepository repositories.TokenRepository,
-	jwtSecret string, logger *zap.Logger) UserService {
-	return &userService{
+func (s *tokenManager) RefreshToken(ctx context.Context, token string) (string, bool, error) {
+	claims := jwt.MapClaims{}
+	refreshToken, err := jwt.ParseWithClaims(token, claims, func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, fmt.Errorf("error decoding token")
+		}
+		return []byte(s.jwtSecret), nil
+	})
+
+	if errors.Is(err, jwt.ErrTokenExpired) {
+		err = s.tokenRepository.DeleteTokensByRefreshToken(ctx, token)
+		if err != nil {
+			return "", true, err
+		}
+		return "", true, nil
+	}
+
+	if err != nil {
+		return "", true, err
+	}
+
+	if refreshToken.Valid {
+		if refreshToken.Raw != token {
+			return "", false, errors.New("refresh token is invalid")
+		}
+
+		userID := int(claims["id"].(float64))
+		currentUser, errGet := s.userRepository.GetUserByID(ctx, userID) // get current user
+		if errGet != nil {
+			return "", false, errGet
+		}
+
+		newAccessToken, errGenJWT := generateJWT(currentUser, s.jwtSecret)
+		if errGet != nil {
+			s.logger.Error("generate JWT token error")
+			return "", false, errGenJWT
+		}
+
+		errUpdate := s.tokenRepository.UpdateAccessToken(ctx, newAccessToken, token)
+		if errGet != nil {
+			log.Printf("update JWT token error: %v", errGet)
+			return "", false, errUpdate
+		}
+
+		return newAccessToken, false, nil
+	}
+
+	s.logger.Error("token not valid", zap.String("token", token))
+	return "", true, errors.New("token not valid")
+}
+
+func NewTokenManager(userRepository repositories.UserRepository, tokenRepository repositories.TokenRepository,
+	jwtSecret string, logger *zap.Logger) TokenManager {
+	return &tokenManager{
 		userRepository:  userRepository,
 		tokenRepository: tokenRepository,
 		jwtSecret:       jwtSecret,
@@ -40,8 +94,8 @@ func NewUserService(userRepository repositories.UserRepository, tokenRepository 
 }
 
 // GenerateAccessToken generates access token for user. It returns token string, is it internal error and error.
-func (u *userService) GenerateAccessToken(ctx context.Context, login, password string) (string, bool, error) {
-	user, err := u.userRepository.GetUserByLogin(ctx, login)
+func (s *tokenManager) GenerateAccessToken(ctx context.Context, login, password string) (string, bool, error) {
+	user, err := s.userRepository.GetUserByLogin(ctx, login)
 	if ent.IsNotFound(err) {
 		return "", false, err
 	}
@@ -53,17 +107,17 @@ func (u *userService) GenerateAccessToken(ctx context.Context, login, password s
 		return "", false, err
 	}
 
-	accessToken, err := generateJWT(user, u.jwtSecret)
+	accessToken, err := generateJWT(user, s.jwtSecret)
 	if err != nil {
 		return "", true, err
 	}
 
-	refreshToken, err := generateRefreshToken(user, u.jwtSecret)
+	refreshToken, err := generateRefreshToken(user, s.jwtSecret)
 	if err != nil {
 		return "", true, err
 	}
 
-	err = u.tokenRepository.CreateTokens(ctx, user.ID, accessToken, refreshToken)
+	err = s.tokenRepository.CreateTokens(ctx, user.ID, accessToken, refreshToken)
 	if err != nil {
 		return "", true, err
 	}

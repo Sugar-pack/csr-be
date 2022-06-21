@@ -1,19 +1,13 @@
 package handlers
 
 import (
-	"context"
 	"errors"
-	"fmt"
-	"log"
 	"net/http"
-	"time"
 
 	"github.com/go-openapi/runtime/middleware"
-	"github.com/golang-jwt/jwt/v4"
 	"go.uber.org/zap"
 
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent"
-	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/token"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/authentication"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/models"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/restapi/operations/users"
@@ -21,53 +15,17 @@ import (
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/services"
 )
 
-const (
-	accessExpireTime = 15 * time.Minute
-)
-
 type User struct {
-	client *ent.Client
 	logger *zap.Logger
 }
 
-func generateJWT(ctx context.Context, user *ent.User, jwtSecretKey string) (string, error) {
-	token := jwt.New(jwt.SigningMethodHS256)
-	claims := token.Claims.(jwt.MapClaims)
-
-	claims["id"] = user.ID
-	claims["login"] = user.Login
-	claims["role"] = nil
-	claims["group"] = nil
-	role, err := user.QueryRole().First(ctx)
-	if err == nil {
-		claims["role"] = map[string]interface{}{
-			"id":   role.ID,
-			"slug": role.Slug,
-		}
-	}
-	group, err := user.QueryGroups().First(ctx)
-	if err == nil {
-		claims["group"] = map[string]interface{}{
-			"id": group.ID,
-		}
-	}
-	claims["exp"] = time.Now().Add(accessExpireTime).Unix()
-
-	tokenString, err := token.SignedString([]byte(jwtSecretKey))
-	if err != nil {
-		return "", err
-	}
-	return tokenString, nil
-}
-
-func NewUser(client *ent.Client, logger *zap.Logger) *User {
+func NewUser(logger *zap.Logger) *User {
 	return &User{
-		client: client,
 		logger: logger,
 	}
 }
 
-func (c User) LoginUserFunc(service services.UserService) users.LoginHandlerFunc {
+func (c User) LoginUserFunc(service services.TokenManager) users.LoginHandlerFunc {
 	return func(p users.LoginParams) middleware.Responder {
 		ctx := p.HTTPRequest.Context()
 		login := *p.Login.Login
@@ -79,6 +37,7 @@ func (c User) LoginUserFunc(service services.UserService) users.LoginHandlerFunc
 			}
 			return users.NewLoginUnauthorized().WithPayload("Invalid login or password")
 		}
+
 		return users.NewLoginOK().WithPayload(&models.AccessToken{AccessToken: &accessToken})
 	}
 }
@@ -112,91 +71,69 @@ func (c User) PostUserFunc(repository repositories.UserRepository, regConfirmSer
 	}
 }
 
-func (c User) Refresh(jwtSecretKey string) users.RefreshHandlerFunc {
+func (c User) Refresh(manager services.TokenManager) users.RefreshHandlerFunc {
 	return func(p users.RefreshParams) middleware.Responder {
 		ctx := p.HTTPRequest.Context()
-		claims := jwt.MapClaims{}
-		refreshToken, err := jwt.ParseWithClaims(*p.RefreshToken.RefreshToken, claims, func(token *jwt.Token) (interface{}, error) {
-			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-				return nil, fmt.Errorf("error decoding token")
-			}
-			return []byte(jwtSecretKey), nil
-		})
-
-		if errors.Is(err, jwt.ErrTokenExpired) {
-			_, err = c.client.Token.Delete().Where(token.RefreshToken(refreshToken.Raw)).Exec(ctx)
-			if err != nil {
-				c.logger.Error("delete tokens error", zap.Error(err))
-				return users.NewRefreshDefault(http.StatusInternalServerError).WithPayload(&models.Error{Data: &models.ErrorData{
-					Message: "delete tokens error",
-				}})
-			}
-
-			c.logger.Error("refresh token is expired", zap.Error(err))
-			return users.NewRefreshDefault(http.StatusInternalServerError).WithPayload(&models.Error{Data: &models.ErrorData{
-				Message: "refresh token is expired",
-			}})
+		refreshToken := *p.RefreshToken.RefreshToken
+		newToken, isValid, err := manager.RefreshToken(ctx, refreshToken)
+		if isValid {
+			c.logger.Info("token invalid", zap.String("token", refreshToken))
+			return users.NewRefreshDefault(http.StatusBadRequest).
+				WithPayload(buildStringPayload("token invalid"))
 		}
-
 		if err != nil {
-			c.logger.Error("not valid refresh token", zap.Error(err))
-			return users.NewRefreshDefault(http.StatusInternalServerError).WithPayload(&models.Error{Data: &models.ErrorData{
-				Message: "not valid refresh token",
+			c.logger.Error("Error while refreshing token", zap.Error(err))
+			return users.NewRefreshDefault(http.StatusInternalServerError).
+				WithPayload(buildStringPayload("Error while refreshing token"))
+		}
+		return users.NewRefreshOK().WithPayload(&models.AccessToken{AccessToken: &newToken})
+	}
+}
+
+func (c User) GetUserFunc(repository repositories.UserRepository) users.GetCurrentUserHandlerFunc {
+	return func(p users.GetCurrentUserParams, access interface{}) middleware.Responder {
+		ctx := p.HTTPRequest.Context()
+		userId, err := authentication.GetUserId(access)
+		if err != nil {
+			c.logger.Error("get user id error", zap.Error(err))
+			return users.NewGetCurrentUserDefault(http.StatusUnauthorized).WithPayload(&models.Error{Data: &models.ErrorData{
+				Message: "get user id error",
+			}})
+		}
+		user, err := repository.GetUserByID(ctx, userId)
+		if err != nil {
+			c.logger.Error("get user by id error", zap.Error(err))
+			return users.NewGetCurrentUserDefault(http.StatusInternalServerError).WithPayload(&models.Error{Data: &models.ErrorData{
+				Message: "cant find user by id",
 			}})
 		}
 
-		if refreshToken.Valid {
-			if refreshToken.Raw != *p.RefreshToken.RefreshToken {
-				c.logger.Error("invalid refresh token")
-				return users.NewRefreshDefault(http.StatusInternalServerError).WithPayload(&models.Error{Data: &models.ErrorData{
-					Message: "invalid refresh token",
-				}})
-			}
-
-			userID := int(claims["id"].(float64))
-
-			currentUser, err := c.client.User.Get(ctx, userID) // get current user
-			if err != nil {
-				c.logger.Error("user not found", zap.Error(err))
-				return users.NewRefreshDefault(http.StatusInternalServerError).WithPayload(&models.Error{Data: &models.ErrorData{
-					Message: "user not found",
-				}})
-			}
-
-			newAccessToken, err := generateJWT(ctx, currentUser, jwtSecretKey)
-			if err != nil {
-				c.logger.Error("generate JWT token error")
-				return users.NewRefreshDefault(http.StatusInternalServerError).WithPayload(&models.Error{Data: &models.ErrorData{
-					Message: "generate JWT token error",
-				}})
-			}
-
-			_, err = c.client.Token.Update().Where(token.RefreshToken(refreshToken.Raw)).SetAccessToken(newAccessToken).Save(ctx)
-			if err != nil {
-				log.Printf("update JWT token error: %v", err)
-				return users.NewRefreshDefault(http.StatusInternalServerError).WithPayload(&models.Error{Data: &models.ErrorData{
-					Message: "update JWT token error",
-				}})
-			}
-
-			return users.NewRefreshOK().WithPayload(&models.AccessToken{AccessToken: &newAccessToken})
+		result, err := mapUserInfo(user)
+		if err != nil {
+			c.logger.Error("map user error", zap.Error(err))
+			return users.NewGetCurrentUserDefault(http.StatusInternalServerError).
+				WithPayload(buildStringPayload("map user error"))
 		}
 
-		c.logger.Error("validating refresh token token error", zap.Error(err))
-		return users.NewRefreshDefault(http.StatusInternalServerError).WithPayload(&models.Error{Data: &models.ErrorData{
-			Message: "validating refresh token error",
-		}})
+		return users.NewGetCurrentUserOK().WithPayload(result)
 	}
 }
 
-func (c User) GetUserFunc() users.GetCurrentUserHandlerFunc {
-	return func(p users.GetCurrentUserParams, _ interface{}) middleware.Responder {
-		return users.NewGetCurrentUserOK()
-	}
-}
-
-func (c User) PatchUserFunc() users.PatchUserHandlerFunc {
-	return func(p users.PatchUserParams, _ interface{}) middleware.Responder {
+func (c User) PatchUserFunc(repository repositories.UserRepository) users.PatchUserHandlerFunc {
+	return func(p users.PatchUserParams, access interface{}) middleware.Responder {
+		ctx := p.HTTPRequest.Context()
+		userId, err := authentication.GetUserId(access)
+		if err != nil {
+			c.logger.Error("get user id error", zap.Error(err))
+			return users.NewPatchUserDefault(http.StatusUnauthorized).
+				WithPayload(buildStringPayload("get user id error"))
+		}
+		err = repository.UpdateUserByID(ctx, userId, p.UserPatch)
+		if err != nil {
+			c.logger.Error("get user by id error", zap.Error(err))
+			return users.NewPatchUserDefault(http.StatusInternalServerError).
+				WithPayload(buildStringPayload("cant update user"))
+		}
 		return users.NewPatchUserNoContent()
 	}
 }
@@ -205,131 +142,96 @@ func (c User) AssignRoleToUserFunc(repository repositories.UserRepository) users
 	return func(p users.AssignRoleToUserParams, access interface{}) middleware.Responder {
 		_, err := authentication.IsAdmin(access)
 		if err != nil {
-			return users.NewAssignRoleToUserDefault(http.StatusInternalServerError).WithPayload(buildErrorPayload(err))
+			c.logger.Error("user is not admin", zap.Error(err))
+			return users.NewAssignRoleToUserDefault(http.StatusForbidden).WithPayload(buildErrorPayload(err))
 		}
 		ctx := p.HTTPRequest.Context()
 		userId := int(p.UserID)
 		roleId := int(*p.Data.RoleID)
 
-		foundUser, err := repository.SetUserRole(ctx, userId, roleId)
+		err = repository.SetUserRole(ctx, userId, roleId)
 		if err != nil {
-			return users.NewAssignRoleToUserDefault(http.StatusNotFound).WithPayload(buildErrorPayload(err))
+			c.logger.Error("set user role error", zap.Error(err))
+			return users.NewAssignRoleToUserDefault(http.StatusInternalServerError).WithPayload(buildErrorPayload(err))
 		}
 
-		userIdInt64 := int64(foundUser.ID)
-		roleIdInt64 := int64(roleId)
-		return users.NewAssignRoleToUserOK().WithPayload(&models.GetUserResponse{
-			Data: &models.User{
-				CreateTime: nil,
-				ID:         &userIdInt64,
-				RoleID:     &roleIdInt64,
-				Login:      &foundUser.Login,
-			},
-		})
+		return users.NewAssignRoleToUserOK().WithPayload("role assigned")
 	}
 }
 
-func (c User) GetUserById() users.GetUserHandlerFunc {
+func (c User) GetUserById(repository repositories.UserRepository) users.GetUserHandlerFunc {
 	return func(p users.GetUserParams) middleware.Responder {
 		ctx := p.HTTPRequest.Context()
 		id := int(p.UserID)
-		user, err := c.client.User.Get(ctx, id)
+		foundUser, err := repository.GetUserByID(ctx, id)
 		if err != nil {
-			return users.NewGetUserDefault(http.StatusNotFound).WithPayload(&models.Error{
-				Data: &models.ErrorData{
-					Message: err.Error(),
-				},
-			})
+			return users.NewGetUserDefault(http.StatusInternalServerError).
+				WithPayload(buildStringPayload("cant find user by id"))
 		}
 
-		id64 := int64(id)
-		passportDate := user.PassportIssueDate.String()
-		typeString := user.Type.String()
-		role, err := user.QueryRole().Only(ctx)
+		userToResponse, err := mapUserInfo(foundUser)
 		if err != nil {
-			return users.NewGetAllUsersDefault(http.StatusNotFound).WithPayload(&models.Error{
-				Data: &models.ErrorData{
-					Message: err.Error(),
-				},
-			})
-		}
-		roleResp := models.GetUserByIDRole{
-			ID:   int64(role.ID),
-			Name: role.Name,
+			c.logger.Error("map user error", zap.Error(err))
+			return users.NewGetUserDefault(http.StatusInternalServerError).
+				WithPayload(buildStringPayload("map user error"))
 		}
 
-		return users.NewGetUserCreated().WithPayload(&models.GetUserByID{
-			Email:             &user.Email,
-			ID:                &id64,
-			IsBlocked:         &user.IsBlocked,
-			Login:             &user.Login,
-			Name:              &user.Name,
-			OrgName:           user.OrgName,
-			PassportAuthority: user.PassportAuthority,
-			PassportIssueDate: &passportDate,
-			PassportNumber:    user.PassportNumber,
-			PassportSeries:    user.PassportSeries,
-			Patronymic:        user.Patronymic,
-			PhoneNumber:       user.Phone,
-			Role:              &roleResp,
-			Surname:           user.Surname,
-			Type:              &typeString,
-		})
+		return users.NewGetUserOK().WithPayload(userToResponse)
 	}
 }
 
-func (c User) GetUsersList() users.GetAllUsersHandlerFunc {
+func (c User) GetUsersList(repository repositories.UserRepository) users.GetAllUsersHandlerFunc {
 	return func(p users.GetAllUsersParams) middleware.Responder {
 		ctx := p.HTTPRequest.Context()
-		all, err := c.client.User.Query().All(ctx)
+		all, err := repository.UserList(ctx)
 		if err != nil {
-			c.logger.Error("failed to query users")
-			return users.NewGetAllUsersDefault(http.StatusNotFound).WithPayload(&models.Error{
-				Data: &models.ErrorData{
-					Message: err.Error(),
-				},
-			})
+			c.logger.Error("failed get user list", zap.Error(err))
+			return users.NewGetAllUsersDefault(http.StatusInternalServerError).
+				WithPayload(buildStringPayload("failed to get user list"))
 		}
 		listUsers := models.GetListUsers{}
 		for _, element := range all {
-
-			id64 := int64(element.ID)
-			passportDate := element.PassportIssueDate.String()
-			typeString := element.Type.String()
-
-			role, err := element.QueryRole().Only(ctx)
-			if err != nil {
-				c.logger.Error("failed to query role")
-				return users.NewGetAllUsersDefault(http.StatusNotFound).WithPayload(&models.Error{
-					Data: &models.ErrorData{
-						Message: err.Error(),
-					},
-				})
+			userToResponse, errMap := mapUserInfo(element)
+			if errMap != nil {
+				c.logger.Error("map user error", zap.Error(errMap))
+				return users.NewGetAllUsersDefault(http.StatusInternalServerError).
+					WithPayload(buildStringPayload("map user error"))
 			}
-			roleResp := models.GetUserByIDRole{
-				ID:   int64(role.ID),
-				Name: role.Name,
-			}
-
-			listUsers = append(listUsers, &models.GetUserByID{
-				Email:             &element.Email,
-				ID:                &id64,
-				IsBlocked:         &element.IsBlocked,
-				Login:             &element.Login,
-				Name:              &element.Name,
-				OrgName:           element.OrgName,
-				PassportAuthority: element.PassportAuthority,
-				PassportIssueDate: &passportDate,
-				PassportNumber:    element.PassportNumber,
-				PassportSeries:    element.PassportSeries,
-				Patronymic:        element.Patronymic,
-				PhoneNumber:       element.Phone,
-				Role:              &roleResp,
-				Surname:           element.Surname,
-				Type:              &typeString,
-			})
+			listUsers = append(listUsers, userToResponse)
 		}
 
-		return users.NewGetAllUsersCreated().WithPayload(listUsers)
+		return users.NewGetAllUsersOK().WithPayload(listUsers)
 	}
+}
+
+func mapUserInfo(user *ent.User) (*models.UserInfo, error) {
+	userID := int64(user.ID)
+	passportDate := user.PassportIssueDate.String()
+	if user.Edges.Role == nil {
+		return nil, errors.New("role is nil")
+	}
+	userRole := user.Edges.Role
+	userRoleInfo := models.UserInfoRole{
+		ID:   int64(userRole.ID),
+		Name: userRole.Name,
+	}
+	typeString := user.Type.String()
+	result := &models.UserInfo{
+		Email:             &user.Email,
+		ID:                &userID,
+		IsBlocked:         &user.IsBlocked,
+		Login:             &user.Login,
+		Name:              &user.Name,
+		OrgName:           user.OrgName,
+		PassportAuthority: user.PassportAuthority,
+		PassportIssueDate: &passportDate,
+		PassportNumber:    user.PassportNumber,
+		PassportSeries:    user.PassportSeries,
+		Patronymic:        user.Patronymic,
+		PhoneNumber:       user.Phone,
+		Role:              &userRoleInfo,
+		Surname:           user.Surname,
+		Type:              &typeString,
+	}
+	return result, nil
 }

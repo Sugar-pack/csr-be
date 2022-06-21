@@ -21,7 +21,7 @@ type UserServiceTestSuite struct {
 	suite.Suite
 	tokenRepository *repomock.TokenRepository
 	userRepository  *repomock.UserRepository
-	userService     UserService
+	userService     TokenManager
 	jwtSecret       string
 	logger          *zap.Logger
 }
@@ -35,7 +35,7 @@ func (s *UserServiceTestSuite) SetupTest() {
 	s.userRepository = &repomock.UserRepository{}
 	s.jwtSecret = "secret"
 	s.logger = zap.NewNop()
-	s.userService = NewUserService(s.userRepository, s.tokenRepository, s.jwtSecret, s.logger)
+	s.userService = NewTokenManager(s.userRepository, s.tokenRepository, s.jwtSecret, s.logger)
 }
 
 func (s *UserServiceTestSuite) TestUserService_GenerateAccessToken_UserNotFound() {

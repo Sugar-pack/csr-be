@@ -27,6 +27,34 @@ func (_m *TokenRepository) CreateTokens(ctx context.Context, ownerID int, access
 	return r0
 }
 
+// DeleteTokensByRefreshToken provides a mock function with given fields: ctx, refreshToken
+func (_m *TokenRepository) DeleteTokensByRefreshToken(ctx context.Context, refreshToken string) error {
+	ret := _m.Called(ctx, refreshToken)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) error); ok {
+		r0 = rf(ctx, refreshToken)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// UpdateAccessToken provides a mock function with given fields: ctx, accessToken, refreshToken
+func (_m *TokenRepository) UpdateAccessToken(ctx context.Context, accessToken string, refreshToken string) error {
+	ret := _m.Called(ctx, accessToken, refreshToken)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) error); ok {
+		r0 = rf(ctx, accessToken, refreshToken)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 type mockConstructorTestingTNewTokenRepository interface {
 	mock.TestingT
 	Cleanup(func())

@@ -124,10 +124,7 @@ func main() {
 
 	equipmentHandler := handlers.NewEquipment(logger)
 
-	userHandler := handlers.NewUser(
-		entClient,
-		logger,
-	)
+	userHandler := handlers.NewUser(logger)
 
 	roleHandler := handlers.NewRole(logger)
 
@@ -163,20 +160,22 @@ func main() {
 		logger.Error("JWT_SECRET_KEY not specified", zap.Error(err))
 	}
 	api.BearerAuth = middlewares.BearerAuthenticateFunc(jwtSecretKey, logger)
-	api.UsersRefreshHandler = userHandler.Refresh(jwtSecretKey)
 
 	tokenRepository := repositories.NewTokenRepository(entClient)
-	userService := services.NewUserService(userRepository, tokenRepository, jwtSecretKey, logger)
-	api.UsersLoginHandler = userHandler.LoginUserFunc(userService)
+	tokenManager := services.NewTokenManager(userRepository, tokenRepository, jwtSecretKey, logger)
+	api.UsersLoginHandler = userHandler.LoginUserFunc(tokenManager)
+	api.UsersRefreshHandler = userHandler.Refresh(tokenManager)
 
 	api.UsersPostUserHandler = userHandler.PostUserFunc(userRepository, regConfirmService)
-	api.UsersGetCurrentUserHandler = userHandler.GetUserFunc()
-	api.UsersPatchUserHandler = userHandler.PatchUserFunc()
-	api.UsersGetUserHandler = userHandler.GetUserById()
-	api.UsersGetAllUsersHandler = userHandler.GetUsersList()
-	api.UsersBlockUserHandler = blockerHandler.BlockUserFunc(repositories.NewBlockerRepository(entClient))
-	api.UsersUnblockUserHandler = blockerHandler.UnblockUserFunc(repositories.NewBlockerRepository(entClient))
+	api.UsersGetCurrentUserHandler = userHandler.GetUserFunc(userRepository)
+	api.UsersPatchUserHandler = userHandler.PatchUserFunc(userRepository)
+	api.UsersGetUserHandler = userHandler.GetUserById(userRepository)
+	api.UsersGetAllUsersHandler = userHandler.GetUsersList(userRepository)
 	api.UsersAssignRoleToUserHandler = userHandler.AssignRoleToUserFunc(userRepository)
+
+	blockerRepository := repositories.NewBlockerRepository(entClient)
+	api.UsersBlockUserHandler = blockerHandler.BlockUserFunc(blockerRepository)
+	api.UsersUnblockUserHandler = blockerHandler.UnblockUserFunc(blockerRepository)
 
 	roleRepository := repositories.NewRoleRepository(entClient)
 	api.RolesGetRolesHandler = roleHandler.GetRolesFunc(roleRepository)
