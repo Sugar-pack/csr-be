@@ -68,3 +68,10 @@ go get -u github.com/a8m/enter
 enter ./ent/schema
 ```
 
+### Files workflow
+
+Files are stored in the file system. 
+The name of the folder with files is set in environment variable PHOTOS_FOLDER. 
+The database stores id - names of files without an extension
+
+<img src="images/equipments_photos.png" alt="files workflow diagrams">

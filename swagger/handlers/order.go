@@ -57,6 +57,10 @@ func mapOrder(o *ent.Order, log *zap.Logger) (*models.Order, error) {
 	if equipment.Edges.Status != nil {
 		statusId = int64(equipment.Edges.Status.ID)
 	}
+	var photoURL string
+	if equipment.Edges.Photo != nil {
+		photoURL = equipment.Edges.Photo.URL
+	}
 
 	allStatuses := o.Edges.OrderStatus
 	var statusToOrder *models.OrderStatus
@@ -77,12 +81,12 @@ func mapOrder(o *ent.Order, log *zap.Logger) (*models.Order, error) {
 
 	return &models.Order{
 		Description: &o.Description,
-		Equipment: &models.Equipment{
+		Equipment: &models.EquipmentResponse{
 			Description: &equipment.Description,
 			Kind:        &kindId,
 			Location:    nil,
 			Name:        &equipment.Name,
-			Photo:       nil,
+			Photo:       &photoURL,
 			Status:      &statusId,
 		},
 		ID:        &id,

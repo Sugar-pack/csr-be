@@ -129,6 +129,11 @@ func main() {
 	roleHandler := handlers.NewRole(logger)
 
 	kindsHandler := handlers.NewKind(logger)
+
+	photosServerURL := getEnv("PHOTOS_SERVER_URL", "http://localhost:8080/")
+	photosFolder := getEnv("PHOTOS_FOLDER", "equipments_photos")
+	photosHandler := handlers.NewPhoto(photosFolder, photosServerURL, logger)
+
 	statusHandler := handlers.NewStatus(logger)
 	activeAreasHandler := handlers.NewActiveArea(logger)
 
@@ -200,6 +205,12 @@ func main() {
 	api.EquipmentGetAllEquipmentHandler = equipmentHandler.ListEquipmentFunc(equipmentRepository)
 	api.EquipmentEditEquipmentHandler = equipmentHandler.EditEquipmentFunc(equipmentRepository)
 	api.EquipmentFindEquipmentHandler = equipmentHandler.FindEquipmentFunc(equipmentRepository)
+
+	photoRepository := repositories.NewPhotoRepository(entClient)
+	api.PhotosCreateNewPhotoHandler = photosHandler.CreateNewPhotoFunc(photoRepository)
+	api.PhotosGetPhotoHandler = photosHandler.GetPhotoFunc(photoRepository)
+	api.PhotosDeletePhotoHandler = photosHandler.DeletePhotoFunc(photoRepository)
+	api.PhotosDownloadPhotoHandler = photosHandler.DownloadPhotoFunc(photoRepository)
 
 	activeAreasRepository := repositories.NewActiveAreaRepository(entClient)
 	api.ActiveAreasGetAllActiveAreasHandler = activeAreasHandler.GetActiveAreasFunc(activeAreasRepository)

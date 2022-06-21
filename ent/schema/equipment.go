@@ -35,6 +35,7 @@ func (Equipment) Edges() []ent.Edge {
 		edge.From("status", Statuses.Type).Ref("equipments").Unique(),
 		edge.From("order", Order.Type).Ref("equipments"),
 		edge.From("pet_size", PetSize.Type).Ref("equipments").Unique(),
+		edge.From("photo", Photo.Type).Ref("equipments").Unique(),
 		edge.From("petKinds", PetKind.Type).Ref("equipments"),
 	}
 }
