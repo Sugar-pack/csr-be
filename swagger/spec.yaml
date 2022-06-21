@@ -111,7 +111,7 @@ paths:
         200:
           description: Success
           schema:
-            $ref: "#/definitions/GetUserResponse"
+            $ref: "#/definitions/UserInfo"
         default:
           description: Unexpected error.
           schema:
@@ -131,7 +131,7 @@ paths:
           description: The patch to apply to the user.
           required: true
           schema:
-            $ref: "#/definitions/PatchRequest"
+            $ref: "#/definitions/PatchUserRequest"
       responses:
         204:
           description: Success
@@ -152,10 +152,10 @@ paths:
         - Users
       operationId: GetUser
       responses:
-        201:
+        200:
           description: Success
           schema:
-            $ref: "#/definitions/GetUserById"
+            $ref: "#/definitions/UserInfo"
         default:
           description: Unexpected error.
           schema:
@@ -167,7 +167,7 @@ paths:
         - Users
       operationId: GetAllUsers
       responses:
-        201:
+        200:
           description: Success
           schema:
             $ref: "#/definitions/GetListUsers"
@@ -217,7 +217,7 @@ paths:
         200:
           description: Role has been assigned to user
           schema:
-            $ref: "#/definitions/GetUserResponse"
+            type: string
         default:
           description: Unexpected error.
           schema:
@@ -1048,38 +1048,31 @@ definitions:
           vk:
             type: string
 
-  PatchRequest:
-    type: array
-    items:
-      $ref: "#/definitions/PatchItem"
-  PatchItem:
+  PatchUserRequest:
     type: object
-    description: A JSONPatch document as defined by RFC 6902
-    required:
-      - op
-      - path
     properties:
-      from:
-        description: A string containing a JSON Pointer value
+      name:
         type: string
-      op:
-        description: The operation to be performed
-        enum:
-          - add
-          - remove
-          - replace
-          - move
-          - copy
-          - test
+      surname:
+        type : string
+      passport_series:
+        type : string
+      passport_number:
+        type : string
+      passport_authority:
+        type : string
+      passport_issue_date:
+        type : string
+        format : date
+      phone:
         type: string
-      path:
-        description: A JSON-Pointer
+      org_name:
         type: string
-      value:
-        description: The value to be used within the operations
-        type: object
-
-  # User
+      website:
+        type: string
+      vk:
+        type: string
+      # User
   LoginInfo:
     type: object
     required:
@@ -1239,7 +1232,7 @@ definitions:
     properties:
       roleId:
         type: integer
-  GetUserById:
+  UserInfo:
     type: object
     required:
       - id
@@ -1298,7 +1291,7 @@ definitions:
   GetListUsers:
     type: array
     items:
-      $ref: "#/definitions/GetUserById"
+      $ref: "#/definitions/UserInfo"
 
   SuccessUserUpdateResponse:
    type: object

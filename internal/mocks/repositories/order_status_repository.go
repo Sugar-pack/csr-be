@@ -5,9 +5,8 @@ package repositories
 import (
 	context "context"
 
-	mock "github.com/stretchr/testify/mock"
-
 	ent "git.epam.com/epm-lstr/epm-lstr-lc/be/ent"
+	mock "github.com/stretchr/testify/mock"
 
 	models "git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/models"
 )

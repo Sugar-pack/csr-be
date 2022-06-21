@@ -2,10 +2,10 @@ package repositories
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
-	"entgo.io/ent/dialect/sql"
 	"golang.org/x/crypto/bcrypt"
 
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent"
@@ -16,18 +16,65 @@ import (
 )
 
 type UserRepository interface {
-	SetUserRole(ctx context.Context, userId int, roleId int) (*ent.User, error)
+	SetUserRole(ctx context.Context, userId int, roleId int) error
 	UserByLogin(ctx context.Context, login string) (*ent.User, error)
 	ChangePasswordByLogin(ctx context.Context, login string, password string) (Transaction, error)
 	CreateUser(ctx context.Context, data *models.UserRegister) (*ent.User, error)
 	GetUserByLogin(ctx context.Context, login string) (*ent.User, error)
+	GetUserByID(ctx context.Context, id int) (*ent.User, error)
+	UpdateUserByID(ctx context.Context, id int, patch *models.PatchUserRequest) error
+	UserList(ctx context.Context) ([]*ent.User, error)
 	ConfirmRegistration(ctx context.Context, login string) error
 }
 
-const defaultRoleSlug = "user"
+const (
+	defaultRoleSlug   = "user"
+	defaultStrFmtDate = "0001-01-01"
+)
 
 type userRepository struct {
 	client *ent.Client
+}
+
+func (r *userRepository) UserList(ctx context.Context) ([]*ent.User, error) {
+	return r.client.User.Query().WithRole().All(ctx)
+}
+
+func (r *userRepository) UpdateUserByID(ctx context.Context, id int, patch *models.PatchUserRequest) error {
+	if patch == nil {
+		return errors.New("patch is nil")
+	}
+	userUpdate := r.client.User.Update().Where(user.ID(id))
+	if patch.Name != "" {
+		userUpdate.SetName(patch.Name)
+	}
+	if patch.Surname != "" {
+		userUpdate.SetName(patch.Name)
+	}
+	if patch.PassportNumber != "" {
+		//TODO: if user changes his passport data or name/surname,
+		// we should recall him to verify it
+		userUpdate.SetPassportNumber(patch.PassportNumber)
+	}
+	if patch.PassportAuthority != "" {
+		userUpdate.SetPassportAuthority(patch.PassportAuthority)
+	}
+	if patch.PassportIssueDate.String() != defaultStrFmtDate { // todo think how to do it right
+		passportIssueDate := time.Time(patch.PassportIssueDate)
+		userUpdate.SetPassportIssueDate(passportIssueDate)
+	}
+	if patch.OrgName != "" {
+		userUpdate.SetOrgName(patch.OrgName)
+	}
+	if patch.Vk != "" {
+		userUpdate.SetVk(patch.Vk)
+	}
+	if patch.Website != "" {
+		userUpdate.SetWebsite(patch.Website)
+	}
+
+	_, err := userUpdate.Save(ctx)
+	return err
 }
 
 func (r *userRepository) GetUserByLogin(ctx context.Context, login string) (*ent.User, error) {
@@ -54,45 +101,25 @@ func NewUserRepository(client *ent.Client) UserRepository {
 	return &userRepository{client: client}
 }
 
-func (r *userRepository) SetUserRole(ctx context.Context, userId int, roleId int) (foundUser *ent.User, resultError error) {
-	tx, err := r.client.BeginTx(ctx, &sql.TxOptions{})
+func (r *userRepository) GetUserByID(ctx context.Context, id int) (*ent.User, error) {
+	return r.client.User.Query().Where(user.ID(id)).WithGroups().WithRole().Only(ctx)
+}
+
+func (r *userRepository) SetUserRole(ctx context.Context, userId int, roleId int) error {
+	_, err := r.client.User.UpdateOneID(userId).SetRoleID(roleId).Save(ctx)
 	if err != nil {
-		return nil, err
+		return err
 	}
-
-	defer func(tx *ent.Tx) {
-		err := tx.Commit()
-		if err != nil {
-			resultError = err
-			foundUser = nil
-		}
-	}(tx)
-
-	user, err := tx.User.Get(ctx, userId)
-	if err != nil {
-		return nil, err
-	}
-
-	role, err := tx.Role.Get(ctx, roleId)
-	if err != nil {
-		return nil, err
-	}
-
-	foundUser, err = r.client.User.UpdateOne(user).SetRole(role).Save(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	return foundUser, nil
+	return nil
 }
 
 func DefaultUserRole(ctx context.Context, client *ent.Client) (*ent.Role, error) {
-	role, err := client.Role.Query().Where(role.Slug(defaultRoleSlug)).Only(ctx)
+	defaultRole, err := client.Role.Query().Where(role.Slug(defaultRoleSlug)).Only(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	return role, nil
+	return defaultRole, nil
 }
 
 func (r *userRepository) CreateUser(ctx context.Context, data *models.UserRegister) (createdUser *ent.User, err error) {

@@ -58,6 +58,7 @@ func (s *ActiveAreasSuite) TestActiveAreaRepository_AllActiveAreas() {
 		t.Fatal(err)
 	}
 	assert.Equal(t, len(s.activeAreas), len(activeAreas))
-	assert.Equal(t, s.activeAreas[1], activeAreas[0].Name)
-	assert.Equal(t, s.activeAreas[2], activeAreas[1].Name)
+	for _, value := range activeAreas {
+		assert.Contains(t, s.activeAreas, value.ID)
+	}
 }
