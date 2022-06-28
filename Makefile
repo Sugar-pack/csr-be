@@ -54,3 +54,5 @@ gen-email-client-mock:
 gen-services-mocks:
 	@docker run -v `pwd`:/src -w /src vektra/mockery:v2.13.1 --case snake --dir swagger/services --output internal/mocks/services --all
 
+gen-utils-mock:
+	@docker run -v `pwd`:/src -w /src vektra/mockery:v2.13.1 --case snake --dir internal/utils --output internal/mocks/utils --all

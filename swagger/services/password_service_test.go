@@ -14,16 +14,18 @@ import (
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent"
 	clientmock "git.epam.com/epm-lstr/epm-lstr-lc/be/internal/mocks/email"
 	repomock "git.epam.com/epm-lstr/epm-lstr-lc/be/internal/mocks/repositories"
+	utilmock "git.epam.com/epm-lstr/epm-lstr-lc/be/internal/mocks/utils"
 )
 
 type PasswordResetTestSuite struct {
 	suite.Suite
-	txMock          *repomock.Transaction
-	logger          *zap.Logger
-	userRepository  *repomock.UserRepository
-	passwordRepo    *repomock.PasswordResetRepository
-	emailClient     *clientmock.Sender
-	passwordService PasswordReset
+	txMock            *repomock.Transaction
+	logger            *zap.Logger
+	userRepository    *repomock.UserRepository
+	passwordRepo      *repomock.PasswordResetRepository
+	emailClient       *clientmock.Sender
+	passwordGenerator *utilmock.PasswordGenerator
+	passwordService   PasswordReset
 }
 
 func TestPasswordClientSuite(t *testing.T) {
@@ -36,9 +38,10 @@ func (s *PasswordResetTestSuite) SetupTest() {
 	s.userRepository = &repomock.UserRepository{}
 	s.passwordRepo = &repomock.PasswordResetRepository{}
 	s.emailClient = &clientmock.Sender{}
+	s.passwordGenerator = &utilmock.PasswordGenerator{}
 	s.logger = zap.NewExample()
 	ttl := time.Hour
-	service := NewPasswordResetService(s.emailClient, s.userRepository, s.passwordRepo, s.logger, &ttl)
+	service := NewPasswordResetService(s.emailClient, s.userRepository, s.passwordRepo, s.logger, &ttl, s.passwordGenerator)
 	s.passwordService = service
 }
 
@@ -162,6 +165,31 @@ func (s *PasswordResetTestSuite) TestPasswordReset_VerifyTokenAndSendPassword_De
 	s.passwordRepo.AssertExpectations(t)
 }
 
+func (s *PasswordResetTestSuite) TestPasswordReset_VerifyTokenAndSendPassword_PasswordGenErr() {
+	t := s.T()
+	ctx := context.Background()
+	token := "token"
+	returnToken := &ent.PasswordReset{
+		TTL:   time.Now().Add(1 * time.Hour),
+		Token: token,
+		Edges: ent.PasswordResetEdges{
+			Users: &ent.User{Login: "login"},
+		},
+	}
+	err := errors.New("error")
+	newPassword := "new password"
+	s.passwordRepo.On("GetToken", ctx, token).Return(returnToken, nil)
+	s.passwordGenerator.On("NewPassword").Return(newPassword, err)
+
+	errReturn := s.passwordService.VerifyTokenAndSendPassword(ctx, token)
+	assert.Error(t, errReturn)
+	assert.Equal(t, err, errReturn)
+	s.passwordRepo.AssertExpectations(t)
+	s.userRepository.AssertExpectations(t)
+	s.emailClient.AssertExpectations(t)
+	s.passwordRepo.AssertExpectations(t)
+}
+
 func (s *PasswordResetTestSuite) TestPasswordReset_VerifyTokenAndSendPassword_ChangeTxErr() {
 	t := s.T()
 	ctx := context.Background()
@@ -174,15 +202,19 @@ func (s *PasswordResetTestSuite) TestPasswordReset_VerifyTokenAndSendPassword_Ch
 		},
 	}
 	err := errors.New("error")
+	newPassword := "new password"
 	s.passwordRepo.On("GetToken", ctx, token).Return(returnToken, nil)
 	s.userRepository.On("ChangePasswordByLogin", ctx, returnToken.Edges.Users.Login,
 		mock.AnythingOfType("string")).Return(s.txMock, err)
+	s.passwordGenerator.On("NewPassword").Return(newPassword, nil)
+
 	errReturn := s.passwordService.VerifyTokenAndSendPassword(ctx, token)
 	assert.Error(t, errReturn)
 	assert.Equal(t, err, errReturn)
 	s.passwordRepo.AssertExpectations(t)
 	s.userRepository.AssertExpectations(t)
 	s.emailClient.AssertExpectations(t)
+	s.passwordRepo.AssertExpectations(t)
 }
 
 func (s *PasswordResetTestSuite) TestPasswordReset_VerifyTokenAndSendPassword_RollbackErr() {
@@ -197,12 +229,14 @@ func (s *PasswordResetTestSuite) TestPasswordReset_VerifyTokenAndSendPassword_Ro
 		},
 	}
 	err := errors.New("error")
+	newPassword := "new password"
 	s.passwordRepo.On("GetToken", ctx, token).Return(returnToken, nil)
+	s.passwordGenerator.On("NewPassword").Return(newPassword, nil)
 	s.userRepository.On("ChangePasswordByLogin", ctx, returnToken.Edges.Users.Login,
 		mock.AnythingOfType("string")).Return(s.txMock, nil)
 	s.txMock.On("Rollback").Return(err)
 	s.emailClient.On("SendNewPassword", returnToken.Edges.Users.Email,
-		returnToken.Edges.Users.Login, mock.AnythingOfType("string")).Return(err)
+		returnToken.Edges.Users.Login, newPassword).Return(err)
 	errReturn := s.passwordService.VerifyTokenAndSendPassword(ctx, token)
 	assert.Error(t, errReturn)
 	assert.Equal(t, err, errReturn)
@@ -210,6 +244,7 @@ func (s *PasswordResetTestSuite) TestPasswordReset_VerifyTokenAndSendPassword_Ro
 	s.userRepository.AssertExpectations(t)
 	s.txMock.AssertExpectations(t)
 	s.emailClient.AssertExpectations(t)
+	s.passwordRepo.AssertExpectations(t)
 }
 
 func (s *PasswordResetTestSuite) TestPasswordReset_VerifyTokenAndSendPassword_SendEmailErr() {
@@ -224,12 +259,14 @@ func (s *PasswordResetTestSuite) TestPasswordReset_VerifyTokenAndSendPassword_Se
 		},
 	}
 	err := errors.New("error")
+	newPassword := "new password"
 	s.passwordRepo.On("GetToken", ctx, token).Return(returnToken, nil)
+	s.passwordGenerator.On("NewPassword").Return(newPassword, nil)
 	s.userRepository.On("ChangePasswordByLogin", ctx, returnToken.Edges.Users.Login,
 		mock.AnythingOfType("string")).Return(s.txMock, nil)
 	s.txMock.On("Rollback").Return(nil)
 	s.emailClient.On("SendNewPassword", returnToken.Edges.Users.Email,
-		returnToken.Edges.Users.Login, mock.AnythingOfType("string")).Return(err)
+		returnToken.Edges.Users.Login, newPassword).Return(err)
 	errReturn := s.passwordService.VerifyTokenAndSendPassword(ctx, token)
 	assert.Error(t, errReturn)
 	assert.Equal(t, err, errReturn)
@@ -237,6 +274,7 @@ func (s *PasswordResetTestSuite) TestPasswordReset_VerifyTokenAndSendPassword_Se
 	s.userRepository.AssertExpectations(t)
 	s.txMock.AssertExpectations(t)
 	s.emailClient.AssertExpectations(t)
+	s.passwordRepo.AssertExpectations(t)
 }
 
 func (s *PasswordResetTestSuite) TestPasswordReset_VerifyTokenAndSendPassword_CommitErr() {
@@ -251,12 +289,14 @@ func (s *PasswordResetTestSuite) TestPasswordReset_VerifyTokenAndSendPassword_Co
 		},
 	}
 	err := errors.New("error")
+	newPassword := "new password"
 	s.passwordRepo.On("GetToken", ctx, token).Return(returnToken, nil)
+	s.passwordGenerator.On("NewPassword").Return(newPassword, nil)
 	s.userRepository.On("ChangePasswordByLogin", ctx, returnToken.Edges.Users.Login,
 		mock.AnythingOfType("string")).Return(s.txMock, nil)
 	s.txMock.On("Commit").Return(err)
 	s.emailClient.On("SendNewPassword", returnToken.Edges.Users.Email,
-		returnToken.Edges.Users.Login, mock.AnythingOfType("string")).Return(nil)
+		returnToken.Edges.Users.Login, newPassword).Return(nil)
 	errReturn := s.passwordService.VerifyTokenAndSendPassword(ctx, token)
 	assert.Error(t, errReturn)
 	assert.Equal(t, err, errReturn)
@@ -264,6 +304,7 @@ func (s *PasswordResetTestSuite) TestPasswordReset_VerifyTokenAndSendPassword_Co
 	s.userRepository.AssertExpectations(t)
 	s.txMock.AssertExpectations(t)
 	s.emailClient.AssertExpectations(t)
+	s.passwordRepo.AssertExpectations(t)
 }
 
 func (s *PasswordResetTestSuite) TestPasswordReset_VerifyTokenAndSendPassword_DeleteTokenErr() {
@@ -277,12 +318,14 @@ func (s *PasswordResetTestSuite) TestPasswordReset_VerifyTokenAndSendPassword_De
 			Users: &ent.User{Login: "login"},
 		},
 	}
+	newPassword := "new password"
 	s.passwordRepo.On("GetToken", ctx, token).Return(returnToken, nil)
+	s.passwordGenerator.On("NewPassword").Return(newPassword, nil)
 	s.userRepository.On("ChangePasswordByLogin", ctx, returnToken.Edges.Users.Login,
 		mock.AnythingOfType("string")).Return(s.txMock, nil)
 	s.txMock.On("Commit").Return(nil)
 	s.emailClient.On("SendNewPassword", returnToken.Edges.Users.Email,
-		returnToken.Edges.Users.Login, mock.AnythingOfType("string")).Return(nil)
+		returnToken.Edges.Users.Login, newPassword).Return(nil)
 	s.passwordRepo.On("DeleteToken", ctx, token).Return(errors.New("error"))
 	errReturn := s.passwordService.VerifyTokenAndSendPassword(ctx, token)
 	assert.NoError(t, errReturn)
@@ -290,6 +333,7 @@ func (s *PasswordResetTestSuite) TestPasswordReset_VerifyTokenAndSendPassword_De
 	s.userRepository.AssertExpectations(t)
 	s.txMock.AssertExpectations(t)
 	s.emailClient.AssertExpectations(t)
+	s.passwordRepo.AssertExpectations(t)
 }
 
 func (s *PasswordResetTestSuite) TestPasswordReset_VerifyTokenAndSendPassword_OK() {
@@ -303,12 +347,14 @@ func (s *PasswordResetTestSuite) TestPasswordReset_VerifyTokenAndSendPassword_OK
 			Users: &ent.User{Login: "login"},
 		},
 	}
+	newPassword := "new password"
 	s.passwordRepo.On("GetToken", ctx, token).Return(returnToken, nil)
+	s.passwordGenerator.On("NewPassword").Return(newPassword, nil)
 	s.userRepository.On("ChangePasswordByLogin", ctx, returnToken.Edges.Users.Login,
 		mock.AnythingOfType("string")).Return(s.txMock, nil)
 	s.txMock.On("Commit").Return(nil)
 	s.emailClient.On("SendNewPassword", returnToken.Edges.Users.Email,
-		returnToken.Edges.Users.Login, mock.AnythingOfType("string")).Return(nil)
+		returnToken.Edges.Users.Login, newPassword).Return(nil)
 	s.passwordRepo.On("DeleteToken", ctx, token).Return(nil)
 	errReturn := s.passwordService.VerifyTokenAndSendPassword(ctx, token)
 	assert.NoError(t, errReturn)
@@ -316,4 +362,5 @@ func (s *PasswordResetTestSuite) TestPasswordReset_VerifyTokenAndSendPassword_OK
 	s.userRepository.AssertExpectations(t)
 	s.txMock.AssertExpectations(t)
 	s.emailClient.AssertExpectations(t)
+	s.passwordRepo.AssertExpectations(t)
 }
