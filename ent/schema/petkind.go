@@ -15,7 +15,6 @@ type PetKind struct {
 // Fields of the Kind.
 func (PetKind) Fields() []ent.Field {
 	return []ent.Field{
-		field.Int("id").Unique(),
 		field.String("name").Unique(),
 	}
 }
