@@ -9,6 +9,8 @@ import (
 	"strconv"
 	"time"
 
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/utils"
+
 	"entgo.io/ent/dialect"
 	entsql "entgo.io/ent/dialect/sql"
 	"github.com/go-openapi/loads"
@@ -72,6 +74,16 @@ func main() {
 	if err != nil {
 		logger.Error("error loading swagger spec", zap.Error(err))
 		return
+	}
+
+	passwordLength := getEnv("PASSWORD_LENGTH", "8")
+	passwordLengthInt, err := strconv.Atoi(passwordLength)
+	if err != nil {
+		logger.Fatal("error parsing password length", zap.Error(err))
+	}
+	passwordGenerator, err := utils.NewPasswordGenerator(passwordLengthInt)
+	if err != nil {
+		logger.Fatal("error creating password generator", zap.Error(err))
 	}
 
 	emailSenderServerHost := os.Getenv("EMAIL_SENDER_SERVER_HOST")
@@ -139,7 +151,8 @@ func main() {
 
 	userRepository := repositories.NewUserRepository(entClient)
 	ttl := time.Duration(passwordResetExpirationMinutesInt) * time.Minute
-	passwordService := services.NewPasswordResetService(mailSendClient, userRepository, passwordRepo, logger, &ttl)
+	passwordService := services.NewPasswordResetService(mailSendClient, userRepository, passwordRepo, logger,
+		&ttl, passwordGenerator)
 	passwordResetHandler := handlers.NewPasswordReset(
 		logger,
 		passwordService,
