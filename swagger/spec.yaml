@@ -856,7 +856,7 @@ paths:
             $ref: "#/definitions/PetSize"
       responses:
         201:
-          description: Pet size created
+          description: Pet kind created
           schema:
             $ref: "#/definitions/PetSizeResponse"
         default:
@@ -1015,6 +1015,101 @@ paths:
           schema:
             $ref: "#/definitions/Error"
 
+  /pet_kind:
+    get:
+      summary: Get all pet kinds
+      tags:
+        - PetKind
+      operationId: GetAllPetKinds
+      responses:
+        200:
+          description: Success
+          schema:
+            $ref: "#/definitions/ListOfPetKinds"
+        default:
+          description: Unexpected error.
+          schema:
+            $ref: "#/definitions/Error" 
+    post:
+      summary: Register a new pet kind
+      tags:
+        - PetKind
+      operationId: CreateNewPetKind
+      consumes:
+        - application/json
+      parameters:
+        - name: newPetKind
+          in: body
+          description: Create a new pet kind
+          required: true
+          schema:
+            $ref: "#/definitions/PetKind"
+      responses:
+        201:
+          description: Pet size created
+          schema:
+            $ref: "#/definitions/PetKindResponse"
+        default:
+          description: Unexpected error.
+          schema:
+            $ref: "#/definitions/Error"
+  /pet_kind/{petKindId}:
+    parameters:
+      - name: petKindId
+        in: path
+        required: true
+        description: pet kind id
+        type: integer
+    get:
+      summary: Get pet kind by id
+      tags:
+        - PetKind
+      operationId: GetPetKind
+      responses:
+        200:
+          description: Pet kind has been found
+          schema:
+            $ref: "#/definitions/PetKindResponse"
+        default:
+          description: Unexpected error.
+          schema:
+            $ref: "#/definitions/Error"
+    delete:
+      summary: Delete pet kind by id
+      tags:
+        - PetKind
+      operationId: DeletePetKind
+      responses:
+        200:
+          description: Pet kind has been deleted
+          schema:
+            type: string
+        default:
+          description: Unexpected error.
+          schema:
+            $ref: "#/definitions/Error"
+    put:
+      summary: Edit pet kind by id
+      tags:
+        - PetKind
+      operationId: EditPetKind
+      parameters:
+        - name: EditPetKind
+          in: body
+          description: Edit an pet kind
+          required: true
+          schema:
+            $ref: "#/definitions/PetKind"
+      responses:
+        200:
+          description: Pet kind edited
+          schema:
+            $ref: "#/definitions/PetKindResponse"
+        default:
+          description: Unexpected error.
+          schema:
+            $ref: "#/definitions/Error"
+
   /registration_confirm/:
     post:
       summary: Create registration confirm link by login.
@@ -1062,7 +1157,7 @@ definitions:
   PetKind:
     type: object
     required:
-      - id
+      - name
     properties:
       id:
         type: integer
@@ -1080,6 +1175,22 @@ definitions:
             type: string
           message:
             type: string
+
+  ListOfPetKinds:
+    type: array
+    items:
+      $ref: "#/definitions/PetKindResponse"
+  PetKindResponse:
+    type: object
+    required:
+      - id
+      - name
+    properties:
+      id:
+        type: integer
+      name:
+        type: string
+
   PatchKind:
     type: object
     description: Patch task object (changing kind properties)

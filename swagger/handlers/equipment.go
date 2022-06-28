@@ -185,7 +185,7 @@ func mapEquipmentResponse(eq *ent.Equipment) (*models.EquipmentResponse, error) 
 	var petKinds []*models.PetKind
 	for _, petKindEdge := range eq.Edges.PetKinds {
 		petKindID := int64(petKindEdge.ID)
-		petKind := models.PetKind{ID: &petKindID, Name: petKindEdge.Name}
+		petKind := models.PetKind{ID: petKindID, Name: &petKindEdge.Name}
 		petKinds = append(petKinds, &petKind)
 	}
 
