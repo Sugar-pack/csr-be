@@ -14,6 +14,7 @@ import (
 
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent"
 	repomock "git.epam.com/epm-lstr/epm-lstr-lc/be/internal/mocks/repositories"
+	servicesmock "git.epam.com/epm-lstr/epm-lstr-lc/be/internal/mocks/services"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/models"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/restapi/operations/equipment"
 )
@@ -23,6 +24,7 @@ type EquipmentTestSuite struct {
 	logger        *zap.Logger
 	equipmentRepo *repomock.EquipmentRepository
 	equipment     *Equipment
+	fileManager   *servicesmock.FileManager
 }
 
 func InvalidEquipment(t *testing.T) *ent.Equipment {
@@ -41,7 +43,11 @@ func ValidEquipment(t *testing.T) *ent.Equipment {
 		Edges: ent.EquipmentEdges{
 			Kind:   &ent.Kind{},
 			Status: &ent.Statuses{},
-			Photo:  &ent.Photo{},
+			Photo: &ent.Photo{
+				ID:       "photoid",
+				URL:      "localhost:8080/api/photoid",
+				FileName: "photoid.jpg",
+			},
 		},
 	}
 }
@@ -54,6 +60,7 @@ func (s *EquipmentTestSuite) SetupTest() {
 	s.logger = zap.NewNop()
 	s.equipmentRepo = &repomock.EquipmentRepository{}
 	s.equipment = NewEquipment(s.logger)
+	s.fileManager = &servicesmock.FileManager{}
 }
 
 func (s *EquipmentTestSuite) TestEquipment_PostEquipmentFunc_RepoErr() {
@@ -221,7 +228,7 @@ func (s *EquipmentTestSuite) TestEquipment_DeleteEquipmentFunc_RepoErr() {
 	request := http.Request{}
 	ctx := request.Context()
 
-	handlerFunc := s.equipment.DeleteEquipmentFunc(s.equipmentRepo)
+	handlerFunc := s.equipment.DeleteEquipmentFunc(s.equipmentRepo, s.fileManager)
 	equipmentId := int64(1)
 	data := equipment.DeleteEquipmentParams{
 		HTTPRequest: &request,
@@ -246,7 +253,7 @@ func (s *EquipmentTestSuite) TestEquipment_DeleteEquipmentFunc_OK() {
 	request := http.Request{}
 	ctx := request.Context()
 
-	handlerFunc := s.equipment.DeleteEquipmentFunc(s.equipmentRepo)
+	handlerFunc := s.equipment.DeleteEquipmentFunc(s.equipmentRepo, s.fileManager)
 	equipmentId := int64(1)
 	data := equipment.DeleteEquipmentParams{
 		HTTPRequest: &request,
@@ -257,6 +264,7 @@ func (s *EquipmentTestSuite) TestEquipment_DeleteEquipmentFunc_OK() {
 	s.equipmentRepo.On("EquipmentByID", ctx, int(equipmentId)).Return(equipmentToReturn, nil)
 	s.equipmentRepo.On("DeleteEquipmentByID", ctx, int(equipmentId)).Return(nil)
 	s.equipmentRepo.On("DeleteEquipmentPhoto", ctx, equipmentToReturn.Edges.Photo.ID).Return(nil)
+	s.fileManager.On("DeleteFile", equipmentToReturn.Edges.Photo.FileName).Return(nil)
 
 	resp := handlerFunc(data)
 	responseRecorder := httptest.NewRecorder()
