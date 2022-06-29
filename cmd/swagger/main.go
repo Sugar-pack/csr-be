@@ -67,6 +67,9 @@ func main() {
 	m, err := migrate.NewWithDatabaseInstance(
 		"file://db/migrations",
 		"csr", driver)
+	if err != nil {
+		logger.Fatal("migration instance failed", zap.Error(err))
+	}
 	if err := m.Up(); err != nil {
 		if err != migrate.ErrNoChange {
 			logger.Fatal("migration failed", zap.Error(err))
