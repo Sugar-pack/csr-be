@@ -4,8 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"github.com/golang-migrate/migrate/v4"
-	"github.com/golang-migrate/migrate/v4/database/postgres"
 	"log"
 	"os"
 	"strconv"
@@ -59,23 +57,23 @@ func main() {
 		logger.Fatal("failed creating schema resources", zap.Error(err))
 	}
 
-	driver, err := postgres.WithInstance(db, &postgres.Config{})
-	if err != nil {
-		logger.Fatal("migration driver instance failed", zap.Error(err))
-	}
-
-	m, err := migrate.NewWithDatabaseInstance(
-		"file://db/migrations",
-		"csr", driver)
-	if err != nil {
-		logger.Fatal("migration instance failed", zap.Error(err))
-	}
-	if err := m.Up(); err != nil {
-		if err != migrate.ErrNoChange {
-			logger.Fatal("migration failed", zap.Error(err))
-		}
-		logger.Error("migration error", zap.Error(err))
-	}
+	//driver, err := postgres.WithInstance(db, &postgres.Config{})
+	//if err != nil {
+	//	logger.Fatal("migration driver instance failed", zap.Error(err))
+	//}
+	//
+	//m, err := migrate.NewWithDatabaseInstance(
+	//	"file://db/migrations",
+	//	"csr", driver)
+	//if err != nil {
+	//	logger.Fatal("migration instance failed", zap.Error(err))
+	//}
+	//if err := m.Up(); err != nil {
+	//	if err != migrate.ErrNoChange {
+	//		logger.Fatal("migration failed", zap.Error(err))
+	//	}
+	//	logger.Error("migration error", zap.Error(err))
+	//}
 
 	swaggerSpec, err := loads.Analyzed(restapi.SwaggerJSON, "")
 	if err != nil {
