@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"errors"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/services"
 	"net/http"
 
 	"github.com/go-openapi/runtime/middleware"
@@ -62,7 +63,8 @@ func (c Equipment) GetEquipmentFunc(repository repositories.EquipmentRepository)
 	}
 }
 
-func (c Equipment) DeleteEquipmentFunc(repository repositories.EquipmentRepository) equipment.DeleteEquipmentHandlerFunc {
+func (c Equipment) DeleteEquipmentFunc(repository repositories.EquipmentRepository,
+	filesManager services.FileManager) equipment.DeleteEquipmentHandlerFunc {
 	return func(s equipment.DeleteEquipmentParams) middleware.Responder {
 		ctx := s.HTTPRequest.Context()
 		eq, err := repository.EquipmentByID(ctx, int(s.EquipmentID))
@@ -83,8 +85,11 @@ func (c Equipment) DeleteEquipmentFunc(repository repositories.EquipmentReposito
 
 		if err := repository.DeleteEquipmentPhoto(ctx, eq.Edges.Photo.ID); err != nil {
 			c.logger.Error("Error while deleting photo from db", zap.Error(err))
-		} else if err := deletePhotoFile(eq.Edges.Photo.ID); err != nil {
-			c.logger.Error("Error while deleting photo file", zap.Error(err))
+		} else {
+			err = filesManager.DeleteFile(eq.Edges.Photo.FileName)
+			if err != nil {
+				c.logger.Error("Error while deleting photo file", zap.Error(err))
+			}
 		}
 
 		return equipment.NewDeleteEquipmentOK().WithPayload("Equipment deleted")

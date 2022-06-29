@@ -436,6 +436,10 @@ paths:
           description: Equipment photo uploaded
           schema:
             $ref: "#/definitions/CreateNewPhotoResponse"
+        400:
+          description: Bad request
+          schema:
+            $ref: "#/definitions/Error"
         default:
           description: Unexpected error.
           schema:
@@ -473,7 +477,7 @@ paths:
         200:
           description: Equipment photo has been deleted
           schema:
-            $ref: "#/definitions/DeletePhotoResponse"
+            type: string
         default:
           description: Unexpected error.
           schema:
@@ -1554,13 +1558,8 @@ definitions:
         type: string
       url:
         type: string
-  DeletePhotoResponse:
-    type: object
-    required:
-      - data
-    properties:
-      data:
-        $ref: "#/definitions/Photo"
+      fileName:
+        type: string
   CreateNewPhoto:
     type: object
     required:

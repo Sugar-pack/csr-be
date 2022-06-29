@@ -12,8 +12,9 @@ type Photo struct {
 
 func (Photo) Fields() []ent.Field {
 	return []ent.Field{
-		field.String("id").Default("unknown"),
+		field.String("id").Unique(),
 		field.String("url").Default("unknown"),
+		field.String("fileName").Default("unknown.jpg"),
 	}
 }
 

@@ -146,7 +146,8 @@ func main() {
 
 	photosServerURL := getEnv("PHOTOS_SERVER_URL", "http://localhost:8080/")
 	photosFolder := getEnv("PHOTOS_FOLDER", "equipments_photos")
-	photosHandler := handlers.NewPhoto(photosFolder, photosServerURL, logger)
+	photosHandler := handlers.NewPhoto(photosServerURL, logger)
+	fileManager := services.NewFileManager(photosFolder, logger)
 
 	statusHandler := handlers.NewStatus(logger)
 	activeAreasHandler := handlers.NewActiveArea(logger)
@@ -216,16 +217,16 @@ func main() {
 	equipmentRepository := repositories.NewEquipmentRepository(entClient)
 	api.EquipmentCreateNewEquipmentHandler = equipmentHandler.PostEquipmentFunc(equipmentRepository)
 	api.EquipmentGetEquipmentHandler = equipmentHandler.GetEquipmentFunc(equipmentRepository)
-	api.EquipmentDeleteEquipmentHandler = equipmentHandler.DeleteEquipmentFunc(equipmentRepository)
+	api.EquipmentDeleteEquipmentHandler = equipmentHandler.DeleteEquipmentFunc(equipmentRepository, fileManager)
 	api.EquipmentGetAllEquipmentHandler = equipmentHandler.ListEquipmentFunc(equipmentRepository)
 	api.EquipmentEditEquipmentHandler = equipmentHandler.EditEquipmentFunc(equipmentRepository)
 	api.EquipmentFindEquipmentHandler = equipmentHandler.FindEquipmentFunc(equipmentRepository)
 
 	photoRepository := repositories.NewPhotoRepository(entClient)
-	api.PhotosCreateNewPhotoHandler = photosHandler.CreateNewPhotoFunc(photoRepository)
-	api.PhotosGetPhotoHandler = photosHandler.GetPhotoFunc(photoRepository)
-	api.PhotosDeletePhotoHandler = photosHandler.DeletePhotoFunc(photoRepository)
-	api.PhotosDownloadPhotoHandler = photosHandler.DownloadPhotoFunc(photoRepository)
+	api.PhotosCreateNewPhotoHandler = photosHandler.CreateNewPhotoFunc(photoRepository, fileManager)
+	api.PhotosGetPhotoHandler = photosHandler.GetPhotoFunc(photoRepository, fileManager)
+	api.PhotosDeletePhotoHandler = photosHandler.DeletePhotoFunc(photoRepository, fileManager)
+	api.PhotosDownloadPhotoHandler = photosHandler.DownloadPhotoFunc(photoRepository, fileManager)
 
 	activeAreasRepository := repositories.NewActiveAreaRepository(entClient)
 	api.ActiveAreasGetAllActiveAreasHandler = activeAreasHandler.GetActiveAreasFunc(activeAreasRepository)
