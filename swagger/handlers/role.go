@@ -22,7 +22,7 @@ func NewRole(logger *zap.Logger) *Role {
 }
 
 func (r Role) GetRolesFunc(repository repositories.RoleRepository) roles.GetRolesHandlerFunc {
-	return func(s roles.GetRolesParams) middleware.Responder {
+	return func(s roles.GetRolesParams, access interface{}) middleware.Responder {
 		ctx := s.HTTPRequest.Context()
 		e, err := repository.GetRoles(ctx)
 		if err != nil {

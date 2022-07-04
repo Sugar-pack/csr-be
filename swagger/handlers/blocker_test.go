@@ -46,7 +46,8 @@ func (s *BlockerTestSuite) TestBlocker_BlockUserFunc_RepoErr() {
 	s.blockerRepository.On("SetIsBlockedUser", ctx, userID, true).Return(err)
 
 	handlerFunc := s.blocker.BlockUserFunc(s.blockerRepository)
-	resp := handlerFunc.Handle(data)
+	access := "dummy access"
+	resp := handlerFunc.Handle(data, access)
 
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
@@ -69,7 +70,8 @@ func (s *BlockerTestSuite) TestBlocker_BlockUserFunc_OK() {
 	s.blockerRepository.On("SetIsBlockedUser", ctx, userID, true).Return(nil)
 
 	handlerFunc := s.blocker.BlockUserFunc(s.blockerRepository)
-	resp := handlerFunc.Handle(data)
+	access := "dummy access"
+	resp := handlerFunc.Handle(data, access)
 
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
@@ -92,7 +94,8 @@ func (s *BlockerTestSuite) TestBlocker_UnblockUserFunc_RepoErr() {
 	s.blockerRepository.On("SetIsBlockedUser", ctx, userID, false).Return(err)
 
 	handlerFunc := s.blocker.UnblockUserFunc(s.blockerRepository)
-	resp := handlerFunc.Handle(data)
+	access := "dummy access"
+	resp := handlerFunc.Handle(data, access)
 
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
@@ -114,7 +117,8 @@ func (s *BlockerTestSuite) TestBlocker_UnblockUserFunc_OK() {
 	s.blockerRepository.On("SetIsBlockedUser", ctx, userID, false).Return(nil)
 
 	handlerFunc := s.blocker.UnblockUserFunc(s.blockerRepository)
-	resp := handlerFunc.Handle(data)
+	access := "dummy access"
+	resp := handlerFunc.Handle(data, access)
 
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()

@@ -11,11 +11,12 @@ import (
 	"github.com/stretchr/testify/suite"
 	"gotest.tools/assert"
 
+	"go.uber.org/zap"
+
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent"
 	repomock "git.epam.com/epm-lstr/epm-lstr-lc/be/internal/mocks/repositories"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/models"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/restapi/operations/pet_size"
-	"go.uber.org/zap"
 )
 
 type PetSizeTestSuite struct {
@@ -83,7 +84,8 @@ func (s *PetSizeTestSuite) TestPetSize_CreatePetSizeFunc_OK() {
 
 	s.petSizeRepo.On("CreatePetSize", ctx, petSizeToAdd).Return(petSizeToReturn, nil)
 
-	resp := handlerFunc(data)
+	access := "dummy access"
+	resp := handlerFunc(data, access)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
@@ -120,7 +122,8 @@ func (s *PetSizeTestSuite) TestPetSize_CreatePetSizeFunc_ErrFromRepo() {
 
 	s.petSizeRepo.On("CreatePetSize", ctx, petSizeToAdd).Return(nil, err)
 
-	resp := handlerFunc(data)
+	access := "dummy access"
+	resp := handlerFunc(data, access)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
@@ -148,7 +151,8 @@ func (s *PetSizeTestSuite) TestPetSize_CreatePetSizeFunc_ErrRespNil() {
 
 	s.petSizeRepo.On("CreatePetSize", ctx, petSizeToAdd).Return(toReturn, nil)
 
-	resp := handlerFunc(data)
+	access := "dummy access"
+	resp := handlerFunc(data, access)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
@@ -170,7 +174,8 @@ func (s *PetSizeTestSuite) TestPetSize_GetAllPetSizeFunc_OK() {
 	}
 	s.petSizeRepo.On("AllPetSizes", ctx).Return(petSizeToReturn, nil)
 
-	resp := handlerFunc(data)
+	access := "dummy access"
+	resp := handlerFunc(data, access)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
@@ -201,7 +206,8 @@ func (s *PetSizeTestSuite) TestPetSize_GetAllPetSizeFunc_ErrFromRepo() {
 
 	s.petSizeRepo.On("AllPetSizes", ctx).Return(nil, err)
 
-	resp := handlerFunc(data)
+	access := "dummy access"
+	resp := handlerFunc(data, access)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
@@ -220,7 +226,8 @@ func (s *PetSizeTestSuite) TestPetSize_GetAllPetSizeFunc_ErrRespNil() {
 	}
 	s.petSizeRepo.On("AllPetSizes", ctx).Return(toReturn, nil)
 
-	resp := handlerFunc(data)
+	access := "dummy access"
+	resp := handlerFunc(data, access)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
@@ -242,7 +249,8 @@ func (s *PetSizeTestSuite) TestPetSize_DeletePetSizeFunc_Err() {
 
 	s.petSizeRepo.On("DeletePetSizeByID", ctx, idToDelete).Return(err)
 
-	resp := handlerFunc(data)
+	access := "dummy access"
+	resp := handlerFunc(data, access)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
@@ -262,7 +270,8 @@ func (s *PetSizeTestSuite) TestPetSize_DeletePetSizeFunc_OK() {
 	}
 	s.petSizeRepo.On("DeletePetSizeByID", ctx, idToDelete).Return(nil)
 
-	resp := handlerFunc(data)
+	access := "dummy access"
+	resp := handlerFunc(data, access)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
@@ -283,7 +292,8 @@ func (s *PetSizeTestSuite) TestPetSize_GetPetSizeByIDFunc_OK() {
 	petSizeToReturn := ValidPetSize(t)
 	s.petSizeRepo.On("PetSizeByID", ctx, idToGet).Return(petSizeToReturn, nil)
 
-	resp := handlerFunc(data)
+	access := "dummy access"
+	resp := handlerFunc(data, access)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
@@ -314,7 +324,8 @@ func (s *PetSizeTestSuite) TestPetSize_GetPetSizeByIDFunc_ErrFromRepo() {
 	err := errors.New("test")
 	s.petSizeRepo.On("PetSizeByID", ctx, idToGet).Return(nil, err)
 
-	resp := handlerFunc(data)
+	access := "dummy access"
+	resp := handlerFunc(data, access)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
@@ -334,7 +345,8 @@ func (s *PetSizeTestSuite) TestPetSize_GetPetSizeByIDFunc_ErrRespNil() {
 	}
 	s.petSizeRepo.On("PetSizeByID", ctx, idToGet).Return(nil, nil)
 
-	resp := handlerFunc(data)
+	access := "dummy access"
+	resp := handlerFunc(data, access)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
@@ -362,7 +374,8 @@ func (s *PetSizeTestSuite) TestPetSize_EditPetSizeFunc_OK() {
 
 	s.petSizeRepo.On("UpdatePetSizeByID", ctx, int(petSizeToUpdate.ID), petSizeToUpdate).Return(petSizeToReturn, nil)
 
-	resp := handlerFunc(data)
+	access := "dummy access"
+	resp := handlerFunc(data, access)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
@@ -396,7 +409,8 @@ func (s *PetSizeTestSuite) TestPetSize_EditPetSizeFunc_ErrRespNil() {
 	}
 	s.petSizeRepo.On("UpdatePetSizeByID", ctx, int(petSizeToUpdate.ID), petSizeToUpdate).Return(nil, nil)
 
-	resp := handlerFunc(data)
+	access := "dummy access"
+	resp := handlerFunc(data, access)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
@@ -422,7 +436,8 @@ func (s *PetSizeTestSuite) TestPetSize_EditPetSizeFunc_ErrFromRepo() {
 	err := errors.New("test")
 	s.petSizeRepo.On("UpdatePetSizeByID", ctx, int(petSizeToUpdate.ID), petSizeToUpdate).Return(nil, err)
 
-	resp := handlerFunc(data)
+	access := "dummy access"
+	resp := handlerFunc(data, access)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)

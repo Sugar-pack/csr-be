@@ -23,7 +23,7 @@ func NewKind(logger *zap.Logger) *Kind {
 }
 
 func (c *Kind) CreateNewKindFunc(repository repositories.KindRepository) kinds.CreateNewKindHandlerFunc {
-	return func(s kinds.CreateNewKindParams) middleware.Responder {
+	return func(s kinds.CreateNewKindParams, access interface{}) middleware.Responder {
 		ctx := s.HTTPRequest.Context()
 		createdKind, err := repository.CreateKind(ctx, *s.NewKind)
 		if err != nil {
@@ -38,7 +38,7 @@ func (c *Kind) CreateNewKindFunc(repository repositories.KindRepository) kinds.C
 }
 
 func (c *Kind) GetAllKindsFunc(repository repositories.KindRepository) kinds.GetAllKindsHandlerFunc {
-	return func(s kinds.GetAllKindsParams) middleware.Responder {
+	return func(s kinds.GetAllKindsParams, access interface{}) middleware.Responder {
 		ctx := s.HTTPRequest.Context()
 		allKinds, err := repository.AllKind(ctx)
 		if err != nil {
@@ -55,7 +55,7 @@ func (c *Kind) GetAllKindsFunc(repository repositories.KindRepository) kinds.Get
 }
 
 func (c *Kind) GetKindByIDFunc(repository repositories.KindRepository) kinds.GetKindByIDHandlerFunc {
-	return func(s kinds.GetKindByIDParams) middleware.Responder {
+	return func(s kinds.GetKindByIDParams, access interface{}) middleware.Responder {
 		ctx := s.HTTPRequest.Context()
 		kind, err := repository.KindByID(ctx, int(s.KindID))
 		if err != nil {
@@ -70,7 +70,7 @@ func (c *Kind) GetKindByIDFunc(repository repositories.KindRepository) kinds.Get
 }
 
 func (c *Kind) DeleteKindFunc(repository repositories.KindRepository) kinds.DeleteKindHandlerFunc {
-	return func(s kinds.DeleteKindParams) middleware.Responder {
+	return func(s kinds.DeleteKindParams, access interface{}) middleware.Responder {
 		ctx := s.HTTPRequest.Context()
 		err := repository.DeleteKindByID(ctx, int(s.KindID))
 		if err != nil {
@@ -83,7 +83,7 @@ func (c *Kind) DeleteKindFunc(repository repositories.KindRepository) kinds.Dele
 }
 
 func (c *Kind) PatchKindFunc(repository repositories.KindRepository) kinds.PatchKindHandlerFunc {
-	return func(s kinds.PatchKindParams) middleware.Responder {
+	return func(s kinds.PatchKindParams, access interface{}) middleware.Responder {
 		ctx := s.HTTPRequest.Context()
 		updatedKind, err := repository.UpdateKind(ctx, int(s.KindID), *s.PatchKind)
 		if err != nil {

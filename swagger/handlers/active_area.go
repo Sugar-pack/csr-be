@@ -22,7 +22,7 @@ func NewActiveArea(logger *zap.Logger) *ActiveArea {
 }
 
 func (area ActiveArea) GetActiveAreasFunc(repository repositories.ActiveAreaRepository) active_areas.GetAllActiveAreasHandlerFunc {
-	return func(a active_areas.GetAllActiveAreasParams) middleware.Responder {
+	return func(a active_areas.GetAllActiveAreasParams, access interface{}) middleware.Responder {
 		ctx := a.HTTPRequest.Context()
 		e, err := repository.AllActiveAreas(ctx)
 		if err != nil {

@@ -54,7 +54,8 @@ func (s *StatusTestSuite) TestStatus_PostStatus_RepoErr() {
 	s.repository.On("Create", ctx, statusName).Return(nil, err)
 
 	handlerFunc := s.handler.PostStatusFunc(s.repository)
-	resp := handlerFunc.Handle(data)
+	access := "dummy access"
+	resp := handlerFunc.Handle(data, access)
 
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
@@ -81,7 +82,8 @@ func (s *StatusTestSuite) TestStatus_PostStatus_OK() {
 	s.repository.On("Create", ctx, statusName).Return(statusToReturn, nil)
 
 	handlerFunc := s.handler.PostStatusFunc(s.repository)
-	resp := handlerFunc.Handle(data)
+	access := "dummy access"
+	resp := handlerFunc.Handle(data, access)
 
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
@@ -110,7 +112,8 @@ func (s *StatusTestSuite) TestStatus_GetStatuses_RepoErr() {
 	s.repository.On("GetAll", ctx).Return(nil, err)
 
 	handlerFunc := s.handler.GetStatusesFunc(s.repository)
-	resp := handlerFunc.Handle(data)
+	access := "dummy access"
+	resp := handlerFunc.Handle(data, access)
 
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
@@ -135,7 +138,8 @@ func (s *StatusTestSuite) TestStatus_GetStatuses_OK() {
 	s.repository.On("GetAll", ctx).Return(statusesToReturn, nil)
 
 	handlerFunc := s.handler.GetStatusesFunc(s.repository)
-	resp := handlerFunc.Handle(data)
+	access := "dummy access"
+	resp := handlerFunc.Handle(data, access)
 
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
@@ -167,7 +171,8 @@ func (s *StatusTestSuite) TestStatus_GetStatus_RepoErr() {
 	s.repository.On("Get", ctx, statusID).Return(nil, err)
 
 	handlerFunc := s.handler.GetStatusFunc(s.repository)
-	resp := handlerFunc.Handle(data)
+	access := "dummy access"
+	resp := handlerFunc.Handle(data, access)
 
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
@@ -194,7 +199,8 @@ func (s *StatusTestSuite) TestStatus_GetStatus_OK() {
 	s.repository.On("Create", ctx, statusName).Return(statusToReturn, nil)
 
 	handlerFunc := s.handler.PostStatusFunc(s.repository)
-	resp := handlerFunc.Handle(data)
+	access := "dummy access"
+	resp := handlerFunc.Handle(data, access)
 
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
@@ -225,7 +231,8 @@ func (s *StatusTestSuite) TestStatus_DeleteStatus_RepoErr() {
 	s.repository.On("Delete", ctx, statusID).Return(nil, err)
 
 	handlerFunc := s.handler.DeleteStatusFunc(s.repository)
-	resp := handlerFunc.Handle(data)
+	access := "dummy access"
+	resp := handlerFunc.Handle(data, access)
 
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
@@ -250,7 +257,8 @@ func (s *StatusTestSuite) TestStatus_DeleteStatus_OK() {
 	s.repository.On("Delete", ctx, statusID).Return(statusToReturn, nil)
 
 	handlerFunc := s.handler.DeleteStatusFunc(s.repository)
-	resp := handlerFunc.Handle(data)
+	access := "dummy access"
+	resp := handlerFunc.Handle(data, access)
 
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()

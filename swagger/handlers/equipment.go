@@ -2,8 +2,9 @@ package handlers
 
 import (
 	"errors"
-	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/services"
 	"net/http"
+
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/services"
 
 	"github.com/go-openapi/runtime/middleware"
 	"go.uber.org/zap"
@@ -25,7 +26,7 @@ func NewEquipment(logger *zap.Logger) *Equipment {
 }
 
 func (c Equipment) PostEquipmentFunc(repository repositories.EquipmentRepository) equipment.CreateNewEquipmentHandlerFunc {
-	return func(s equipment.CreateNewEquipmentParams) middleware.Responder {
+	return func(s equipment.CreateNewEquipmentParams, access interface{}) middleware.Responder {
 		ctx := s.HTTPRequest.Context()
 		eq, err := repository.CreateEquipment(ctx, *s.NewEquipment)
 		if err != nil {
@@ -45,7 +46,7 @@ func (c Equipment) PostEquipmentFunc(repository repositories.EquipmentRepository
 }
 
 func (c Equipment) GetEquipmentFunc(repository repositories.EquipmentRepository) equipment.GetEquipmentHandlerFunc {
-	return func(s equipment.GetEquipmentParams) middleware.Responder {
+	return func(s equipment.GetEquipmentParams, access interface{}) middleware.Responder {
 		ctx := s.HTTPRequest.Context()
 		eq, err := repository.EquipmentByID(ctx, int(s.EquipmentID))
 		if err != nil {
@@ -65,7 +66,7 @@ func (c Equipment) GetEquipmentFunc(repository repositories.EquipmentRepository)
 
 func (c Equipment) DeleteEquipmentFunc(repository repositories.EquipmentRepository,
 	filesManager services.FileManager) equipment.DeleteEquipmentHandlerFunc {
-	return func(s equipment.DeleteEquipmentParams) middleware.Responder {
+	return func(s equipment.DeleteEquipmentParams, access interface{}) middleware.Responder {
 		ctx := s.HTTPRequest.Context()
 		eq, err := repository.EquipmentByID(ctx, int(s.EquipmentID))
 		if err != nil {
@@ -97,7 +98,7 @@ func (c Equipment) DeleteEquipmentFunc(repository repositories.EquipmentReposito
 }
 
 func (c Equipment) ListEquipmentFunc(repository repositories.EquipmentRepository) equipment.GetAllEquipmentHandlerFunc {
-	return func(s equipment.GetAllEquipmentParams) middleware.Responder {
+	return func(s equipment.GetAllEquipmentParams, access interface{}) middleware.Responder {
 		ctx := s.HTTPRequest.Context()
 		equipments, err := repository.AllEquipments(ctx)
 		if err != nil {
@@ -125,7 +126,7 @@ func (c Equipment) ListEquipmentFunc(repository repositories.EquipmentRepository
 }
 
 func (c Equipment) EditEquipmentFunc(repository repositories.EquipmentRepository) equipment.EditEquipmentHandlerFunc {
-	return func(s equipment.EditEquipmentParams) middleware.Responder {
+	return func(s equipment.EditEquipmentParams, access interface{}) middleware.Responder {
 		ctx := s.HTTPRequest.Context()
 		eq, err := repository.UpdateEquipmentByID(ctx, int(s.EquipmentID), s.EditEquipment)
 		if err != nil {
@@ -145,7 +146,7 @@ func (c Equipment) EditEquipmentFunc(repository repositories.EquipmentRepository
 }
 
 func (c Equipment) FindEquipmentFunc(EquipmentRepo repositories.EquipmentRepository) equipment.FindEquipmentHandlerFunc {
-	return func(s equipment.FindEquipmentParams) middleware.Responder {
+	return func(s equipment.FindEquipmentParams, access interface{}) middleware.Responder {
 		ctx := s.HTTPRequest.Context()
 		equipmentFilter := *s.FindEquipment
 		foundEquipment, err := EquipmentRepo.EquipmentsByFilter(ctx, equipmentFilter)

@@ -3,11 +3,12 @@ package handlers
 import (
 	"net/http"
 
+	"github.com/go-openapi/runtime/middleware"
+	"go.uber.org/zap"
+
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/models"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/restapi/operations/pet_kind"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/repositories"
-	"github.com/go-openapi/runtime/middleware"
-	"go.uber.org/zap"
 )
 
 type PetKind struct {
@@ -21,7 +22,7 @@ func NewPetKind(logger *zap.Logger) *PetKind {
 }
 
 func (pk PetKind) CreatePetKindFunc(repository repositories.PetKindRepository) pet_kind.CreateNewPetKindHandlerFunc {
-	return func(p pet_kind.CreateNewPetKindParams) middleware.Responder {
+	return func(p pet_kind.CreateNewPetKindParams, access interface{}) middleware.Responder {
 		ctx := p.HTTPRequest.Context()
 		petKind, err := repository.CreatePetKind(ctx, *p.NewPetKind)
 		if err != nil {
@@ -44,7 +45,7 @@ func (pk PetKind) CreatePetKindFunc(repository repositories.PetKindRepository) p
 }
 
 func (pk PetKind) GetAllPetKindFunc(repository repositories.PetKindRepository) pet_kind.GetAllPetKindsHandlerFunc {
-	return func(p pet_kind.GetAllPetKindsParams) middleware.Responder {
+	return func(p pet_kind.GetAllPetKindsParams, access interface{}) middleware.Responder {
 		ctx := p.HTTPRequest.Context()
 		petKinds, err := repository.AllPetKinds(ctx)
 		if err != nil {
@@ -67,7 +68,7 @@ func (pk PetKind) GetAllPetKindFunc(repository repositories.PetKindRepository) p
 }
 
 func (pk PetKind) GetPetKindsByID(repo repositories.PetKindRepository) pet_kind.GetPetKindHandlerFunc {
-	return func(p pet_kind.GetPetKindParams) middleware.Responder {
+	return func(p pet_kind.GetPetKindParams, access interface{}) middleware.Responder {
 		ctx := p.HTTPRequest.Context()
 		petKind, err := repo.PetKindByID(ctx, int(p.PetKindID))
 		if err != nil {
@@ -85,7 +86,7 @@ func (pk PetKind) GetPetKindsByID(repo repositories.PetKindRepository) pet_kind.
 }
 
 func (pk PetKind) DeletePetKindByID(repo repositories.PetKindRepository) pet_kind.DeletePetKindHandlerFunc {
-	return func(p pet_kind.DeletePetKindParams) middleware.Responder {
+	return func(p pet_kind.DeletePetKindParams, access interface{}) middleware.Responder {
 		ctx := p.HTTPRequest.Context()
 		err := repo.DeletePetKindByID(ctx, int(p.PetKindID))
 		if err != nil {
@@ -98,7 +99,7 @@ func (pk PetKind) DeletePetKindByID(repo repositories.PetKindRepository) pet_kin
 }
 
 func (pk PetKind) UpdatePetKindByID(repo repositories.PetKindRepository) pet_kind.EditPetKindHandlerFunc {
-	return func(p pet_kind.EditPetKindParams) middleware.Responder {
+	return func(p pet_kind.EditPetKindParams, access interface{}) middleware.Responder {
 		ctx := p.HTTPRequest.Context()
 		petSize, err := repo.UpdatePetKindByID(ctx, int(p.PetKindID), p.EditPetKind)
 		if err != nil {
