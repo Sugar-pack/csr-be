@@ -580,7 +580,8 @@ func (s *UserTestSuite) TestUser_GetUsersList_RepositoryErr() {
 	err := errors.New("some err")
 	s.userRepository.On("UserList", ctx).Return(nil, err)
 
-	resp := handlerFunc(data)
+	access := "dummy access"
+	resp := handlerFunc(data, access)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
@@ -605,7 +606,8 @@ func (s *UserTestSuite) TestUser_GetUsersList_MapErr() {
 	userList = append(userList, user)
 	s.userRepository.On("UserList", ctx).Return(userList, nil)
 
-	resp := handlerFunc(data)
+	access := "dummy access"
+	resp := handlerFunc(data, access)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
@@ -633,7 +635,8 @@ func (s *UserTestSuite) TestUser_GetUsersList_OK() {
 	userList = append(userList, user)
 	s.userRepository.On("UserList", ctx).Return(userList, nil)
 
-	resp := handlerFunc(data)
+	access := "dummy access"
+	resp := handlerFunc(data, access)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
@@ -664,7 +667,8 @@ func (s *UserTestSuite) TestUser_GetUserById_RepoErr() {
 	err := errors.New("some err")
 	s.userRepository.On("GetUserByID", ctx, userID).Return(nil, err)
 
-	resp := handlerFunc(data)
+	access := "dummy access"
+	resp := handlerFunc(data, access)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
@@ -689,7 +693,8 @@ func (s *UserTestSuite) TestUser_GetUserById_MapErr() {
 	}
 	s.userRepository.On("GetUserByID", ctx, userID).Return(user, nil)
 
-	resp := handlerFunc(data)
+	access := "dummy access"
+	resp := handlerFunc(data, access)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
@@ -717,7 +722,8 @@ func (s *UserTestSuite) TestUser_GetUserById_OK() {
 	}
 	s.userRepository.On("GetUserByID", ctx, userID).Return(user, nil)
 
-	resp := handlerFunc(data)
+	access := "dummy access"
+	resp := handlerFunc(data, access)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)

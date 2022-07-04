@@ -3,15 +3,17 @@ package handlers
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"net/http"
+
+	"github.com/go-openapi/runtime"
+	"github.com/go-openapi/runtime/middleware"
+	"go.uber.org/zap"
+
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/models"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/restapi/operations/photos"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/repositories"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/services"
-	"github.com/go-openapi/runtime"
-	"github.com/go-openapi/runtime/middleware"
-	"go.uber.org/zap"
-	"io/ioutil"
-	"net/http"
 )
 
 const photoURLPath string = "api/equipment/photos/"
@@ -30,7 +32,7 @@ func NewPhoto(serverURL string, logger *zap.Logger) *Photo {
 
 func (p Photo) CreateNewPhotoFunc(repository repositories.PhotoRepository,
 	fileManager services.FileManager) photos.CreateNewPhotoHandlerFunc {
-	return func(s photos.CreateNewPhotoParams) middleware.Responder {
+	return func(s photos.CreateNewPhotoParams, access interface{}) middleware.Responder {
 		ctx := s.HTTPRequest.Context()
 		// read input file
 		fileBytes, err := ioutil.ReadAll(s.File)
@@ -96,7 +98,7 @@ func (p Photo) CreateNewPhotoFunc(repository repositories.PhotoRepository,
 
 func (p Photo) GetPhotoFunc(repository repositories.PhotoRepository,
 	fileManager services.FileManager) photos.GetPhotoHandlerFunc {
-	return func(s photos.GetPhotoParams) middleware.Responder {
+	return func(s photos.GetPhotoParams, access interface{}) middleware.Responder {
 		return middleware.ResponderFunc(func(w http.ResponseWriter, _ runtime.Producer) {
 			ctx := s.HTTPRequest.Context()
 			photo, err := repository.PhotoByID(ctx, s.PhotoID)
@@ -127,7 +129,7 @@ func (p Photo) GetPhotoFunc(repository repositories.PhotoRepository,
 
 func (p Photo) DownloadPhotoFunc(repository repositories.PhotoRepository,
 	fileManager services.FileManager) photos.DownloadPhotoHandlerFunc {
-	return func(s photos.DownloadPhotoParams) middleware.Responder {
+	return func(s photos.DownloadPhotoParams, access interface{}) middleware.Responder {
 		return middleware.ResponderFunc(func(w http.ResponseWriter, _ runtime.Producer) {
 
 			ctx := s.HTTPRequest.Context()
@@ -160,7 +162,7 @@ func (p Photo) DownloadPhotoFunc(repository repositories.PhotoRepository,
 
 func (p Photo) DeletePhotoFunc(repository repositories.PhotoRepository,
 	fileManager services.FileManager) photos.DeletePhotoHandlerFunc {
-	return func(s photos.DeletePhotoParams) middleware.Responder {
+	return func(s photos.DeletePhotoParams, access interface{}) middleware.Responder {
 		ctx := s.HTTPRequest.Context()
 		photo, err := repository.PhotoByID(ctx, s.PhotoID)
 		if err != nil {

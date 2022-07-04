@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
-	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/restapi/operations/photos"
 	"image"
 	"image/jpeg"
 	"log"
@@ -12,6 +11,8 @@ import (
 	"net/http/httptest"
 	"os"
 	"testing"
+
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/restapi/operations/photos"
 
 	"github.com/go-openapi/runtime"
 	"github.com/stretchr/testify/assert"
@@ -65,7 +66,8 @@ func (s *PhotoTestSuite) TestPhoto_CreatePhoto_EmptyFile() {
 	}
 
 	handlerFunc := s.handler.CreateNewPhotoFunc(s.repository, s.fileManager)
-	resp := handlerFunc.Handle(data)
+	access := "dummy access"
+	resp := handlerFunc.Handle(data, access)
 
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
@@ -107,7 +109,8 @@ func (s *PhotoTestSuite) TestPhoto_CreatePhoto_WrongMimeType() {
 	}
 
 	handlerFunc := s.handler.CreateNewPhotoFunc(s.repository, s.fileManager)
-	resp := handlerFunc.Handle(data)
+	access := "dummy access"
+	resp := handlerFunc.Handle(data, access)
 
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
@@ -169,7 +172,8 @@ func (s *PhotoTestSuite) TestPhoto_CreatePhoto_OK() {
 	s.fileManager.On("BuildFileURL", s.serverURL, s.photoURLPath, id).Return(url, nil)
 
 	handlerFunc := s.handler.CreateNewPhotoFunc(s.repository, s.fileManager)
-	resp := handlerFunc.Handle(data)
+	access := "dummy access"
+	resp := handlerFunc.Handle(data, access)
 
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
@@ -210,7 +214,8 @@ func (s *PhotoTestSuite) TestPhoto_GetPhoto_OK() {
 	s.fileManager.On("ReadFile", fileName).Return([]byte{1, 1, 1}, nil)
 
 	handlerFunc := s.handler.GetPhotoFunc(s.repository, s.fileManager)
-	resp := handlerFunc.Handle(data)
+	access := "dummy access"
+	resp := handlerFunc.Handle(data, access)
 
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
@@ -238,7 +243,8 @@ func (s *PhotoTestSuite) TestPhoto_GetPhoto_RepoErr() {
 	s.repository.On("PhotoByID", ctx, data.PhotoID).Return(nil, errorToReturn)
 
 	handlerFunc := s.handler.GetPhotoFunc(s.repository, s.fileManager)
-	resp := handlerFunc(data)
+	access := "dummy access"
+	resp := handlerFunc(data, access)
 
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
@@ -281,7 +287,8 @@ func (s *PhotoTestSuite) TestPhoto_DownloadPhoto_OK() {
 	s.fileManager.On("ReadFile", fileName).Return(bytesToReturn, nil)
 
 	handlerFunc := s.handler.DownloadPhotoFunc(s.repository, s.fileManager)
-	resp := handlerFunc.Handle(data)
+	access := "dummy access"
+	resp := handlerFunc.Handle(data, access)
 
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
@@ -309,7 +316,8 @@ func (s *PhotoTestSuite) TestPhoto_DeletePhoto_NotExists() {
 	s.repository.On("PhotoByID", ctx, data.PhotoID).Return(nil, errorToReturn)
 
 	handlerFunc := s.handler.DeletePhotoFunc(s.repository, s.fileManager)
-	resp := handlerFunc.Handle(data)
+	access := "dummy access"
+	resp := handlerFunc.Handle(data, access)
 
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
@@ -350,7 +358,8 @@ func (s *PhotoTestSuite) TestPhoto_DeletePhoto_OK() {
 	s.fileManager.On("DeleteFile", fileName).Return(nil)
 
 	handlerFunc := s.handler.DeletePhotoFunc(s.repository, s.fileManager)
-	resp := handlerFunc.Handle(data)
+	access := "dummy access"
+	resp := handlerFunc.Handle(data, access)
 
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()

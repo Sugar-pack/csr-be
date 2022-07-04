@@ -23,7 +23,7 @@ func NewStatus(logger *zap.Logger) *Status {
 }
 
 func (c Status) PostStatusFunc(repository repositories.EquipmentStatusRepository) status.PostStatusHandlerFunc {
-	return func(s status.PostStatusParams) middleware.Responder {
+	return func(s status.PostStatusParams, access interface{}) middleware.Responder {
 		ctx := s.HTTPRequest.Context()
 		name := s.Name.Name
 		createdStatus, err := repository.Create(ctx, *name)
@@ -40,7 +40,7 @@ func (c Status) PostStatusFunc(repository repositories.EquipmentStatusRepository
 }
 
 func (c Status) GetStatusesFunc(repository repositories.EquipmentStatusRepository) status.GetStatusesHandlerFunc {
-	return func(s status.GetStatusesParams) middleware.Responder {
+	return func(s status.GetStatusesParams, access interface{}) middleware.Responder {
 		ctx := s.HTTPRequest.Context()
 		statuses, err := repository.GetAll(ctx)
 		if err != nil {
@@ -57,7 +57,7 @@ func (c Status) GetStatusesFunc(repository repositories.EquipmentStatusRepositor
 }
 
 func (c Status) GetStatusFunc(repository repositories.EquipmentStatusRepository) status.GetStatusHandlerFunc {
-	return func(s status.GetStatusParams) middleware.Responder {
+	return func(s status.GetStatusParams, access interface{}) middleware.Responder {
 		ctx := s.HTTPRequest.Context()
 		foundStatus, err := repository.Get(ctx, int(s.StatusID))
 		if err != nil {
@@ -73,7 +73,7 @@ func (c Status) GetStatusFunc(repository repositories.EquipmentStatusRepository)
 }
 
 func (c Status) DeleteStatusFunc(repository repositories.EquipmentStatusRepository) status.DeleteStatusHandlerFunc {
-	return func(s status.DeleteStatusParams) middleware.Responder {
+	return func(s status.DeleteStatusParams, access interface{}) middleware.Responder {
 		ctx := s.HTTPRequest.Context()
 		deletedStatus, err := repository.Delete(ctx, int(s.StatusID))
 		if err != nil {

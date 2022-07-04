@@ -3,11 +3,12 @@ package handlers
 import (
 	"net/http"
 
+	"github.com/go-openapi/runtime/middleware"
+	"go.uber.org/zap"
+
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/models"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/restapi/operations/pet_size"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/repositories"
-	"github.com/go-openapi/runtime/middleware"
-	"go.uber.org/zap"
 )
 
 type PetSize struct {
@@ -21,7 +22,7 @@ func NewPetSize(logger *zap.Logger) *PetSize {
 }
 
 func (ps PetSize) CreatePetSizeFunc(repository repositories.PetSizeRepository) pet_size.CreateNewPetSizeHandlerFunc {
-	return func(p pet_size.CreateNewPetSizeParams) middleware.Responder {
+	return func(p pet_size.CreateNewPetSizeParams, access interface{}) middleware.Responder {
 		ctx := p.HTTPRequest.Context()
 		petSize, err := repository.CreatePetSize(ctx, *p.NewPetSize)
 		if err != nil {
@@ -53,7 +54,7 @@ func (ps PetSize) CreatePetSizeFunc(repository repositories.PetSizeRepository) p
 }
 
 func (ps PetSize) GetAllPetSizeFunc(repository repositories.PetSizeRepository) pet_size.GetAllPetSizeHandlerFunc {
-	return func(p pet_size.GetAllPetSizeParams) middleware.Responder {
+	return func(p pet_size.GetAllPetSizeParams, access interface{}) middleware.Responder {
 		ctx := p.HTTPRequest.Context()
 		petSizes, err := repository.AllPetSizes(ctx)
 		if err != nil {
@@ -82,7 +83,7 @@ func (ps PetSize) GetAllPetSizeFunc(repository repositories.PetSizeRepository) p
 }
 
 func (ps PetSize) GetPetSizeByID(repo repositories.PetSizeRepository) pet_size.GetPetSizeHandlerFunc {
-	return func(p pet_size.GetPetSizeParams) middleware.Responder {
+	return func(p pet_size.GetPetSizeParams, access interface{}) middleware.Responder {
 		ctx := p.HTTPRequest.Context()
 		petSize, err := repo.PetSizeByID(ctx, int(p.PetSizeID))
 		if err != nil {
@@ -108,7 +109,7 @@ func (ps PetSize) GetPetSizeByID(repo repositories.PetSizeRepository) pet_size.G
 }
 
 func (ps PetSize) DeletePetSizeByID(repo repositories.PetSizeRepository) pet_size.DeletePetSizeHandlerFunc {
-	return func(p pet_size.DeletePetSizeParams) middleware.Responder {
+	return func(p pet_size.DeletePetSizeParams, access interface{}) middleware.Responder {
 		ctx := p.HTTPRequest.Context()
 		err := repo.DeletePetSizeByID(ctx, int(p.PetSizeID))
 		if err != nil {
@@ -125,7 +126,7 @@ func (ps PetSize) DeletePetSizeByID(repo repositories.PetSizeRepository) pet_siz
 }
 
 func (ps PetSize) UpdatePetSizeByID(repo repositories.PetSizeRepository) pet_size.EditPetSizeHandlerFunc {
-	return func(p pet_size.EditPetSizeParams) middleware.Responder {
+	return func(p pet_size.EditPetSizeParams, access interface{}) middleware.Responder {
 		ctx := p.HTTPRequest.Context()
 		petSize, err := repo.UpdatePetSizeByID(ctx, int(p.PetSizeID), p.EditPetSize)
 		if err != nil {

@@ -22,7 +22,7 @@ func NewBlocker(logger *zap.Logger) *Blocker {
 }
 
 func (b Blocker) BlockUserFunc(repository repositories.BlockerRepository) users.BlockUserHandlerFunc {
-	return func(u users.BlockUserParams) middleware.Responder {
+	return func(u users.BlockUserParams, access interface{}) middleware.Responder {
 		userId := int(u.UserID)
 		context := u.HTTPRequest.Context()
 		err := repository.SetIsBlockedUser(context, userId, true)
@@ -39,7 +39,7 @@ func (b Blocker) BlockUserFunc(repository repositories.BlockerRepository) users.
 }
 
 func (b Blocker) UnblockUserFunc(repository repositories.BlockerRepository) users.UnblockUserHandlerFunc {
-	return func(u users.UnblockUserParams) middleware.Responder {
+	return func(u users.UnblockUserParams, access interface{}) middleware.Responder {
 		userId := int(u.UserID)
 		context := u.HTTPRequest.Context()
 

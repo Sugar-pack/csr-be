@@ -48,7 +48,8 @@ func (s *ActiveAreaTestSuite) TestActiveArea_GetActiveAreasFunc_RepoErr() {
 	err := errors.New("some error")
 	s.repository.On("AllActiveAreas", ctx).Return(nil, err)
 
-	resp := handlerFunc(data)
+	access := "dummy access"
+	resp := handlerFunc(data, access)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
@@ -74,7 +75,8 @@ func (s *ActiveAreaTestSuite) TestActiveArea_GetActiveAreasFunc_OK() {
 	)
 	s.repository.On("AllActiveAreas", ctx).Return(areas, nil)
 
-	resp := handlerFunc(data)
+	access := "dummy access"
+	resp := handlerFunc(data, access)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)

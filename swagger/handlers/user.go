@@ -160,7 +160,7 @@ func (c User) AssignRoleToUserFunc(repository repositories.UserRepository) users
 }
 
 func (c User) GetUserById(repository repositories.UserRepository) users.GetUserHandlerFunc {
-	return func(p users.GetUserParams) middleware.Responder {
+	return func(p users.GetUserParams, access interface{}) middleware.Responder {
 		ctx := p.HTTPRequest.Context()
 		id := int(p.UserID)
 		foundUser, err := repository.GetUserByID(ctx, id)
@@ -181,7 +181,7 @@ func (c User) GetUserById(repository repositories.UserRepository) users.GetUserH
 }
 
 func (c User) GetUsersList(repository repositories.UserRepository) users.GetAllUsersHandlerFunc {
-	return func(p users.GetAllUsersParams) middleware.Responder {
+	return func(p users.GetAllUsersParams, access interface{}) middleware.Responder {
 		ctx := p.HTTPRequest.Context()
 		all, err := repository.UserList(ctx)
 		if err != nil {

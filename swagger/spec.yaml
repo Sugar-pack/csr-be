@@ -148,6 +148,8 @@ paths:
         type: integer
     get:
       summary: Get user by ID
+      security:
+        - Bearer: [ ]
       tags:
         - Users
       operationId: GetUser
@@ -163,6 +165,8 @@ paths:
   /management/listUsers:
     get:
       summary: Get all users
+      security:
+        - Bearer: [ ]
       tags:
         - Users
       operationId: GetAllUsers
@@ -178,6 +182,8 @@ paths:
   /v1/roles:
     get:
       summary: List all roles.
+      security:
+        - Bearer: [ ]
       tags:
         - Roles
       operationId: GetRoles
@@ -244,6 +250,8 @@ paths:
         - Users
       operationId: UserUpdate
       summary: Updates user information by its id.
+      security:
+        - Bearer: [ ]
       responses:
         200:
           description: User information has been updated.
@@ -258,6 +266,8 @@ paths:
   /equipment/statuses:
     post:
       summary: Creating a new status.
+      security:
+        - Bearer: [ ]
       tags:
         - Status
       operationId: postStatus
@@ -279,6 +289,8 @@ paths:
             $ref: "#/definitions/Error"
     get:
       summary: List all statuses.
+      security:
+        - Bearer: [ ]
       tags:
         - Status
       operationId: GetStatuses
@@ -300,6 +312,8 @@ paths:
         type: integer
     get:
       summary: Get status by id
+      security:
+        - Bearer: [ ]
       tags:
         - Status
       operationId: GetStatus
@@ -314,6 +328,8 @@ paths:
             $ref: "#/definitions/Error"
     delete:
       summary: Delete status by id
+      security:
+        - Bearer: [ ]
       tags:
         - Status
       operationId: DeleteStatus
@@ -329,6 +345,8 @@ paths:
   /equipment/kinds:
     get:
       summary: Get all kinds.
+      security:
+        - Bearer: [ ]
       tags:
         - Kinds
       operationId: GetAllKinds
@@ -343,6 +361,8 @@ paths:
             $ref: "#/definitions/Error"
     post:
       summary: Create a new kind.
+      security:
+        - Bearer: [ ]
       tags:
         - Kinds
       operationId: CreateNewKind
@@ -371,6 +391,8 @@ paths:
         type: integer
     get:
       summary: Get information about the kind of equipment by id.
+      security:
+        - Bearer: [ ]
       tags:
         - Kinds
       operationId: getKindByID
@@ -385,6 +407,8 @@ paths:
             $ref: "#/definitions/Error"
     delete:
       summary: Delete kind of equipment from db by id.
+      security:
+        - Bearer: [ ]
       tags:
         - Kinds
       operationId: deleteKind
@@ -399,6 +423,8 @@ paths:
             $ref: "#/definitions/Error"
     patch:
       summary: Edit equipment kind by id.
+      security:
+        - Bearer: [ ]
       tags:
         - Kinds
       operationId: PatchKind
@@ -420,6 +446,8 @@ paths:
   /equipment/photos:
     post:
       summary: Upload a new equipment photo
+      security:
+        - Bearer: [ ]
       tags:
         - Photos
       operationId: CreateNewPhoto
@@ -453,6 +481,8 @@ paths:
         type: string
     get:
       summary: Get photo by id
+      security:
+        - Bearer: [ ]
       tags:
         - Photos
       operationId: GetPhoto
@@ -470,6 +500,8 @@ paths:
             $ref: "#/definitions/Error"
     delete:
       summary: Delete photo by id
+      security:
+        - Bearer: [ ]
       tags:
         - Photos
       operationId: DeletePhoto
@@ -491,6 +523,8 @@ paths:
         type: string
     get:
       summary: Download photo by id
+      security:
+        - Bearer: [ ]
       tags:
         - Photos
       operationId: DownloadPhoto
@@ -555,10 +589,10 @@ paths:
   /v1/orders/{orderId}:
     put:
       summary: Edit order by id
-      tags:
-        - Orders
       security:
         - Bearer: [ ]
+      tags:
+        - Orders
       operationId: UpdateOrder
       parameters:
         - name: orderId
@@ -715,6 +749,8 @@ paths:
   /v1/active_areas:
     get:
       summary: Get all active areas.
+      security:
+        - Bearer: [ ]
       tags:
         - Active_Areas
       operationId: GetAllActiveAreas
@@ -730,6 +766,8 @@ paths:
   /equipment:
     post:
       summary: Register a new equipment
+      security:
+        - Bearer: [ ]
       tags:
         - Equipment
       operationId: CreateNewEquipment
@@ -753,6 +791,8 @@ paths:
             $ref: "#/definitions/Error"
     get:
       summary: Get all equipment
+      security:
+        - Bearer: [ ]
       tags:
         - Equipment
       operationId: GetAllEquipment
@@ -774,6 +814,8 @@ paths:
         type: integer
     get:
       summary: Get equipment by id
+      security:
+        - Bearer: [ ]
       tags:
         - Equipment
       operationId: GetEquipment
@@ -788,6 +830,8 @@ paths:
             $ref: "#/definitions/Error"
     delete:
       summary: Delete equipment by id
+      security:
+        - Bearer: [ ]
       tags:
         - Equipment
       operationId: DeleteEquipment
@@ -802,6 +846,8 @@ paths:
             $ref: "#/definitions/Error"
     put:
       summary: Edit equipment by id
+      security:
+        - Bearer: [ ]
       tags:
         - Equipment
       operationId: EditEquipment
@@ -824,6 +870,8 @@ paths:
   /equipment/search:
     post:
       summary: Equipment filtered list
+      security:
+        - Bearer: [ ]
       tags:
         - Equipment
       operationId: FindEquipment
@@ -846,6 +894,8 @@ paths:
   /pet_size:
     post:
       summary: Register a new pet size
+      security:
+        - Bearer: [ ]
       tags:
         - PetSize
       operationId: CreateNewPetSize
@@ -869,6 +919,8 @@ paths:
             $ref: "#/definitions/Error"
     get:
       summary: Get all pet size
+      security:
+        - Bearer: [ ]
       tags:
         - PetSize
       operationId: GetAllPetSize
@@ -890,6 +942,8 @@ paths:
         type: integer
     get:
       summary: Get pet size by id
+      security:
+        - Bearer: [ ]
       tags:
         - PetSize
       operationId: GetPetSize
@@ -904,6 +958,8 @@ paths:
             $ref: "#/definitions/Error"
     delete:
       summary: Delete pet size by id
+      security:
+        - Bearer: [ ]
       tags:
         - PetSize
       operationId: DeletePetSize
@@ -918,6 +974,8 @@ paths:
             $ref: "#/definitions/Error"
     put:
       summary: Edit pet size by id
+      security:
+        - Bearer: [ ]
       tags:
         - PetSize
       operationId: EditPetSize
@@ -946,6 +1004,8 @@ paths:
         type: integer 
     post: 
       summary: Block user
+      security:
+        - Bearer: [ ]
       tags:
         - Users
       operationId: blockUser
@@ -965,6 +1025,8 @@ paths:
         type: integer 
     post: 
       summary: Unblock user
+      security:
+        - Bearer: [ ]
       tags:
         - Users
       operationId: unblockUser
@@ -1022,6 +1084,8 @@ paths:
   /pet_kind:
     get:
       summary: Get all pet kinds
+      security:
+        - Bearer: [ ]
       tags:
         - PetKind
       operationId: GetAllPetKinds
@@ -1036,6 +1100,8 @@ paths:
             $ref: "#/definitions/Error" 
     post:
       summary: Register a new pet kind
+      security:
+        - Bearer: [ ]
       tags:
         - PetKind
       operationId: CreateNewPetKind
@@ -1066,6 +1132,8 @@ paths:
         type: integer
     get:
       summary: Get pet kind by id
+      security:
+        - Bearer: [ ]
       tags:
         - PetKind
       operationId: GetPetKind
@@ -1080,6 +1148,8 @@ paths:
             $ref: "#/definitions/Error"
     delete:
       summary: Delete pet kind by id
+      security:
+        - Bearer: [ ]
       tags:
         - PetKind
       operationId: DeletePetKind
@@ -1094,6 +1164,8 @@ paths:
             $ref: "#/definitions/Error"
     put:
       summary: Edit pet kind by id
+      security:
+        - Bearer: [ ]
       tags:
         - PetKind
       operationId: EditPetKind
