@@ -31,13 +31,15 @@ services:
       - EMAIL_SENDER_PASSWORD=
       - EMAIL_SENDER_FROM_ADDRESS=noreply.lkot@yandex.ru
       - EMAIL_SENDER_FROM_NAME="Lyonkin Kot"
-      - PHOTOS_FOLDER=equipments_photos
+      - PHOTOS_FOLDER=/equipments_photos
       - PHOTOS_SERVER_URL=https://csr.golangforall.com/
     depends_on:
       database:
         condition: service_healthy
     ports:
       - 8080:8080
+    volumes:
+      - ./equipments_photos:/equipments_photos
     restart: on-failure:3
     networks:
       - go-network

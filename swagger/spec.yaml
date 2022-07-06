@@ -1766,7 +1766,7 @@ definitions:
       - status
       - petSize
       - compensationСost
-      - condition
+      - technicalIssues
       - inventoryNumber
       - supplier
       - receiptDate
@@ -1802,9 +1802,16 @@ definitions:
       compensationСost:
         type: integer
         example: 3900
+      technicalIssues:
+        type: string
+        enum:
+          - есть
+          - нет
+        example: "есть"
       condition:
         type: string
         example: "удовлетворительное, местами облупляется краска"
+        description: "required if technicalIssues is 'есть'"
       inventoryNumber:
         type: integer
         example: "1"
@@ -1865,6 +1872,12 @@ definitions:
       compensationСost:
         type: integer
         example: 3900
+      technicalIssues:
+        type: string
+        enum:
+          - есть
+          - нет
+        example: "есть"
       condition:
         type: string
         example: "удовлетворительное, местами облупляется краска"
@@ -1911,7 +1924,7 @@ definitions:
       - status
       - petSize
       - compensationСost
-      - condition
+      - technicalIssues
       - inventoryNumber
       - supplier
       - receiptDate
@@ -1946,6 +1959,12 @@ definitions:
       compensationСost:
         type: integer
         example: 3900
+      technicalIssues:
+        type: string
+        enum:
+          - есть
+          - нет
+        example: "есть"
       condition:
         type: string
         example: "удовлетворительное, местами облупляется краска"
