@@ -212,15 +212,16 @@ func mapEquipmentResponse(eq *ent.Equipment) (*models.EquipmentResponse, error) 
 		petSizeID = &idInt64
 	}
 
-	if eq.Edges.Photo == nil {
-		return nil, errors.New("equipment photo is nil")
+	var photoURL string
+	if eq.Edges.Photo != nil {
+		photoURL = eq.Edges.Photo.URL
 	}
-	photoURL := eq.Edges.Photo.URL
 
 	return &models.EquipmentResponse{
 		Category:         &eq.Category,
 		CompensationСost: &eq.CompensationCost,
-		Condition:        &eq.Condition,
+		TechnicalIssues:  &eq.TechIssue,
+		Condition:        eq.Condition,
 		Description:      &eq.Description,
 		ID:               &id,
 		InventoryNumber:  &eq.InventoryNumber,
