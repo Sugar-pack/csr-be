@@ -6,10 +6,25 @@ import (
 	"github.com/go-openapi/runtime/middleware"
 	"go.uber.org/zap"
 
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent"
+
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/models"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/restapi/operations"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/restapi/operations/pet_kind"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/repositories"
 )
+
+func SetPetKindHandler(client *ent.Client, logger *zap.Logger, api *operations.BeAPI) {
+	petKindRepo := repositories.NewPetKindRepository(client)
+	petKindHandler := NewPetKind(logger)
+
+	api.PetKindGetAllPetKindsHandler = petKindHandler.GetAllPetKindFunc(petKindRepo)
+	api.PetKindEditPetKindHandler = petKindHandler.UpdatePetKindByID(petKindRepo)
+	api.PetKindDeletePetKindHandler = petKindHandler.DeletePetKindByID(petKindRepo)
+	api.PetKindCreateNewPetKindHandler = petKindHandler.CreatePetKindFunc(petKindRepo)
+	api.PetKindGetPetKindHandler = petKindHandler.GetPetKindsByID(petKindRepo)
+
+}
 
 type PetKind struct {
 	logger *zap.Logger

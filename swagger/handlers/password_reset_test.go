@@ -6,15 +6,40 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/go-openapi/loads"
 	"github.com/go-openapi/runtime"
+	_ "github.com/mattn/go-sqlite3"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/zap"
 
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/enttest"
 	psmock "git.epam.com/epm-lstr/epm-lstr-lc/be/internal/mocks/services"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/models"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/restapi"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/restapi/operations"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/restapi/operations/password_reset"
 )
+
+func TestSetPasswordResetHandler(t *testing.T) {
+	client := enttest.Open(t, "sqlite3", "file:passwordhandler?mode=memory&cache=shared&_fk=1")
+	defer client.Close()
+
+	logger := zap.NewNop()
+
+	swaggerSpec, err := loads.Analyzed(restapi.SwaggerJSON, "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	api := operations.NewBeAPI(swaggerSpec)
+
+	passwordService := &psmock.PasswordReset{}
+
+	SetPasswordResetHandler(logger, api, passwordService)
+
+	assert.NotNil(t, api.PasswordResetGetPasswordResetLinkHandler)
+	assert.NotNil(t, api.PasswordResetSendLinkByLoginHandler)
+}
 
 type PasswordResetHandlerTestSuite struct {
 	suite.Suite

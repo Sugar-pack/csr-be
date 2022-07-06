@@ -7,19 +7,39 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent"
-
+	"github.com/go-openapi/loads"
 	"github.com/go-openapi/runtime"
+	_ "github.com/mattn/go-sqlite3"
 	"github.com/stretchr/testify/assert"
-
-	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/models"
-	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/restapi/operations/status"
-
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/zap"
 
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/enttest"
 	repomock "git.epam.com/epm-lstr/epm-lstr-lc/be/internal/mocks/repositories"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/models"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/restapi"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/restapi/operations"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/restapi/operations/status"
 )
+
+func TestSetEquipmentStatusHandler(t *testing.T) {
+	client := enttest.Open(t, "sqlite3", "file:eqstatushandler?mode=memory&cache=shared&_fk=1")
+	defer client.Close()
+
+	logger := zap.NewNop()
+
+	swaggerSpec, err := loads.Analyzed(restapi.SwaggerJSON, "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	api := operations.NewBeAPI(swaggerSpec)
+	SetEquipmentStatusHandler(client, logger, api)
+	assert.NotEmpty(t, api.StatusPostStatusHandler)
+	assert.NotEmpty(t, api.StatusGetStatusesHandler)
+	assert.NotEmpty(t, api.StatusGetStatusHandler)
+	assert.NotEmpty(t, api.StatusDeleteStatusHandler)
+}
 
 type StatusTestSuite struct {
 	suite.Suite

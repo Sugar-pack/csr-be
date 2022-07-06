@@ -10,10 +10,26 @@ import (
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/authentication"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/models"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/restapi/operations"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/restapi/operations/users"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/repositories"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/services"
 )
+
+func SetUserHandler(client *ent.Client, logger *zap.Logger, api *operations.BeAPI,
+	tokenManager services.TokenManager, regConfirmService services.RegistrationConfirm) {
+	userRepo := repositories.NewUserRepository(client)
+	userHandler := NewUser(logger)
+
+	api.UsersLoginHandler = userHandler.LoginUserFunc(tokenManager)
+	api.UsersRefreshHandler = userHandler.Refresh(tokenManager)
+	api.UsersPostUserHandler = userHandler.PostUserFunc(userRepo, regConfirmService)
+	api.UsersGetCurrentUserHandler = userHandler.GetUserFunc(userRepo)
+	api.UsersPatchUserHandler = userHandler.PatchUserFunc(userRepo)
+	api.UsersGetUserHandler = userHandler.GetUserById(userRepo)
+	api.UsersGetAllUsersHandler = userHandler.GetUsersList(userRepo)
+	api.UsersAssignRoleToUserHandler = userHandler.AssignRoleToUserFunc(userRepo)
+}
 
 type User struct {
 	logger *zap.Logger

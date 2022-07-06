@@ -7,17 +7,40 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/go-openapi/loads"
 	"github.com/go-openapi/runtime"
+	_ "github.com/mattn/go-sqlite3"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
-	"gotest.tools/assert"
-
 	"go.uber.org/zap"
 
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/enttest"
 	repomock "git.epam.com/epm-lstr/epm-lstr-lc/be/internal/mocks/repositories"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/models"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/restapi"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/restapi/operations"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/restapi/operations/pet_kind"
 )
+
+func TestSetPetKindHandler(t *testing.T) {
+	client := enttest.Open(t, "sqlite3", "file:petkindhandler?mode=memory&cache=shared&_fk=1")
+	defer client.Close()
+
+	logger := zap.NewNop()
+
+	swaggerSpec, err := loads.Analyzed(restapi.SwaggerJSON, "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	api := operations.NewBeAPI(swaggerSpec)
+	SetPetKindHandler(client, logger, api)
+	assert.NotEmpty(t, api.PetKindGetAllPetKindsHandler)
+	assert.NotEmpty(t, api.PetKindEditPetKindHandler)
+	assert.NotEmpty(t, api.PetKindDeletePetKindHandler)
+	assert.NotEmpty(t, api.PetKindCreateNewPetKindHandler)
+	assert.NotEmpty(t, api.PetKindGetPetKindHandler)
+}
 
 type PetKindTestSuite struct {
 	suite.Suite

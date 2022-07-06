@@ -11,9 +11,19 @@ import (
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/authentication"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/models"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/restapi/operations"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/restapi/operations/orders"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/repositories"
 )
+
+func SetOrderHandler(client *ent.Client, logger *zap.Logger, api *operations.BeAPI) {
+	orderRepo := repositories.NewOrderRepository(client)
+	ordersHandler := NewOrder(logger)
+
+	api.OrdersGetAllOrdersHandler = ordersHandler.ListOrderFunc(orderRepo)
+	api.OrdersCreateOrderHandler = ordersHandler.CreateOrderFunc(orderRepo)
+	api.OrdersUpdateOrderHandler = ordersHandler.UpdateOrderFunc(orderRepo)
+}
 
 type Order struct {
 	logger *zap.Logger

@@ -6,9 +6,17 @@ import (
 	"github.com/go-openapi/runtime/middleware"
 	"go.uber.org/zap"
 
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/restapi/operations"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/restapi/operations/registration_confirm"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/services"
 )
+
+func SetRegistrationHandler(logger *zap.Logger, api *operations.BeAPI, service services.RegistrationConfirm) {
+	regConfirmHandler := NewRegistrationConfirmHandler(logger, service)
+
+	api.RegistrationConfirmSendRegistrationConfirmLinkByLoginHandler = regConfirmHandler.SendRegistrationConfirmLinkByLoginFunc()
+	api.RegistrationConfirmVerifyRegistrationConfirmTokenHandler = regConfirmHandler.VerifyRegistrationConfirmTokenFunc()
+}
 
 type registrationConfirmHandler struct {
 	logger     *zap.Logger

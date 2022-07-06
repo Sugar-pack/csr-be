@@ -11,13 +11,15 @@ type senderImpl struct {
 	client      *wrapperSmtp
 }
 
-func NewSenderSmtp(websiteUrl, smtpHost, smtpPort, smtpPassword, senderEmail, senderName string) Sender {
+func NewSenderSmtp(config ServiceConfig) Sender {
 
 	return &senderImpl{
-		websiteUrl:  websiteUrl,
-		senderName:  senderName,
-		senderEmail: senderEmail,
-		client:      NewWrapperSmtp(smtpHost, smtpPort, smtpPassword),
+		websiteUrl:  config.SenderWebsiteUrl,
+		senderName:  config.FromName,
+		senderEmail: config.SenderFromAddress,
+		client: NewWrapperSmtp(config.EmailServerHost,
+			config.ServerPort,
+			config.password),
 	}
 }
 

@@ -8,9 +8,20 @@ import (
 
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/models"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/restapi/operations"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/restapi/operations/status"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/repositories"
 )
+
+func SetEquipmentStatusHandler(client *ent.Client, logger *zap.Logger, api *operations.BeAPI) {
+	equipmentStatusRepo := repositories.NewEquipmentStatusRepository(client)
+	statusHandler := NewStatus(logger)
+
+	api.StatusPostStatusHandler = statusHandler.PostStatusFunc(equipmentStatusRepo)
+	api.StatusGetStatusesHandler = statusHandler.GetStatusesFunc(equipmentStatusRepo)
+	api.StatusGetStatusHandler = statusHandler.GetStatusFunc(equipmentStatusRepo)
+	api.StatusDeleteStatusHandler = statusHandler.DeleteStatusFunc(equipmentStatusRepo)
+}
 
 type Status struct {
 	logger *zap.Logger
