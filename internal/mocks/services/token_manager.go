@@ -14,7 +14,7 @@ type TokenManager struct {
 }
 
 // GenerateAccessToken provides a mock function with given fields: ctx, login, password
-func (_m *TokenManager) GenerateAccessToken(ctx context.Context, login string, password string) (string, bool, error) {
+func (_m *TokenManager) GenerateTokens(ctx context.Context, login string, password string) (string, string, bool, error) {
 	ret := _m.Called(ctx, login, password)
 
 	var r0 string
@@ -24,21 +24,28 @@ func (_m *TokenManager) GenerateAccessToken(ctx context.Context, login string, p
 		r0 = ret.Get(0).(string)
 	}
 
-	var r1 bool
-	if rf, ok := ret.Get(1).(func(context.Context, string, string) bool); ok {
+	var r1 string
+	if rf, ok := ret.Get(1).(func(context.Context, string, string) string); ok {
 		r1 = rf(ctx, login, password)
 	} else {
-		r1 = ret.Get(1).(bool)
+		r1 = ret.Get(1).(string)
 	}
 
-	var r2 error
-	if rf, ok := ret.Get(2).(func(context.Context, string, string) error); ok {
+	var r2 bool
+	if rf, ok := ret.Get(2).(func(context.Context, string, string) bool); ok {
 		r2 = rf(ctx, login, password)
 	} else {
-		r2 = ret.Error(2)
+		r2 = ret.Get(2).(bool)
 	}
 
-	return r0, r1, r2
+	var r3 error
+	if rf, ok := ret.Get(3).(func(context.Context, string, string) error); ok {
+		r3 = rf(ctx, login, password)
+	} else {
+		r3 = ret.Error(3)
+	}
+
+	return r0, r1, r2, r3
 }
 
 // RefreshToken provides a mock function with given fields: ctx, token

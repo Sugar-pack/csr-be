@@ -88,13 +88,13 @@ func (_m *FileManager) ReadFile(name string) ([]byte, error) {
 	return r0, r1
 }
 
-// SaveDataToFile provides a mock function with given fields: file, name
-func (_m *FileManager) SaveDataToFile(file []byte, name string) error {
-	ret := _m.Called(file, name)
+// SaveDataToFile provides a mock function with given fields: data, name
+func (_m *FileManager) SaveDataToFile(data []byte, name string) error {
+	ret := _m.Called(data, name)
 
 	var r0 error
 	if rf, ok := ret.Get(0).(func([]byte, string) error); ok {
-		r0 = rf(file, name)
+		r0 = rf(data, name)
 	} else {
 		r0 = ret.Error(0)
 	}

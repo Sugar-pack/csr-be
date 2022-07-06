@@ -21,7 +21,7 @@ const (
 )
 
 type TokenManager interface {
-	GenerateAccessToken(ctx context.Context, login, password string) (string, bool, error)
+	GenerateTokens(ctx context.Context, login, password string) (string, string, bool, error)
 	RefreshToken(ctx context.Context, token string) (string, bool, error)
 }
 
@@ -93,36 +93,36 @@ func NewTokenManager(userRepository repositories.UserRepository, tokenRepository
 	}
 }
 
-// GenerateAccessToken generates access token for user. It returns token string, is it internal error and error.
-func (s *tokenManager) GenerateAccessToken(ctx context.Context, login, password string) (string, bool, error) {
+// GenerateAccessToken generates access token for user. It returns access and refresh token, is it internal error and error.
+func (s *tokenManager) GenerateTokens(ctx context.Context, login, password string) (string, string, bool, error) {
 	user, err := s.userRepository.GetUserByLogin(ctx, login)
 	if ent.IsNotFound(err) {
-		return "", false, err
+		return "", "", false, err
 	}
 	if err != nil {
-		return "", true, err
+		return "", "", true, err
 	}
 	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password))
 	if err != nil {
-		return "", false, err
+		return "", "", false, err
 	}
 
 	accessToken, err := generateJWT(user, s.jwtSecret)
 	if err != nil {
-		return "", true, err
+		return "", "", true, err
 	}
 
 	refreshToken, err := generateRefreshToken(user, s.jwtSecret)
 	if err != nil {
-		return "", true, err
+		return "", "", true, err
 	}
 
 	err = s.tokenRepository.CreateTokens(ctx, user.ID, accessToken, refreshToken)
 	if err != nil {
-		return "", true, err
+		return "", "", true, err
 	}
 
-	return accessToken, false, nil
+	return accessToken, refreshToken, false, nil
 }
 
 func generateJWT(user *ent.User, jwtSecretKey string) (string, error) {
