@@ -88,7 +88,7 @@ func (s *UserTestSuite) TestUser_LoginUserFunc_InternalErr() {
 		},
 	}
 	err := errors.New("some error")
-	s.service.On("GenerateAccessToken", ctx, login, password).Return("", true, err)
+	s.service.On("GenerateTokens", ctx, login, password).Return("", "", true, err)
 
 	resp := handlerFunc(data)
 	responseRecorder := httptest.NewRecorder()
@@ -114,7 +114,7 @@ func (s *UserTestSuite) TestUser_LoginUserFunc_UnauthorizedErr() {
 		},
 	}
 	err := errors.New("some error")
-	s.service.On("GenerateAccessToken", ctx, login, password).Return("", false, err)
+	s.service.On("GenerateTokens", ctx, login, password).Return("", "", false, err)
 
 	resp := handlerFunc(data)
 	responseRecorder := httptest.NewRecorder()
@@ -139,13 +139,24 @@ func (s *UserTestSuite) TestUser_LoginUserFunc_OK() {
 			Password: &password,
 		},
 	}
-	s.service.On("GenerateAccessToken", ctx, login, password).Return("", false, nil)
+	accessToken := "accessToken"
+	refreshToken := "refreshToken"
+	s.service.On("GenerateTokens", ctx, login, password).Return(accessToken, refreshToken, false, nil)
 
 	resp := handlerFunc(data)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
 	assert.Equal(t, http.StatusOK, responseRecorder.Code)
+
+	var tokenPair models.TokenPair
+	err := json.Unmarshal(responseRecorder.Body.Bytes(), &tokenPair)
+	if err != nil {
+		t.Errorf("unable to unmarshal response: %v", err)
+	}
+	assert.Equal(t, accessToken, *tokenPair.AccessToken)
+	assert.Equal(t, refreshToken, *tokenPair.RefreshToken)
+
 	s.service.AssertExpectations(t)
 }
 

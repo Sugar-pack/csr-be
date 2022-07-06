@@ -47,11 +47,12 @@ func (s *UserServiceTestSuite) TestUserService_GenerateAccessToken_UserNotFound(
 	err := &ent.NotFoundError{}
 
 	s.userRepository.On("GetUserByLogin", ctx, login).Return(nil, err)
-	token, b, errGen := s.userService.GenerateAccessToken(ctx, login, password)
+	accessToken, refreshToken, isInternalErr, errGen := s.userService.GenerateTokens(ctx, login, password)
 	assert.Error(t, errGen)
 	assert.True(t, ent.IsNotFound(errGen))
-	assert.Empty(t, token)
-	assert.False(t, b)
+	assert.Empty(t, accessToken)
+	assert.Empty(t, refreshToken)
+	assert.False(t, isInternalErr)
 	s.userRepository.AssertExpectations(t)
 }
 
@@ -64,10 +65,11 @@ func (s *UserServiceTestSuite) TestUserService_GenerateAccessToken_RepoErr() {
 	err := errors.New("error")
 
 	s.userRepository.On("GetUserByLogin", ctx, login).Return(nil, err)
-	token, isInternalErr, errGen := s.userService.GenerateAccessToken(ctx, login, password)
+	accessToken, refreshToken, isInternalErr, errGen := s.userService.GenerateTokens(ctx, login, password)
 	assert.Error(t, errGen)
 	assert.False(t, ent.IsNotFound(errGen))
-	assert.Empty(t, token)
+	assert.Empty(t, accessToken)
+	assert.Empty(t, refreshToken)
 	assert.True(t, isInternalErr)
 	s.userRepository.AssertExpectations(t)
 }
@@ -84,10 +86,11 @@ func (s *UserServiceTestSuite) TestUserService_GenerateAccessToken_HashCompareEr
 	}
 
 	s.userRepository.On("GetUserByLogin", ctx, login).Return(user, nil)
-	token, isInternalErr, errGen := s.userService.GenerateAccessToken(ctx, login, password)
+	accessToken, refreshToken, isInternalErr, errGen := s.userService.GenerateTokens(ctx, login, password)
 	assert.Error(t, errGen)
 	assert.False(t, ent.IsNotFound(errGen))
-	assert.Empty(t, token)
+	assert.Empty(t, accessToken)
+	assert.Empty(t, refreshToken)
 	assert.False(t, isInternalErr)
 	s.userRepository.AssertExpectations(t)
 }
@@ -122,10 +125,11 @@ func (s *UserServiceTestSuite) TestUserService_GenerateAccessToken_TokenRepoErr(
 	s.userRepository.On("GetUserByLogin", ctx, login).Return(user, nil)
 	s.tokenRepository.On("CreateTokens", ctx, user.ID, mock.AnythingOfType("string"),
 		mock.AnythingOfType("string")).Return(err)
-	token, isInternalErr, errGen := s.userService.GenerateAccessToken(ctx, login, password)
+	accessToken, refreshToken, isInternalErr, errGen := s.userService.GenerateTokens(ctx, login, password)
 	assert.Error(t, errGen)
 	assert.False(t, ent.IsNotFound(errGen))
-	assert.Empty(t, token)
+	assert.Empty(t, accessToken)
+	assert.Empty(t, refreshToken)
 	assert.True(t, isInternalErr)
 	s.userRepository.AssertExpectations(t)
 	s.tokenRepository.AssertExpectations(t)
@@ -160,9 +164,10 @@ func (s *UserServiceTestSuite) TestUserService_GenerateAccessToken_OK() {
 	s.userRepository.On("GetUserByLogin", ctx, login).Return(user, nil)
 	s.tokenRepository.On("CreateTokens", ctx, user.ID, mock.AnythingOfType("string"),
 		mock.AnythingOfType("string")).Return(nil)
-	token, isInternalErr, errGen := s.userService.GenerateAccessToken(ctx, login, password)
+	accessToken, refreshToken, isInternalErr, errGen := s.userService.GenerateTokens(ctx, login, password)
 	assert.NoError(t, errGen)
-	assert.NotEmpty(t, token)
+	assert.NotEmpty(t, accessToken)
+	assert.NotEmpty(t, refreshToken)
 	assert.False(t, isInternalErr)
 	s.userRepository.AssertExpectations(t)
 	s.tokenRepository.AssertExpectations(t)

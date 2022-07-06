@@ -46,7 +46,7 @@ func (c User) LoginUserFunc(service services.TokenManager) users.LoginHandlerFun
 		ctx := p.HTTPRequest.Context()
 		login := *p.Login.Login
 		password := *p.Login.Password
-		accessToken, isInternalErr, err := service.GenerateAccessToken(ctx, login, password)
+		accessToken, refreshToken, isInternalErr, err := service.GenerateTokens(ctx, login, password)
 		if err != nil {
 			if isInternalErr {
 				return users.NewLoginDefault(http.StatusInternalServerError)
@@ -54,7 +54,10 @@ func (c User) LoginUserFunc(service services.TokenManager) users.LoginHandlerFun
 			return users.NewLoginUnauthorized().WithPayload("Invalid login or password")
 		}
 
-		return users.NewLoginOK().WithPayload(&models.AccessToken{AccessToken: &accessToken})
+		return users.NewLoginOK().WithPayload(&models.TokenPair{
+			AccessToken:  &accessToken,
+			RefreshToken: &refreshToken,
+		})
 	}
 }
 
