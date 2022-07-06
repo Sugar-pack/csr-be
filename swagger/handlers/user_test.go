@@ -7,6 +7,12 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/go-openapi/loads"
+
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/enttest"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/restapi"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/restapi/operations"
+
 	"github.com/go-openapi/runtime"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
@@ -19,6 +25,31 @@ import (
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/models"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/restapi/operations/users"
 )
+
+func TestSetUserHandler(t *testing.T) {
+	client := enttest.Open(t, "sqlite3", "file:userhandler?mode=memory&cache=shared&_fk=1")
+	defer client.Close()
+
+	logger := zap.NewNop()
+
+	swaggerSpec, err := loads.Analyzed(restapi.SwaggerJSON, "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	api := operations.NewBeAPI(swaggerSpec)
+	tokenManager := &servicemock.TokenManager{}
+	registrationConfirm := &servicemock.RegistrationConfirm{}
+	SetUserHandler(client, logger, api, tokenManager, registrationConfirm)
+
+	assert.NotEmpty(t, api.UsersLoginHandler)
+	assert.NotEmpty(t, api.UsersRefreshHandler)
+	assert.NotEmpty(t, api.UsersPostUserHandler)
+	assert.NotEmpty(t, api.UsersGetCurrentUserHandler)
+	assert.NotEmpty(t, api.UsersPatchUserHandler)
+	assert.NotEmpty(t, api.UsersGetUserHandler)
+	assert.NotEmpty(t, api.UsersGetAllUsersHandler)
+	assert.NotEmpty(t, api.UsersAssignRoleToUserHandler)
+}
 
 type UserTestSuite struct {
 	suite.Suite

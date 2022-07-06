@@ -8,9 +8,21 @@ import (
 
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/models"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/restapi/operations"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/restapi/operations/kinds"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/repositories"
 )
+
+func SetKindHandler(client *ent.Client, logger *zap.Logger, api *operations.BeAPI) {
+	kindRepo := repositories.NewKindRepository(client)
+	kindHandler := NewKind(logger)
+
+	api.KindsCreateNewKindHandler = kindHandler.CreateNewKindFunc(kindRepo)
+	api.KindsGetKindByIDHandler = kindHandler.GetKindByIDFunc(kindRepo)
+	api.KindsDeleteKindHandler = kindHandler.DeleteKindFunc(kindRepo)
+	api.KindsGetAllKindsHandler = kindHandler.GetAllKindsFunc(kindRepo)
+	api.KindsPatchKindHandler = kindHandler.PatchKindFunc(kindRepo)
+}
 
 type Kind struct {
 	logger *zap.Logger

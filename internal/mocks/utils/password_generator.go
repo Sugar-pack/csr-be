@@ -9,7 +9,7 @@ type PasswordGenerator struct {
 	mock.Mock
 }
 
-// Generate provides a mock function with given fields:
+// NewPassword provides a mock function with given fields:
 func (_m *PasswordGenerator) NewPassword() (string, error) {
 	ret := _m.Called()
 

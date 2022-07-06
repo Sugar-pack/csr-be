@@ -6,10 +6,19 @@ import (
 	"github.com/go-openapi/runtime/middleware"
 	"go.uber.org/zap"
 
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/models"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/restapi/operations"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/restapi/operations/roles"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/repositories"
 )
+
+func SetRoleHandler(client *ent.Client, logger *zap.Logger, api *operations.BeAPI) {
+	roleRepo := repositories.NewRoleRepository(client)
+	roleHandler := NewRole(logger)
+
+	api.RolesGetRolesHandler = roleHandler.GetRolesFunc(roleRepo)
+}
 
 type Role struct {
 	logger *zap.Logger

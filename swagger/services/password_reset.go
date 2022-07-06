@@ -6,12 +6,11 @@ import (
 	"fmt"
 	"time"
 
-	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/utils"
-
 	"github.com/google/uuid"
 	"go.uber.org/zap"
 	"golang.org/x/crypto/bcrypt"
 
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/utils"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/email"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/repositories"
 )

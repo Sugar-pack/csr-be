@@ -6,6 +6,11 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/go-openapi/loads"
+
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/restapi"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/restapi/operations"
+
 	"github.com/go-openapi/runtime"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
@@ -15,6 +20,20 @@ import (
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/models"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/restapi/operations/registration_confirm"
 )
+
+func TestSetRegistrationHandler(t *testing.T) {
+	logger := zap.NewNop()
+
+	swaggerSpec, err := loads.Analyzed(restapi.SwaggerJSON, "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	regConfService := &rcmock.RegistrationConfirm{}
+	api := operations.NewBeAPI(swaggerSpec)
+	SetRegistrationHandler(logger, api, regConfService)
+	assert.NotEmpty(t, api.RegistrationConfirmSendRegistrationConfirmLinkByLoginHandler)
+	assert.NotEmpty(t, api.RegistrationConfirmVerifyRegistrationConfirmTokenHandler)
+}
 
 type RegistrationConfirmHandlerTestSuite struct {
 	suite.Suite

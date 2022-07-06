@@ -13,9 +13,23 @@ import (
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/authentication"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/models"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/restapi/operations"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/restapi/operations/orders"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/repositories"
 )
+
+func SetOrderStatusHandler(client *ent.Client, logger *zap.Logger, api *operations.BeAPI) {
+	orderStatusRepo := repositories.NewOrderStatusRepository(client)
+	orderFilterRepo := repositories.NewOrderFilter(client)
+	orderStatusNameRepo := repositories.NewStatusNameRepository(client)
+	orderStatusHandler := NewOrderStatus(logger)
+
+	api.OrdersGetOrdersByStatusHandler = orderStatusHandler.GetOrdersByStatus(orderFilterRepo)
+	api.OrdersGetOrdersByDateAndStatusHandler = orderStatusHandler.GetOrdersByPeriodAndStatus(orderFilterRepo)
+	api.OrdersAddNewOrderStatusHandler = orderStatusHandler.AddNewStatusToOrder(orderStatusRepo)
+	api.OrdersGetFullOrderHistoryHandler = orderStatusHandler.OrderStatusesHistory(orderStatusRepo)
+	api.OrdersGetAllStatusNamesHandler = orderStatusHandler.GetAllStatusNames(orderStatusNameRepo)
+}
 
 type OrderStatus struct {
 	logger *zap.Logger

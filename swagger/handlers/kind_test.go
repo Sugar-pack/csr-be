@@ -7,16 +7,40 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/go-openapi/loads"
 	"github.com/go-openapi/runtime"
+	_ "github.com/mattn/go-sqlite3"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/zap"
 
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/enttest"
 	repomock "git.epam.com/epm-lstr/epm-lstr-lc/be/internal/mocks/repositories"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/models"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/restapi"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/restapi/operations"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/restapi/operations/kinds"
 )
+
+func TestSetKindHandler(t *testing.T) {
+	client := enttest.Open(t, "sqlite3", "file:kindhandler?mode=memory&cache=shared&_fk=1")
+	defer client.Close()
+
+	logger := zap.NewNop()
+
+	swaggerSpec, err := loads.Analyzed(restapi.SwaggerJSON, "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	api := operations.NewBeAPI(swaggerSpec)
+	SetKindHandler(client, logger, api)
+	assert.NotEmpty(t, api.KindsCreateNewKindHandler)
+	assert.NotEmpty(t, api.KindsGetKindByIDHandler)
+	assert.NotEmpty(t, api.KindsDeleteKindHandler)
+	assert.NotEmpty(t, api.KindsGetAllKindsHandler)
+	assert.NotEmpty(t, api.KindsPatchKindHandler)
+}
 
 type KindTestSuite struct {
 	suite.Suite

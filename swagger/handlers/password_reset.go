@@ -7,9 +7,17 @@ import (
 	"go.uber.org/zap"
 
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/models"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/restapi/operations"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/restapi/operations/password_reset"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/services"
 )
+
+func SetPasswordResetHandler(logger *zap.Logger, api *operations.BeAPI, passwordService services.PasswordReset) {
+	PasswordResetHandler := NewPasswordReset(logger, passwordService)
+
+	api.PasswordResetSendLinkByLoginHandler = PasswordResetHandler.SendLinkByLoginFunc()
+	api.PasswordResetGetPasswordResetLinkHandler = PasswordResetHandler.GetPasswordResetLinkFunc()
+}
 
 type passwordResetHandler struct {
 	logger        *zap.Logger

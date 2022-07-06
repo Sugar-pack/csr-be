@@ -4,16 +4,27 @@ import (
 	"errors"
 	"net/http"
 
-	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/services"
-
 	"github.com/go-openapi/runtime/middleware"
 	"go.uber.org/zap"
 
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/models"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/restapi/operations"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/restapi/operations/equipment"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/repositories"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/services"
 )
+
+func SetEquipmentHandler(client *ent.Client, logger *zap.Logger, api *operations.BeAPI, filesManager services.FileManager) {
+	equipmentRepo := repositories.NewEquipmentRepository(client)
+	equipmentHandler := NewEquipment(logger)
+	api.EquipmentCreateNewEquipmentHandler = equipmentHandler.PostEquipmentFunc(equipmentRepo)
+	api.EquipmentGetEquipmentHandler = equipmentHandler.GetEquipmentFunc(equipmentRepo)
+	api.EquipmentDeleteEquipmentHandler = equipmentHandler.DeleteEquipmentFunc(equipmentRepo, filesManager)
+	api.EquipmentGetAllEquipmentHandler = equipmentHandler.ListEquipmentFunc(equipmentRepo)
+	api.EquipmentEditEquipmentHandler = equipmentHandler.EditEquipmentFunc(equipmentRepo)
+	api.EquipmentFindEquipmentHandler = equipmentHandler.FindEquipmentFunc(equipmentRepo)
+}
 
 type Equipment struct {
 	logger *zap.Logger

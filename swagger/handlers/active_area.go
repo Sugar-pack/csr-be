@@ -6,10 +6,18 @@ import (
 	"github.com/go-openapi/runtime/middleware"
 	"go.uber.org/zap"
 
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/models"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/restapi/operations"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/restapi/operations/active_areas"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/repositories"
 )
+
+func SetActiveAreaHandler(client *ent.Client, logger *zap.Logger, api *operations.BeAPI) {
+	activeAreaRepo := repositories.NewActiveAreaRepository(client)
+	activeAreaHandler := NewActiveArea(logger)
+	api.ActiveAreasGetAllActiveAreasHandler = activeAreaHandler.GetActiveAreasFunc(activeAreaRepo)
+}
 
 type ActiveArea struct {
 	logger *zap.Logger

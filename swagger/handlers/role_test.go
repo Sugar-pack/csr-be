@@ -7,18 +7,35 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent"
-
-	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/models"
-
+	"github.com/go-openapi/loads"
 	"github.com/go-openapi/runtime"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/zap"
 
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/enttest"
 	repomock "git.epam.com/epm-lstr/epm-lstr-lc/be/internal/mocks/repositories"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/models"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/restapi"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/restapi/operations"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/restapi/operations/roles"
 )
+
+func TestSetRoleHandler(t *testing.T) {
+	client := enttest.Open(t, "sqlite3", "file:rolehandler?mode=memory&cache=shared&_fk=1")
+	defer client.Close()
+
+	logger := zap.NewNop()
+
+	swaggerSpec, err := loads.Analyzed(restapi.SwaggerJSON, "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	api := operations.NewBeAPI(swaggerSpec)
+	SetRoleHandler(client, logger, api)
+	assert.NotEmpty(t, api.RolesGetRolesHandler)
+}
 
 type RoleTestSuite struct {
 	suite.Suite

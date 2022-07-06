@@ -12,18 +12,44 @@ import (
 	"os"
 	"testing"
 
-	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/restapi/operations/photos"
-
+	"github.com/go-openapi/loads"
 	"github.com/go-openapi/runtime"
+	_ "github.com/mattn/go-sqlite3"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/zap"
 
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/enttest"
 	repomock "git.epam.com/epm-lstr/epm-lstr-lc/be/internal/mocks/repositories"
 	servicesmock "git.epam.com/epm-lstr/epm-lstr-lc/be/internal/mocks/services"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/models"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/restapi"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/restapi/operations"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/restapi/operations/photos"
 )
+
+func TestSetPhotoHandler(t *testing.T) {
+	client := enttest.Open(t, "sqlite3", "file:photohandler?mode=memory&cache=shared&_fk=1")
+	defer client.Close()
+
+	logger := zap.NewNop()
+
+	swaggerSpec, err := loads.Analyzed(restapi.SwaggerJSON, "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	api := operations.NewBeAPI(swaggerSpec)
+
+	manager := &servicesmock.FileManager{}
+	serverURL := "http://localhost:8080/"
+
+	SetPhotoHandler(client, logger, api, manager, serverURL)
+	assert.NotEmpty(t, api.PhotosCreateNewPhotoHandler)
+	assert.NotEmpty(t, api.PhotosGetPhotoHandler)
+	assert.NotEmpty(t, api.PhotosDeletePhotoHandler)
+	assert.NotEmpty(t, api.PhotosDownloadPhotoHandler)
+}
 
 type PhotoTestSuite struct {
 	suite.Suite

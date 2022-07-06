@@ -10,11 +10,23 @@ import (
 	"github.com/go-openapi/runtime/middleware"
 	"go.uber.org/zap"
 
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/models"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/restapi/operations"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/restapi/operations/photos"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/repositories"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/services"
 )
+
+func SetPhotoHandler(client *ent.Client, logger *zap.Logger, api *operations.BeAPI, manager services.FileManager, serverURL string) {
+	photoRepo := repositories.NewPhotoRepository(client)
+	photosHandler := NewPhoto(serverURL, logger)
+
+	api.PhotosCreateNewPhotoHandler = photosHandler.CreateNewPhotoFunc(photoRepo, manager)
+	api.PhotosGetPhotoHandler = photosHandler.GetPhotoFunc(photoRepo, manager)
+	api.PhotosDeletePhotoHandler = photosHandler.DeletePhotoFunc(photoRepo, manager)
+	api.PhotosDownloadPhotoHandler = photosHandler.DownloadPhotoFunc(photoRepo, manager)
+}
 
 const photoURLPath string = "api/equipment/photos/"
 
