@@ -1,8 +1,6 @@
 package main
 
 import (
-	"context"
-
 	"go.uber.org/zap"
 
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/config"
@@ -13,19 +11,19 @@ import (
 )
 
 func main() {
-	ctx := context.Background()
+	//ctx := context.Background()
 	logger, err := logger.Setup()
 	if err != nil {
 		logger.Fatal("load config error", zap.Error(err))
 	}
 
+	// DO NOT uncomment
 	dbConfig := config.NewDBConfig()
-	sqlDB, entClient, err := db.Setup(dbConfig)
+	_, entClient, err := db.Setup(dbConfig)
 	if err != nil {
 		logger.Fatal("cant open db", zap.Error(err))
 	}
 
-	// DO NOT uncomment
 	//err = migration.Apply(ctx, sqlDB, entClient)
 	//if err != migrate.ErrNoChange && err != nil {
 	//	logger.Fatal("migration failed", zap.Error(err))
