@@ -11,6 +11,8 @@ Authorized APIs:
 - `PATCH /api/v1/users/me` - PATCH current user data
 
 ## How to run this code
+Checked from unix-compatible OS.
+
 1. Install go language binary https://golang.org/doc/install
 2. Install go-swagger binary https://goswagger.io/install.html
 3. Install ent binary:
@@ -22,16 +24,19 @@ Authorized APIs:
    https://docs.docker.com/compose/install/
 5. Init docker db:
     ```shell
-    cd docker; docker-compose up -d
+    cd docker; docker-compose up -d database; cd ..;
     ```
-
-6. Run the service: 
+6. Generate necessary go files (related to ent, swagger)
     ```shell
-    go run cmd/swagger/main.go
+    make generate
+    ```
+7. Run the service: 
+    ```shell
+    export $(grep -v '^#' local.env | xargs) && go run cmd/swagger/main.go
     ```
    The server is here - http://127.0.0.1:8080/api
    Swagger docs are here - http://127.0.0.1:8080/api/docs
-7. Service cURL request example:
+8. Service cURL request example:
    ```shell
    curl -XPOST http://127.0.0.1:8080/api/v1/users/ -vvv
    *   Trying 127.0.0.1:8080...

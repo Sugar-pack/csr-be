@@ -1,17 +1,21 @@
 package main
 
 import (
+	"context"
+
+	"github.com/golang-migrate/migrate/v4"
 	"go.uber.org/zap"
 
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/config"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/db"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/logger"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/migration"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/restapi"
 )
 
 func main() {
-	//ctx := context.Background()
+	ctx := context.Background()
 	logger, err := logger.Setup()
 	if err != nil {
 		logger.Fatal("load config error", zap.Error(err))
@@ -19,16 +23,16 @@ func main() {
 
 	// DO NOT uncomment
 	dbConfig := config.NewDBConfig()
-	_, entClient, err := db.Setup(dbConfig)
+	sqlDB, entClient, err := db.Setup(dbConfig)
 	if err != nil {
 		logger.Fatal("cant open db", zap.Error(err))
 	}
 
-	//err = migration.Apply(ctx, sqlDB, entClient)
-	//if err != migrate.ErrNoChange && err != nil {
-	//	logger.Fatal("migration failed", zap.Error(err))
-	//}
-	//logger.Error("migration error", zap.Error(err))
+	err = migration.Apply(ctx, sqlDB, entClient)
+	if err != migrate.ErrNoChange && err != nil {
+		logger.Fatal("migration failed", zap.Error(err))
+	}
+	logger.Error("migration error", zap.Error(err))
 
 	// conf
 	serverConfig, err := config.SetupServerConfig()

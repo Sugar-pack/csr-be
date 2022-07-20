@@ -36,6 +36,7 @@ local_lint:
 	golangci-lint run --out-format tab
 
 generate:
+	rm -rf ./swagger/generated
 	swagger generate server -f ./swagger/spec.yaml -s swagger/generated/restapi -m swagger/generated/models --exclude-main
 	go generate ./ent
 
