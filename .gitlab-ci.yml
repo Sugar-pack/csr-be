@@ -55,6 +55,6 @@ deploy_stage:
     - chmod -R 700 ~/.ssh
     - echo "$SSH_KNOWN_HOSTS" >> ~/.ssh/known_hosts
     - chmod 644 ~/.ssh/known_hosts
-    - scp -P$SSH_PORT -r ./csr $SSH_USER@$SSH_HOST:~/tmp_csr
-    - scp -P$SSH_PORT -r ./db $SSH_USER@$SSH_HOST:/var/www/csr/
-    - ssh -p$SSH_PORT $SSH_USER@$SSH_HOST 'sudo service csr stop && cp ~/tmp_csr /var/www/csr/server && sudo service csr start'
+    - scp -o "StrictHostKeyChecking=no" -P$SSH_PORT -r ./csr $SSH_USER@$SSH_HOST:~/tmp_csr
+    - scp -o "StrictHostKeyChecking=no" -P$SSH_PORT -r ./db $SSH_USER@$SSH_HOST:/var/www/csr/
+    - ssh -o "StrictHostKeyChecking=no" -p$SSH_PORT $SSH_USER@$SSH_HOST 'sudo service csr stop && cp ~/tmp_csr /var/www/csr/server && sudo service csr start'
