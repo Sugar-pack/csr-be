@@ -55,5 +55,9 @@ gen-email-client-mock:
 gen-services-mocks:
 	@docker run -v `pwd`:/src -w /src vektra/mockery:v2.13.1 --case snake --dir swagger/services --output internal/mocks/services --all
 
-gen-utils-mock:
-	@docker run -v `pwd`:/src -w /src vektra/mockery:v2.13.1 --case snake --dir internal/utils --output internal/mocks/utils --all
+linux-build-mac-version:
+	CGO_ENABLED=1 GOOS=linux CGO_LDFLAGS="-static" GOARCH=amd64 CC=x86_64-linux-musl-gcc CXX=x86_64-linux-musl-g++ go build ./cmd/swagger/main.go
+
+linux-build:
+	CGO_ENABLED=1 GOOS=linux GOARCH=amd64 CGO_LDFLAGS="-static" go build ./cmd/swagger/main.go
+
