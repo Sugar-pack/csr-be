@@ -377,6 +377,37 @@ paths:
             $ref: "#/definitions/Error"
   /equipment/kinds:
     get:
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          description: limit of items in page
+          type: integer
+          default: 10
+        - name: offset
+          in: query
+          required: false
+          description: offset of items
+          type: integer
+          default: 0
+        - name: order_by
+          in: query
+          required: false
+          description: how to order list
+          type: string
+          enum:
+            - asc
+            - desc
+          default: asc
+        - name: order_column
+          in: query
+          required: false
+          description: column to order by
+          type: string
+          enum:
+            - id
+            - name
+          default: id
       summary: Get all kinds.
       security:
         - Bearer: [ ]
@@ -1887,9 +1918,17 @@ definitions:
       max_reservation_units:
         type: integer
   ListOfKinds:
-    type: array
-    items:
-      $ref: "#/definitions/Kind"
+    type: object
+    required:
+      - total
+      - items
+    properties:
+      total:
+        type: integer
+      items:
+        type: array
+        items:
+          $ref: "#/definitions/Kind"
   GetKindByIDResponse:
     type: object
     required:

@@ -3,6 +3,10 @@ package handlers
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/kind"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/utils"
+	"math"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -148,7 +152,7 @@ func (s *KindTestSuite) TestKind_GetAllKinds_RepoErr() {
 	}
 
 	err := errors.New("test")
-	s.repository.On("AllKind", ctx).Return(nil, err)
+	s.repository.On("AllKindsTotal", ctx).Return(0, err)
 
 	handlerFunc := s.handler.GetAllKindsFunc(s.repository)
 	access := "dummy access"
@@ -162,7 +166,7 @@ func (s *KindTestSuite) TestKind_GetAllKinds_RepoErr() {
 	s.repository.AssertExpectations(t)
 }
 
-func (s *KindTestSuite) TestKind_GetAllKinds_OK() {
+func (s *KindTestSuite) TestKind_GetAllKinds_NotFound() {
 	t := s.T()
 	request := http.Request{}
 	ctx := request.Context()
@@ -171,15 +175,7 @@ func (s *KindTestSuite) TestKind_GetAllKinds_OK() {
 		HTTPRequest: &request,
 	}
 
-	var kindsToReturn []*ent.Kind
-	kindToReturn := &ent.Kind{
-		ID:                  1,
-		Name:                "test",
-		MaxReservationTime:  100,
-		MaxReservationUnits: 1,
-	}
-	kindsToReturn = append(kindsToReturn, kindToReturn)
-	s.repository.On("AllKind", ctx).Return(kindsToReturn, nil)
+	s.repository.On("AllKindsTotal", ctx).Return(0, nil)
 
 	handlerFunc := s.handler.GetAllKindsFunc(s.repository)
 	access := "dummy access"
@@ -190,17 +186,281 @@ func (s *KindTestSuite) TestKind_GetAllKinds_OK() {
 	resp.WriteResponse(responseRecorder, producer)
 	assert.Equal(t, http.StatusOK, responseRecorder.Code)
 
-	var returnedKinds []models.Kind
+	var returnedKinds models.ListOfKinds
 	err := json.Unmarshal(responseRecorder.Body.Bytes(), &returnedKinds)
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.Equal(t, len(kindsToReturn), len(returnedKinds))
-	assert.Equal(t, kindToReturn.ID, int(returnedKinds[0].ID))
-	assert.Equal(t, kindToReturn.Name, *returnedKinds[0].Name)
-	assert.Equal(t, kindToReturn.MaxReservationTime, returnedKinds[0].MaxReservationTime)
-	assert.Equal(t, kindToReturn.MaxReservationUnits, returnedKinds[0].MaxReservationUnits)
+	assert.Equal(t, 0, int(*returnedKinds.Total))
+	assert.Equal(t, 0, len(returnedKinds.Items))
 
+	s.repository.AssertExpectations(t)
+}
+
+func (s *KindTestSuite) TestKind_GetAllKinds_EmptyParams() {
+	t := s.T()
+	request := http.Request{}
+	ctx := request.Context()
+
+	limit := math.MaxInt
+	offset := 0
+	orderBy := utils.AscOrder
+	orderColumn := kind.FieldID
+	data := kinds.GetAllKindsParams{
+		HTTPRequest: &request,
+	}
+
+	kindsToReturn := []*ent.Kind{
+		validKind(t, 1),
+		validKind(t, 2),
+		validKind(t, 3),
+	}
+
+	s.repository.On("AllKindsTotal", ctx).Return(len(kindsToReturn), nil)
+	s.repository.On("AllKinds", ctx, limit, offset, orderBy, orderColumn).
+		Return(kindsToReturn, nil)
+
+	handlerFunc := s.handler.GetAllKindsFunc(s.repository)
+	access := "dummy access"
+	resp := handlerFunc.Handle(data, access)
+
+	responseRecorder := httptest.NewRecorder()
+	producer := runtime.JSONProducer()
+	resp.WriteResponse(responseRecorder, producer)
+	assert.Equal(t, http.StatusOK, responseRecorder.Code)
+
+	var returnedKinds models.ListOfKinds
+	err := json.Unmarshal(responseRecorder.Body.Bytes(), &returnedKinds)
+	if err != nil {
+		t.Fatal(err)
+	}
+	assert.Equal(t, len(kindsToReturn), int(*returnedKinds.Total))
+	assert.Equal(t, len(kindsToReturn), len(returnedKinds.Items))
+
+	s.repository.AssertExpectations(t)
+}
+
+func (s *KindTestSuite) TestKind_GetAllKinds_LimitGreaterThanTotal() {
+	t := s.T()
+	request := http.Request{}
+	ctx := request.Context()
+
+	limit := int64(10)
+	offset := int64(0)
+	orderBy := utils.AscOrder
+	orderColumn := kind.FieldID
+	data := kinds.GetAllKindsParams{
+		HTTPRequest: &request,
+		Limit:       &limit,
+		Offset:      &offset,
+		OrderBy:     &orderBy,
+		OrderColumn: &orderColumn,
+	}
+
+	kindsToReturn := []*ent.Kind{
+		validKind(t, 1),
+		validKind(t, 2),
+		validKind(t, 3),
+	}
+
+	s.repository.On("AllKindsTotal", ctx).Return(len(kindsToReturn), nil)
+	s.repository.On("AllKinds", ctx, int(limit), int(offset), orderBy, orderColumn).
+		Return(kindsToReturn, nil)
+
+	handlerFunc := s.handler.GetAllKindsFunc(s.repository)
+	access := "dummy access"
+	resp := handlerFunc.Handle(data, access)
+
+	responseRecorder := httptest.NewRecorder()
+	producer := runtime.JSONProducer()
+	resp.WriteResponse(responseRecorder, producer)
+	assert.Equal(t, http.StatusOK, responseRecorder.Code)
+
+	var returnedKinds models.ListOfKinds
+	err := json.Unmarshal(responseRecorder.Body.Bytes(), &returnedKinds)
+	if err != nil {
+		t.Fatal(err)
+	}
+	assert.Equal(t, len(kindsToReturn), int(*returnedKinds.Total))
+	assert.Equal(t, len(kindsToReturn), len(returnedKinds.Items))
+	assert.GreaterOrEqual(t, int(limit), len(returnedKinds.Items))
+
+	s.repository.AssertExpectations(t)
+}
+
+func (s *KindTestSuite) TestKind_GetAllKinds_LimitLessThanTotal() {
+	t := s.T()
+	request := http.Request{}
+	ctx := request.Context()
+
+	limit := int64(2)
+	offset := int64(0)
+	orderBy := utils.AscOrder
+	orderColumn := kind.FieldID
+	data := kinds.GetAllKindsParams{
+		HTTPRequest: &request,
+		Limit:       &limit,
+		Offset:      &offset,
+		OrderBy:     &orderBy,
+		OrderColumn: &orderColumn,
+	}
+
+	kindsToReturn := []*ent.Kind{
+		validKind(t, 1),
+		validKind(t, 2),
+		validKind(t, 3),
+	}
+
+	s.repository.On("AllKindsTotal", ctx).Return(len(kindsToReturn), nil)
+	s.repository.On("AllKinds", ctx, int(limit), int(offset), orderBy, orderColumn).
+		Return(kindsToReturn[:limit], nil)
+
+	handlerFunc := s.handler.GetAllKindsFunc(s.repository)
+	access := "dummy access"
+	resp := handlerFunc.Handle(data, access)
+
+	responseRecorder := httptest.NewRecorder()
+	producer := runtime.JSONProducer()
+	resp.WriteResponse(responseRecorder, producer)
+	assert.Equal(t, http.StatusOK, responseRecorder.Code)
+
+	var returnedKinds models.ListOfKinds
+	err := json.Unmarshal(responseRecorder.Body.Bytes(), &returnedKinds)
+	if err != nil {
+		t.Fatal(err)
+	}
+	assert.Equal(t, len(kindsToReturn), int(*returnedKinds.Total))
+	assert.Greater(t, len(kindsToReturn), len(returnedKinds.Items))
+	assert.GreaterOrEqual(t, int(limit), len(returnedKinds.Items))
+
+	s.repository.AssertExpectations(t)
+}
+
+func (s *KindTestSuite) TestKind_GetAllKinds_SecondPage() {
+	t := s.T()
+	request := http.Request{}
+	ctx := request.Context()
+
+	limit := int64(2)
+	offset := int64(2)
+	orderBy := utils.AscOrder
+	orderColumn := kind.FieldID
+	data := kinds.GetAllKindsParams{
+		HTTPRequest: &request,
+		Limit:       &limit,
+		Offset:      &offset,
+		OrderBy:     &orderBy,
+		OrderColumn: &orderColumn,
+	}
+
+	kindsToReturn := []*ent.Kind{
+		validKind(t, 1),
+		validKind(t, 2),
+		validKind(t, 3),
+	}
+
+	s.repository.On("AllKindsTotal", ctx).Return(len(kindsToReturn), nil)
+	s.repository.On("AllKinds", ctx, int(limit), int(offset), orderBy, orderColumn).
+		Return(kindsToReturn[offset:], nil)
+
+	handlerFunc := s.handler.GetAllKindsFunc(s.repository)
+	access := "dummy access"
+	resp := handlerFunc.Handle(data, access)
+
+	responseRecorder := httptest.NewRecorder()
+	producer := runtime.JSONProducer()
+	resp.WriteResponse(responseRecorder, producer)
+	assert.Equal(t, http.StatusOK, responseRecorder.Code)
+
+	var returnedKinds models.ListOfKinds
+	err := json.Unmarshal(responseRecorder.Body.Bytes(), &returnedKinds)
+	if err != nil {
+		t.Fatal(err)
+	}
+	assert.Equal(t, len(kindsToReturn), int(*returnedKinds.Total))
+	assert.Greater(t, len(kindsToReturn), len(returnedKinds.Items))
+	assert.GreaterOrEqual(t, int(limit), len(returnedKinds.Items))
+	assert.Equal(t, len(kindsToReturn)-int(offset), len(returnedKinds.Items))
+
+	s.repository.AssertExpectations(t)
+}
+
+func (s *KindTestSuite) TestKind_GetAllKinds_SeveralPages() {
+	t := s.T()
+	request := http.Request{}
+	ctx := request.Context()
+
+	limit := int64(3)
+	offset := int64(0)
+	orderBy := utils.AscOrder
+	orderColumn := kind.FieldID
+	data := kinds.GetAllKindsParams{
+		HTTPRequest: &request,
+		Limit:       &limit,
+		Offset:      &offset,
+		OrderBy:     &orderBy,
+		OrderColumn: &orderColumn,
+	}
+
+	kindsToReturn := []*ent.Kind{
+		validKind(t, 1),
+		validKind(t, 2),
+		validKind(t, 3),
+		validKind(t, 4),
+		validKind(t, 5),
+	}
+
+	s.repository.On("AllKindsTotal", ctx).Return(len(kindsToReturn), nil)
+	s.repository.On("AllKinds", ctx, int(limit), int(offset), orderBy, orderColumn).
+		Return(kindsToReturn[:limit], nil)
+
+	handlerFunc := s.handler.GetAllKindsFunc(s.repository)
+	access := "dummy access"
+	resp := handlerFunc.Handle(data, access)
+
+	responseRecorder := httptest.NewRecorder()
+	producer := runtime.JSONProducer()
+	resp.WriteResponse(responseRecorder, producer)
+	assert.Equal(t, http.StatusOK, responseRecorder.Code)
+
+	var firstPage models.ListOfKinds
+	err := json.Unmarshal(responseRecorder.Body.Bytes(), &firstPage)
+	if err != nil {
+		t.Fatal(err)
+	}
+	assert.Equal(t, len(kindsToReturn), int(*firstPage.Total))
+	assert.Greater(t, len(kindsToReturn), len(firstPage.Items))
+	assert.Equal(t, int(limit), len(firstPage.Items))
+
+	offset = limit
+	data = kinds.GetAllKindsParams{
+		HTTPRequest: &request,
+		Limit:       &limit,
+		Offset:      &offset,
+		OrderBy:     &orderBy,
+		OrderColumn: &orderColumn,
+	}
+	s.repository.On("AllKindsTotal", ctx).Return(len(kindsToReturn), nil)
+	s.repository.On("AllKinds", ctx, int(limit), int(offset), orderBy, orderColumn).
+		Return(kindsToReturn[offset:], nil)
+
+	resp = handlerFunc.Handle(data, access)
+	responseRecorder = httptest.NewRecorder()
+	producer = runtime.JSONProducer()
+	resp.WriteResponse(responseRecorder, producer)
+	assert.Equal(t, http.StatusOK, responseRecorder.Code)
+
+	var secondPage models.ListOfKinds
+	err = json.Unmarshal(responseRecorder.Body.Bytes(), &secondPage)
+	if err != nil {
+		t.Fatal(err)
+	}
+	assert.Equal(t, len(kindsToReturn), int(*secondPage.Total))
+	assert.Greater(t, len(kindsToReturn), len(secondPage.Items))
+	assert.GreaterOrEqual(t, int(limit), len(secondPage.Items))
+	assert.Equal(t, len(kindsToReturn)-int(offset), len(secondPage.Items))
+
+	assert.False(t, kindsDuplicated(t, firstPage.Items, secondPage.Items))
 	s.repository.AssertExpectations(t)
 }
 
@@ -389,4 +649,27 @@ func (s *KindTestSuite) TestKind_PatchKind_OK() {
 	assert.Equal(t, updatedKind.MaxReservationUnits, returnedKind.Data.MaxReservationUnits)
 
 	s.repository.AssertExpectations(t)
+}
+
+func validKind(t *testing.T, id int) *ent.Kind {
+	t.Helper()
+	return &ent.Kind{
+		ID:                  id,
+		Name:                fmt.Sprintf("kind %d", id),
+		MaxReservationTime:  10,
+		MaxReservationUnits: 5,
+	}
+}
+func kindsDuplicated(t *testing.T, array1, array2 []*models.Kind) bool {
+	t.Helper()
+	diff := make(map[int64]int, len(array1))
+	for _, v := range array1 {
+		diff[v.ID] = 1
+	}
+	for _, v := range array2 {
+		if _, ok := diff[v.ID]; ok {
+			return true
+		}
+	}
+	return false
 }

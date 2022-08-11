@@ -1,6 +1,9 @@
 package handlers
 
 import (
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/kind"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/utils"
+	"math"
 	"net/http"
 
 	"github.com/go-openapi/runtime/middleware"
@@ -52,15 +55,33 @@ func (c *Kind) CreateNewKindFunc(repository repositories.KindRepository) kinds.C
 func (c *Kind) GetAllKindsFunc(repository repositories.KindRepository) kinds.GetAllKindsHandlerFunc {
 	return func(s kinds.GetAllKindsParams, access interface{}) middleware.Responder {
 		ctx := s.HTTPRequest.Context()
-		allKinds, err := repository.AllKind(ctx)
+		limit := utils.GetParamInt(s.Limit, math.MaxInt)
+		offset := utils.GetParamInt(s.Offset, 0)
+		orderBy := utils.GetParamString(s.OrderBy, utils.AscOrder)
+		orderColumn := utils.GetParamString(s.OrderColumn, kind.FieldID)
+		total, err := repository.AllKindsTotal(ctx)
 		if err != nil {
-			c.logger.Error("query all kind error", zap.Error(err))
+			c.logger.Error("query total kinds error", zap.Error(err))
 			return kinds.NewGetAllKindsDefault(http.StatusInternalServerError).
-				WithPayload(buildStringPayload("cant get all kinds"))
+				WithPayload(buildStringPayload("cant get total amount of kinds"))
 		}
-		listOfKinds := models.ListOfKinds{}
-		for _, v := range allKinds {
-			listOfKinds = append(listOfKinds, mapKind(v))
+		var allKinds []*ent.Kind
+		if total > 0 {
+			allKinds, err = repository.AllKinds(ctx, limit, offset, orderBy, orderColumn)
+			if err != nil {
+				c.logger.Error("query all kind error", zap.Error(err))
+				return kinds.NewGetAllKindsDefault(http.StatusInternalServerError).
+					WithPayload(buildStringPayload("cant get all kinds"))
+			}
+		}
+		mappedKinds := make([]*models.Kind, len(allKinds))
+		for i, v := range allKinds {
+			mappedKinds[i] = mapKind(v)
+		}
+		totalKinds := int64(total)
+		listOfKinds := &models.ListOfKinds{
+			Items: mappedKinds,
+			Total: &totalKinds,
 		}
 		return kinds.NewGetAllKindsOK().WithPayload(listOfKinds)
 	}
