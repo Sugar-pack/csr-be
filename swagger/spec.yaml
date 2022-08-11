@@ -103,7 +103,7 @@ paths:
     get:
       summary: Get the current user data.
       security:
-        - Bearer: []
+        - Bearer: [ ]
       tags:
         - Users
       operationId: getCurrentUser
@@ -119,7 +119,7 @@ paths:
     patch:
       summary: Edit selected fields of the current user.
       security:
-        - Bearer: []
+        - Bearer: [ ]
       tags:
         - Users
       operationId: patchUser
@@ -205,7 +205,7 @@ paths:
         type: integer
     post:
       security:
-        - Bearer: []
+        - Bearer: [ ]
       consumes:
         - application/json
       parameters:
@@ -796,6 +796,38 @@ paths:
       tags:
         - Equipment
       operationId: GetAllEquipment
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          description: limit of items in page
+          type: integer
+          default: 10
+        - name: offset
+          in: query
+          required: false
+          description: offset of items
+          type: integer
+          default: 0
+        - name: order_by
+          in: query
+          required: false
+          description: how to order list
+          type: string
+          enum:
+            - asc
+            - desc
+          default: asc
+        - name: order_column
+          in: query
+          required: false
+          description: column to order by
+          type: string
+          enum:
+            - id
+            - name
+            - title
+          default: id
       responses:
         200:
           description: Success
@@ -882,6 +914,37 @@ paths:
           required: false
           schema:
             $ref: "#/definitions/EquipmentFilter"
+        - name: limit
+          in: query
+          required: false
+          description: limit of items in page
+          type: integer
+          default: 10
+        - name: offset
+          in: query
+          required: false
+          description: offset of items
+          type: integer
+          default: 0
+        - name: order_by
+          in: query
+          required: false
+          description: how to order list
+          type: string
+          enum:
+          - asc
+          - desc
+          default: asc
+        - name: order_column
+          in: query
+          required: false
+          description: column to order by
+          type: string
+          enum:
+          - id
+          - name
+          - title
+          default: id
       responses:
         200:
           description: Equipment has been found
@@ -1001,8 +1064,8 @@ paths:
         in: path
         required: true
         description: user id
-        type: integer 
-    post: 
+        type: integer
+    post:
       summary: Block user
       security:
         - Bearer: [ ]
@@ -1022,8 +1085,8 @@ paths:
         in: path
         required: true
         description: user id
-        type: integer 
-    post: 
+        type: integer
+    post:
       summary: Unblock user
       security:
         - Bearer: [ ]
@@ -1036,7 +1099,7 @@ paths:
         default:
           description: Unexpected error.
           schema:
-            $ref: "#/definitions/Error"  
+            $ref: "#/definitions/Error"
 
   /password_reset/:
     post:
@@ -1097,7 +1160,7 @@ paths:
         default:
           description: Unexpected error.
           schema:
-            $ref: "#/definitions/Error" 
+            $ref: "#/definitions/Error"
     post:
       summary: Register a new pet kind
       security:
@@ -1271,12 +1334,12 @@ definitions:
     type: object
     description: Patch task object (changing kind properties)
     properties:
-        name:
-          type: string
-        maxReservationTime:
-            type: integer
-        maxReservationUnits:
-            type: integer
+      name:
+        type: string
+      maxReservationTime:
+        type: integer
+      maxReservationUnits:
+        type: integer
 
   UpdateUserTask:
     type: object
@@ -1326,16 +1389,16 @@ definitions:
       name:
         type: string
       surname:
-        type : string
+        type: string
       passport_series:
-        type : string
+        type: string
       passport_number:
-        type : string
+        type: string
       passport_authority:
-        type : string
+        type: string
       passport_issue_date:
-        type : string
-        format : date
+        type: string
+        format: date
       phone:
         type: string
       org_name:
@@ -1360,8 +1423,8 @@ definitions:
     required:
       - accessToken
     properties:
-     accessToken:
-       type: string
+      accessToken:
+        type: string
   RefreshToken:
     type: object
     required:
@@ -1576,12 +1639,12 @@ definitions:
       $ref: "#/definitions/UserInfo"
 
   SuccessUserUpdateResponse:
-   type: object
-   required:
-    - data
-   properties:
-    data:
-      $ref: "#/definitions/User"
+    type: object
+    required:
+      - data
+    properties:
+      data:
+        $ref: "#/definitions/User"
   #Role
   Role:
     type: object
@@ -1695,12 +1758,12 @@ definitions:
       - max_reservation_time
       - max_reservation_units
     properties:
-        name:
-            type: string
-        max_reservation_time:
-            type: integer
-        max_reservation_units:
-            type: integer
+      name:
+        type: string
+      max_reservation_time:
+        type: integer
+      max_reservation_units:
+        type: integer
   CreateNewKindResponse:
     type: object
     required:
@@ -2010,12 +2073,20 @@ definitions:
         items:
           $ref: "#/definitions/PetKind"
   ListEquipment:
-    type: array
-    items:
-      $ref: "#/definitions/EquipmentResponse"
+    type: object
+    required:
+      - total
+      - items
+    properties:
+      total:
+        type: integer
+      items:
+        type: array
+        items:
+          $ref: "#/definitions/EquipmentResponse"
 
 
-#PasswordReset
+  #PasswordReset
   PasswordReset:
     type: object
     required:
@@ -2033,12 +2104,12 @@ definitions:
       hash:
         type: string
   SendPasswordResetLinkRequest:
-   type: object
-   required:
-    - data
-   properties:
-    data:
-      $ref: "#/definitions/Login"
+    type: object
+    required:
+      - data
+    properties:
+      data:
+        $ref: "#/definitions/Login"
   PasswordResetResponse:
     type: string
 
