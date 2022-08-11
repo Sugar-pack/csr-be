@@ -545,23 +545,44 @@ paths:
       tags:
         - Orders
       operationId: GetAllOrders
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          description: limit of items in page
+          type: integer
+          default: 10
+        - name: offset
+          in: query
+          required: false
+          description: offset of items
+          type: integer
+          default: 0
+        - name: order_by
+          in: query
+          required: false
+          description: how to order list
+          type: string
+          enum:
+            - asc
+            - desc
+          default: asc
+        - name: order_column
+          in: query
+          required: false
+          description: column to order by
+          type: string
+          enum:
+            - id
+            - name
+          default: id
       security:
         - Bearer: [ ]
       responses:
         200:
-          description: 'List of orders'
+          description: Success
           schema:
-            type: object
-            properties:
-              data:
-                type: object
-                properties:
-                  items:
-                    type: array
-                    items:
-                      $ref: '#/definitions/Order'
-                  total:
-                    type: integer
+            $ref: "#/definitions/OrderList"
         default:
           description: 'Unexpected error'
           schema:
@@ -679,6 +700,36 @@ paths:
           required: true
           description: order status
           type: string
+        - name: limit
+          in: query
+          required: false
+          description: limit of items in page
+          type: integer
+          default: 10
+        - name: offset
+          in: query
+          required: false
+          description: offset of items
+          type: integer
+          default: 0
+        - name: order_by
+          in: query
+          required: false
+          description: how to order list
+          type: string
+          enum:
+            - asc
+            - desc
+          default: asc
+        - name: order_column
+          in: query
+          required: false
+          description: column to order by
+          type: string
+          enum:
+            - id
+            - name
+          default: id
       operationId: GetOrdersByStatus
       responses:
         200:
@@ -715,6 +766,36 @@ paths:
           in: path
           required: true
           type: string
+        - name: limit
+          in: query
+          required: false
+          description: limit of items in page
+          type: integer
+          default: 10
+        - name: offset
+          in: query
+          required: false
+          description: offset of items
+          type: integer
+          default: 0
+        - name: order_by
+          in: query
+          required: false
+          description: how to order list
+          type: string
+          enum:
+            - asc
+            - desc
+          default: asc
+        - name: order_column
+          in: query
+          required: false
+          description: column to order by
+          type: string
+          enum:
+            - id
+            - name
+          default: id
       operationId: GetOrdersByDateAndStatus
       responses:
         200:
@@ -2295,9 +2376,17 @@ definitions:
       order_id:
         type: integer
   OrderList:
-    type: array
-    items:
-      $ref: "#/definitions/Order"
+    type: object
+    required:
+      - total
+      - items
+    properties:
+      total:
+        type: integer
+      items:
+        type: array
+        items:
+          $ref: "#/definitions/Order"
   # Order Status
   NewOrderStatus:
     type: object

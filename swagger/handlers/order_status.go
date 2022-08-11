@@ -3,6 +3,9 @@ package handlers
 import (
 	"errors"
 	"fmt"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/order"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/utils"
+	"math"
 	"net/http"
 	"time"
 
@@ -181,27 +184,37 @@ func rightForStatusCreation(access interface{}, status *string) bool {
 
 func (h *OrderStatus) GetOrdersByStatus(repository repositories.OrderRepositoryWithFilter) orders.GetOrdersByStatusHandlerFunc {
 	return func(params orders.GetOrdersByStatusParams, access interface{}) middleware.Responder {
-		h.logger.Info("GetOrdersByStatus begin")
 		ctx := params.HTTPRequest.Context()
+		limit := utils.GetParamInt(params.Limit, math.MaxInt)
+		offset := utils.GetParamInt(params.Offset, 0)
+		orderBy := utils.GetParamString(params.OrderBy, utils.AscOrder)
+		orderColumn := utils.GetParamString(params.OrderColumn, order.FieldID)
+
 		haveRight := hasSearchRight(access)
 		if !haveRight {
 			h.logger.Warn("User have no right to get orders by status", zap.Any("access", access))
 			return orders.NewGetOrdersByStatusDefault(http.StatusForbidden).
 				WithPayload(&models.Error{Data: &models.ErrorData{Message: "You don't have rights to get orders by status"}})
 		}
-		ordersByStatus, err := repository.OrdersByStatus(ctx, params.Status)
+		total, err := repository.OrdersByStatusTotal(ctx, params.Status)
 		if err != nil {
 			h.logger.Error("GetOrdersByStatus error", zap.Error(err))
 			return orders.NewGetOrdersByStatusDefault(http.StatusInternalServerError).
-				WithPayload(&models.Error{Data: &models.ErrorData{Message: fmt.Sprintf("Can't get orders by status. error: %s", err.Error())}})
+				WithPayload(buildStringPayload(fmt.Sprintf("Can't get total count of orders by status. error: %s", err.Error())))
 		}
-		if ordersByStatus == nil {
-			h.logger.Warn("No orders by status", zap.Any("access", access))
-			return orders.NewGetOrdersByStatusNotFound().WithPayload("no orders by status found")
+
+		var ordersByStatus []*ent.Order
+		if total > 0 {
+			ordersByStatus, err = repository.OrdersByStatus(ctx, params.Status, limit, offset, orderBy, orderColumn)
+			if err != nil {
+				h.logger.Error("GetOrdersByStatus error", zap.Error(err))
+				return orders.NewGetOrdersByStatusDefault(http.StatusInternalServerError).
+					WithPayload(buildStringPayload(fmt.Sprintf("Can't get orders by status. error: %s", err.Error())))
+			}
 		}
 		ordersResult := make([]*models.Order, len(ordersByStatus))
 		for index, order := range ordersByStatus {
-			tmpOrder, errMap := mapOrder(&order, h.logger)
+			tmpOrder, errMap := mapOrder(order, h.logger)
 			if errMap != nil {
 				h.logger.Error("GetOrdersByStatus error", zap.Error(errMap))
 				return orders.NewGetOrdersByStatusDefault(http.StatusInternalServerError).
@@ -209,8 +222,13 @@ func (h *OrderStatus) GetOrdersByStatus(repository repositories.OrderRepositoryW
 			}
 			ordersResult[index] = tmpOrder
 		}
-		h.logger.Info("GetOrdersByStatus end")
-		return orders.NewGetOrdersByStatusOK().WithPayload(ordersResult)
+
+		totalOrders := int64(total)
+		listOrders := &models.OrderList{
+			Items: ordersResult,
+			Total: &totalOrders,
+		}
+		return orders.NewGetOrdersByStatusOK().WithPayload(listOrders)
 	}
 }
 
@@ -224,32 +242,54 @@ func hasSearchRight(access interface{}) bool {
 
 func (h *OrderStatus) GetOrdersByPeriodAndStatus(repository repositories.OrderRepositoryWithFilter) orders.GetOrdersByDateAndStatusHandlerFunc {
 	return func(params orders.GetOrdersByDateAndStatusParams, access interface{}) middleware.Responder {
-		h.logger.Info("GetOrdersByPeriodAndStatus begin")
 		ctx := params.HTTPRequest.Context()
+		limit := utils.GetParamInt(params.Limit, math.MaxInt)
+		offset := utils.GetParamInt(params.Offset, 0)
+		orderBy := utils.GetParamString(params.OrderBy, utils.AscOrder)
+		orderColumn := utils.GetParamString(params.OrderColumn, order.FieldID)
+
 		haveRight := hasSearchRight(access)
 		if !haveRight {
 			h.logger.Warn("User have no right to get orders by period and status", zap.Any("access", access))
 			return orders.NewGetOrdersByDateAndStatusDefault(http.StatusForbidden).
-				WithPayload(&models.Error{Data: &models.ErrorData{Message: "You don't have rights to get orders by period and status"}})
+				WithPayload(buildStringPayload("You don't have rights to get orders by period and status"))
 		}
-		ordersByPeriodAndStatus, err := repository.OrdersByPeriodAndStatus(ctx, time.Time(params.FromDate), time.Time(params.ToDate), params.StatusName)
+		total, err := repository.OrdersByPeriodAndStatusTotal(ctx,
+			time.Time(params.FromDate), time.Time(params.ToDate), params.StatusName)
 		if err != nil {
 			h.logger.Error("GetOrdersByPeriodAndStatus error", zap.Error(err))
 			return orders.NewGetOrdersByDateAndStatusDefault(http.StatusInternalServerError).
-				WithPayload(&models.Error{Data: &models.ErrorData{Message: "Can't get orders by period and status"}})
+				WithPayload(buildStringPayload("Can't get total amount of orders by period and status"))
+		}
+
+		var ordersByPeriodAndStatus []*ent.Order
+		if total > 0 {
+			ordersByPeriodAndStatus, err = repository.OrdersByPeriodAndStatus(ctx,
+				time.Time(params.FromDate), time.Time(params.ToDate), params.StatusName,
+				limit, offset, orderBy, orderColumn)
+			if err != nil {
+				h.logger.Error("GetOrdersByPeriodAndStatus error", zap.Error(err))
+				return orders.NewGetOrdersByDateAndStatusDefault(http.StatusInternalServerError).
+					WithPayload(buildStringPayload("Can't get orders by period and status"))
+			}
 		}
 		ordersResult := make([]*models.Order, len(ordersByPeriodAndStatus))
 		for index, order := range ordersByPeriodAndStatus {
-			tmpOrder, errMap := mapOrder(&order, h.logger)
+			tmpOrder, errMap := mapOrder(order, h.logger)
 			if errMap != nil {
 				h.logger.Error("GetOrdersByPeriodAndStatus error", zap.Error(errMap))
 				return orders.NewGetOrdersByDateAndStatusDefault(http.StatusInternalServerError).
-					WithPayload(&models.Error{Data: &models.ErrorData{Message: "Can't map order"}})
+					WithPayload(buildStringPayload("Can't map order"))
 			}
 			ordersResult[index] = tmpOrder
 		}
-		h.logger.Info("GetOrdersByPeriodAndStatus end")
-		return orders.NewGetOrdersByDateAndStatusOK().WithPayload(ordersResult)
+
+		totalOrders := int64(total)
+		listOrders := &models.OrderList{
+			Items: ordersResult,
+			Total: &totalOrders,
+		}
+		return orders.NewGetOrdersByDateAndStatusOK().WithPayload(listOrders)
 
 	}
 }

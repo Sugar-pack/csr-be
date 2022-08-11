@@ -11,8 +11,12 @@ import (
 )
 
 type OrderRepositoryWithFilter interface {
-	OrdersByStatus(ctx context.Context, status string) ([]ent.Order, error)
-	OrdersByPeriodAndStatus(ctx context.Context, from, to time.Time, status string) ([]ent.Order, error)
+	OrdersByStatus(ctx context.Context, status string, limit, offset int,
+		orderBy, orderColumn string) ([]*ent.Order, error)
+	OrdersByStatusTotal(ctx context.Context, status string) (int, error)
+	OrdersByPeriodAndStatus(ctx context.Context, from, to time.Time, status string, limit, offset int,
+		orderBy, orderColumn string) ([]*ent.Order, error)
+	OrdersByPeriodAndStatusTotal(ctx context.Context, from, to time.Time, status string) (int, error)
 }
 type orderFilterRepository struct {
 	client *ent.Client
@@ -22,7 +26,21 @@ func NewOrderFilter(client *ent.Client) *orderFilterRepository {
 	return &orderFilterRepository{client: client}
 }
 
-func (r *orderFilterRepository) OrdersByPeriodAndStatus(ctx context.Context, from, to time.Time, status string) ([]ent.Order, error) {
+func (r *orderFilterRepository) OrdersByStatusTotal(ctx context.Context, status string) (int, error) {
+	return r.client.OrderStatus.Query().
+		QueryStatusName().Where(statusname.StatusEQ(status)).QueryOrderStatus().Count(ctx)
+}
+
+func (r *orderFilterRepository) OrdersByPeriodAndStatusTotal(ctx context.Context,
+	from, to time.Time, status string) (int, error) {
+	return r.client.OrderStatus.Query().
+		Where(orderstatus.CurrentDateGT(from)).
+		Where(orderstatus.CurrentDateLTE(to)).
+		QueryStatusName().Where(statusname.StatusEQ(status)).QueryOrderStatus().Count(ctx)
+}
+
+func (r *orderFilterRepository) OrdersByPeriodAndStatus(ctx context.Context, from, to time.Time, status string,
+	limit, offset int, orderBy, orderColumn string) ([]*ent.Order, error) {
 	statusID, err := r.client.StatusName.Query().Where(statusname.StatusEQ(status)).OnlyID(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get status id: %w", err)
@@ -39,8 +57,9 @@ func (r *orderFilterRepository) OrdersByPeriodAndStatus(ctx context.Context, fro
 	if len(orderStatusByStatus) == 0 {
 		return nil, fmt.Errorf("no orders with status %s", status)
 	}
-	var orders []ent.Order
-	for _, orderStatus := range orderStatusByStatus {
+
+	orders := make([]*ent.Order, len(orderStatusByStatus))
+	for i, orderStatus := range orderStatusByStatus {
 		order, errOrder := r.client.Order.Query().WithOrderStatus(func(query *ent.OrderStatusQuery) {
 			query.Where(orderstatus.IDEQ(orderStatus.ID))
 		}).Only(ctx)
@@ -48,14 +67,15 @@ func (r *orderFilterRepository) OrdersByPeriodAndStatus(ctx context.Context, fro
 			return nil, errOrder
 		}
 		if order != nil {
-			orders = append(orders, *order)
+			orders[i] = order
 		}
 	}
 	return orders, nil
 
 }
 
-func (r *orderFilterRepository) OrdersByStatus(ctx context.Context, status string) ([]ent.Order, error) {
+func (r *orderFilterRepository) OrdersByStatus(ctx context.Context, status string,
+	limit, offset int, orderBy, orderColumn string) ([]*ent.Order, error) {
 	statusID, err := r.client.StatusName.Query().Where(statusname.StatusEQ(status)).OnlyID(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get status id: %w", err)
@@ -70,8 +90,9 @@ func (r *orderFilterRepository) OrdersByStatus(ctx context.Context, status strin
 	if len(orderStatusByStatus) == 0 {
 		return nil, fmt.Errorf("no orders with status %s", status)
 	}
-	var orders []ent.Order
-	for _, orderStatus := range orderStatusByStatus {
+
+	orders := make([]*ent.Order, len(orderStatusByStatus))
+	for i, orderStatus := range orderStatusByStatus {
 		order, errOrder := r.client.Order.Query().WithOrderStatus(func(query *ent.OrderStatusQuery) {
 			query.Where(orderstatus.IDEQ(orderStatus.ID))
 		}).Only(ctx)
@@ -79,9 +100,8 @@ func (r *orderFilterRepository) OrdersByStatus(ctx context.Context, status strin
 			return nil, errOrder
 		}
 		if order != nil {
-			orders = append(orders, *order)
+			orders[i] = order
 		}
 	}
 	return orders, nil
-
 }
