@@ -1,6 +1,9 @@
 package handlers
 
 import (
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/order"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/utils"
+	"math"
 	"net/http"
 
 	"github.com/go-openapi/runtime/middleware"
@@ -32,19 +35,33 @@ func NewActiveArea(logger *zap.Logger) *ActiveArea {
 func (area ActiveArea) GetActiveAreasFunc(repository repositories.ActiveAreaRepository) active_areas.GetAllActiveAreasHandlerFunc {
 	return func(a active_areas.GetAllActiveAreasParams, access interface{}) middleware.Responder {
 		ctx := a.HTTPRequest.Context()
-		e, err := repository.AllActiveAreas(ctx)
+		limit := utils.GetParamInt(a.Limit, math.MaxInt)
+		offset := utils.GetParamInt(a.Offset, 0)
+		orderBy := utils.GetParamString(a.OrderBy, utils.AscOrder)
+		orderColumn := utils.GetParamString(a.OrderColumn, order.FieldID)
+		total, err := repository.TotalActiveAreas(ctx)
 		if err != nil {
-			area.logger.Error("failed to query active areas", zap.Error(err))
-			return active_areas.NewGetAllActiveAreasDefault(http.StatusInternalServerError).WithPayload(&models.Error{
-				Data: &models.ErrorData{
-					Message: err.Error(),
-				},
-			})
+			area.logger.Error("failed to query total active areas", zap.Error(err))
+			return active_areas.NewGetAllActiveAreasDefault(http.StatusInternalServerError).
+				WithPayload(buildErrorPayload(err))
 		}
-		listActiveAreas := models.ListOfActiveAreas{}
-		for _, element := range e {
+		var e []*ent.ActiveArea
+		if total > 0 {
+			e, err = repository.AllActiveAreas(ctx, limit, offset, orderBy, orderColumn)
+			if err != nil {
+				area.logger.Error("failed to query active areas", zap.Error(err))
+				return active_areas.NewGetAllActiveAreasDefault(http.StatusInternalServerError).
+					WithPayload(buildErrorPayload(err))
+			}
+		}
+		totalAreas := int64(total)
+		listActiveAreas := &models.ListOfActiveAreas{
+			Items: make([]*models.ActiveArea, len(e)),
+			Total: &totalAreas,
+		}
+		for i, element := range e {
 			id := int64(element.ID)
-			listActiveAreas = append(listActiveAreas, &models.ActiveArea{ID: &id, Name: &element.Name})
+			listActiveAreas.Items[i] = &models.ActiveArea{ID: &id, Name: &element.Name}
 		}
 		return active_areas.NewGetAllActiveAreasOK().WithPayload(listActiveAreas)
 	}

@@ -14,17 +14,38 @@ type ActiveAreaRepository struct {
 	mock.Mock
 }
 
-// AllActiveAreas provides a mock function with given fields: ctx
-func (_m *ActiveAreaRepository) AllActiveAreas(ctx context.Context) ([]*ent.ActiveArea, error) {
-	ret := _m.Called(ctx)
+// AllActiveAreas provides a mock function with given fields: ctx, limit, offset, orderBy, orderColumn
+func (_m *ActiveAreaRepository) AllActiveAreas(ctx context.Context, limit int, offset int, orderBy string, orderColumn string) ([]*ent.ActiveArea, error) {
+	ret := _m.Called(ctx, limit, offset, orderBy, orderColumn)
 
 	var r0 []*ent.ActiveArea
-	if rf, ok := ret.Get(0).(func(context.Context) []*ent.ActiveArea); ok {
-		r0 = rf(ctx)
+	if rf, ok := ret.Get(0).(func(context.Context, int, int, string, string) []*ent.ActiveArea); ok {
+		r0 = rf(ctx, limit, offset, orderBy, orderColumn)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]*ent.ActiveArea)
 		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, int, int, string, string) error); ok {
+		r1 = rf(ctx, limit, offset, orderBy, orderColumn)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// TotalActiveAreas provides a mock function with given fields: ctx
+func (_m *ActiveAreaRepository) TotalActiveAreas(ctx context.Context) (int, error) {
+	ret := _m.Called(ctx)
+
+	var r0 int
+	if rf, ok := ret.Get(0).(func(context.Context) int); ok {
+		r0 = rf(ctx)
+	} else {
+		r0 = ret.Get(0).(int)
 	}
 
 	var r1 error
