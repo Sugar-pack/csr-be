@@ -63,9 +63,9 @@ deploy_stage:
     - chmod -R 700 ~/.ssh
     - echo "$SSH_KNOWN_HOSTS" >> ~/.ssh/known_hosts
     - chmod 644 ~/.ssh/known_hosts
-    - scp -P$SSH_PORT -r ./csr $SSH_USER@$SSH_HOST:~/tmp_csr
-    - scp -P$SSH_PORT -r ./db $SSH_USER@$SSH_HOST:/var/www/csr/
-    - ssh -p$SSH_PORT $SSH_USER@$SSH_HOST 'sudo service csr stop && cp ~/tmp_csr /var/www/csr/server && sudo service csr start'
+    - scp -o "StrictHostKeyChecking=no -P$SSH_PORT -r ./csr $SSH_USER@$SSH_HOST:~/tmp_csr
+    - scp -o "StrictHostKeyChecking=no -P$SSH_PORT -r ./db $SSH_USER@$SSH_HOST:/var/www/csr/
+    - ssh -o "StrictHostKeyChecking=no -p$SSH_PORT $SSH_USER@$SSH_HOST 'sudo service csr stop && cp ~/tmp_csr /var/www/csr/server && sudo service csr start'
 
 deploy_to_prod:
   image: kroniak/ssh-client
@@ -80,12 +80,12 @@ deploy_to_prod:
    - chmod -R 700 ~/.ssh
    - echo "$SSH_PROD_KNOWN_HOSTS" >> ~/.ssh/known_hosts
    - chmod 644 ~/.ssh/known_hosts
-   - ssh -P$SSH_PROD_PORT -i ~/.ssh/id_rsa $SSH_PROD_USER@$SSH_PROD_HOST 'touch /go/stop && sleep 3 && rm /go/stop'
+   - ssh -o "StrictHostKeyChecking=no -P$SSH_PROD_PORT -i ~/.ssh/id_rsa $SSH_PROD_USER@$SSH_PROD_HOST 'touch /go/stop && sleep 3 && rm /go/stop'
    - sleep 5
-   - scp -P$SSH_PROD_PORT -i ~/.ssh/id_rsa -r ./csr $SSH_PROD_USER@$SSH_PROD_HOST:/go/csr
+   - scp -o "StrictHostKeyChecking=no -P$SSH_PROD_PORT -i ~/.ssh/id_rsa -r ./csr $SSH_PROD_USER@$SSH_PROD_HOST:/go/csr
    - sleep 5
-   - scp -P$SSH_PROD_PORT -i ~/.ssh/id_rsa -r ./db $SSH_PROD_USER@$SSH_PROD_HOST:/go/db
+   - scp -o "StrictHostKeyChecking=no -P$SSH_PROD_PORT -i ~/.ssh/id_rsa -r ./db $SSH_PROD_USER@$SSH_PROD_HOST:/go/db
    - sleep 5
-   - ssh -P$SSH_PROD_PORT -i ~/.ssh/id_rsa $SSH_PROD_USER@$SSH_PROD_HOST 'source /go/setenv &&  cd /go && nohup bash -c "./csr >> log.txt 2>&1 &"'
+   - ssh -o "StrictHostKeyChecking=no -P$SSH_PROD_PORT -i ~/.ssh/id_rsa $SSH_PROD_USER@$SSH_PROD_HOST 'source /go/setenv &&  cd /go && nohup bash -c "./csr >> log.txt 2>&1 &"'
    - sleep 5
-   - ssh -P$SSH_PROD_PORT -i ~/.ssh/id_rsa $SSH_PROD_USER@$SSH_PROD_HOST 'cat /go/pid'
+   - ssh -o "StrictHostKeyChecking=no -P$SSH_PROD_PORT -i ~/.ssh/id_rsa $SSH_PROD_USER@$SSH_PROD_HOST 'cat /go/pid'
