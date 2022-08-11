@@ -39,34 +39,48 @@ func (_m *OrderRepository) Create(ctx context.Context, data *models.OrderCreateR
 	return r0, r1
 }
 
-// List provides a mock function with given fields: ctx, ownerId
-func (_m *OrderRepository) List(ctx context.Context, ownerId int) ([]*ent.Order, int, error) {
-	ret := _m.Called(ctx, ownerId)
+// List provides a mock function with given fields: ctx, ownerId, limit, offset, orderBy, orderColumn
+func (_m *OrderRepository) List(ctx context.Context, ownerId int, limit int, offset int, orderBy string, orderColumn string) ([]*ent.Order, error) {
+	ret := _m.Called(ctx, ownerId, limit, offset, orderBy, orderColumn)
 
 	var r0 []*ent.Order
-	if rf, ok := ret.Get(0).(func(context.Context, int) []*ent.Order); ok {
-		r0 = rf(ctx, ownerId)
+	if rf, ok := ret.Get(0).(func(context.Context, int, int, int, string, string) []*ent.Order); ok {
+		r0 = rf(ctx, ownerId, limit, offset, orderBy, orderColumn)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]*ent.Order)
 		}
 	}
 
-	var r1 int
-	if rf, ok := ret.Get(1).(func(context.Context, int) int); ok {
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, int, int, int, string, string) error); ok {
+		r1 = rf(ctx, ownerId, limit, offset, orderBy, orderColumn)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// OrdersTotal provides a mock function with given fields: ctx, ownerId
+func (_m *OrderRepository) OrdersTotal(ctx context.Context, ownerId int) (int, error) {
+	ret := _m.Called(ctx, ownerId)
+
+	var r0 int
+	if rf, ok := ret.Get(0).(func(context.Context, int) int); ok {
+		r0 = rf(ctx, ownerId)
+	} else {
+		r0 = ret.Get(0).(int)
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, int) error); ok {
 		r1 = rf(ctx, ownerId)
 	} else {
-		r1 = ret.Get(1).(int)
+		r1 = ret.Error(1)
 	}
 
-	var r2 error
-	if rf, ok := ret.Get(2).(func(context.Context, int) error); ok {
-		r2 = rf(ctx, ownerId)
-	} else {
-		r2 = ret.Error(2)
-	}
-
-	return r0, r1, r2
+	return r0, r1
 }
 
 // Update provides a mock function with given fields: ctx, id, data, ownerId

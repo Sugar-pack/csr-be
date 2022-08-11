@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/utils"
 	"time"
 
 	"github.com/go-openapi/strfmt"
@@ -23,9 +24,15 @@ func (r OrderAccessDenied) Error() string {
 }
 
 type OrderRepository interface {
-	List(ctx context.Context, ownerId int) ([]*ent.Order, int, error)
+	List(ctx context.Context, ownerId, limit, offset int, orderBy, orderColumn string) ([]*ent.Order, error)
+	OrdersTotal(ctx context.Context, ownerId int) (int, error)
 	Create(ctx context.Context, data *models.OrderCreateRequest, ownerId int) (*ent.Order, error)
 	Update(ctx context.Context, id int, data *models.OrderUpdateRequest, ownerId int) (*ent.Order, error)
+}
+
+var fieldsToOrderOrders = []string{
+	order.FieldID,
+	order.FieldRentStart,
 }
 
 type orderRepository struct {
@@ -65,19 +72,28 @@ func getQuantity(quantity int, maxQuantity int) (*int, error) {
 	return &quantity, nil
 }
 
-func (r *orderRepository) List(ctx context.Context, ownerId int) (items []*ent.Order, total int, err error) {
-	items, err = r.client.Order.Query().Where(order.HasUsersWith(user.ID(ownerId))).Order(ent.Desc("id")).
-		WithUsers().WithOrderStatus().WithEquipments().All(ctx)
-	if err != nil {
-		return nil, 0, err
+func (r *orderRepository) List(ctx context.Context, ownerId, limit, offset int, orderBy, orderColumn string) ([]*ent.Order, error) {
+	if !utils.IsOrderField(orderColumn, fieldsToOrderOrders) {
+		return nil, errors.New("wrong column to order by")
 	}
-
-	total, err = r.client.Order.Query().Count(ctx)
+	orderFunc, err := utils.GetOrderFunc(orderBy, orderColumn)
 	if err != nil {
-		return nil, 0, err
+		return nil, err
 	}
+	items, err := r.client.Order.Query().
+		Where(order.HasUsersWith(user.ID(ownerId))).
+		Order(orderFunc).
+		Limit(limit).Offset(offset).
+		WithUsers().WithOrderStatus().WithEquipments().
+		All(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return items, err
+}
 
-	return
+func (r *orderRepository) OrdersTotal(ctx context.Context, ownerId int) (int, error) {
+	return r.client.Order.Query().Where(order.HasUsersWith(user.ID(ownerId))).Count(ctx)
 }
 
 func (r *orderRepository) Create(ctx context.Context, data *models.OrderCreateRequest, ownerId int) (*ent.Order, error) {

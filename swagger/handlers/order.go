@@ -2,6 +2,10 @@ package handlers
 
 import (
 	"errors"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/order"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/utils"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/restapi/operations/equipment"
+	"math"
 	"net/http"
 
 	"github.com/go-openapi/runtime/middleware"
@@ -128,6 +132,10 @@ func mapOrdersToResponse(entOrders []*ent.Order, log *zap.Logger) ([]*models.Ord
 func (o Order) ListOrderFunc(repository repositories.OrderRepository) orders.GetAllOrdersHandlerFunc {
 	return func(p orders.GetAllOrdersParams, access interface{}) middleware.Responder {
 		ctx := p.HTTPRequest.Context()
+		limit := utils.GetParamInt(p.Limit, math.MaxInt)
+		offset := utils.GetParamInt(p.Offset, 0)
+		orderBy := utils.GetParamString(p.OrderBy, utils.AscOrder)
+		orderColumn := utils.GetParamString(p.OrderColumn, order.FieldID)
 
 		ownerId, err := authentication.GetUserId(access)
 		if err != nil {
@@ -138,11 +146,20 @@ func (o Order) ListOrderFunc(repository repositories.OrderRepository) orders.Get
 			}
 			return orders.NewGetAllOrdersDefault(status).WithPayload(buildErrorPayload(err))
 		}
-
-		items, total, err := repository.List(ctx, ownerId)
+		total, err := repository.OrdersTotal(ctx, ownerId)
 		if err != nil {
-			o.logger.Error("list items failed", zap.Error(err))
-			return orders.NewGetAllOrdersDefault(http.StatusInternalServerError).WithPayload(buildErrorPayload(err))
+			o.logger.Error("Error while getting total of all user's orders", zap.Error(err))
+			return equipment.NewGetAllEquipmentDefault(http.StatusInternalServerError).
+				WithPayload(buildErrorPayload(err))
+		}
+
+		var items []*ent.Order
+		if total > 0 {
+			items, err = repository.List(ctx, ownerId, limit, offset, orderBy, orderColumn)
+			if err != nil {
+				o.logger.Error("list items failed", zap.Error(err))
+				return orders.NewGetAllOrdersDefault(http.StatusInternalServerError).WithPayload(buildErrorPayload(err))
+			}
 		}
 
 		mappedOrders, err := mapOrdersToResponse(items, o.logger)
@@ -150,11 +167,12 @@ func (o Order) ListOrderFunc(repository repositories.OrderRepository) orders.Get
 			o.logger.Error("map orders to response failed", zap.Error(err))
 			return orders.NewGetAllOrdersDefault(http.StatusInternalServerError).WithPayload(buildErrorPayload(err))
 		}
-
-		return orders.NewGetAllOrdersOK().WithPayload(&orders.GetAllOrdersOKBody{Data: &orders.GetAllOrdersOKBodyData{
+		totalOrders := int64(total)
+		listOrders := &models.OrderList{
 			Items: mappedOrders,
-			Total: int64(total),
-		}})
+			Total: &totalOrders,
+		}
+		return orders.NewGetAllOrdersOK().WithPayload(listOrders)
 	}
 }
 
