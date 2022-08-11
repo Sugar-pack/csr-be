@@ -2,6 +2,9 @@ package handlers
 
 import (
 	"errors"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/user"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/utils"
+	"math"
 	"net/http"
 
 	"github.com/go-openapi/runtime/middleware"
@@ -202,21 +205,40 @@ func (c User) GetUserById(repository repositories.UserRepository) users.GetUserH
 func (c User) GetUsersList(repository repositories.UserRepository) users.GetAllUsersHandlerFunc {
 	return func(p users.GetAllUsersParams, access interface{}) middleware.Responder {
 		ctx := p.HTTPRequest.Context()
-		all, err := repository.UserList(ctx)
+		limit := utils.GetParamInt(p.Limit, math.MaxInt)
+		offset := utils.GetParamInt(p.Offset, 0)
+		orderBy := utils.GetParamString(p.OrderBy, utils.AscOrder)
+		orderColumn := utils.GetParamString(p.OrderColumn, user.FieldID)
+		total, err := repository.UsersListTotal(ctx)
 		if err != nil {
-			c.logger.Error("failed get user list", zap.Error(err))
+			c.logger.Error("failed get user total amount", zap.Error(err))
 			return users.NewGetAllUsersDefault(http.StatusInternalServerError).
-				WithPayload(buildStringPayload("failed to get user list"))
+				WithPayload(buildStringPayload("failed to get user total amount"))
 		}
-		listUsers := models.GetListUsers{}
-		for _, element := range all {
+		var allUsers []*ent.User
+		if total > 0 {
+			allUsers, err = repository.UserList(ctx, limit, offset, orderBy, orderColumn)
+			if err != nil {
+				c.logger.Error("failed get user list", zap.Error(err))
+				return users.NewGetAllUsersDefault(http.StatusInternalServerError).
+					WithPayload(buildStringPayload("failed to get user list"))
+			}
+		}
+
+		usersToResponse := make([]*models.UserInfo, len(allUsers))
+		for i, element := range allUsers {
 			userToResponse, errMap := mapUserInfo(element)
 			if errMap != nil {
 				c.logger.Error("map user error", zap.Error(errMap))
 				return users.NewGetAllUsersDefault(http.StatusInternalServerError).
 					WithPayload(buildStringPayload("map user error"))
 			}
-			listUsers = append(listUsers, userToResponse)
+			usersToResponse[i] = userToResponse
+		}
+		totalUsers := int64(total)
+		listUsers := &models.GetListUsers{
+			Items: usersToResponse,
+			Total: &totalUsers,
 		}
 
 		return users.NewGetAllUsersOK().WithPayload(listUsers)

@@ -164,6 +164,39 @@ paths:
             $ref: "#/definitions/Error"
   /management/listUsers:
     get:
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          description: limit of items in page
+          type: integer
+          default: 10
+        - name: offset
+          in: query
+          required: false
+          description: offset of items
+          type: integer
+          default: 0
+        - name: order_by
+          in: query
+          required: false
+          description: how to order list
+          type: string
+          enum:
+            - asc
+            - desc
+          default: asc
+        - name: order_column
+          in: query
+          required: false
+          description: column to order by
+          type: string
+          enum:
+            - id
+            - name
+            - login
+            - email
+          default: id
       summary: Get all users
       security:
         - Bearer: [ ]
@@ -1746,9 +1779,17 @@ definitions:
         type: string
 
   GetListUsers:
-    type: array
-    items:
-      $ref: "#/definitions/UserInfo"
+    type: object
+    required:
+      - total
+      - items
+    properties:
+      total:
+        type: integer
+      items:
+        type: array
+        items:
+          $ref: "#/definitions/UserInfo"
 
   SuccessUserUpdateResponse:
     type: object

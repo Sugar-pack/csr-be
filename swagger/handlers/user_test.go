@@ -2,7 +2,11 @@ package handlers
 
 import (
 	"encoding/json"
+	"entgo.io/ent/entc/integration/ent/user"
 	"errors"
+	"fmt"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/utils"
+	"math"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -620,7 +624,7 @@ func (s *UserTestSuite) TestUser_GetUsersList_RepositoryErr() {
 		HTTPRequest: &request,
 	}
 	err := errors.New("some err")
-	s.userRepository.On("UserList", ctx).Return(nil, err)
+	s.userRepository.On("UsersListTotal", ctx).Return(0, err)
 
 	access := "dummy access"
 	resp := handlerFunc(data, access)
@@ -636,17 +640,23 @@ func (s *UserTestSuite) TestUser_GetUsersList_MapErr() {
 	t := s.T()
 	request := http.Request{}
 	ctx := request.Context()
+	limit := math.MaxInt
+	offset := 0
+	orderBy := utils.AscOrder
+	orderColumn := user.FieldID
 
 	handlerFunc := s.user.GetUsersList(s.userRepository)
 	data := users.GetAllUsersParams{
 		HTTPRequest: &request,
 	}
-	var userList []*ent.User
-	user := &ent.User{
-		ID: 1,
+	usersToReturn := []*ent.User{
+		{
+			ID: 1,
+		},
 	}
-	userList = append(userList, user)
-	s.userRepository.On("UserList", ctx).Return(userList, nil)
+	s.userRepository.On("UsersListTotal", ctx).Return(1, nil)
+	s.userRepository.On("UserList", ctx, limit, offset, orderBy, orderColumn).
+		Return(usersToReturn, nil)
 
 	access := "dummy access"
 	resp := handlerFunc(data, access)
@@ -658,7 +668,7 @@ func (s *UserTestSuite) TestUser_GetUsersList_MapErr() {
 	s.userRepository.AssertExpectations(t)
 }
 
-func (s *UserTestSuite) TestUser_GetUsersList_OK() {
+func (s *UserTestSuite) TestUser_GetUsersList_NotFound() {
 	t := s.T()
 	request := http.Request{}
 	ctx := request.Context()
@@ -670,12 +680,9 @@ func (s *UserTestSuite) TestUser_GetUsersList_OK() {
 	var userList []*ent.User
 	user := &ent.User{
 		ID: 1,
-		Edges: ent.UserEdges{
-			Role: &ent.Role{},
-		},
 	}
 	userList = append(userList, user)
-	s.userRepository.On("UserList", ctx).Return(userList, nil)
+	s.userRepository.On("UsersListTotal", ctx).Return(0, nil)
 
 	access := "dummy access"
 	resp := handlerFunc(data, access)
@@ -689,9 +696,264 @@ func (s *UserTestSuite) TestUser_GetUsersList_OK() {
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.Equal(t, len(userList), len(*responseUsers))
-	assert.Equal(t, user.ID, int(*(*responseUsers)[0].ID))
+	assert.Equal(t, 0, int(*responseUsers.Total))
+	assert.Equal(t, 0, len(responseUsers.Items))
+	s.userRepository.AssertExpectations(t)
+}
 
+func (s *UserTestSuite) TestUser_GetUsersList_EmptyParams() {
+	t := s.T()
+	request := http.Request{}
+	ctx := request.Context()
+	limit := math.MaxInt
+	offset := 0
+	orderBy := utils.AscOrder
+	orderColumn := user.FieldID
+
+	handlerFunc := s.user.GetUsersList(s.userRepository)
+	data := users.GetAllUsersParams{
+		HTTPRequest: &request,
+	}
+	usersToReturn := []*ent.User{
+		validUser(t, 1),
+	}
+	s.userRepository.On("UsersListTotal", ctx).Return(1, nil)
+	s.userRepository.On("UserList", ctx, limit, offset, orderBy, orderColumn).
+		Return(usersToReturn, nil)
+
+	access := "dummy access"
+	resp := handlerFunc(data, access)
+	responseRecorder := httptest.NewRecorder()
+	producer := runtime.JSONProducer()
+	resp.WriteResponse(responseRecorder, producer)
+	assert.Equal(t, http.StatusOK, responseRecorder.Code)
+
+	responseUsers := &models.GetListUsers{}
+	err := json.Unmarshal(responseRecorder.Body.Bytes(), responseUsers)
+	if err != nil {
+		t.Fatal(err)
+	}
+	assert.Equal(t, len(usersToReturn), int(*responseUsers.Total))
+	assert.Equal(t, len(usersToReturn), len(responseUsers.Items))
+
+	s.userRepository.AssertExpectations(t)
+}
+
+func (s *UserTestSuite) TestUser_GetUsersList_LimitGreaterThanTotal() {
+	t := s.T()
+	request := http.Request{}
+	ctx := request.Context()
+	limit := int64(5)
+	offset := int64(0)
+	orderBy := utils.AscOrder
+	orderColumn := user.FieldID
+
+	handlerFunc := s.user.GetUsersList(s.userRepository)
+	data := users.GetAllUsersParams{
+		HTTPRequest: &request,
+		Limit:       &limit,
+		Offset:      &offset,
+		OrderColumn: &orderColumn,
+		OrderBy:     &orderBy,
+	}
+	usersToReturn := []*ent.User{
+		validUser(t, 1),
+		validUser(t, 2),
+		validUser(t, 3),
+	}
+	s.userRepository.On("UsersListTotal", ctx).Return(len(usersToReturn), nil)
+	s.userRepository.On("UserList", ctx, int(limit), int(offset), orderBy, orderColumn).
+		Return(usersToReturn, nil)
+
+	access := "dummy access"
+	resp := handlerFunc(data, access)
+	responseRecorder := httptest.NewRecorder()
+	producer := runtime.JSONProducer()
+	resp.WriteResponse(responseRecorder, producer)
+	assert.Equal(t, http.StatusOK, responseRecorder.Code)
+
+	responseUsers := &models.GetListUsers{}
+	err := json.Unmarshal(responseRecorder.Body.Bytes(), responseUsers)
+	if err != nil {
+		t.Fatal(err)
+	}
+	assert.Equal(t, len(usersToReturn), int(*responseUsers.Total))
+	assert.Equal(t, len(usersToReturn), len(responseUsers.Items))
+	assert.GreaterOrEqual(t, int(limit), len(responseUsers.Items))
+
+	s.userRepository.AssertExpectations(t)
+}
+
+func (s *UserTestSuite) TestUser_GetUsersList_LimitLessThanTotal() {
+	t := s.T()
+	request := http.Request{}
+	ctx := request.Context()
+	limit := int64(3)
+	offset := int64(0)
+	orderBy := utils.AscOrder
+	orderColumn := user.FieldID
+
+	handlerFunc := s.user.GetUsersList(s.userRepository)
+	data := users.GetAllUsersParams{
+		HTTPRequest: &request,
+		Limit:       &limit,
+		Offset:      &offset,
+		OrderColumn: &orderColumn,
+		OrderBy:     &orderBy,
+	}
+	usersToReturn := []*ent.User{
+		validUser(t, 1),
+		validUser(t, 2),
+		validUser(t, 3),
+		validUser(t, 4),
+		validUser(t, 5),
+		validUser(t, 6),
+	}
+	s.userRepository.On("UsersListTotal", ctx).Return(len(usersToReturn), nil)
+	s.userRepository.On("UserList", ctx, int(limit), int(offset), orderBy, orderColumn).
+		Return(usersToReturn[:limit], nil)
+
+	access := "dummy access"
+	resp := handlerFunc(data, access)
+	responseRecorder := httptest.NewRecorder()
+	producer := runtime.JSONProducer()
+	resp.WriteResponse(responseRecorder, producer)
+	assert.Equal(t, http.StatusOK, responseRecorder.Code)
+
+	responseUsers := &models.GetListUsers{}
+	err := json.Unmarshal(responseRecorder.Body.Bytes(), responseUsers)
+	if err != nil {
+		t.Fatal(err)
+	}
+	assert.Equal(t, len(usersToReturn), int(*responseUsers.Total))
+	assert.Greater(t, len(usersToReturn), len(responseUsers.Items))
+	assert.GreaterOrEqual(t, int(limit), len(responseUsers.Items))
+
+	s.userRepository.AssertExpectations(t)
+}
+
+func (s *UserTestSuite) TestUser_GetUsersList_SecondPage() {
+	t := s.T()
+	request := http.Request{}
+	ctx := request.Context()
+	limit := int64(5)
+	offset := int64(5)
+	orderBy := utils.AscOrder
+	orderColumn := user.FieldID
+
+	handlerFunc := s.user.GetUsersList(s.userRepository)
+	data := users.GetAllUsersParams{
+		HTTPRequest: &request,
+		Limit:       &limit,
+		Offset:      &offset,
+		OrderColumn: &orderColumn,
+		OrderBy:     &orderBy,
+	}
+	usersToReturn := []*ent.User{
+		validUser(t, 1),
+		validUser(t, 2),
+		validUser(t, 3),
+		validUser(t, 4),
+		validUser(t, 5),
+		validUser(t, 6),
+	}
+	s.userRepository.On("UsersListTotal", ctx).Return(len(usersToReturn), nil)
+	s.userRepository.On("UserList", ctx, int(limit), int(offset), orderBy, orderColumn).
+		Return(usersToReturn[offset:], nil)
+
+	access := "dummy access"
+	resp := handlerFunc(data, access)
+	responseRecorder := httptest.NewRecorder()
+	producer := runtime.JSONProducer()
+	resp.WriteResponse(responseRecorder, producer)
+	assert.Equal(t, http.StatusOK, responseRecorder.Code)
+
+	responseUsers := &models.GetListUsers{}
+	err := json.Unmarshal(responseRecorder.Body.Bytes(), responseUsers)
+	if err != nil {
+		t.Fatal(err)
+	}
+	assert.Equal(t, len(usersToReturn), int(*responseUsers.Total))
+	assert.Greater(t, len(usersToReturn), len(responseUsers.Items))
+	assert.GreaterOrEqual(t, int(limit), len(responseUsers.Items))
+	assert.Equal(t, len(usersToReturn)-int(offset), len(responseUsers.Items))
+
+	s.userRepository.AssertExpectations(t)
+}
+
+func (s *UserTestSuite) TestUser_GetUsersList_SeveralPages() {
+	t := s.T()
+	request := http.Request{}
+	ctx := request.Context()
+	limit := int64(5)
+	offset := int64(0)
+	orderBy := utils.AscOrder
+	orderColumn := user.FieldID
+
+	handlerFunc := s.user.GetUsersList(s.userRepository)
+	data := users.GetAllUsersParams{
+		HTTPRequest: &request,
+		Limit:       &limit,
+		Offset:      &offset,
+		OrderColumn: &orderColumn,
+		OrderBy:     &orderBy,
+	}
+	usersToReturn := []*ent.User{
+		validUser(t, 1),
+		validUser(t, 2),
+		validUser(t, 3),
+		validUser(t, 4),
+		validUser(t, 5),
+		validUser(t, 6),
+	}
+	s.userRepository.On("UsersListTotal", ctx).Return(len(usersToReturn), nil)
+	s.userRepository.On("UserList", ctx, int(limit), int(offset), orderBy, orderColumn).
+		Return(usersToReturn[:limit], nil)
+
+	access := "dummy access"
+	resp := handlerFunc(data, access)
+	responseRecorder := httptest.NewRecorder()
+	producer := runtime.JSONProducer()
+	resp.WriteResponse(responseRecorder, producer)
+	assert.Equal(t, http.StatusOK, responseRecorder.Code)
+
+	firstPage := &models.GetListUsers{}
+	err := json.Unmarshal(responseRecorder.Body.Bytes(), firstPage)
+	if err != nil {
+		t.Fatal(err)
+	}
+	assert.Equal(t, len(usersToReturn), int(*firstPage.Total))
+	assert.Equal(t, int(limit), len(firstPage.Items))
+
+	offset = limit
+	data = users.GetAllUsersParams{
+		HTTPRequest: &request,
+		Limit:       &limit,
+		Offset:      &offset,
+		OrderColumn: &orderColumn,
+		OrderBy:     &orderBy,
+	}
+	s.userRepository.On("UsersListTotal", ctx).Return(len(usersToReturn), nil)
+	s.userRepository.On("UserList", ctx, int(limit), int(offset), orderBy, orderColumn).
+		Return(usersToReturn[offset:], nil)
+
+	resp = handlerFunc(data, access)
+	responseRecorder = httptest.NewRecorder()
+	producer = runtime.JSONProducer()
+	resp.WriteResponse(responseRecorder, producer)
+	assert.Equal(t, http.StatusOK, responseRecorder.Code)
+
+	secondPage := &models.GetListUsers{}
+	err = json.Unmarshal(responseRecorder.Body.Bytes(), secondPage)
+	if err != nil {
+		t.Fatal(err)
+	}
+	assert.Equal(t, len(usersToReturn), int(*secondPage.Total))
+	assert.Greater(t, len(usersToReturn), len(secondPage.Items))
+	assert.GreaterOrEqual(t, int(limit), len(secondPage.Items))
+	assert.Equal(t, len(usersToReturn)-int(offset), len(secondPage.Items))
+
+	assert.False(t, usersDuplicated(t, firstPage.Items, secondPage.Items))
 	s.userRepository.AssertExpectations(t)
 }
 
@@ -779,4 +1041,35 @@ func (s *UserTestSuite) TestUser_GetUserById_OK() {
 	assert.Equal(t, user.ID, int(*responseUsers.ID))
 
 	s.userRepository.AssertExpectations(t)
+}
+
+func validUser(t *testing.T, id int) *ent.User {
+	t.Helper()
+	return &ent.User{
+		ID:    id,
+		Name:  fmt.Sprintf("User%d", id),
+		Login: fmt.Sprintf("user_%d", id),
+		Email: fmt.Sprintf("user_%d@mail.com", id),
+		Edges: ent.UserEdges{
+			Role: &ent.Role{
+				ID:   1,
+				Name: "user",
+				Slug: "user",
+			},
+		},
+	}
+}
+
+func usersDuplicated(t *testing.T, array1, array2 []*models.UserInfo) bool {
+	t.Helper()
+	diff := make(map[int64]int, len(array1))
+	for _, v := range array1 {
+		diff[*v.ID] = 1
+	}
+	for _, v := range array2 {
+		if _, ok := diff[*v.ID]; ok {
+			return true
+		}
+	}
+	return false
 }

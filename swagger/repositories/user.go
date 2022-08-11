@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/utils"
 	"time"
 
 	"golang.org/x/crypto/bcrypt"
@@ -23,7 +24,8 @@ type UserRepository interface {
 	GetUserByLogin(ctx context.Context, login string) (*ent.User, error)
 	GetUserByID(ctx context.Context, id int) (*ent.User, error)
 	UpdateUserByID(ctx context.Context, id int, patch *models.PatchUserRequest) error
-	UserList(ctx context.Context) ([]*ent.User, error)
+	UserList(ctx context.Context, limit, offset int, orderBy, orderColumn string) ([]*ent.User, error)
+	UsersListTotal(ctx context.Context) (int, error)
 	ConfirmRegistration(ctx context.Context, login string) error
 }
 
@@ -32,12 +34,31 @@ const (
 	defaultStrFmtDate = "0001-01-01"
 )
 
+var fieldsToOrderUsers = []string{
+	user.FieldID,
+	user.FieldName,
+	user.FieldLogin,
+	user.FieldEmail,
+}
+
 type userRepository struct {
 	client *ent.Client
 }
 
-func (r *userRepository) UserList(ctx context.Context) ([]*ent.User, error) {
-	return r.client.User.Query().WithRole().All(ctx)
+func (r *userRepository) UsersListTotal(ctx context.Context) (int, error) {
+	return r.client.User.Query().Count(ctx)
+}
+
+func (r *userRepository) UserList(ctx context.Context, limit, offset int,
+	orderBy, orderColumn string) ([]*ent.User, error) {
+	if !utils.IsOrderField(orderColumn, fieldsToOrderUsers) {
+		return nil, errors.New("wrong column to order by")
+	}
+	orderFunc, err := utils.GetOrderFunc(orderBy, orderColumn)
+	if err != nil {
+		return nil, err
+	}
+	return r.client.User.Query().WithRole().Order(orderFunc).Limit(limit).Offset(offset).All(ctx)
 }
 
 func (r *userRepository) UpdateUserByID(ctx context.Context, id int, patch *models.PatchUserRequest) error {
