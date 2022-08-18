@@ -3,8 +3,6 @@ package handlers
 import (
 	"encoding/json"
 	"errors"
-	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/order"
-	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/utils"
 	"math"
 	"net/http"
 	"net/http/httptest"
@@ -21,7 +19,9 @@ import (
 
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/enttest"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/order"
 	repomock "git.epam.com/epm-lstr/epm-lstr-lc/be/internal/mocks/repositories"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/utils"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/authentication"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/models"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/restapi"
@@ -738,7 +738,12 @@ func (s *orderTestSuite) TestOrder_UpdateOrder_OK() {
 func containsOrder(t *testing.T, list []*ent.Order, order *models.Order) bool {
 	t.Helper()
 	for _, v := range list {
-		if int(*order.ID) == v.ID && int(*order.User.ID) == v.Edges.Users[0].ID {
+		if v.ID == int(*order.ID) && v.Description == *order.Description &&
+			v.Quantity == int(*order.Quantity) && v.Edges.Users[0].ID == int(*order.User.ID) &&
+			strfmt.DateTime(v.RentStart).String() == order.RentStart.String() &&
+			strfmt.DateTime(v.RentEnd).String() == order.RentEnd.String() &&
+			v.Edges.Equipments[0].Description == *order.Equipment.Description &&
+			v.Edges.OrderStatus[0].ID == int(*order.LastStatus.ID) {
 			return true
 		}
 	}

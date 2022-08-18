@@ -2,12 +2,14 @@ package repositories
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"time"
 
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/order"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/orderstatus"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/statusname"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/utils"
 )
 
 type OrderRepositoryWithFilter interface {
@@ -26,6 +28,13 @@ func NewOrderFilter(client *ent.Client) *orderFilterRepository {
 	return &orderFilterRepository{client: client}
 }
 
+var fieldsToOrderOrdersByStatus = []string{
+	order.FieldID,
+	order.FieldCreatedAt,
+	order.FieldRentStart,
+	order.FieldRentEnd,
+}
+
 func (r *orderFilterRepository) OrdersByStatusTotal(ctx context.Context, status string) (int, error) {
 	return r.client.OrderStatus.Query().
 		QueryStatusName().Where(statusname.StatusEQ(status)).QueryOrderStatus().Count(ctx)
@@ -34,74 +43,55 @@ func (r *orderFilterRepository) OrdersByStatusTotal(ctx context.Context, status 
 func (r *orderFilterRepository) OrdersByPeriodAndStatusTotal(ctx context.Context,
 	from, to time.Time, status string) (int, error) {
 	return r.client.OrderStatus.Query().
+		QueryStatusName().Where(statusname.StatusEQ(status)).QueryOrderStatus().
 		Where(orderstatus.CurrentDateGT(from)).
 		Where(orderstatus.CurrentDateLTE(to)).
-		QueryStatusName().Where(statusname.StatusEQ(status)).QueryOrderStatus().Count(ctx)
+		Count(ctx)
 }
 
 func (r *orderFilterRepository) OrdersByPeriodAndStatus(ctx context.Context, from, to time.Time, status string,
 	limit, offset int, orderBy, orderColumn string) ([]*ent.Order, error) {
-	statusID, err := r.client.StatusName.Query().Where(statusname.StatusEQ(status)).OnlyID(ctx)
+	if !utils.IsOrderField(orderColumn, fieldsToOrderOrdersByStatus) {
+		return nil, errors.New("wrong field to order by")
+	}
+	orderFunc, err := utils.GetOrderFunc(orderBy, orderColumn)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get status id: %w", err)
+		return nil, err
 	}
 
-	orderStatusByStatus, err := r.client.OrderStatus.Query().
+	items, err := r.client.Order.Query().
+		QueryOrderStatus().
+		QueryStatusName().Where(statusname.StatusEQ(status)).
+		QueryOrderStatus().
 		Where(orderstatus.CurrentDateGT(from)).
 		Where(orderstatus.CurrentDateLTE(to)).
-		QueryStatusName().Where(statusname.IDEQ(statusID)).QueryOrderStatus().All(ctx)
-
+		QueryOrder().
+		WithOrderStatus().
+		Order(orderFunc).Limit(limit).Offset(offset).All(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get order status by status: %w", err)
+		return nil, err
 	}
-	if len(orderStatusByStatus) == 0 {
-		return nil, fmt.Errorf("no orders with status %s", status)
-	}
-
-	orders := make([]*ent.Order, len(orderStatusByStatus))
-	for i, orderStatus := range orderStatusByStatus {
-		order, errOrder := r.client.Order.Query().WithOrderStatus(func(query *ent.OrderStatusQuery) {
-			query.Where(orderstatus.IDEQ(orderStatus.ID))
-		}).Only(ctx)
-		if errOrder != nil {
-			return nil, errOrder
-		}
-		if order != nil {
-			orders[i] = order
-		}
-	}
-	return orders, nil
-
+	return items, nil
 }
 
 func (r *orderFilterRepository) OrdersByStatus(ctx context.Context, status string,
 	limit, offset int, orderBy, orderColumn string) ([]*ent.Order, error) {
-	statusID, err := r.client.StatusName.Query().Where(statusname.StatusEQ(status)).OnlyID(ctx)
+	if !utils.IsOrderField(orderColumn, fieldsToOrderOrdersByStatus) {
+		return nil, errors.New("wrong field to order by")
+	}
+	orderFunc, err := utils.GetOrderFunc(orderBy, orderColumn)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get status id: %w", err)
+		return nil, err
 	}
 
-	orderStatusByStatus, err := r.client.OrderStatus.Query().
-		QueryStatusName().Where(statusname.IDEQ(statusID)).QueryOrderStatus().All(ctx)
-
+	items, err := r.client.Order.Query().
+		QueryOrderStatus().
+		QueryStatusName().Where(statusname.StatusEQ(status)).
+		QueryOrderStatus().QueryOrder().
+		WithOrderStatus().
+		Order(orderFunc).Limit(limit).Offset(offset).All(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get order status by status: %w", err)
+		return nil, err
 	}
-	if len(orderStatusByStatus) == 0 {
-		return nil, fmt.Errorf("no orders with status %s", status)
-	}
-
-	orders := make([]*ent.Order, len(orderStatusByStatus))
-	for i, orderStatus := range orderStatusByStatus {
-		order, errOrder := r.client.Order.Query().WithOrderStatus(func(query *ent.OrderStatusQuery) {
-			query.Where(orderstatus.IDEQ(orderStatus.ID))
-		}).Only(ctx)
-		if errOrder != nil {
-			return nil, errOrder
-		}
-		if order != nil {
-			orders[i] = order
-		}
-	}
-	return orders, nil
+	return items, nil
 }
