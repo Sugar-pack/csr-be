@@ -10,19 +10,18 @@ import (
 
 	"entgo.io/ent/dialect"
 	entsql "entgo.io/ent/dialect/sql"
-	"github.com/golang-migrate/migrate/v4"
-	"github.com/golang-migrate/migrate/v4/database/sqlite3"
-	_ "github.com/golang-migrate/migrate/v4/source/file"
-	_ "github.com/jackc/pgx/v4/stdlib"
-	_ "github.com/mattn/go-sqlite3"
-	"go.uber.org/zap"
-
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent"
 	entMigrate "git.epam.com/epm-lstr/epm-lstr-lc/be/ent/migrate"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/config"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/logger"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/restapi"
+	"github.com/golang-migrate/migrate/v4"
+	"github.com/golang-migrate/migrate/v4/database/sqlite3"
+	_ "github.com/golang-migrate/migrate/v4/source/file"
+	_ "github.com/jackc/pgx/v4/stdlib"
+	_ "github.com/mattn/go-sqlite3"
+	"go.uber.org/zap"
 )
 
 func main() {

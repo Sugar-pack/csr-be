@@ -1,0 +1,49 @@
+version: '3'
+services:
+  database:
+    image: "postgres:latest"
+    container_name: lc_postgres_test
+    environment:
+      - POSTGRES_PASSWORD=postgres # required
+    volumes:
+      - ./docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d # mount volume with init scripts
+    ports:
+      - "5432:5432"
+    networks:
+      - go-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U csr -p 5432"]
+      interval: 2s
+      timeout: 1s
+      retries: 5
+
+  test_goapp:
+    image: test_go_run:${TAG}
+    container_name: lc_golang_test
+    ports:
+      - 8080:8080
+    volumes:
+      - ./equipments_photos:/equipments_photos
+    environment:
+      - DB_HOST=localhost
+      - SERVER_HOST=0.0.0.0
+      - EMAIL_SENDER_WEBSITE_URL=https://csr.golangforall.com/
+      # todo: import from local.env
+      - JWT_SECRET_KEY=123
+      - EMAIL_SENDER_SERVER_HOST=any
+      - EMAIL_SENDER_SERVER_PORT=1
+      - EMAIL_SENDER_PASSWORD=any
+      - EMAIL_SENDER_FROM_ADDRESS=any
+      - EMAIL_SENDER_FROM_NAME=any
+      - PASSWORD_RESET_EXPIRATION_MINUTES=15
+      - PHOTOS_FOLDER=/equipments_photos
+      - PHOTOS_SERVER_URL=https://csr.golangforall.com/
+    depends_on:
+      database:
+        condition: service_healthy
+    networks:
+      - go-network
+    restart: on-failure:3
+
+networks:
+  go-network:
