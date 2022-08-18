@@ -2,15 +2,17 @@ package repositories
 
 import (
 	"context"
+	"math"
+	"testing"
+	"time"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/suite"
+
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/enttest"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/order"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/utils"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/suite"
-	"math"
-	"testing"
-	"time"
 )
 
 type OrderSuite struct {
@@ -250,7 +252,6 @@ func containsOrder(t *testing.T, order *ent.Order, orders []*ent.Order) bool {
 	t.Helper()
 	for _, o := range orders {
 		if order.ID == o.ID && order.RentStart.Equal(o.RentStart) &&
-			order.Edges.Users[0].ID == o.Edges.Users[0].ID &&
 			order.Quantity == o.Quantity && order.CreatedAt.Equal(o.CreatedAt) {
 			return true
 		}
