@@ -4,6 +4,12 @@ equipment-kind-db-controller-api/
 !/ent/schema/
 !/ent/generate.go
 /swagger/generated/
-coverage.out
+*.out
 .idea
 .vscode
+/models
+/gen
+*__debug_bin
+main
+pid
+/client

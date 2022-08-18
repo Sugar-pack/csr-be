@@ -11,14 +11,15 @@ COPY internal/logger internal/logger
 COPY internal/migration internal/migration
 COPY go.mod go.sum ./
 
-RUN CGO_ENABLED=0 GOARCH=amd64 GOOS=linux go build -ldflags "-extldflags '-static'" -o /go cmd/swagger/main.go
+RUN apk add build-base
+RUN CGO_ENABLED=1 GOOS=linux GOARCH=amd64 CGO_LDFLAGS="-static" go build ./cmd/swagger/main.go
 
 
 FROM alpine:3.15 as run
 
 WORKDIR /go
 COPY db db
-COPY --from=build /go/main ./
+COPY --from=build /go/src/main ./
 
 ENTRYPOINT [ "./main" ]
 

@@ -1,0 +1,67 @@
+package roles
+
+import (
+	"context"
+	"net/http"
+	"testing"
+
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/client/roles"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/models"
+	utils "git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/integration-tests"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+)
+
+func TestIntegration_GetRoles(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping integration test")
+	}
+
+	ctx := context.Background()
+	client := utils.SetupClient()
+
+	l, p, err := utils.GenerateLoginAndPassword()
+	require.NoError(t, err)
+
+	_, err = utils.CreateUser(ctx, client, l, p)
+	require.NoError(t, err)
+
+	loginUser, err := utils.LoginUser(ctx, client, l, p)
+	require.NoError(t, err)
+
+	t.Run("get roles ok", func(t *testing.T) {
+		params := roles.NewGetRolesParamsWithContext(ctx)
+		token := loginUser.GetPayload().AccessToken
+
+		res, err := client.Roles.GetRoles(params, utils.AuthInfoFunc(token))
+		require.NoError(t, err)
+		assert.NotEmpty(t, res)
+	})
+
+	t.Run("get roles failed: no authorization", func(t *testing.T) {
+		params := roles.NewGetRolesParamsWithContext(ctx)
+
+		_, err = client.Roles.GetRoles(params, utils.AuthInfoFunc(nil))
+		require.Error(t, err)
+
+		errExp := roles.NewGetRolesDefault(http.StatusUnauthorized)
+		errExp.Payload = &models.Error{
+			Data: nil,
+		}
+		assert.Equal(t, errExp, err)
+	})
+
+	t.Run("get roles failed: token contains an invalid number of segments", func(t *testing.T) {
+		params := roles.NewGetRolesParamsWithContext(ctx)
+		dummyToken := utils.TokenNotExist
+
+		_, err = client.Roles.GetRoles(params, utils.AuthInfoFunc(&dummyToken))
+		require.Error(t, err)
+
+		errExp := roles.NewGetRolesDefault(http.StatusInternalServerError)
+		errExp.Payload = &models.Error{
+			Data: nil,
+		}
+		assert.Equal(t, errExp, err)
+	})
+}
