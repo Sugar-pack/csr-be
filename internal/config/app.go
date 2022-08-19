@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/utils"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/email"
 )
@@ -17,7 +18,6 @@ func SetupAppConfig() (*AppConfig, error) {
 	jwtSecretKey := utils.GetEnv("JWT_SECRET_KEY", "")
 	if jwtSecretKey == "" {
 		return nil, fmt.Errorf("JWT_SECRET_KEY not specified")
-
 	}
 
 	emailServiceConfig, err := email.SetupEmailServiceConfig()

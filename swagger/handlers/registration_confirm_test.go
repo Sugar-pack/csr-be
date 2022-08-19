@@ -63,6 +63,7 @@ func (s *RegistrationConfirmHandlerTestSuite) TestRegistrationConfirmHandler_Sen
 		Login:       &models.SendRegistrationConfirmLinkRequest{Data: &models.Login{Login: &login}},
 	}
 	s.regConfirmService.On("SendConfirmationLink", ctx, login).Return(nil)
+	s.regConfirmService.On("IsSendRequired").Return(false)
 	handlerFunc := s.handler.SendRegistrationConfirmLinkByLoginFunc()
 	resp := handlerFunc.Handle(params)
 	responseRecorder := httptest.NewRecorder()

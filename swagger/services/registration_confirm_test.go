@@ -44,7 +44,7 @@ func (s *RegistrationConfirmTestSuite) TestPasswordReset_SendConfirmationLink_Us
 	t := s.T()
 	ctx := context.Background()
 	login := "login"
-	err := errors.New("error")
+	err := errors.New("error while getting user by login")
 	s.userRepository.On("UserByLogin", ctx, login).Return(nil, err)
 	errReturn := s.regConfirmService.SendConfirmationLink(ctx, login)
 	assert.Error(t, errReturn)
@@ -97,6 +97,7 @@ func (s *RegistrationConfirmTestSuite) TestPasswordReset_SendConfirmationLink_OK
 		mock.AnythingOfType("time.Time"), user.ID).Return(nil)
 	s.emailClient.On("SendRegistrationConfirmLink", user.Email, user.Login,
 		mock.AnythingOfType("string")).Return(nil)
+	s.emailClient.On("IsSendRequired").Return(false)
 	errReturn := s.regConfirmService.SendConfirmationLink(ctx, login)
 	assert.NoError(t, errReturn)
 	s.userRepository.AssertExpectations(t)

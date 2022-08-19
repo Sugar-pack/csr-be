@@ -13,7 +13,7 @@ type TokenManager struct {
 	mock.Mock
 }
 
-// GenerateAccessToken provides a mock function with given fields: ctx, login, password
+// GenerateTokens provides a mock function with given fields: ctx, login, password
 func (_m *TokenManager) GenerateTokens(ctx context.Context, login string, password string) (string, string, bool, error) {
 	ret := _m.Called(ctx, login, password)
 

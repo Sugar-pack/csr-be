@@ -29,6 +29,7 @@ services:
       - EMAIL_SENDER_SERVER_HOST=smtp.yandex.ru
       - EMAIL_SENDER_SERVER_PORT=587
       - EMAIL_SENDER_PASSWORD=
+      - EMAIL_SENDER_IS_SEND_REQUIRED=false
       - EMAIL_SENDER_FROM_ADDRESS=noreply.lkot@yandex.ru
       - EMAIL_SENDER_FROM_NAME="Lyonkin Kot"
       - PHOTOS_FOLDER=/equipments_photos

@@ -4,16 +4,19 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"go.uber.org/zap"
 	"time"
-
-	"github.com/google/uuid"
 
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/email"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/repositories"
+	"github.com/google/uuid"
+	"go.uber.org/zap"
 )
 
-var RegistrationAlreadyConfirmedErr = fmt.Errorf("registration is already confirmed")
+// Scope of custom errors
+var (
+	ErrRegistrationAlreadyConfirmed = fmt.Errorf("registration is already confirmed")
+	ErrUserNotFound                 = fmt.Errorf("error while getting user by login")
+)
 
 type registrationConfirm struct {
 	email.Sender
@@ -37,6 +40,11 @@ func NewRegistrationConfirmService(emailClient email.Sender, userRepository repo
 type RegistrationConfirm interface {
 	SendConfirmationLink(ctx context.Context, login string) error
 	VerifyConfirmationToken(ctx context.Context, token string) error
+	IsSendRequired() bool
+}
+
+func (rc *registrationConfirm) IsSendRequired() bool {
+	return rc.Sender.IsSendRequired()
 }
 
 func (rc *registrationConfirm) SendConfirmationLink(ctx context.Context, login string) error {
@@ -44,11 +52,12 @@ func (rc *registrationConfirm) SendConfirmationLink(ctx context.Context, login s
 	token := uuid.New().String()
 	user, err := rc.UserRepository.UserByLogin(ctx, login)
 	if err != nil {
+		err = ErrUserNotFound
 		rc.logger.Error("Error while getting user by login", zap.String("login", login), zap.Error(err))
 		return err
 	}
 	if user.IsConfirmed {
-		err = RegistrationAlreadyConfirmedErr
+		err = ErrRegistrationAlreadyConfirmed
 		rc.logger.Error("Error registration is already confirmed", zap.String("login", login), zap.Error(err))
 		return err
 	}
@@ -62,7 +71,11 @@ func (rc *registrationConfirm) SendConfirmationLink(ctx context.Context, login s
 		rc.logger.Error("Error while sending confirmation link to email", zap.String("login", login), zap.Error(err))
 		return err
 	}
-	rc.logger.Info("registration confirmation service: send registration confirmation link")
+	if rc.Sender.IsSendRequired() {
+		rc.logger.Info("registration confirmation service: send registration confirmation link")
+	} else {
+		rc.logger.Info("registration confirmation service: no send, send wasn't required")
+	}
 	return nil
 }
 

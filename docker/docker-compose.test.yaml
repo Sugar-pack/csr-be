@@ -12,7 +12,7 @@ services:
     networks:
       - go-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U csr -p 5432"]
+      test: [ "CMD-SHELL", "pg_isready -U csr -p 5432" ]
       interval: 2s
       timeout: 1s
       retries: 5
@@ -35,6 +35,7 @@ services:
       - EMAIL_SENDER_PASSWORD=any
       - EMAIL_SENDER_FROM_ADDRESS=any
       - EMAIL_SENDER_FROM_NAME=any
+      - EMAIL_SENDER_IS_SEND_REQUIRED=false
       - PASSWORD_RESET_EXPIRATION_MINUTES=15
       - PHOTOS_FOLDER=/equipments_photos
       - PHOTOS_SERVER_URL=https://csr.golangforall.com/

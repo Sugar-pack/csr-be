@@ -9,6 +9,20 @@ type Sender struct {
 	mock.Mock
 }
 
+// IsSendRequired provides a mock function with given fields:
+func (_m *Sender) IsSendRequired() bool {
+	ret := _m.Called()
+
+	var r0 bool
+	if rf, ok := ret.Get(0).(func() bool); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Get(0).(bool)
+	}
+
+	return r0
+}
+
 // SendNewPassword provides a mock function with given fields: _a0, userName, password
 func (_m *Sender) SendNewPassword(_a0 string, userName string, password string) error {
 	ret := _m.Called(_a0, userName, password)
