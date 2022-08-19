@@ -60,7 +60,11 @@ func (p *passwordReset) SendResetPasswordLink(ctx context.Context, login string)
 		p.logger.Error("Error while sending reset link to email", zap.String("login", login), zap.Error(err))
 		return err
 	}
-	p.logger.Info("password reset service: send reset password link")
+	if !p.Sender.IsSendRequired() {
+		p.logger.Info("password reset service: reset password link wasn't send, sending parameter is set to false and send email is not required")
+	} else {
+		p.logger.Info("password reset service: send reset password link")
+	}
 	return nil
 }
 
@@ -114,6 +118,10 @@ func (p *passwordReset) VerifyTokenAndSendPassword(ctx context.Context, tokenToV
 	if errDelete != nil {
 		p.logger.Warn("Error while deleting token", zap.String("token", tokenToVerify), zap.Error(errDelete))
 	}
-	p.logger.Info("password reset service: verified token and send password")
+	if p.Sender.IsSendRequired() == false {
+		p.logger.Info("password reset service: verified token, password wasn't send, sending parameter is set to false and send email is not required")
+	} else {
+		p.logger.Info("password reset service: verified token and send password")
+	}
 	return nil
 }

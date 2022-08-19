@@ -2,17 +2,14 @@ package main
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"fmt"
 	"os"
 	"time"
 
-	"entgo.io/ent/dialect"
-	entsql "entgo.io/ent/dialect/sql"
-	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent"
 	entMigrate "git.epam.com/epm-lstr/epm-lstr-lc/be/ent/migrate"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/config"
+	internalDB "git.epam.com/epm-lstr/epm-lstr-lc/be/internal/db"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/logger"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/restapi"
@@ -40,14 +37,7 @@ func main() {
 		}
 	}()
 
-	db, err := sql.Open("sqlite3", "file:csr?mode=memory&cache=shared&_fk=1")
-	if err != nil {
-		logger.Fatal("cant open db", zap.Error(err))
-	}
-
-	// Create an ent.Driver from `db`.
-	drv := entsql.OpenDB(dialect.SQLite, db)
-	entClient := ent.NewClient(ent.Driver(drv))
+	db, entClient := internalDB.Setup(logger)
 
 	// Run the auto migration tool.
 	if err := entClient.Schema.Create(ctx, entMigrate.WithDropIndex(true)); err != nil {

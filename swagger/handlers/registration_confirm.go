@@ -43,13 +43,19 @@ func (rc registrationConfirmHandler) SendRegistrationConfirmLinkByLoginFunc() re
 		if err != nil {
 			rc.logger.Error("Error while sending registration confirmation link", zap.Error(err))
 			switch err {
-			case services.RegistrationAlreadyConfirmedErr:
+			case services.ErrRegistrationAlreadyConfirmed:
 				return registration_confirm.NewSendRegistrationConfirmLinkByLoginDefault(http.StatusInternalServerError).
 					WithPayload(buildStringPayload("Registration is already confirmed."))
+			case services.ErrUserNotFound:
+				return registration_confirm.NewSendRegistrationConfirmLinkByLoginDefault(http.StatusInternalServerError).
+					WithPayload(buildStringPayload("Can't find this user, registration confirmation link wasn't send"))
 			default:
 				return registration_confirm.NewSendRegistrationConfirmLinkByLoginDefault(http.StatusInternalServerError).
 					WithPayload(buildStringPayload("Can't send registration confirmation link. Please try again later"))
 			}
+		}
+		if !rc.regConfirm.IsSendRequired() {
+			return registration_confirm.NewSendRegistrationConfirmLinkByLoginOK().WithPayload("Confirmation link was not sent to email, sending parameter was set to false and not required")
 		}
 		return registration_confirm.NewSendRegistrationConfirmLinkByLoginOK().WithPayload("Confirmation link was sent")
 	}

@@ -2,24 +2,23 @@ package db
 
 import (
 	"database/sql"
-	"fmt"
-
-	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/config"
 
 	"entgo.io/ent/dialect"
 	entsql "entgo.io/ent/dialect/sql"
-	_ "github.com/jackc/pgx/v4/stdlib"
-
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent"
+	_ "github.com/jackc/pgx/v4/stdlib"
+	"go.uber.org/zap"
 )
 
-func Setup(dbConfig *config.DB) (*sql.DB, *ent.Client, error) {
-	connectionString := fmt.Sprintf("host=%s user=csr password=csr dbname=csr sslmode=disable", dbConfig.Host)
-	db, err := sql.Open("pgx", connectionString)
+func Setup(logger *zap.Logger) (*sql.DB, *ent.Client) {
+	db, err := sql.Open("sqlite3", "file:csr?mode=memory&cache=shared&_fk=1")
 	if err != nil {
-		return nil, nil, err
+		logger.Fatal("cant open db", zap.Error(err))
 	}
-	drv := entsql.OpenDB(dialect.Postgres, db)
+
+	// Create an ent.Driver from `db`.
+	drv := entsql.OpenDB(dialect.SQLite, db)
 	entClient := ent.NewClient(ent.Driver(drv))
-	return db, entClient, nil
+
+	return db, entClient
 }

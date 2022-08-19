@@ -13,6 +13,20 @@ type RegistrationConfirm struct {
 	mock.Mock
 }
 
+// IsSendRequired provides a mock function with given fields:
+func (_m *RegistrationConfirm) IsSendRequired() bool {
+	ret := _m.Called()
+
+	var r0 bool
+	if rf, ok := ret.Get(0).(func() bool); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Get(0).(bool)
+	}
+
+	return r0
+}
+
 // SendConfirmationLink provides a mock function with given fields: ctx, login
 func (_m *RegistrationConfirm) SendConfirmationLink(ctx context.Context, login string) error {
 	ret := _m.Called(ctx, login)

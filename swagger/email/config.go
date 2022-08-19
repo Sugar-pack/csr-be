@@ -3,6 +3,7 @@ package email
 import (
 	"fmt"
 	"os"
+	"strconv"
 
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/utils"
 )
@@ -14,6 +15,7 @@ type ServiceConfig struct {
 	SenderFromAddress string
 	FromName          string
 	SenderWebsiteUrl  string
+	IsSendRequired    bool
 }
 
 func SetupEmailServiceConfig() (ServiceConfig, error) {
@@ -37,6 +39,14 @@ func SetupEmailServiceConfig() (ServiceConfig, error) {
 	if emailSenderFromName == "" {
 		return ServiceConfig{}, fmt.Errorf("EMAIL_SENDER_FROM_NAME is not set")
 	}
+	emailSenderOptionalSend := os.Getenv("EMAIL_SENDER_IS_SEND_REQUIRED")
+	if emailSenderOptionalSend == "" {
+		return ServiceConfig{}, fmt.Errorf("EMAIL_SENDER_IS_SEND_REQUIRED is not set")
+	}
+	emailSenderOptionalSendBool, err := strconv.ParseBool(emailSenderOptionalSend)
+	if err != nil {
+		return ServiceConfig{}, fmt.Errorf("EMAIL_SENDER_IS_SEND_REQUIRED must have bool values: true/false")
+	}
 	emailSenderWebsiteUrl := utils.GetEnv("EMAIL_SENDER_WEBSITE_URL", "https://csr.golangforall.com/")
 	return ServiceConfig{
 		EmailServerHost:   emailSenderServerHost,
@@ -45,5 +55,6 @@ func SetupEmailServiceConfig() (ServiceConfig, error) {
 		SenderFromAddress: emailSenderFromAddress,
 		FromName:          emailSenderFromName,
 		SenderWebsiteUrl:  emailSenderWebsiteUrl,
+		IsSendRequired:    emailSenderOptionalSendBool,
 	}, nil
 }
