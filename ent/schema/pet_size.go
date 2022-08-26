@@ -14,6 +14,7 @@ func (PetSize) Fields() []ent.Field {
 	return []ent.Field{
 		field.String("name").Default("unknown"),
 		field.String("size").Default("unknown"),
+		field.Bool("is_universal").Default(false),
 	}
 }
 
