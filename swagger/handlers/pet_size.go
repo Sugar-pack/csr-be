@@ -37,6 +37,27 @@ func NewPetSize(logger *zap.Logger) *PetSize {
 func (ps PetSize) CreatePetSizeFunc(repository repositories.PetSizeRepository) pet_size.CreateNewPetSizeHandlerFunc {
 	return func(p pet_size.CreateNewPetSizeParams, access interface{}) middleware.Responder {
 		ctx := p.HTTPRequest.Context()
+		allPetSizes, err := repository.AllPetSizes(ctx)
+		if err != nil {
+			ps.logger.Error("Error while getting pet size", zap.Error(err))
+			return pet_size.NewCreateNewPetSizeDefault(http.StatusInternalServerError).WithPayload(
+				&models.Error{
+					Data: &models.ErrorData{
+						Message: "Error while creating pet size",
+					},
+				})
+		}
+		for _, petSize := range allPetSizes {
+			if *p.NewPetSize.Name == petSize.Name {
+				ps.logger.Error("Error while creating pet size", zap.Error(err))
+				return pet_size.NewCreateNewPetSizeDefault(http.StatusInternalServerError).WithPayload(
+					&models.Error{
+						Data: &models.ErrorData{
+							Message: "Error while creating pet size: the name already exist",
+						},
+					})
+			}
+		}
 		petSize, err := repository.CreatePetSize(ctx, *p.NewPetSize)
 		if err != nil {
 			ps.logger.Error("Error while creating pet size", zap.Error(err))
@@ -58,9 +79,10 @@ func (ps PetSize) CreatePetSizeFunc(repository repositories.PetSizeRepository) p
 		}
 		id := int64(petSize.ID)
 		return pet_size.NewCreateNewPetSizeCreated().WithPayload(&models.PetSizeResponse{
-			ID:   &id,
-			Name: &petSize.Name,
-			Size: &petSize.Size,
+			ID:          &id,
+			Name:        &petSize.Name,
+			Size:        &petSize.Size,
+			IsUniversal: false,
 		},
 		)
 	}
@@ -89,7 +111,12 @@ func (ps PetSize) GetAllPetSizeFunc(repository repositories.PetSizeRepository) p
 		}
 		listOfPetSize := models.ListOfPetSizes{}
 		for _, v := range petSizes {
-			listOfPetSize = append(listOfPetSize, &models.PetSize{ID: int64(v.ID), Name: &v.Name, Size: &v.Size})
+			listOfPetSize = append(listOfPetSize, &models.PetSize{
+				ID:          int64(v.ID),
+				Name:        &v.Name,
+				Size:        &v.Size,
+				IsUniversal: v.IsUniversal,
+			})
 		}
 		return pet_size.NewGetAllPetSizeOK().WithPayload(listOfPetSize)
 	}

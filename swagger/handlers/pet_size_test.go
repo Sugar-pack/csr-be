@@ -3,6 +3,7 @@ package handlers
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -61,9 +62,10 @@ func InvalidPetSize(t *testing.T) *ent.PetSize {
 func ValidPetSize(t *testing.T) *ent.PetSize {
 	t.Helper()
 	return &ent.PetSize{
-		ID:   1,
-		Name: "test pet name",
-		Size: "test size",
+		ID:          1,
+		Name:        "test pet name",
+		Size:        "test size",
+		IsUniversal: false,
 		Edges: ent.PetSizeEdges{
 			Equipments: []*ent.Equipment{},
 		},
@@ -108,6 +110,14 @@ func (s *PetSizeTestSuite) TestPetSize_CreatePetSizeFunc_OK() {
 
 	s.petSizeRepo.On("CreatePetSize", ctx, petSizeToAdd).Return(petSizeToReturn, nil)
 
+	var petSizesToReturn []*ent.PetSize
+	for i := 0; i < 10; i++ {
+		ps := ValidPetSize(t)
+		ps.Name = ps.Name + fmt.Sprintf("-%v", i)
+		petSizesToReturn = append(petSizesToReturn, ps)
+	}
+	s.petSizeRepo.On("AllPetSizes", ctx).Return(petSizesToReturn, nil)
+
 	access := "dummy access"
 	resp := handlerFunc(data, access)
 	responseRecorder := httptest.NewRecorder()
@@ -145,6 +155,48 @@ func (s *PetSizeTestSuite) TestPetSize_CreatePetSizeFunc_ErrFromRepo() {
 	err := errors.New("test")
 
 	s.petSizeRepo.On("CreatePetSize", ctx, petSizeToAdd).Return(nil, err)
+	var petSizesToReturn []*ent.PetSize
+	for i := 0; i < 10; i++ {
+		ps := ValidPetSize(t)
+		ps.Name = ps.Name + fmt.Sprintf("-%v", i)
+		petSizesToReturn = append(petSizesToReturn, ps)
+	}
+	s.petSizeRepo.On("AllPetSizes", ctx).Return(petSizesToReturn, nil)
+
+	access := "dummy access"
+	resp := handlerFunc(data, access)
+	responseRecorder := httptest.NewRecorder()
+	producer := runtime.JSONProducer()
+	resp.WriteResponse(responseRecorder, producer)
+	assert.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
+	s.petSizeRepo.AssertExpectations(t)
+}
+
+func (s *PetSizeTestSuite) TestPetSize_CreatePetSizeFunc_ErrRespGetAll() {
+	t := s.T()
+	request := http.Request{}
+	ctx := request.Context()
+	name := "test pet name"
+	size := "test size"
+	handlerFunc := s.petSize.CreatePetSizeFunc(s.petSizeRepo)
+
+	petSizeToAdd := models.PetSize{
+		Name: &name,
+		Size: &size,
+	}
+	data := pet_size.CreateNewPetSizeParams{
+		HTTPRequest: &request,
+		NewPetSize:  &petSizeToAdd,
+	}
+
+	err := errors.New("Error while creating pet size")
+	var petSizesToReturn []*ent.PetSize
+	for i := 0; i < 10; i++ {
+		ps := ValidPetSize(t)
+		petSizesToReturn = append(petSizesToReturn, ps)
+	}
+
+	s.petSizeRepo.On("AllPetSizes", ctx).Return(nil, err)
 
 	access := "dummy access"
 	resp := handlerFunc(data, access)
@@ -174,6 +226,13 @@ func (s *PetSizeTestSuite) TestPetSize_CreatePetSizeFunc_ErrRespNil() {
 	}
 
 	s.petSizeRepo.On("CreatePetSize", ctx, petSizeToAdd).Return(toReturn, nil)
+	var petSizesToReturn []*ent.PetSize
+	for i := 0; i < 10; i++ {
+		ps := ValidPetSize(t)
+		ps.Name = ps.Name + fmt.Sprintf("-%v", i)
+		petSizesToReturn = append(petSizesToReturn, ps)
+	}
+	s.petSizeRepo.On("AllPetSizes", ctx).Return(petSizesToReturn, nil)
 
 	access := "dummy access"
 	resp := handlerFunc(data, access)
