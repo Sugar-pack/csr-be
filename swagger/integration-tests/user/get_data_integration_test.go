@@ -7,7 +7,8 @@ import (
 
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/client/users"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/models"
-	utils "git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/integration-tests"
+	utils "git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/integration-tests/common"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

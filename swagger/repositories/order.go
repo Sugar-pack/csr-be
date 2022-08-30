@@ -9,6 +9,7 @@ import (
 	"github.com/go-openapi/strfmt"
 
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/equipment"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/order"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/user"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/utils"
@@ -97,7 +98,9 @@ func (r *orderRepository) OrdersTotal(ctx context.Context, ownerId int) (int, er
 }
 
 func (r *orderRepository) Create(ctx context.Context, data *models.OrderCreateRequest, ownerId int) (*ent.Order, error) {
-	equipment, err := r.client.Equipment.Get(ctx, int(*data.Equipment))
+	// equipment, err := r.client.Equipment.Get(ctx, int(*data.Equipment))
+	equipment, err := r.client.Equipment.Query().Where(equipment.ID(int(*data.Equipment))).
+		WithKind().WithStatus().WithPetKinds().WithPetSize().WithPhoto().Only(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -139,6 +142,25 @@ func (r *orderRepository) Create(ctx context.Context, data *models.OrderCreateRe
 		WithUsers().WithOrderStatus().WithEquipments().Only(ctx) // get order with relations
 	if err != nil {
 		return nil, err
+	}
+
+	for _, orderEquipment := range returnOrder.Edges.Equipments {
+		if orderEquipment.ID == equipment.ID {
+			orderEquipment.Edges = equipment.Edges
+		}
+	}
+
+	for i := range returnOrder.Edges.OrderStatus { // get order status relations
+		statusName, errStatusName := returnOrder.Edges.OrderStatus[i].QueryStatusName().Only(ctx)
+		if errStatusName != nil {
+			return nil, errStatusName
+		}
+		returnOrder.Edges.OrderStatus[i].Edges.StatusName = statusName
+		statusUser, errStatusUser := returnOrder.Edges.OrderStatus[i].QueryUsers().Only(ctx)
+		if errStatusUser != nil {
+			return nil, errStatusUser
+		}
+		returnOrder.Edges.OrderStatus[i].Edges.Users = statusUser
 	}
 
 	return returnOrder, nil

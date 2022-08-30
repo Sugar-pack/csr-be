@@ -93,15 +93,45 @@ func mapOrder(o *ent.Order, log *zap.Logger) (*models.Order, error) {
 		statusToOrder = mappedStatus
 	}
 
+	var psID int64
+	eqID := int64(equipment.ID)
+	if equipment.Edges.PetSize != nil {
+		psID = int64(equipment.Edges.PetSize.ID)
+	}
+
+	petKinds := []*models.PetKind{}
+	if equipment.Edges.PetKinds != nil {
+		for _, petKind := range equipment.Edges.PetKinds {
+			j := &models.PetKind{
+				ID:   int64(petKind.ID),
+				Name: &petKind.Name,
+			}
+			petKinds = append(petKinds, j)
+		}
+	}
+
 	return &models.Order{
 		Description: &o.Description,
 		Equipment: &models.EquipmentResponse{
-			Description: &equipment.Description,
-			Kind:        &kindId,
-			Location:    nil,
-			Name:        &equipment.Name,
-			Photo:       &photoURL,
-			Status:      &statusId,
+			Category:         &equipment.Category,
+			CompensationСost: &equipment.CompensationCost,
+			Condition:        equipment.Condition,
+			Description:      &equipment.Description,
+			ID:               &eqID,
+			InventoryNumber:  &equipment.InventoryNumber,
+			Kind:             &kindId,
+			Location:         nil,
+			MaximumAmount:    &equipment.MaximumAmount,
+			MaximumDays:      &equipment.MaximumDays,
+			Name:             &equipment.Name,
+			Photo:            &photoURL,
+			PetSize:          &psID,
+			PetKinds:         petKinds,
+			ReceiptDate:      &equipment.ReceiptDate,
+			Supplier:         &equipment.Supplier,
+			TechnicalIssues:  &equipment.TechIssue,
+			Title:            &equipment.Title,
+			Status:           &statusId,
 		},
 		ID:        &id,
 		Quantity:  &quantity,

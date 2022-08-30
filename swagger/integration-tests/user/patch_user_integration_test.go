@@ -7,7 +7,8 @@ import (
 
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/client/users"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/models"
-	utils "git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/integration-tests"
+	utils "git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/integration-tests/common"
+
 	"github.com/brianvoe/gofakeit/v6"
 	"github.com/go-openapi/strfmt"
 	"github.com/stretchr/testify/assert"
