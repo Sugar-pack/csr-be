@@ -664,6 +664,10 @@ paths:
           description: 'Order created'
           schema:
             $ref: '#/definitions/Order'
+        default:
+          description: 'Unexpected error'
+          schema:
+            $ref: '#/definitions/Error'
       parameters:
         - name: data
           in: body
@@ -2049,7 +2053,6 @@ definitions:
       - receiptDate
       - maximumAmount
       - maximumDays
-      - order
       - location
       - description
       - photoID
@@ -2104,9 +2107,6 @@ definitions:
       maximumDays:
         type: integer
         example: 30
-      order:
-        type: integer
-        example: 1
       location:
         type: integer
         example: 71
@@ -2173,9 +2173,6 @@ definitions:
       maximumDays:
         type: integer
         example: 30
-      order:
-        type: integer
-        example: 1
       location:
         type: integer
         example: 71
@@ -2207,7 +2204,6 @@ definitions:
       - receiptDate
       - maximumAmount
       - maximumDays
-      - order
       - location
       - description
       - photo
@@ -2260,9 +2256,6 @@ definitions:
       maximumDays:
         type: integer
         example: 30
-      order:
-        type: integer
-        example: 1
       location:
         type: integer
         example: 71

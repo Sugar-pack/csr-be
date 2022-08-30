@@ -4,6 +4,7 @@ import (
 	"context"
 	"entgo.io/ent/dialect/sql"
 	"errors"
+
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/utils"
 
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent"
@@ -251,6 +252,7 @@ func (r *equipmentRepository) UpdateEquipmentByID(ctx context.Context, id int, e
 	if *eq.PetSize != 0 {
 		edit.SetPetSizeID(int(*eq.PetSize))
 	}
+	edit.ClearPetKinds()
 	if pks := []int{}; len(eq.PetKinds) != 0 {
 		for _, petKind := range eq.PetKinds {
 			pks = append(pks, int(petKind))

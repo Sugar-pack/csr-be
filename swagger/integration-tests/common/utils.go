@@ -1,4 +1,4 @@
-package integration_tests
+package common
 
 import (
 	"context"
@@ -7,19 +7,17 @@ import (
 	"net/http"
 	"time"
 
-	"git.epam.com/epm-lstr/epm-lstr-lc/be/client/kinds"
-	"git.epam.com/epm-lstr/epm-lstr-lc/be/client/pet_kind"
-	"git.epam.com/epm-lstr/epm-lstr-lc/be/client/pet_size"
 	"go.uber.org/zap"
+
+	"github.com/brianvoe/gofakeit/v6"
+	"github.com/go-openapi/runtime"
+	"github.com/go-openapi/strfmt"
 
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/client"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/client/users"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/config"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/utils"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/models"
-	"github.com/brianvoe/gofakeit/v6"
-	"github.com/go-openapi/runtime"
-	"github.com/go-openapi/strfmt"
 )
 
 var (
@@ -130,33 +128,4 @@ func AuthInfoFunc(token *string) runtime.ClientAuthInfoWriterFunc {
 		return r.SetHeaderParam(runtime.HeaderAuthorization, *token)
 	})
 	return authFunc
-}
-
-func CreatePetSize(ctx context.Context, client *client.Be, token, size, name string) (*pet_size.CreateNewPetSizeCreated, error) {
-	params := pet_size.NewCreateNewPetSizeParamsWithContext(ctx)
-	params.NewPetSize = &models.PetSize{
-		// should not provide ID
-		Name: &name,
-		Size: &size,
-	}
-	return client.PetSize.CreateNewPetSize(params, AuthInfoFunc(&token))
-}
-
-func CreatePetKind(ctx context.Context, client *client.Be, token, name string) (*pet_kind.CreateNewPetKindCreated, error) {
-	params := pet_kind.NewCreateNewPetKindParamsWithContext(ctx)
-	params.NewPetKind = &models.PetKind{
-		// should not provide ID
-		Name: &name,
-	}
-	return client.PetKind.CreateNewPetKind(params, AuthInfoFunc(&token))
-}
-
-func CreateKind(ctx context.Context, client *client.Be, token, name string, maxReservationTime, maxReservationUnits int64) (*kinds.CreateNewKindCreated, error) {
-	params := kinds.NewCreateNewKindParamsWithContext(ctx)
-	params.NewKind = &models.CreateNewKind{
-		MaxReservationTime:  &maxReservationTime,
-		MaxReservationUnits: &maxReservationUnits,
-		Name:                &name,
-	}
-	return client.Kinds.CreateNewKind(params, AuthInfoFunc(&token))
 }

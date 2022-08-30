@@ -12,7 +12,7 @@ type Order struct {
 	ent.Schema
 }
 
-// Fields of the Role.
+// Fields of the Order.
 func (Order) Fields() []ent.Field {
 	return []ent.Field{
 		field.Text("description"),
@@ -23,7 +23,7 @@ func (Order) Fields() []ent.Field {
 	}
 }
 
-// Edges of the Role.
+// Edges of the Order.
 func (Order) Edges() []ent.Edge {
 	return []ent.Edge{
 		edge.To("users", User.Type),

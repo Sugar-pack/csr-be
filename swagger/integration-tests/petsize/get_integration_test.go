@@ -4,12 +4,13 @@ import (
 	"context"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/client"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/client/pet_size"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/models"
-	utils "git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/integration-tests"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
+	utils "git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/integration-tests/common"
 )
 
 func TestIntegration_GetAllPetSize(t *testing.T) {

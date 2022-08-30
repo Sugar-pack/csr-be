@@ -13,3 +13,4 @@ equipment-kind-db-controller-api/
 main
 pid
 /client
+/equipments_photos/*

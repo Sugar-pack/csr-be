@@ -4,11 +4,12 @@ import (
 	"context"
 	"testing"
 
-	"git.epam.com/epm-lstr/epm-lstr-lc/be/client/pet_kind"
-	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/models"
-	utils "git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/integration-tests"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/client/pet_kind"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/models"
+	utils "git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/integration-tests/common"
 )
 
 var (
