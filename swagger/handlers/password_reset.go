@@ -47,14 +47,9 @@ func (c passwordResetHandler) SendLinkByLoginFunc() password_reset.SendLinkByLog
 		err := c.passwordReset.SendResetPasswordLink(ctx, login)
 		if err != nil {
 			c.logger.Error("Error while sending reset password link", zap.Error(err))
-			return password_reset.NewSendLinkByLoginDefault(http.StatusInternalServerError).WithPayload(
-				&models.Error{
-					Data: &models.ErrorData{
-						Message: "Can't send reset password link. Please try again later",
-					},
-				})
+			return password_reset.NewSendLinkByLoginOK().WithPayload("Check your email for a reset link")
 		}
-		return password_reset.NewSendLinkByLoginOK().WithPayload("Reset link sent")
+		return password_reset.NewSendLinkByLoginOK().WithPayload("Check your email for a reset link")
 	}
 }
 
@@ -65,12 +60,8 @@ func (c passwordResetHandler) GetPasswordResetLinkFunc() password_reset.GetPassw
 		err := c.passwordReset.VerifyTokenAndSendPassword(ctx, token)
 		if err != nil {
 			c.logger.Error("Failed to verify token or send email", zap.Error(err))
-			return password_reset.NewGetPasswordResetLinkDefault(http.StatusInternalServerError).WithPayload(&models.Error{
-				Data: &models.ErrorData{
-					Message: "Failed to verify token. Please try again later",
-				},
-			})
+			return password_reset.NewGetPasswordResetLinkOK().WithPayload("Check your email for a new password")
 		}
-		return password_reset.NewGetPasswordResetLinkOK().WithPayload("Password successfully reset. Check your email")
+		return password_reset.NewGetPasswordResetLinkOK().WithPayload("Check your email for a new password")
 	}
 }
