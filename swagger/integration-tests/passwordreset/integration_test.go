@@ -36,7 +36,7 @@ func TestIntegration_PasswordReset(t *testing.T) {
 		require.NoError(t, err)
 
 		want := &password_reset.SendLinkByLoginOK{
-			Payload: models.PasswordResetResponse("Reset link sent"),
+			Payload: models.PasswordResetResponse("Check your email for a reset link"),
 		}
 		assert.Equal(t, want, got)
 	})
@@ -57,22 +57,19 @@ func TestIntegration_PasswordReset(t *testing.T) {
 		assert.Equal(t, errExp, err)
 	})
 
-	t.Run("create password reset link failed: login not exist, 500", func(t *testing.T) {
+	t.Run("create password reset link failed: login not exist", func(t *testing.T) {
 		params := password_reset.NewSendLinkByLoginParamsWithContext(ctx)
 		login := utils.LoginNotExist
 		params.Login = &models.SendPasswordResetLinkRequest{Data: &models.Login{
 			Login: &login,
 		}}
-		_, err = client.PasswordReset.SendLinkByLogin(params)
-		require.Error(t, err)
+		got, err := client.PasswordReset.SendLinkByLogin(params)
+		require.NoError(t, err)
 
-		errExp := password_reset.NewSendLinkByLoginDefault(http.StatusInternalServerError)
-		errExp.Payload = &models.Error{
-			Data: &models.ErrorData{
-				Message: "Can't send reset password link. Please try again later",
-			},
+		want := &password_reset.SendLinkByLoginOK{
+			Payload: models.PasswordResetResponse("Check your email for a reset link"),
 		}
-		assert.Equal(t, errExp, err)
+		assert.Equal(t, want, got)
 	})
 }
 
@@ -93,13 +90,12 @@ func TestIntegration_PasswordResetGetLink(t *testing.T) {
 	t.Run("get password reset link by login failed: error while getting token", func(t *testing.T) {
 		params := password_reset.NewGetPasswordResetLinkParamsWithContext(ctx)
 		params.Token = utils.TokenNotExist
-		_, err = client.PasswordReset.GetPasswordResetLink(params)
-		assert.Error(t, err)
+		got, err := client.PasswordReset.GetPasswordResetLink(params)
+		assert.NoError(t, err)
 
-		errExp := password_reset.NewGetPasswordResetLinkDefault(http.StatusInternalServerError)
-		errExp.Payload = &models.Error{Data: &models.ErrorData{
-			Message: "Failed to verify token. Please try again later",
-		}}
-		assert.Equal(t, errExp, err)
+		want := &password_reset.GetPasswordResetLinkOK{
+			Payload: models.PasswordResetResponse("Check your email for a new password"),
+		}
+		assert.Equal(t, want, got)
 	})
 }

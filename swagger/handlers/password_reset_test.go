@@ -75,7 +75,7 @@ func (s *PasswordResetHandlerTestSuite) TestPasswordResetHandler_GetPasswordRese
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
+	assert.Equal(t, http.StatusOK, responseRecorder.Code)
 	s.passwordService.AssertExpectations(t)
 }
 
@@ -131,7 +131,7 @@ func (s *PasswordResetHandlerTestSuite) TestPasswordResetHandler_GSendLinkByLogi
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
+	assert.Equal(t, http.StatusOK, responseRecorder.Code)
 	s.passwordService.AssertExpectations(t)
 }
 
