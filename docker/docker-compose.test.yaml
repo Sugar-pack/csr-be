@@ -37,7 +37,7 @@ services:
       - EMAIL_SENDER_FROM_NAME=any
       - EMAIL_SENDER_IS_SEND_REQUIRED=false
       - PASSWORD_RESET_EXPIRATION_MINUTES=15
-      - PHOTOS_FOLDER=/equipments_photos
+      - PHOTOS_FOLDER=/equipments_photos/test
       - PHOTOS_SERVER_URL=https://csr.golangforall.com/
     depends_on:
       database:

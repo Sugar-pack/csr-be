@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"time"
 
+	httptransport "github.com/go-openapi/runtime/client"
 	"go.uber.org/zap"
 
 	"github.com/brianvoe/gofakeit/v6"
@@ -104,16 +105,18 @@ func GetUser(ctx context.Context, client *client.Be, authInfo runtime.ClientAuth
 }
 
 func SetupClient() *client.Be {
-	strReg := strfmt.Default
 	serverConfig, err := config.SetupServerConfig()
 	if err != nil {
 		log.Fatal("fail to setup server config", zap.Error(err))
 	}
-	transportConf := client.DefaultTransportConfig()
+
 	host := "localhost"
-	transportConf.Host = fmt.Sprintf("%s:%v", host, serverConfig.Port)
-	transportConf.Schemes = []string{"http"}
-	swaggerClient := client.NewHTTPClientWithConfig(strReg, transportConf)
+	schemes := []string{"http"}
+
+	swaggerClient, err := NewAPIClient(fmt.Sprintf("%s:%v", host, serverConfig.Port), schemes)
+	if err != nil {
+		log.Fatal("fail to setup client", zap.Error(err))
+	}
 	return swaggerClient
 }
 
@@ -128,4 +131,12 @@ func AuthInfoFunc(token *string) runtime.ClientAuthInfoWriterFunc {
 		return r.SetHeaderParam(runtime.HeaderAuthorization, *token)
 	})
 	return authFunc
+}
+
+func NewAPIClient(host string, schemes []string) (*client.Be, error) {
+	be := httptransport.New(host, client.DefaultBasePath, schemes)
+	// Generated client does not accept content types specified in schema
+	// https://github.com/go-swagger/go-swagger/issues/1244
+	be.Consumers["image/jpg"] = runtime.ByteStreamConsumer()
+	return client.New(be, nil), nil
 }

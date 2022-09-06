@@ -178,7 +178,6 @@ func TestIntegration_CreateOrder(t *testing.T) {
 		params := orders.NewCreateOrderParamsWithContext(ctx)
 		desc := "test description"
 		quantity := int64(1)
-		//equipment := eq.ID
 		rentStart := strfmt.DateTime(time.Now())
 		rentEnd := strfmt.DateTime(time.Now().Add(time.Hour))
 		params.Data = &models.OrderCreateRequest{
@@ -249,9 +248,39 @@ func TestIntegration_GetAllOrders(t *testing.T) {
 	client := common.SetupClient()
 
 	t.Run("Get All Orders Ok", func(t *testing.T) {
+		wantOrders := 1
 		params := orders.NewGetAllOrdersParamsWithContext(ctx)
-		_, err := client.Orders.GetAllOrders(params, auth)
+		res, err := client.Orders.GetAllOrders(params, auth)
 		require.NoError(t, err)
+
+		// check that it has one created order
+		assert.Equal(t, wantOrders, len(res.GetPayload().Items))
+
+		// create another order and check that get returns +1 order
+		eq2, err := createEquipment(ctx, client, auth)
+		require.NoError(t, err)
+
+		createParams := orders.NewCreateOrderParamsWithContext(ctx)
+		desc := "test description"
+		quantity := int64(1)
+		rentStart := strfmt.DateTime(time.Now())
+		rentEnd := strfmt.DateTime(time.Now().Add(time.Hour * 24))
+		createParams.Data = &models.OrderCreateRequest{
+			Equipment:   eq2.ID,
+			Description: &desc,
+			Quantity:    &quantity,
+			RentStart:   &rentStart,
+			RentEnd:     &rentEnd,
+		}
+		_, err = client.Orders.CreateOrder(createParams, auth)
+		require.NoError(t, err)
+
+		// orders number changed
+		wantOrders = 2
+		res, err = client.Orders.GetAllOrders(params, auth)
+		require.NoError(t, err)
+
+		assert.Equal(t, wantOrders, len(res.GetPayload().Items))
 	})
 
 	t.Run("Get All Orders Ok limit", func(t *testing.T) {
@@ -308,12 +337,13 @@ func TestIntegration_GetAllOrders(t *testing.T) {
 		assert.Equal(t, wantErr, gotErr)
 	})
 
-	t.Run("Get All Orders failed: wrong column to order by - validation error", func(t *testing.T) {
+	t.Run("Get All Orders failed: validation error", func(t *testing.T) {
 		params := orders.NewGetAllOrdersParamsWithContext(ctx)
 		limit := int64(1)
 		offset := int64(0)
 		orderBy := utils.AscOrder
-		orderColumn := "wrong"
+		// only id and rent_start can be used
+		orderColumn := order.FieldRentEnd
 
 		params.OrderBy = &orderBy
 		params.Limit = &limit
@@ -327,6 +357,21 @@ func TestIntegration_GetAllOrders(t *testing.T) {
 		assert.Equal(t, wantErr, gotErr)
 	})
 
+	t.Run("Get All Orders OK: rent_start column to order by", func(t *testing.T) {
+		params := orders.NewGetAllOrdersParamsWithContext(ctx)
+		limit := int64(1)
+		offset := int64(0)
+		orderBy := utils.AscOrder
+		// rent_start and id can be used for orderColumn only
+		orderColumn := "rent_start"
+
+		params.OrderBy = &orderBy
+		params.Limit = &limit
+		params.Offset = &offset
+		params.OrderColumn = &orderColumn
+		_, err := client.Orders.GetAllOrders(params, auth)
+		require.NoError(t, err)
+	})
 }
 
 func TestIntegration_UpdateOrder(t *testing.T) {
