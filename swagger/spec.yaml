@@ -638,7 +638,7 @@ paths:
           type: string
           enum:
             - id
-            - name
+            - rent_start
           default: id
       security:
         - Bearer: [ ]
@@ -796,7 +796,9 @@ paths:
           type: string
           enum:
             - id
-            - name
+            - created_at
+            - rent_start
+            - rent_end
           default: id
       operationId: GetOrdersByStatus
       responses:
@@ -862,7 +864,9 @@ paths:
           type: string
           enum:
             - id
-            - name
+            - created_at
+            - rent_start
+            - rent_end
           default: id
       operationId: GetOrdersByDateAndStatus
       responses:
