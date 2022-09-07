@@ -2,10 +2,11 @@ package handlers
 
 import (
 	"errors"
-	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/order"
-	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/utils"
 	"math"
 	"net/http"
+
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/order"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/utils"
 
 	"github.com/go-openapi/runtime/middleware"
 	"go.uber.org/zap"
@@ -217,10 +218,10 @@ func mapEquipmentResponse(eq *ent.Equipment) (*models.EquipmentResponse, error) 
 		return nil, errors.New("equipment is nil")
 	}
 	id := int64(eq.ID)
-	if eq.Edges.Kind == nil {
-		return nil, errors.New("equipment kind is nil")
+	if eq.Edges.Category == nil {
+		return nil, errors.New("equipment category is nil")
 	}
-	kindID := int64(eq.Edges.Kind.ID)
+	categoryID := int64(eq.Edges.Category.ID)
 	if eq.Edges.Status == nil {
 		return nil, errors.New("equipment status is nil")
 	}
@@ -245,14 +246,14 @@ func mapEquipmentResponse(eq *ent.Equipment) (*models.EquipmentResponse, error) 
 	}
 
 	return &models.EquipmentResponse{
-		Category:         &eq.Category,
+		TermsOfUse:       &eq.TermsOfUse,
 		CompensationСost: &eq.CompensationCost,
 		TechnicalIssues:  &eq.TechIssue,
 		Condition:        eq.Condition,
 		Description:      &eq.Description,
 		ID:               &id,
 		InventoryNumber:  &eq.InventoryNumber,
-		Kind:             &kindID,
+		Category:         &categoryID,
 		MaximumAmount:    &eq.MaximumAmount,
 		MaximumDays:      &eq.MaximumDays,
 		Name:             &eq.Name,

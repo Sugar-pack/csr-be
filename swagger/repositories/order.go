@@ -100,12 +100,12 @@ func (r *orderRepository) OrdersTotal(ctx context.Context, ownerId int) (int, er
 func (r *orderRepository) Create(ctx context.Context, data *models.OrderCreateRequest, ownerId int) (*ent.Order, error) {
 	// equipment, err := r.client.Equipment.Get(ctx, int(*data.Equipment))
 	equipment, err := r.client.Equipment.Query().Where(equipment.ID(int(*data.Equipment))).
-		WithKind().WithStatus().WithPetKinds().WithPetSize().WithPhoto().Only(ctx)
+		WithCategory().WithStatus().WithPetKinds().WithPetSize().WithPhoto().Only(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	kind, err := equipment.QueryKind().First(ctx)
+	kind, err := equipment.QueryCategory().First(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -186,7 +186,7 @@ func (r *orderRepository) Update(ctx context.Context, id int, data *models.Order
 		return nil, err
 	}
 
-	kind, err := equipment.QueryKind().First(ctx)
+	kind, err := equipment.QueryCategory().First(ctx)
 	if err != nil {
 		return nil, err
 	}

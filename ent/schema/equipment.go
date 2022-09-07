@@ -14,7 +14,7 @@ type Equipment struct {
 // Fields of the Equipment.
 func (Equipment) Fields() []ent.Field {
 	return []ent.Field{
-		field.String("category").Default("unknown"),
+		field.String("termsOfUse").Default("unknown"),
 		field.String("name").Default("unknown"),
 		field.String("title").Default("unknown"),
 		field.Int64("compensationCost").Optional(),
@@ -32,7 +32,7 @@ func (Equipment) Fields() []ent.Field {
 // Edges of the Equipment.
 func (Equipment) Edges() []ent.Edge {
 	return []ent.Edge{
-		edge.From("kind", Kind.Type).Ref("equipments").Unique(),
+		edge.From("category", Category.Type).Ref("equipments").Unique(),
 		edge.From("status", Statuses.Type).Ref("equipments").Unique(),
 		edge.From("pet_size", PetSize.Type).Ref("equipments").Unique(),
 		edge.From("photo", Photo.Type).Ref("equipments").Unique(),

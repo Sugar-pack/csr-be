@@ -63,9 +63,9 @@ func mapOrder(o *ent.Order, log *zap.Logger) (*models.Order, error) {
 	equipment := equipments[0]
 	ownerId := int64(owner.ID)
 	ownerName := owner.Login
-	var kindId int64
-	if equipment.Edges.Kind != nil {
-		kindId = int64(equipment.Edges.Kind.ID)
+	var categoryId int64
+	if equipment.Edges.Category != nil {
+		categoryId = int64(equipment.Edges.Category.ID)
 	}
 	var statusId int64
 	if equipment.Edges.Status != nil {
@@ -113,13 +113,13 @@ func mapOrder(o *ent.Order, log *zap.Logger) (*models.Order, error) {
 	return &models.Order{
 		Description: &o.Description,
 		Equipment: &models.EquipmentResponse{
-			Category:         &equipment.Category,
+			TermsOfUse:       &equipment.TermsOfUse,
 			CompensationСost: &equipment.CompensationCost,
 			Condition:        equipment.Condition,
 			Description:      &equipment.Description,
 			ID:               &eqID,
 			InventoryNumber:  &equipment.InventoryNumber,
-			Kind:             &kindId,
+			Category:         &categoryId,
 			Location:         nil,
 			MaximumAmount:    &equipment.MaximumAmount,
 			MaximumDays:      &equipment.MaximumDays,

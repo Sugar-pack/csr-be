@@ -2,15 +2,17 @@ package repositories
 
 import (
 	"context"
+	"math"
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/suite"
+
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/enttest"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/equipment"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/utils"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/models"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/suite"
-	"math"
-	"testing"
 )
 
 type EquipmentSuite struct {
@@ -44,11 +46,11 @@ func (s *EquipmentSuite) SetupTest() {
 	}
 
 	kindName := "kind"
-	_, err = s.client.Kind.Delete().Exec(s.ctx) // clean up
+	_, err = s.client.Category.Delete().Exec(s.ctx) // clean up
 	if err != nil {
 		t.Fatal(err)
 	}
-	kind, err := s.client.Kind.Create().SetName(kindName).Save(s.ctx)
+	kind, err := s.client.Category.Create().SetName(kindName).Save(s.ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -81,7 +83,7 @@ func (s *EquipmentSuite) SetupTest() {
 	}
 	for i, value := range s.equipments {
 		eq, errCreate := s.client.Equipment.Create().
-			SetName(value.Name).SetTitle(value.Title).SetStatus(status).SetKind(kind).
+			SetName(value.Name).SetTitle(value.Title).SetStatus(status).SetCategory(kind).
 			Save(s.ctx)
 		if errCreate != nil {
 			t.Fatal(errCreate)

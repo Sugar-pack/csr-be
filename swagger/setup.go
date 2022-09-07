@@ -52,7 +52,7 @@ func SetupAPI(entClient *ent.Client, logger *zap.Logger, config *config.AppConfi
 	handlers.SetActiveAreaHandler(entClient, logger, api)
 	handlers.SetBlockerHandler(entClient, logger, api)
 	handlers.SetEquipmentHandler(entClient, logger, api, fileManager)
-	handlers.SetKindHandler(entClient, logger, api)
+	handlers.SetCategoryHandler(entClient, logger, api)
 	handlers.SetOrderHandler(entClient, logger, api)
 	handlers.SetOrderStatusHandler(entClient, logger, api)
 	handlers.SetPasswordResetHandler(logger, api, passwordService)
