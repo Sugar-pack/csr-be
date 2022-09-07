@@ -1,22 +1,5 @@
 version: '3'
 services:
-  database:
-    image: "postgres:latest"
-    container_name: lc_postgres_test
-    environment:
-      - POSTGRES_PASSWORD=postgres # required
-    volumes:
-      - ./docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d # mount volume with init scripts
-    ports:
-      - "5432:5432"
-    networks:
-      - go-network
-    healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U csr -p 5432" ]
-      interval: 2s
-      timeout: 1s
-      retries: 5
-
   test_goapp:
     image: test_go_run:${TAG}
     container_name: lc_golang_test
@@ -39,9 +22,7 @@ services:
       - PASSWORD_RESET_EXPIRATION_MINUTES=15
       - PHOTOS_FOLDER=/equipments_photos/test
       - PHOTOS_SERVER_URL=https://csr.golangforall.com/
-    depends_on:
-      database:
-        condition: service_healthy
+      - DB_FILE=test_csr.db
     networks:
       - go-network
     restart: on-failure:3

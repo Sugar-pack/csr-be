@@ -13,8 +13,8 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/client"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/client/categories"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/client/equipment"
-	"git.epam.com/epm-lstr/epm-lstr-lc/be/client/kinds"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/client/orders"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/client/pet_kind"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/client/pet_size"
@@ -62,7 +62,7 @@ func TestIntegration_CreateOrder(t *testing.T) {
 	ctx := context.Background()
 	client := common.SetupClient()
 
-	t.Run("Create Order failed: quantity more than kind.MaxReservationUnits", func(t *testing.T) {
+	t.Run("Create Order failed: quantity more than category.MaxReservationUnits", func(t *testing.T) {
 		params := orders.NewCreateOrderParamsWithContext(ctx)
 		desc := "test description"
 		quantity := int64(20)
@@ -439,13 +439,13 @@ func createEquipment(ctx context.Context, client *client.Be, auth runtime.Client
 }
 
 func setParameters(ctx context.Context, client *client.Be, auth runtime.ClientAuthInfoWriterFunc) (*models.Equipment, error) {
-	category := "Клетки"
+	termsOfUse := "https://..."
 	cost := int64(3900)
 	condition := "удовлетворительное, местами облупляется краска"
 	description := "удобная, подойдет для котов любых размеров"
 	inventoryNumber := int64(1)
 
-	kind, err := client.Kinds.GetKindByID(kinds.NewGetKindByIDParamsWithContext(ctx).WithKindID(1), auth)
+	category, err := client.Categories.GetCategoryByID(categories.NewGetCategoryByIDParamsWithContext(ctx).WithCategoryID(1), auth)
 	if err != nil {
 		return nil, err
 	}
@@ -487,12 +487,12 @@ func setParameters(ctx context.Context, client *client.Be, auth runtime.ClientAu
 	title := "клетка midwest icrate 1"
 
 	return &models.Equipment{
-		Category:         &category,
+		TermsOfUse:       termsOfUse,
 		CompensationСost: &cost,
 		Condition:        condition,
 		Description:      &description,
 		InventoryNumber:  &inventoryNumber,
-		Kind:             &kind.Payload.Data.ID,
+		Category:         category.Payload.Data.ID,
 		Location:         &location,
 		MaximumAmount:    &amount,
 		MaximumDays:      &mdays,

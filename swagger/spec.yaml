@@ -375,7 +375,7 @@ paths:
           description: Unexpected error.
           schema:
             $ref: "#/definitions/Error"
-  /equipment/kinds:
+  /equipment/categories:
     get:
       parameters:
         - name: limit
@@ -408,101 +408,101 @@ paths:
             - id
             - name
           default: id
-      summary: Get all kinds.
+      summary: Get all categories.
       security:
         - Bearer: [ ]
       tags:
-        - Kinds
-      operationId: GetAllKinds
+        - Categories
+      operationId: GetAllCategories
       responses:
         200:
           description: Success
           schema:
-            $ref: "#/definitions/ListOfKinds"
+            $ref: "#/definitions/ListOfCategories"
         default:
           description: Unexpected error.
           schema:
             $ref: "#/definitions/Error"
     post:
-      summary: Create a new kind.
+      summary: Create a new Category.
       security:
         - Bearer: [ ]
       tags:
-        - Kinds
-      operationId: CreateNewKind
+        - Categories
+      operationId: CreateNewCategory
       parameters:
-        - name: NewKind
+        - name: NewCategory
           in: body
-          description: Name of a kind
+          description: Name of a category
           required: true
           schema:
-            $ref: "#/definitions/CreateNewKind"
+            $ref: "#/definitions/CreateNewCategory"
       responses:
         201:
           description: Success
           schema:
-            $ref: "#/definitions/CreateNewKindResponse"
+            $ref: "#/definitions/CreateNewCategoryResponse"
         default:
           description: Unexpected error.
           schema:
             $ref: "#/definitions/Error"
-  /equipment/kinds/{kindId}:
+  /equipment/categories/{categoryId}:
     parameters:
-      - name: kindId
+      - name: categoryId
         in: path
         required: true
-        description: kind id
+        description: category id
         type: integer
     get:
-      summary: Get information about the kind of equipment by id.
+      summary: Get information about the category of equipment by id.
       security:
         - Bearer: [ ]
       tags:
-        - Kinds
-      operationId: getKindByID
+        - Categories
+      operationId: getCategoryByID
       responses:
         200:
           description: Success
           schema:
-            $ref: "#/definitions/GetKindByIDResponse"
+            $ref: "#/definitions/GetCategoryByIDResponse"
         default:
           description: Unexpected error.
           schema:
             $ref: "#/definitions/Error"
     delete:
-      summary: Delete kind of equipment from db by id.
+      summary: Delete category of equipment from db by id.
       security:
         - Bearer: [ ]
       tags:
-        - Kinds
-      operationId: deleteKind
+        - Categories
+      operationId: deleteCategory
       responses:
         200:
-          description: kind of equipment successfully deleted from db
+          description: category of equipment successfully deleted from db
           schema:
             type: string
         default:
           description: Unexpected error.
           schema:
             $ref: "#/definitions/Error"
-    patch:
-      summary: Edit equipment kind by id.
+    put:
+      summary: Edit equipment category by id.
       security:
         - Bearer: [ ]
       tags:
-        - Kinds
-      operationId: PatchKind
+        - Categories
+      operationId: UpdateCategory
       parameters:
-        - name: patchKind
+        - name: updateCategory
           in: body
           required: true
           schema:
-            $ref: '#/definitions/PatchKind'
+            $ref: '#/definitions/UpdateCategoryRequest'
       responses:
         200:
           description: Success
           schema:
-            $ref: "#/definitions/PatchKindResponse"
+            $ref: "#/definitions/UpdateCategoryResponse"
         default:
           description: Unexpected error
           schema:
@@ -1514,17 +1514,6 @@ definitions:
       name:
         type: string
 
-  PatchKind:
-    type: object
-    description: Patch task object (changing kind properties)
-    properties:
-      name:
-        type: string
-      maxReservationTime:
-        type: integer
-      maxReservationUnits:
-        type: integer
-
   UpdateUserTask:
     type: object
     required:
@@ -1911,11 +1900,15 @@ definitions:
     properties:
       data:
         $ref: "#/definitions/Photo"
-  # Kind
-  Kind:
+  # Category
+  Category:
     type: object
     required:
+      - id
       - name
+      - max_reservation_time
+      - max_reservation_units
+      - has_subcategory
     properties:
       id:
         type: integer
@@ -1925,7 +1918,9 @@ definitions:
         type: integer
       max_reservation_units:
         type: integer
-  ListOfKinds:
+      has_subcategory:
+        type: boolean
+  ListOfCategories:
     type: object
     required:
       - total
@@ -1936,27 +1931,28 @@ definitions:
       items:
         type: array
         items:
-          $ref: "#/definitions/Kind"
-  GetKindByIDResponse:
+          $ref: "#/definitions/Category"
+  GetCategoryByIDResponse:
     type: object
     required:
       - data
     properties:
       data:
-        $ref: "#/definitions/Kind"
-  DeleteKindResponse:
+        $ref: "#/definitions/Category"
+  DeleteCategoryResponse:
     type: object
     required:
       - data
     properties:
       data:
-        $ref: "#/definitions/Kind"
-  CreateNewKind:
+        $ref: "#/definitions/Category"
+  CreateNewCategory:
     type: object
     required:
       - name
       - max_reservation_time
       - max_reservation_units
+      - has_subcategory
     properties:
       name:
         type: string
@@ -1964,20 +1960,38 @@ definitions:
         type: integer
       max_reservation_units:
         type: integer
-  CreateNewKindResponse:
+      has_subcategory:
+        type: boolean
+  CreateNewCategoryResponse:
     type: object
     required:
       - data
     properties:
       data:
-        $ref: "#/definitions/Kind"
-  PatchKindResponse:
+        $ref: "#/definitions/Category"
+  UpdateCategoryRequest:
+    type: object
+    required:
+      - name
+      - max_reservation_time
+      - max_reservation_units
+      - has_subcategory
+    properties:
+      name:
+        type: string
+      max_reservation_time:
+        type: integer
+      max_reservation_units:
+        type: integer
+      has_subcategory:
+        type: boolean
+  UpdateCategoryResponse:
     type: object
     required:
       - data
     properties:
       data:
-        $ref: "#/definitions/Kind"
+        $ref: "#/definitions/Category"
   # PetSize
   PetSize:
     type: object
@@ -2044,10 +2058,9 @@ definitions:
   Equipment:
     type: object
     required:
-      - category
       - name
       - title
-      - kind
+      - category
       - status
       - petSize
       - compensationСost
@@ -2061,9 +2074,9 @@ definitions:
       - description
       - photoID
     properties:
-      category:
+      termsOfUse:
         type: string
-        example: "Клетки"
+        example: "https://..."
       name:
         type: string
         example: "Dog harness 3000"
@@ -2074,7 +2087,10 @@ definitions:
       title:
         type: string
         example: "клетка midwest icrate 1"
-      kind:
+      category:
+        type: integer
+        example: 1
+      subcategory:
         type: integer
         example: 1
       status:
@@ -2128,9 +2144,9 @@ definitions:
   EquipmentFilter:
     type: object
     properties:
-      category:
+      termsOfUse:
         type: string
-        example: "Клетки"
+        example: "https://..."
       name:
         type: string
         example: "Dog harness 3000"
@@ -2141,7 +2157,7 @@ definitions:
       title:
         type: string
         example: "клетка midwest icrate 1"
-      kind:
+      category:
         type: integer
         example: 1
       status:
@@ -2195,10 +2211,10 @@ definitions:
     type: object
     required:
       - id
-      - category
+      - termsOfUse
       - name
       - title
-      - kind
+      - category
       - status
       - petSize
       - compensationСost
@@ -2215,16 +2231,19 @@ definitions:
       id:
         type: integer
         example: 1
-      category:
+      termsOfUse:
         type: string
-        example: "Клетки"
+        example: "https://..."
       name:
         type: string
         example: "Dog harness 3000"
       title:
         type: string
         example: "клетка midwest icrate 1"
-      kind:
+      category:
+        type: integer
+        example: 1
+      subcategory:
         type: integer
         example: 1
       status:

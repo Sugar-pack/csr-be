@@ -10,8 +10,8 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/client"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/client/categories"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/client/equipment"
-	"git.epam.com/epm-lstr/epm-lstr-lc/be/client/kinds"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/client/pet_kind"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/client/pet_size"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/client/photos"
@@ -57,7 +57,7 @@ func TestIntegration_CreateEquipment(t *testing.T) {
 		assert.Equal(t, model.Condition, res.Payload.Condition)
 		assert.Equal(t, model.Description, res.Payload.Description)
 		assert.Equal(t, model.InventoryNumber, res.Payload.InventoryNumber)
-		assert.Equal(t, model.Kind, res.Payload.Kind)
+		assert.Equal(t, model.Category, res.Payload.Category)
 		//assert.Equal(t, location, *res.Payload.Location)
 		assert.Equal(t, model.MaximumAmount, res.Payload.MaximumAmount)
 		assert.Equal(t, model.MaximumDays, res.Payload.MaximumDays)
@@ -190,7 +190,7 @@ func TestIntegration_GetEquipment(t *testing.T) {
 		assert.Equal(t, model.Condition, res.Payload.Condition)
 		assert.Equal(t, model.Description, res.Payload.Description)
 		assert.Equal(t, model.InventoryNumber, res.Payload.InventoryNumber)
-		assert.Equal(t, model.Kind, res.Payload.Kind)
+		assert.Equal(t, model.Category, res.Payload.Category)
 		assert.Equal(t, model.MaximumAmount, res.Payload.MaximumAmount)
 		assert.Equal(t, model.MaximumDays, res.Payload.MaximumDays)
 		assert.Equal(t, model.Name, res.Payload.Name)
@@ -303,7 +303,7 @@ func TestIntegration_FindEquipment(t *testing.T) {
 	t.Run("Find Equipment: unknown parameters, zero items found", func(t *testing.T) {
 		params := equipment.NewFindEquipmentParamsWithContext(ctx)
 		params.FindEquipment = &models.EquipmentFilter{
-			Category: "unknown category",
+			TermsOfUse: "unknown category",
 		}
 
 		res, gotErr := client.Equipment.FindEquipment(params, auth)
@@ -442,13 +442,13 @@ func TestIntegration_DeleteEquipment(t *testing.T) {
 }
 
 func setParameters(ctx context.Context, client *client.Be, auth runtime.ClientAuthInfoWriterFunc) (*models.Equipment, error) {
-	category := "Клетки"
+	termsOfUse := "https://..."
 	cost := int64(3900)
 	condition := "удовлетворительное, местами облупляется краска"
 	description := "удобная, подойдет для котов любых размеров"
 	inventoryNumber := int64(1)
 
-	kind, err := client.Kinds.GetKindByID(kinds.NewGetKindByIDParamsWithContext(ctx).WithKindID(1), auth)
+	category, err := client.Categories.GetCategoryByID(categories.NewGetCategoryByIDParamsWithContext(ctx).WithCategoryID(1), auth)
 	if err != nil {
 		return nil, err
 	}
@@ -490,12 +490,12 @@ func setParameters(ctx context.Context, client *client.Be, auth runtime.ClientAu
 	title := "клетка midwest icrate 1"
 
 	return &models.Equipment{
-		Category:         &category,
+		TermsOfUse:       termsOfUse,
 		CompensationСost: &cost,
 		Condition:        condition,
 		Description:      &description,
 		InventoryNumber:  &inventoryNumber,
-		Kind:             &kind.Payload.Data.ID,
+		Category:         category.Payload.Data.ID,
 		Location:         &location,
 		MaximumAmount:    &amount,
 		MaximumDays:      &mdays,

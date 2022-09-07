@@ -77,7 +77,7 @@ func TestIntegration_GetPetSize(t *testing.T) {
 	})
 }
 
-func TestIntegration_DeletePetKind(t *testing.T) {
+func TestIntegration_DeletePetSize(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping integration test")
 	}

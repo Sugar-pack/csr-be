@@ -70,8 +70,8 @@ func ValidEquipment(t *testing.T, id int) *ent.Equipment {
 		ID:   id,
 		Name: fmt.Sprintf("test equipment %d", id),
 		Edges: ent.EquipmentEdges{
-			Kind:   &ent.Kind{},
-			Status: &ent.Statuses{},
+			Category: &ent.Category{},
+			Status:   &ent.Statuses{},
 			Photo: &ent.Photo{
 				ID:       "photoid",
 				URL:      "localhost:8080/api/photoid",
@@ -937,9 +937,9 @@ func (s *EquipmentTestSuite) TestEquipment_EditEquipmentFunc_RepoErr() {
 
 	handlerFunc := s.equipment.EditEquipmentFunc(s.equipmentRepo)
 	equipmentId := int64(1)
-	equipmentKindUpdate := int64(10)
+	equipmentCategoryUpdate := int64(10)
 	equipmentUpdate := &models.Equipment{
-		Kind: &equipmentKindUpdate,
+		Category: &equipmentCategoryUpdate,
 	}
 	data := equipment.EditEquipmentParams{
 		HTTPRequest:   &request,
@@ -967,9 +967,9 @@ func (s *EquipmentTestSuite) TestEquipment_EditEquipmentFunc_MapErr() {
 
 	handlerFunc := s.equipment.EditEquipmentFunc(s.equipmentRepo)
 	equipmentId := int64(1)
-	equipmentKindUpdate := int64(10)
+	equipmentCategoryUpdate := int64(10)
 	equipmentUpdate := &models.Equipment{
-		Kind: &equipmentKindUpdate,
+		Category: &equipmentCategoryUpdate,
 	}
 	data := equipment.EditEquipmentParams{
 		HTTPRequest:   &request,
@@ -999,7 +999,7 @@ func (s *EquipmentTestSuite) TestEquipment_EditEquipmentFunc_OK() {
 	equipmentId := int64(1)
 	equipmentKindUpdate := int64(10)
 	equipmentUpdate := &models.Equipment{
-		Kind: &equipmentKindUpdate,
+		Category: &equipmentKindUpdate,
 	}
 	data := equipment.EditEquipmentParams{
 		HTTPRequest:   &request,

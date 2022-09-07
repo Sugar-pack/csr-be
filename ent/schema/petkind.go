@@ -6,20 +6,20 @@ import (
 	"entgo.io/ent/schema/field"
 )
 
-// Kind holds the schema definition for the Kind entity.
+// PetKind holds the schema definition for the PetKind entity.
 
 type PetKind struct {
 	ent.Schema
 }
 
-// Fields of the Kind.
+// Fields of the PetKind.
 func (PetKind) Fields() []ent.Field {
 	return []ent.Field{
 		field.String("name").Unique(),
 	}
 }
 
-// Edges of the Kind.
+// Edges of the PetKind.
 func (PetKind) Edges() []ent.Edge {
 	return []ent.Edge{
 		edge.To("equipments", Equipment.Type),

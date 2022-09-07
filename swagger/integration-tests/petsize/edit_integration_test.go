@@ -12,7 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestIntegration_EditPetKind(t *testing.T) {
+func TestIntegration_EditPetSize(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping integration test")
 	}
@@ -44,11 +44,11 @@ func TestIntegration_EditPetKind(t *testing.T) {
 		Size: &newSize,
 	}
 
-	kind, err := client.PetSize.EditPetSize(params, utils.AuthInfoFunc(token))
+	petSize, err := client.PetSize.EditPetSize(params, utils.AuthInfoFunc(token))
 	require.NoError(t, err)
 
-	assert.Equal(t, newName, *kind.GetPayload().Name)
-	assert.Equal(t, newSize, *kind.GetPayload().Size)
+	assert.Equal(t, newName, *petSize.GetPayload().Name)
+	assert.Equal(t, newSize, *petSize.GetPayload().Size)
 
 	// revert changes back for delete function
 	params.EditPetSize = &models.PetSize{
