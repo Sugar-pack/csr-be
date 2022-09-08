@@ -33,6 +33,7 @@ func (Equipment) Fields() []ent.Field {
 func (Equipment) Edges() []ent.Edge {
 	return []ent.Edge{
 		edge.From("category", Category.Type).Ref("equipments").Unique(),
+		edge.From("subcategory", Subcategory.Type).Ref("equipments").Unique(),
 		edge.From("status", Statuses.Type).Ref("equipments").Unique(),
 		edge.From("pet_size", PetSize.Type).Ref("equipments").Unique(),
 		edge.From("photo", Photo.Type).Ref("equipments").Unique(),

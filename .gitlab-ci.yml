@@ -8,7 +8,7 @@ stages:
   - build
   - deploy
   - deploy_prod
-  - integration_test
+#  - integration_test
 
 test:
   image: golang:1.17-alpine
@@ -24,24 +24,24 @@ test:
     - go install github.com/go-swagger/go-swagger/cmd/swagger@latest && go install entgo.io/ent/cmd/ent@latest
     - make generate && make test && make coverage
 
-integration_tests:
-  image: golang:1.17-alpine
-  stage: integration_test
-  variables:
-    DOCKER_HOST: tcp://docker:2375
-    DOCKER_DRIVER: overlay2
-    DOCKER_TLS_CERTDIR: ""
-  services:
-    - name: docker:20-dind
-      alias: docker
-      command: [ "--tls=false", "--mtu=1300" ]
-      entrypoint: [ "dockerd-entrypoint.sh", "--tls=false" ]
-  rules:
-    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
-  script:
-    - apk add --update --no-cache git build-base docker openrc docker-compose && rm -rf /var/cache/apk/*
-    - go install github.com/go-swagger/go-swagger/cmd/swagger@latest && go install entgo.io/ent/cmd/ent@latest
-    - make generate && make integration-test
+#integration_tests:
+#  image: golang:1.17-alpine
+#  stage: integration_test
+#  variables:
+#    DOCKER_HOST: tcp://docker:2375
+#    DOCKER_DRIVER: overlay2
+#    DOCKER_TLS_CERTDIR: ""
+#  services:
+#    - name: docker:20-dind
+#      alias: docker
+#      command: [ "--tls=false", "--mtu=1300" ]
+#      entrypoint: [ "dockerd-entrypoint.sh", "--tls=false" ]
+#  rules:
+#    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+#  script:
+#    - apk add --update --no-cache git build-base docker openrc docker-compose && rm -rf /var/cache/apk/*
+#    - go install github.com/go-swagger/go-swagger/cmd/swagger@latest && go install entgo.io/ent/cmd/ent@latest
+#    - make generate && make integration-test
 
 lint:
   image: registry.gitlab.com/gitlab-org/gitlab-build-images:golangci-lint-alpine
