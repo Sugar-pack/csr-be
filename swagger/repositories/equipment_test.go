@@ -45,12 +45,22 @@ func (s *EquipmentSuite) SetupTest() {
 		t.Fatal(err)
 	}
 
-	kindName := "kind"
+	categoryName := "category"
 	_, err = s.client.Category.Delete().Exec(s.ctx) // clean up
 	if err != nil {
 		t.Fatal(err)
 	}
-	kind, err := s.client.Category.Create().SetName(kindName).Save(s.ctx)
+	category, err := s.client.Category.Create().SetName(categoryName).Save(s.ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	subcategoryName := "subcategory"
+	_, err = s.client.Subcategory.Delete().Exec(s.ctx) // clean up
+	if err != nil {
+		t.Fatal(err)
+	}
+	subcategory, err := s.client.Subcategory.Create().SetName(subcategoryName).SetCategory(category).Save(s.ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -83,7 +93,7 @@ func (s *EquipmentSuite) SetupTest() {
 	}
 	for i, value := range s.equipments {
 		eq, errCreate := s.client.Equipment.Create().
-			SetName(value.Name).SetTitle(value.Title).SetStatus(status).SetCategory(kind).
+			SetName(value.Name).SetTitle(value.Title).SetStatus(status).SetCategory(category).SetSubcategory(subcategory).
 			Save(s.ctx)
 		if errCreate != nil {
 			t.Fatal(errCreate)

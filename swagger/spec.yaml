@@ -507,6 +507,113 @@ paths:
           description: Unexpected error
           schema:
             $ref: "#/definitions/Error"
+  /equipment/categories/{categoryId}/subcategories:
+    parameters:
+      - name: categoryId
+        in: path
+        required: true
+        description: category id
+        type: integer
+    get:
+      summary: List subcategories of equipment categories by category ID.
+      security:
+        - Bearer: [ ]
+      tags:
+        - Subcategories
+      operationId: ListSubcategoriesByCategoryID
+      responses:
+        200:
+          description: Success
+          schema:
+            $ref: "#/definitions/ListOfSubcategories"
+        default:
+          description: Unexpected error.
+          schema:
+            $ref: "#/definitions/Error"
+    post:
+      summary: Create a new Subcategory.
+      security:
+        - Bearer: [ ]
+      tags:
+        - Subcategories
+      operationId: CreateNewSubcategory
+      parameters:
+        - name: NewSubcategory
+          in: body
+          description: Name of subcategory
+          required: true
+          schema:
+            $ref: "#/definitions/NewSubcategory"
+      responses:
+        201:
+          description: Success
+          schema:
+            $ref: "#/definitions/SubcategoryResponse"
+        default:
+          description: Unexpected error.
+          schema:
+            $ref: "#/definitions/Error"
+  /equipment/categories/subcategories/{subcategoryId}:
+    parameters:
+      - name: subcategoryId
+        in: path
+        required: true
+        description: subcategory id
+        type: integer
+    get:
+      summary: Get information about the subcategory of equipment by id.
+      security:
+        - Bearer: [ ]
+      tags:
+        - Subcategories
+      operationId: GetSubcategoryByID
+      responses:
+        200:
+          description: Success
+          schema:
+            $ref: "#/definitions/SubcategoryResponse"
+        default:
+          description: Unexpected error.
+          schema:
+            $ref: "#/definitions/Error"
+    delete:
+      summary: Delete subcategory of equipment from db by id.
+      security:
+          - Bearer: [ ]
+      tags:
+        - Subcategories
+      operationId: DeleteSubcategory
+      responses:
+        200:
+          description: subcategory of equipment successfully deleted from db
+          schema:
+            type: string
+        default:
+          description: Unexpected error.
+          schema:
+            $ref: "#/definitions/Error"
+    put:
+      summary: Edit equipment subcategory by id.
+      security:
+        - Bearer: [ ]
+      tags:
+        - Subcategories
+      operationId: UpdateSubcategory
+      parameters:
+        - name: UpdateSubcategory
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/NewSubcategory'
+      responses:
+        200:
+          description: Success
+          schema:
+            $ref: "#/definitions/SubcategoryResponse"
+        default:
+          description: Unexpected error
+          schema:
+            $ref: "#/definitions/Error"
   /equipment/photos:
     post:
       summary: Upload a new equipment photo
@@ -1992,6 +2099,36 @@ definitions:
     properties:
       data:
         $ref: "#/definitions/Category"
+  # Subcategory
+  Subcategory:
+    type: object
+    required:
+      - name
+    properties:
+      id:
+        type: integer
+      name:
+        type: string
+      category:
+        type: integer
+  ListOfSubcategories:
+    type: array
+    items:
+      $ref: "#/definitions/Subcategory"
+  SubcategoryResponse:
+    type: object
+    required:
+      - data
+    properties:
+      data:
+        $ref: "#/definitions/Subcategory"
+  NewSubcategory:
+    type: object
+    required:
+      - name
+    properties:
+      name:
+        type: string
   # PetSize
   PetSize:
     type: object
@@ -2158,6 +2295,9 @@ definitions:
         type: string
         example: "клетка midwest icrate 1"
       category:
+        type: integer
+        example: 1
+      subcategory:
         type: integer
         example: 1
       status:

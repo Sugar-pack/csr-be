@@ -7,6 +7,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/category"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/subcategory"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/utils"
 
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent"
@@ -62,6 +63,9 @@ func (r *equipmentRepository) EquipmentsByFilter(ctx context.Context, filter mod
 		QueryCategory().
 		Where(OptionalIntCategory(filter.Category, category.FieldID)).
 		QueryEquipments().
+		QuerySubcategory().
+		Where(OptionalIntSubcategory(filter.Subcategory, subcategory.FieldID)).
+		QueryEquipments().
 		Where(
 			equipment.NameContains(filter.NameSubstring),
 			OptionalStringEquipment(filter.Name, equipment.FieldName),
@@ -81,6 +85,7 @@ func (r *equipmentRepository) EquipmentsByFilter(ctx context.Context, filter mod
 		Limit(limit).Offset(offset).
 		WithPetSize().
 		WithCategory().
+		WithSubcategory().
 		WithStatus().
 		WithPhoto().
 		WithPetKinds().
@@ -112,6 +117,8 @@ func (r *equipmentRepository) CreateEquipment(ctx context.Context, NewEquipment 
 		SetCategory(&ent.Category{ID: int(*NewEquipment.Category)}).
 		SetStatus(&ent.Statuses{ID: int(*NewEquipment.Status)}).
 		SetCategoryID(int(*NewEquipment.Category)).
+		SetSubcategoryID(int(NewEquipment.Subcategory)).
+		SetSubcategory(&ent.Subcategory{ID: int(NewEquipment.Subcategory)}).
 		SetStatusID(int(*NewEquipment.Status)).
 		AddPetKindIDs(petKinds...).
 		SetTitle(*NewEquipment.Title).
@@ -122,7 +129,7 @@ func (r *equipmentRepository) CreateEquipment(ctx context.Context, NewEquipment 
 		return nil, err
 	}
 	result, err := r.client.Equipment.Query().Where(equipment.ID(eq.ID)).
-		WithCategory().WithStatus().WithPhoto().WithPetKinds().WithPetSize().Only(ctx)
+		WithCategory().WithSubcategory().WithStatus().WithPhoto().WithPetKinds().WithPetSize().Only(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -131,7 +138,7 @@ func (r *equipmentRepository) CreateEquipment(ctx context.Context, NewEquipment 
 
 func (r *equipmentRepository) EquipmentByID(ctx context.Context, id int) (*ent.Equipment, error) {
 	result, err := r.client.Equipment.Query().Where(equipment.ID(id)).
-		WithCategory().WithStatus().WithPetKinds().WithPetSize().WithPhoto().Only(ctx)
+		WithCategory().WithSubcategory().WithStatus().WithPetKinds().WithPetSize().WithPhoto().Only(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -163,7 +170,7 @@ func (r *equipmentRepository) AllEquipments(ctx context.Context, limit, offset i
 		return nil, err
 	}
 	result, err := r.client.Equipment.Query().Order(orderFunc).Limit(limit).Offset(offset).
-		WithCategory().WithStatus().WithPetKinds().WithPetSize().WithPhoto().
+		WithCategory().WithSubcategory().WithStatus().WithPetKinds().WithPetSize().WithPhoto().
 		All(ctx)
 	if err != nil {
 		return nil, err
@@ -187,6 +194,9 @@ func (r *equipmentRepository) EquipmentsByFilterTotal(ctx context.Context, filte
 		QueryEquipments().
 		QueryCategory().
 		Where(OptionalIntCategory(filter.Category, category.FieldID)).
+		QueryEquipments().
+		QuerySubcategory().
+		Where(OptionalIntSubcategory(filter.Subcategory, subcategory.FieldID)).
 		QueryEquipments().
 		Where(
 			equipment.NameContains(filter.NameSubstring),
@@ -250,6 +260,9 @@ func (r *equipmentRepository) UpdateEquipmentByID(ctx context.Context, id int, e
 	if *eq.Category != 0 {
 		edit.SetCategory(&ent.Category{ID: int(*eq.Category)})
 	}
+	if eq.Subcategory != 0 {
+		edit.SetSubcategory(&ent.Subcategory{ID: int(eq.Subcategory)})
+	}
 	if *eq.PetSize != 0 {
 		edit.SetPetSizeID(int(*eq.PetSize))
 	}
@@ -273,7 +286,8 @@ func (r *equipmentRepository) UpdateEquipmentByID(ctx context.Context, id int, e
 	if err != nil {
 		return nil, err
 	}
-	result, err := r.client.Equipment.Query().Where(equipment.ID(eqToUpdate.ID)).WithCategory().WithStatus().WithPetSize().WithPetKinds().WithPhoto().Only(ctx)
+	result, err := r.client.Equipment.Query().Where(equipment.ID(eqToUpdate.ID)).
+		WithCategory().WithSubcategory().WithStatus().WithPetSize().WithPetKinds().WithPhoto().Only(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -301,6 +315,16 @@ func OptionalIntStatus(v int64, field string) predicate.Statuses {
 }
 
 func OptionalIntCategory(v int64, field string) predicate.Category {
+	if v == 0 {
+		return func(s *sql.Selector) {
+		}
+	}
+	return func(s *sql.Selector) {
+		s.Where(sql.EQ(s.C(field), v))
+	}
+}
+
+func OptionalIntSubcategory(v int64, field string) predicate.Subcategory {
 	if v == 0 {
 		return func(s *sql.Selector) {
 		}

@@ -222,6 +222,10 @@ func mapEquipmentResponse(eq *ent.Equipment) (*models.EquipmentResponse, error) 
 		return nil, errors.New("equipment category is nil")
 	}
 	categoryID := int64(eq.Edges.Category.ID)
+	subcategoryID := int64(0)
+	if eq.Edges.Subcategory != nil {
+		subcategoryID = int64(eq.Edges.Subcategory.ID)
+	}
 	if eq.Edges.Status == nil {
 		return nil, errors.New("equipment status is nil")
 	}
@@ -254,6 +258,7 @@ func mapEquipmentResponse(eq *ent.Equipment) (*models.EquipmentResponse, error) 
 		ID:               &id,
 		InventoryNumber:  &eq.InventoryNumber,
 		Category:         &categoryID,
+		Subcategory:      subcategoryID,
 		MaximumAmount:    &eq.MaximumAmount,
 		MaximumDays:      &eq.MaximumDays,
 		Name:             &eq.Name,
