@@ -102,9 +102,9 @@ deploy_to_prod:
    - echo "$SSH_PROD_KNOWN_HOSTS" >> ~/.ssh/known_hosts
    - chmod 644 ~/.ssh/known_hosts
    - mkdir -p ~/go/config && echo $PRODUCTION_FILE
-   - cat $PRODUCTION_FILE >> ~/go/config/.env && cat ~/go/config/.env
+   - cat $PRODUCTION_FILE >> ~/go/config/.env
    - scp -o "StrictHostKeyChecking=no" -P$SSH_PROD_PORT -i ~/.ssh/id_rsa ~/go/config/.env $SSH_PROD_USER@$SSH_PROD_HOST:/go/.env
-   - ssh -o "StrictHostKeyChecking=no" -P$SSH_PROD_PORT -i ~/.ssh/id_rsa $SSH_PROD_USER@$SSH_PROD_HOST 'cat ~/go/.env && touch /go/stop && sleep 3 && rm /go/stop'
+   - ssh -o "StrictHostKeyChecking=no" -P$SSH_PROD_PORT -i ~/.ssh/id_rsa $SSH_PROD_USER@$SSH_PROD_HOST 'touch /go/stop && sleep 3 && rm /go/stop'
    - sleep 5
    - scp -o "StrictHostKeyChecking=no" -P$SSH_PROD_PORT -i ~/.ssh/id_rsa -r ./csr $SSH_PROD_USER@$SSH_PROD_HOST:/go/csr
    - sleep 5
