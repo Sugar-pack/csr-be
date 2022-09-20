@@ -37,7 +37,6 @@ func SetupAPI(entClient *ent.Client, logger *zap.Logger, config *config.AppConfi
 	passwordTTL := config.PasswordConfig.PasswordTokenTTL
 	jwtSecret := config.JWTSecret
 	photosFolder := config.PhotoService.PhotosFolder
-	photosServerURL := config.PhotoService.PhotosServerURL
 	// services
 	mailSendClient := email.NewSenderSmtp(config.EmailService)
 	regConfirmService := services.NewRegistrationConfirmService(mailSendClient, userRepository, regConfirmRepo,
@@ -58,7 +57,7 @@ func SetupAPI(entClient *ent.Client, logger *zap.Logger, config *config.AppConfi
 	handlers.SetOrderStatusHandler(entClient, logger, api)
 	handlers.SetPasswordResetHandler(logger, api, passwordService)
 	handlers.SetPetSizeHandler(entClient, logger, api)
-	handlers.SetPhotoHandler(entClient, logger, api, fileManager, photosServerURL)
+	handlers.SetPhotoHandler(entClient, logger, api, fileManager)
 	handlers.SetRegistrationHandler(logger, api, regConfirmService)
 	handlers.SetRoleHandler(entClient, logger, api)
 	handlers.SetEquipmentStatusHandler(entClient, logger, api)

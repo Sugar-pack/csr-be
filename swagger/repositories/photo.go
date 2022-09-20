@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/photo"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/models"
@@ -26,18 +27,14 @@ func NewPhotoRepository(client *ent.Client) PhotoRepository {
 }
 
 func (r *photoRepository) CreatePhoto(ctx context.Context, newPhoto models.Photo) (*ent.Photo, error) {
-	if newPhoto.ID == "" {
+	if newPhoto.ID == nil || *newPhoto.ID == "" {
 		return nil, errors.New("photo id must not be empty")
 	}
-	if newPhoto.URL == nil {
-		return nil, errors.New("photo url must not be empty")
-	}
 	if newPhoto.FileName == "" {
-		newPhoto.FileName = fmt.Sprintf("%s.jpg", newPhoto.ID)
+		newPhoto.FileName = fmt.Sprintf("%s.jpg", *newPhoto.ID)
 	}
 	p, err := r.client.Photo.Create().
-		SetID(newPhoto.ID).
-		SetURL(*newPhoto.URL).
+		SetID(*newPhoto.ID).
 		SetFileName(newPhoto.FileName).
 		Save(ctx)
 	if err != nil {

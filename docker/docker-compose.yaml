@@ -33,7 +33,6 @@ services:
       - EMAIL_SENDER_FROM_ADDRESS=noreply.lkot@yandex.ru
       - EMAIL_SENDER_FROM_NAME="Lyonkin Kot"
       - PHOTOS_FOLDER=/equipments_photos
-      - PHOTOS_SERVER_URL=https://csr.golangforall.com/
     depends_on:
       database:
         condition: service_healthy

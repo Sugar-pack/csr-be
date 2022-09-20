@@ -42,9 +42,8 @@ func TestSetPhotoHandler(t *testing.T) {
 	api := operations.NewBeAPI(swaggerSpec)
 
 	manager := &servicesmock.FileManager{}
-	serverURL := "http://localhost:8080/"
 
-	SetPhotoHandler(client, logger, api, manager, serverURL)
+	SetPhotoHandler(client, logger, api, manager)
 	assert.NotEmpty(t, api.PhotosCreateNewPhotoHandler)
 	assert.NotEmpty(t, api.PhotosGetPhotoHandler)
 	assert.NotEmpty(t, api.PhotosDeletePhotoHandler)
@@ -53,12 +52,10 @@ func TestSetPhotoHandler(t *testing.T) {
 
 type PhotoTestSuite struct {
 	suite.Suite
-	logger       *zap.Logger
-	repository   *repomock.PhotoRepository
-	fileManager  *servicesmock.FileManager
-	handler      *Photo
-	serverURL    string
-	photoURLPath string
+	logger      *zap.Logger
+	repository  *repomock.PhotoRepository
+	fileManager *servicesmock.FileManager
+	handler     *Photo
 }
 
 func TestPhotoSuite(t *testing.T) {
@@ -67,11 +64,9 @@ func TestPhotoSuite(t *testing.T) {
 
 func (s *PhotoTestSuite) SetupTest() {
 	s.logger = zap.NewNop()
-	s.serverURL = "http://localhost:8080/"
-	s.photoURLPath = "api/equipment/photos/"
 	s.repository = &repomock.PhotoRepository{}
 	s.fileManager = &servicesmock.FileManager{}
-	s.handler = NewPhoto(s.serverURL, s.logger)
+	s.handler = NewPhoto(s.logger)
 }
 
 func (s *PhotoTestSuite) TestPhoto_CreatePhoto_EmptyFile() {
@@ -161,7 +156,6 @@ func (s *PhotoTestSuite) TestPhoto_CreatePhoto_OK() {
 	ctx := request.Context()
 
 	id := "testimagename"
-	url := "http://localhost:8080/api/equipments/photos/testimagename"
 	fileName := "testimagename.jpg"
 
 	img, err := generateImageBytes()
@@ -185,17 +179,14 @@ func (s *PhotoTestSuite) TestPhoto_CreatePhoto_OK() {
 		File:        f,
 	}
 	s.repository.On("CreatePhoto", ctx, models.Photo{
-		ID:       id,
-		URL:      &url,
+		ID:       &id,
 		FileName: fileName,
 	}).Return(&ent.Photo{
 		ID:       id,
-		URL:      url,
 		FileName: fileName,
 	}, nil)
 	s.fileManager.On("GenerateFileName").Return(id, nil)
 	s.fileManager.On("SaveDataToFile", img, fileName).Return(nil)
-	s.fileManager.On("BuildFileURL", s.serverURL, s.photoURLPath, id).Return(url, nil)
 
 	handlerFunc := s.handler.CreateNewPhotoFunc(s.repository, s.fileManager)
 	access := "dummy access"
@@ -211,8 +202,7 @@ func (s *PhotoTestSuite) TestPhoto_CreatePhoto_OK() {
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.Equal(t, id, returnedPhoto.Data.ID)
-	assert.Equal(t, url, *returnedPhoto.Data.URL)
+	assert.Equal(t, id, *returnedPhoto.Data.ID)
 	assert.Equal(t, fileName, returnedPhoto.Data.FileName)
 
 	s.repository.AssertExpectations(t)
@@ -224,7 +214,6 @@ func (s *PhotoTestSuite) TestPhoto_GetPhoto_OK() {
 	ctx := request.Context()
 
 	id := "testimagename"
-	url := "http://localhost:8080/api/equipments/photos/testimagename"
 	fileName := "testimagename.jpg"
 
 	data := photos.GetPhotoParams{
@@ -234,7 +223,6 @@ func (s *PhotoTestSuite) TestPhoto_GetPhoto_OK() {
 
 	s.repository.On("PhotoByID", ctx, data.PhotoID).Return(&ent.Photo{
 		ID:       id,
-		URL:      url,
 		FileName: fileName,
 	}, nil)
 	s.fileManager.On("ReadFile", fileName).Return([]byte{1, 1, 1}, nil)
@@ -296,7 +284,6 @@ func (s *PhotoTestSuite) TestPhoto_DownloadPhoto_OK() {
 	ctx := request.Context()
 
 	id := "testimagename"
-	url := "http://localhost:8080/api/equipments/photos/testimagename"
 	fileName := "testimagename.jpg"
 
 	data := photos.DownloadPhotoParams{
@@ -307,7 +294,6 @@ func (s *PhotoTestSuite) TestPhoto_DownloadPhoto_OK() {
 	bytesToReturn := []byte{1, 1, 1, 1}
 	s.repository.On("PhotoByID", ctx, data.PhotoID).Return(&ent.Photo{
 		ID:       id,
-		URL:      url,
 		FileName: fileName,
 	}, nil)
 	s.fileManager.On("ReadFile", fileName).Return(bytesToReturn, nil)
@@ -368,7 +354,6 @@ func (s *PhotoTestSuite) TestPhoto_DeletePhoto_OK() {
 	ctx := request.Context()
 
 	id := "testimagename"
-	url := "http://localhost:8080/api/equipments/photos/testimagename"
 	fileName := "testimagename.jpg"
 
 	data := photos.DeletePhotoParams{
@@ -377,7 +362,6 @@ func (s *PhotoTestSuite) TestPhoto_DeletePhoto_OK() {
 	}
 	s.repository.On("PhotoByID", ctx, data.PhotoID).Return(&ent.Photo{
 		ID:       id,
-		URL:      url,
 		FileName: fileName,
 	}, nil)
 	s.repository.On("DeletePhotoByID", ctx, data.PhotoID).Return(nil)

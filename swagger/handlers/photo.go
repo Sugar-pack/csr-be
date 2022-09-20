@@ -18,9 +18,9 @@ import (
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/services"
 )
 
-func SetPhotoHandler(client *ent.Client, logger *zap.Logger, api *operations.BeAPI, manager services.FileManager, serverURL string) {
+func SetPhotoHandler(client *ent.Client, logger *zap.Logger, api *operations.BeAPI, manager services.FileManager) {
 	photoRepo := repositories.NewPhotoRepository(client)
-	photosHandler := NewPhoto(serverURL, logger)
+	photosHandler := NewPhoto(logger)
 
 	api.PhotosCreateNewPhotoHandler = photosHandler.CreateNewPhotoFunc(photoRepo, manager)
 	api.PhotosGetPhotoHandler = photosHandler.GetPhotoFunc(photoRepo, manager)
@@ -28,17 +28,14 @@ func SetPhotoHandler(client *ent.Client, logger *zap.Logger, api *operations.BeA
 	api.PhotosDownloadPhotoHandler = photosHandler.DownloadPhotoFunc(photoRepo, manager)
 }
 
-const photoURLPath string = "api/equipment/photos/"
-
 type Photo struct {
 	serverURL string
 	logger    *zap.Logger
 }
 
-func NewPhoto(serverURL string, logger *zap.Logger) *Photo {
+func NewPhoto(logger *zap.Logger) *Photo {
 	return &Photo{
-		serverURL: serverURL,
-		logger:    logger,
+		logger: logger,
 	}
 }
 
@@ -85,15 +82,8 @@ func (p Photo) CreateNewPhotoFunc(repository repositories.PhotoRepository,
 			return photos.NewCreateNewPhotoDefault(http.StatusInternalServerError).
 				WithPayload(buildErrorPayload(err))
 		}
-		photoURL, err := fileManager.BuildFileURL(p.serverURL, photoURLPath, photoID)
-		if err != nil {
-			p.logger.Error("failed to get photo url", zap.Error(err))
-			return photos.NewCreateNewPhotoDefault(http.StatusInternalServerError).
-				WithPayload(buildErrorPayload(err))
-		}
 		newPhoto := models.Photo{
-			ID:       photoID,
-			URL:      &photoURL,
+			ID:       &photoID,
 			FileName: fileName,
 		}
 		_, err = repository.CreatePhoto(ctx, newPhoto)

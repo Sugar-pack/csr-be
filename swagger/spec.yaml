@@ -1985,11 +1985,9 @@ definitions:
   Photo:
     type: object
     required:
-      - url
+      - id
     properties:
       id:
-        type: string
-      url:
         type: string
       fileName:
         type: string
@@ -2339,9 +2337,8 @@ definitions:
       description:
         type: string
         example: "This is a dog harness.\nWARNING: do not put on cats!"
-      photo:
+      photoID:
         type: string
-        example: "https://..."
       petKinds:
         type: array
         items:
@@ -2366,7 +2363,7 @@ definitions:
       - maximumDays
       - location
       - description
-      - photo
+      - photoID
     properties:
       id:
         type: integer
@@ -2425,9 +2422,8 @@ definitions:
       description:
         type: string
         example: "This is a dog harness.\nWARNING: do not put on cats!"
-      photo:
+      photoID:
         type: string
-        example: "https://..."
       petKinds:
         type: array
         items:

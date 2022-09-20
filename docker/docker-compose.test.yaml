@@ -21,7 +21,6 @@ services:
       - EMAIL_SENDER_IS_SEND_REQUIRED=false
       - PASSWORD_RESET_EXPIRATION_MINUTES=15
       - PHOTOS_FOLDER=/equipments_photos/test
-      - PHOTOS_SERVER_URL=https://csr.golangforall.com/
       - DB_FILE=test_csr.db
     networks:
       - go-network
