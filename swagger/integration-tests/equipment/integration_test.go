@@ -64,7 +64,7 @@ func TestIntegration_CreateEquipment(t *testing.T) {
 		assert.Equal(t, model.Name, res.Payload.Name)
 		assert.Equal(t, model.PetKinds[0], res.Payload.PetKinds[0].ID)
 		assert.Equal(t, model.PetSize, res.Payload.PetSize)
-		assert.Contains(t, *res.Payload.Photo, *model.PhotoID)
+		assert.Contains(t, *res.Payload.PhotoID, *model.PhotoID)
 		assert.Equal(t, model.ReceiptDate, res.Payload.ReceiptDate)
 		assert.Equal(t, model.Status, res.Payload.Status)
 		assert.Equal(t, model.Supplier, res.Payload.Supplier)
@@ -197,7 +197,7 @@ func TestIntegration_GetEquipment(t *testing.T) {
 		//assert.Equal(t, model.Location, res.Payload.Location)
 		assert.Equal(t, model.PetKinds[0], res.Payload.PetKinds[0].ID)
 		assert.Equal(t, model.PetSize, res.Payload.PetSize)
-		assert.Contains(t, *res.Payload.Photo, *model.PhotoID)
+		assert.Contains(t, *res.Payload.PhotoID, *model.PhotoID)
 		assert.Equal(t, model.ReceiptDate, res.Payload.ReceiptDate)
 		assert.Equal(t, model.Status, res.Payload.Status)
 		assert.Equal(t, model.Supplier, res.Payload.Supplier)
@@ -503,7 +503,7 @@ func setParameters(ctx context.Context, client *client.Be, auth runtime.ClientAu
 		NameSubstring:    "box",
 		PetKinds:         []int64{*cats.Payload.ID},
 		PetSize:          &petSize.Payload[0].ID,
-		PhotoID:          &photo.Payload.Data.ID,
+		PhotoID:          photo.Payload.Data.ID,
 		ReceiptDate:      &rDate,
 		Status:           status.Payload.Data.ID,
 		Supplier:         &supp,

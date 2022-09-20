@@ -1,14 +1,15 @@
 package services
 
 import (
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/suite"
-	"go.uber.org/zap"
 	"log"
 	"os"
 	"path/filepath"
 	"regexp"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/suite"
+	"go.uber.org/zap"
 )
 
 type FileManagerTestSuite struct {
@@ -49,30 +50,6 @@ func (s *FileManagerTestSuite) TestFileManager_SaveFile_OK() {
 	assert.NoError(t, err)
 
 	s.cleanResources()
-}
-
-func (s *FileManagerTestSuite) TestFileManager_BuildFileURL_Fail() {
-	t := s.T()
-	server := "http://localhost:port/"
-	pathURL := "api/photos/"
-	name := "testphotoname"
-	urlToReturn := "http://localhost:port/api/photos/testphotoname"
-
-	urlReturned, err := s.filesManager.BuildFileURL(server, pathURL, name)
-	assert.Error(t, err)
-	assert.NotEqual(t, urlToReturn, urlReturned)
-}
-
-func (s *FileManagerTestSuite) TestFileManager_BuildFileURL_OK() {
-	t := s.T()
-	server := "http://localhost:8080/"
-	pathURL := "/api/photos/"
-	name := "testphotoname"
-	urlToReturn := "http://localhost:8080/api/photos/testphotoname"
-
-	urlReturned, err := s.filesManager.BuildFileURL(server, pathURL, name)
-	assert.NoError(t, err)
-	assert.Equal(t, urlReturned, urlToReturn)
 }
 
 func (s *FileManagerTestSuite) TestFileManager_ReadFile_NotExists() {

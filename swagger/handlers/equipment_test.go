@@ -73,9 +73,7 @@ func ValidEquipment(t *testing.T, id int) *ent.Equipment {
 			Category: &ent.Category{},
 			Status:   &ent.Statuses{},
 			Photo: &ent.Photo{
-				ID:       "photoid",
-				URL:      "localhost:8080/api/photoid",
-				FileName: "photoid.jpg",
+				ID: "photoid",
 			},
 		},
 	}

@@ -244,9 +244,9 @@ func mapEquipmentResponse(eq *ent.Equipment) (*models.EquipmentResponse, error) 
 		petSizeID = &idInt64
 	}
 
-	var photoURL string
+	var photoID string
 	if eq.Edges.Photo != nil {
-		photoURL = eq.Edges.Photo.URL
+		photoID = eq.Edges.Photo.ID
 	}
 
 	return &models.EquipmentResponse{
@@ -267,7 +267,7 @@ func mapEquipmentResponse(eq *ent.Equipment) (*models.EquipmentResponse, error) 
 		Supplier:         &eq.Supplier,
 		Title:            &eq.Title,
 		PetSize:          petSizeID,
-		Photo:            &photoURL,
+		PhotoID:          &photoID,
 		PetKinds:         petKinds,
 	}, nil
 }

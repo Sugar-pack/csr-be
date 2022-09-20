@@ -70,11 +70,10 @@ func TestIntegration_PhotosUpload(t *testing.T) {
 
 		require.NotNil(t, res.Payload.Data)
 		assert.NotEmpty(t, res.Payload.Data.ID)
-		assert.NotEmpty(t, res.Payload.Data.URL)
 		assert.NotEmpty(t, res.Payload.Data.FileName)
 
 		// cleanup
-		_, err = beClient.Photos.DeletePhoto(photos.NewDeletePhotoParamsWithContext(ctx).WithPhotoID(res.Payload.Data.ID), auth)
+		_, err = beClient.Photos.DeletePhoto(photos.NewDeletePhotoParamsWithContext(ctx).WithPhotoID(*res.Payload.Data.ID), auth)
 		require.NoError(t, err)
 		f.Close()
 	})
@@ -89,11 +88,10 @@ func TestIntegration_PhotosUpload(t *testing.T) {
 		require.NoError(t, err)
 
 		assert.NotEmpty(t, res.Payload.Data.ID)
-		assert.NotEmpty(t, res.Payload.Data.URL)
 		assert.NotEmpty(t, res.Payload.Data.FileName)
 
 		// cleanup
-		_, err = beClient.Photos.DeletePhoto(photos.NewDeletePhotoParamsWithContext(ctx).WithPhotoID(res.Payload.Data.ID), auth)
+		_, err = beClient.Photos.DeletePhoto(photos.NewDeletePhotoParamsWithContext(ctx).WithPhotoID(*res.Payload.Data.ID), auth)
 		require.NoError(t, err)
 		f.Close()
 	})
@@ -167,7 +165,7 @@ func TestIntegration_DeletePhoto(t *testing.T) {
 
 	t.Run("Delete Photo failed: access failed", func(t *testing.T) {
 		token := common.TokenNotExist
-		_, gotErr := beClient.Photos.DeletePhoto(photos.NewDeletePhotoParamsWithContext(ctx).WithPhotoID(res.Payload.Data.ID),
+		_, gotErr := beClient.Photos.DeletePhoto(photos.NewDeletePhotoParamsWithContext(ctx).WithPhotoID(*res.Payload.Data.ID),
 			common.AuthInfoFunc(&token))
 
 		require.Error(t, gotErr)
@@ -187,7 +185,7 @@ func TestIntegration_DeletePhoto(t *testing.T) {
 	})
 
 	t.Run("Delete Photo Ok", func(t *testing.T) {
-		result, err := beClient.Photos.DeletePhoto(photos.NewDeletePhotoParamsWithContext(ctx).WithPhotoID(res.Payload.Data.ID), auth)
+		result, err := beClient.Photos.DeletePhoto(photos.NewDeletePhotoParamsWithContext(ctx).WithPhotoID(*res.Payload.Data.ID), auth)
 		require.NoError(t, err)
 
 		got := result.Payload
@@ -196,7 +194,7 @@ func TestIntegration_DeletePhoto(t *testing.T) {
 	})
 
 	t.Run("Delete Photo failed: trying to delete again the same photo, photo not found", func(t *testing.T) {
-		_, err = beClient.Photos.DeletePhoto(photos.NewDeletePhotoParamsWithContext(ctx).WithPhotoID(res.Payload.Data.ID), auth)
+		_, err = beClient.Photos.DeletePhoto(photos.NewDeletePhotoParamsWithContext(ctx).WithPhotoID(*res.Payload.Data.ID), auth)
 		require.Error(t, err)
 
 		var phErr *photos.DeletePhotoDefault
@@ -226,12 +224,12 @@ func TestIntegration_PhotosDownload(t *testing.T) {
 		res, err := beClient.Photos.CreateNewPhoto(createParams, auth)
 		require.NoError(t, err)
 
-		result, err := beClient.Photos.DownloadPhoto(photos.NewDownloadPhotoParamsWithContext(ctx).WithPhotoID(res.Payload.Data.ID), auth, io.Discard)
+		result, err := beClient.Photos.DownloadPhoto(photos.NewDownloadPhotoParamsWithContext(ctx).WithPhotoID(*res.Payload.Data.ID), auth, io.Discard)
 		require.NoError(t, err)
 
 		assert.Equal(t, io.Discard, result.Payload)
 		// cleanup
-		_, err = beClient.Photos.DeletePhoto(photos.NewDeletePhotoParamsWithContext(ctx).WithPhotoID(res.Payload.Data.ID), auth)
+		_, err = beClient.Photos.DeletePhoto(photos.NewDeletePhotoParamsWithContext(ctx).WithPhotoID(*res.Payload.Data.ID), auth)
 		require.NoError(t, err)
 		f.Close()
 	})
@@ -245,12 +243,12 @@ func TestIntegration_PhotosDownload(t *testing.T) {
 		res, err := beClient.Photos.CreateNewPhoto(createParams, auth)
 		require.NoError(t, err)
 
-		result, err := beClient.Photos.DownloadPhoto(photos.NewDownloadPhotoParamsWithContext(ctx).WithPhotoID(res.Payload.Data.ID), auth, io.Discard)
+		result, err := beClient.Photos.DownloadPhoto(photos.NewDownloadPhotoParamsWithContext(ctx).WithPhotoID(*res.Payload.Data.ID), auth, io.Discard)
 		require.NoError(t, err)
 
 		assert.Equal(t, io.Discard, result.Payload)
 		// cleanup
-		_, err = beClient.Photos.DeletePhoto(photos.NewDeletePhotoParamsWithContext(ctx).WithPhotoID(res.Payload.Data.ID), auth)
+		_, err = beClient.Photos.DeletePhoto(photos.NewDeletePhotoParamsWithContext(ctx).WithPhotoID(*res.Payload.Data.ID), auth)
 		require.NoError(t, err)
 		f.Close()
 	})
@@ -265,7 +263,7 @@ func TestIntegration_PhotosDownload(t *testing.T) {
 		require.NoError(t, err)
 
 		token := common.TokenNotExist
-		_, gotErr := beClient.Photos.DownloadPhoto(photos.NewDownloadPhotoParamsWithContext(ctx).WithPhotoID(res.Payload.Data.ID),
+		_, gotErr := beClient.Photos.DownloadPhoto(photos.NewDownloadPhotoParamsWithContext(ctx).WithPhotoID(*res.Payload.Data.ID),
 			common.AuthInfoFunc(&token), io.Discard)
 		require.Error(t, gotErr)
 
@@ -304,12 +302,12 @@ func TestIntegration_PhotoGet(t *testing.T) {
 		res, err := beClient.Photos.CreateNewPhoto(createParams, auth)
 		require.NoError(t, err)
 
-		result, err := beClient.Photos.GetPhoto(photos.NewGetPhotoParamsWithContext(ctx).WithPhotoID(res.Payload.Data.ID), auth, io.Discard)
+		result, err := beClient.Photos.GetPhoto(photos.NewGetPhotoParamsWithContext(ctx).WithPhotoID(*res.Payload.Data.ID), auth, io.Discard)
 		require.NoError(t, err)
 
 		assert.Equal(t, io.Discard, result.Payload)
 		// cleanup
-		_, err = beClient.Photos.DeletePhoto(photos.NewDeletePhotoParamsWithContext(ctx).WithPhotoID(res.Payload.Data.ID), auth)
+		_, err = beClient.Photos.DeletePhoto(photos.NewDeletePhotoParamsWithContext(ctx).WithPhotoID(*res.Payload.Data.ID), auth)
 		require.NoError(t, err)
 		f.Close()
 	})
@@ -323,12 +321,12 @@ func TestIntegration_PhotoGet(t *testing.T) {
 		res, err := beClient.Photos.CreateNewPhoto(createParams, auth)
 		require.NoError(t, err)
 
-		result, err := beClient.Photos.GetPhoto(photos.NewGetPhotoParamsWithContext(ctx).WithPhotoID(res.Payload.Data.ID), auth, io.Discard)
+		result, err := beClient.Photos.GetPhoto(photos.NewGetPhotoParamsWithContext(ctx).WithPhotoID(*res.Payload.Data.ID), auth, io.Discard)
 		require.NoError(t, err)
 
 		assert.Equal(t, io.Discard, result.Payload)
 		// cleanup
-		_, err = beClient.Photos.DeletePhoto(photos.NewDeletePhotoParamsWithContext(ctx).WithPhotoID(res.Payload.Data.ID), auth)
+		_, err = beClient.Photos.DeletePhoto(photos.NewDeletePhotoParamsWithContext(ctx).WithPhotoID(*res.Payload.Data.ID), auth)
 		require.NoError(t, err)
 		f.Close()
 	})
@@ -342,7 +340,7 @@ func TestIntegration_PhotoGet(t *testing.T) {
 		res, err := beClient.Photos.CreateNewPhoto(createParams, auth)
 		require.NoError(t, err)
 		token := common.TokenNotExist
-		_, gotErr := beClient.Photos.GetPhoto(photos.NewGetPhotoParamsWithContext(ctx).WithPhotoID(res.Payload.Data.ID), common.AuthInfoFunc(&token), io.Discard)
+		_, gotErr := beClient.Photos.GetPhoto(photos.NewGetPhotoParamsWithContext(ctx).WithPhotoID(*res.Payload.Data.ID), common.AuthInfoFunc(&token), io.Discard)
 		require.Error(t, gotErr)
 
 		wantErr := photos.NewGetPhotoDefault(http.StatusInternalServerError)

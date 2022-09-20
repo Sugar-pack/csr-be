@@ -37,10 +37,7 @@ func (s *photoRepositorySuite) TearDownSuite() {
 
 func (s *photoRepositorySuite) TestPhotoRepository_CreatePhoto_EmptyID() {
 	t := s.T()
-	url := "someurl"
-	newPhoto := models.Photo{
-		URL: &url,
-	}
+	newPhoto := models.Photo{}
 
 	createdPhoto, err := s.repository.CreatePhoto(s.ctx, newPhoto)
 	assert.Error(t, err)
@@ -53,37 +50,17 @@ func (s *photoRepositorySuite) TestPhotoRepository_CreatePhoto_EmptyID() {
 	}
 }
 
-func (s *photoRepositorySuite) TestPhotoRepository_CreatePhoto_EmptyURL() {
-	t := s.T()
-	newPhoto := models.Photo{
-		ID: "id",
-	}
-
-	createdPhoto, err := s.repository.CreatePhoto(s.ctx, newPhoto)
-	assert.Error(t, err)
-	assert.Errorf(t, err, "url must not be empty")
-	assert.Nil(t, createdPhoto)
-
-	_, err = s.client.Photo.Delete().Exec(s.ctx)
-	if err != nil {
-		t.Fatal()
-	}
-}
-
 func (s *photoRepositorySuite) TestPhotoRepository_CreatePhoto_EmptyFileName() {
 	t := s.T()
 	id := "somegenerateduuid"
-	url := "localhost:8080/api/equipment/photo/somegenerateduuid"
 	fileName := "somegenerateduuid.jpg"
 	newPhoto := models.Photo{
-		ID:  id,
-		URL: &url,
+		ID: &id,
 	}
 
 	createdPhoto, err := s.repository.CreatePhoto(s.ctx, newPhoto)
 	assert.NoError(t, err)
 	assert.Equal(t, id, createdPhoto.ID)
-	assert.Equal(t, url, createdPhoto.URL)
 	assert.Equal(t, fileName, createdPhoto.FileName)
 
 	_, err = s.client.Photo.Delete().Exec(s.ctx)
@@ -95,18 +72,15 @@ func (s *photoRepositorySuite) TestPhotoRepository_CreatePhoto_EmptyFileName() {
 func (s *photoRepositorySuite) TestPhotoRepository_CreatePhoto_OK() {
 	t := s.T()
 	id := "somegenerateduuid"
-	url := "localhost:8080/api/equipment/photo/somegenerateduuid"
 	fileName := "somegenerateduuid.jpg"
 	newPhoto := models.Photo{
-		ID:       id,
-		URL:      &url,
+		ID:       &id,
 		FileName: fileName,
 	}
 
 	createdPhoto, err := s.repository.CreatePhoto(s.ctx, newPhoto)
 	assert.NoError(t, err)
 	assert.Equal(t, id, createdPhoto.ID)
-	assert.Equal(t, url, createdPhoto.URL)
 	assert.Equal(t, fileName, createdPhoto.FileName)
 
 	_, err = s.client.Photo.Delete().Exec(s.ctx)
@@ -133,10 +107,8 @@ func (s *photoRepositorySuite) TestPhotoRepository_PhotoByID_NotFound() {
 func (s *photoRepositorySuite) TestPhotoRepository_PhotoByID_OK() {
 	t := s.T()
 	id := "somegenerateduuid"
-	url := "localhost:8080/api/equipment/photo/somegenerateduuid"
 	fileName := "somegenerateduuid.jpg"
 	createdPhoto, err := s.client.Photo.Create().SetID(id).
-		SetURL(url).
 		SetFileName(fileName).
 		Save(s.ctx)
 	if err != nil {
@@ -146,7 +118,6 @@ func (s *photoRepositorySuite) TestPhotoRepository_PhotoByID_OK() {
 	photo, err := s.repository.PhotoByID(s.ctx, createdPhoto.ID)
 	assert.NoError(t, err)
 	assert.Equal(t, id, photo.ID)
-	assert.Equal(t, url, photo.URL)
 	assert.Equal(t, fileName, photo.FileName)
 
 	_, err = s.client.Photo.Delete().Exec(s.ctx)
@@ -171,10 +142,8 @@ func (s *photoRepositorySuite) TestPhotoRepository_DeletePhotoByID_NotExistsOK()
 func (s *photoRepositorySuite) TestPhotoRepository_DeletePhotoByID_OK() {
 	t := s.T()
 	id := "somegenerateduuid"
-	url := "localhost:8080/api/equipment/photo/somegenerateduuid"
 	fileName := "somegenerateduuid.jpg"
 	createdPhoto, err := s.client.Photo.Create().SetID(id).
-		SetURL(url).
 		SetFileName(fileName).
 		Save(s.ctx)
 	if err != nil {
