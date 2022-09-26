@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/middlewares"
 )
 
 type StatusNameRepository interface {
@@ -12,15 +13,18 @@ type StatusNameRepository interface {
 }
 
 type statusNameRepository struct {
-	client *ent.Client
 }
 
-func NewStatusNameRepository(client *ent.Client) *statusNameRepository {
-	return &statusNameRepository{client: client}
+func NewStatusNameRepository() *statusNameRepository {
+	return &statusNameRepository{}
 }
 
 func (r *statusNameRepository) ListOfStatuses(ctx context.Context) ([]*ent.StatusName, error) {
-	pointersStatuses, err := r.client.StatusName.Query().Order(ent.Asc("id")).All(ctx)
+	tx, err := middlewares.TxFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+	pointersStatuses, err := tx.StatusName.Query().Order(ent.Asc("id")).All(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("status history error, failed to get status names: %s", err)
 	}

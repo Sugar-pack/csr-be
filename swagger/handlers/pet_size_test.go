@@ -35,7 +35,7 @@ func TestSetPetSizeHandler(t *testing.T) {
 		t.Fatal(err)
 	}
 	api := operations.NewBeAPI(swaggerSpec)
-	SetPetSizeHandler(client, logger, api)
+	SetPetSizeHandler(logger, api)
 	assert.NotEmpty(t, api.PetSizeGetAllPetSizeHandler)
 	assert.NotEmpty(t, api.PetSizeEditPetSizeHandler)
 	assert.NotEmpty(t, api.PetSizeCreateNewPetSizeHandler)
@@ -190,12 +190,6 @@ func (s *PetSizeTestSuite) TestPetSize_CreatePetSizeFunc_ErrRespGetAll() {
 	}
 
 	err := errors.New("Error while creating pet size")
-	var petSizesToReturn []*ent.PetSize
-	for i := 0; i < 10; i++ {
-		ps := ValidPetSize(t)
-		petSizesToReturn = append(petSizesToReturn, ps)
-	}
-
 	s.petSizeRepo.On("AllPetSizes", ctx).Return(nil, err)
 
 	access := "dummy access"

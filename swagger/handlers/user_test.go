@@ -2,14 +2,15 @@ package handlers
 
 import (
 	"encoding/json"
-	"entgo.io/ent/entc/integration/ent/user"
 	"errors"
 	"fmt"
-	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/utils"
 	"math"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"entgo.io/ent/entc/integration/ent/user"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/utils"
 
 	"github.com/go-openapi/loads"
 
@@ -43,7 +44,7 @@ func TestSetUserHandler(t *testing.T) {
 	api := operations.NewBeAPI(swaggerSpec)
 	tokenManager := &servicemock.TokenManager{}
 	registrationConfirm := &servicemock.RegistrationConfirm{}
-	SetUserHandler(client, logger, api, tokenManager, registrationConfirm)
+	SetUserHandler(logger, api, tokenManager, registrationConfirm)
 
 	assert.NotEmpty(t, api.UsersLoginHandler)
 	assert.NotEmpty(t, api.UsersRefreshHandler)
@@ -677,11 +678,6 @@ func (s *UserTestSuite) TestUser_GetUsersList_NotFound() {
 	data := users.GetAllUsersParams{
 		HTTPRequest: &request,
 	}
-	var userList []*ent.User
-	user := &ent.User{
-		ID: 1,
-	}
-	userList = append(userList, user)
 	s.userRepository.On("UsersListTotal", ctx).Return(0, nil)
 
 	access := "dummy access"

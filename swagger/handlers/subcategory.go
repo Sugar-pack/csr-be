@@ -14,8 +14,8 @@ import (
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/repositories"
 )
 
-func SetSubcategoryHandler(client *ent.Client, logger *zap.Logger, api *operations.BeAPI) {
-	subcategoryRepo := repositories.NewSubcategoryRepository(client)
+func SetSubcategoryHandler(logger *zap.Logger, api *operations.BeAPI) {
+	subcategoryRepo := repositories.NewSubcategoryRepository()
 	subcategoryHandler := NewSubcategory(logger)
 
 	api.SubcategoriesCreateNewSubcategoryHandler = subcategoryHandler.CreateNewSubcategoryFunc(subcategoryRepo)

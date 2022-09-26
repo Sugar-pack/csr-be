@@ -5,6 +5,7 @@ import (
 
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/role"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/middlewares"
 )
 
 type RoleRepository interface {
@@ -12,15 +13,16 @@ type RoleRepository interface {
 }
 
 type roleRepository struct {
-	client *ent.Client
 }
 
 func (r *roleRepository) GetRoles(ctx context.Context) ([]*ent.Role, error) {
-	return r.client.Role.Query().Order(ent.Asc(role.FieldID)).All(ctx)
+	tx, err := middlewares.TxFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return tx.Role.Query().Order(ent.Asc(role.FieldID)).All(ctx)
 }
 
-func NewRoleRepository(client *ent.Client) RoleRepository {
-	return &roleRepository{
-		client: client,
-	}
+func NewRoleRepository() RoleRepository {
+	return &roleRepository{}
 }

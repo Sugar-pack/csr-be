@@ -3,12 +3,13 @@ package handlers
 import (
 	"encoding/json"
 	"errors"
-	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/activearea"
-	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/utils"
 	"math"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/activearea"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/utils"
 
 	"github.com/go-openapi/loads"
 	"github.com/go-openapi/runtime"
@@ -16,6 +17,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/zap"
+	"go.uber.org/zap/zaptest"
 
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/enttest"
@@ -37,7 +39,7 @@ func TestSetActiveAreaHandler(t *testing.T) {
 		t.Fatal(err)
 	}
 	api := operations.NewBeAPI(swaggerSpec)
-	SetActiveAreaHandler(client, logger, api)
+	SetActiveAreaHandler(logger, api)
 	assert.NotEmpty(t, api.ActiveAreasGetAllActiveAreasHandler)
 }
 
@@ -54,7 +56,7 @@ func TestActiveAreaSuite(t *testing.T) {
 }
 
 func (s *ActiveAreaTestSuite) SetupTest() {
-	s.logger, _ = zap.NewDevelopment()
+	s.logger = zaptest.NewLogger(s.T())
 	s.repository = &repomock.ActiveAreaRepository{}
 	s.handler = NewActiveArea(s.logger)
 	s.areas = []*ent.ActiveArea{

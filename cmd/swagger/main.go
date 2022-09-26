@@ -73,13 +73,13 @@ func main() {
 		logger.Fatal("fail to setup app config", zap.Error(err))
 	}
 	// setup swagger api
-	api, err := swagger.SetupAPI(entClient, logger, appConfig)
+	h, err := swagger.SetupAPI(entClient, logger, appConfig)
 	if err != nil {
 		logger.Fatal("error setup swagger api", zap.Error(err))
 	}
 
 	// run server
-	server := restapi.NewServer(api)
+	server := restapi.NewServer(nil)
 	listeners := []string{"http"}
 
 	server.EnabledListeners = listeners
@@ -90,6 +90,7 @@ func main() {
 		logger.Fatal("failed to write pid file", zap.Error(err))
 	}
 
+	server.SetHandler(h)
 	if err := server.Serve(); err != nil {
 		logger.Error("server fatal error", zap.Error(err))
 		return
@@ -99,13 +100,6 @@ func main() {
 		logger.Error("error shutting down server", zap.Error(errShutdown))
 		return
 	}
-}
-
-func getEnv(key string, defaultValue string) string {
-	if value, exists := os.LookupEnv(key); exists {
-		return value
-	}
-	return defaultValue
 }
 
 const pidFileName = "pid"

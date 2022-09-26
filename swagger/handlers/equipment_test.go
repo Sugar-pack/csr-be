@@ -39,7 +39,7 @@ func TestSetEquipmentHandler(t *testing.T) {
 	api := operations.NewBeAPI(swaggerSpec)
 
 	fileManager := &servicesmock.FileManager{}
-	SetEquipmentHandler(client, logger, api, fileManager)
+	SetEquipmentHandler(logger, api, fileManager)
 	assert.NotEmpty(t, api.EquipmentCreateNewEquipmentHandler)
 	assert.NotEmpty(t, api.EquipmentGetEquipmentHandler)
 	assert.NotEmpty(t, api.EquipmentEditEquipmentHandler)

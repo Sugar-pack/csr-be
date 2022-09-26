@@ -19,8 +19,8 @@ import (
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/services"
 )
 
-func SetEquipmentHandler(client *ent.Client, logger *zap.Logger, api *operations.BeAPI, filesManager services.FileManager) {
-	equipmentRepo := repositories.NewEquipmentRepository(client)
+func SetEquipmentHandler(logger *zap.Logger, api *operations.BeAPI, filesManager services.FileManager) {
+	equipmentRepo := repositories.NewEquipmentRepository()
 	equipmentHandler := NewEquipment(logger)
 	api.EquipmentCreateNewEquipmentHandler = equipmentHandler.PostEquipmentFunc(equipmentRepo)
 	api.EquipmentGetEquipmentHandler = equipmentHandler.GetEquipmentFunc(equipmentRepo)

@@ -9,6 +9,7 @@ import (
 
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/enttest"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/middlewares"
 )
 
 type roleRepositoryTestSuite struct {
@@ -28,7 +29,7 @@ func (s *roleRepositoryTestSuite) SetupTest() {
 	s.ctx = context.Background()
 	client := enttest.Open(t, "sqlite3", "file:role?mode=memory&cache=shared&_fk=1")
 	s.client = client
-	s.repository = NewRoleRepository(client)
+	s.repository = NewRoleRepository()
 
 	_, err := s.client.Role.Delete().Exec(s.ctx)
 	if err != nil {
@@ -53,8 +54,13 @@ func (s *roleRepositoryTestSuite) TearDownSuite() {
 
 func (s *roleRepositoryTestSuite) TestRoleRepository_GetRoles() {
 	t := s.T()
-	roles, err := s.repository.GetRoles(s.ctx)
+	ctx := s.ctx
+	tx, err := s.client.Tx(ctx)
 	assert.NoError(t, err)
+	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
+	roles, err := s.repository.GetRoles(ctx)
+	assert.NoError(t, err)
+	assert.NoError(t, tx.Commit())
 	assert.Equal(t, len(s.roles), len(roles))
 	for _, role := range roles {
 		assert.Contains(t, s.roles, role.Name)

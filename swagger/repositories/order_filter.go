@@ -10,6 +10,7 @@ import (
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/orderstatus"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/statusname"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/utils"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/middlewares"
 )
 
 type OrderRepositoryWithFilter interface {
@@ -21,11 +22,10 @@ type OrderRepositoryWithFilter interface {
 	OrdersByPeriodAndStatusTotal(ctx context.Context, from, to time.Time, status string) (int, error)
 }
 type orderFilterRepository struct {
-	client *ent.Client
 }
 
-func NewOrderFilter(client *ent.Client) *orderFilterRepository {
-	return &orderFilterRepository{client: client}
+func NewOrderFilter() *orderFilterRepository {
+	return &orderFilterRepository{}
 }
 
 var fieldsToOrderOrdersByStatus = []string{
@@ -36,13 +36,21 @@ var fieldsToOrderOrdersByStatus = []string{
 }
 
 func (r *orderFilterRepository) OrdersByStatusTotal(ctx context.Context, status string) (int, error) {
-	return r.client.OrderStatus.Query().
+	tx, err := middlewares.TxFromContext(ctx)
+	if err != nil {
+		return 0, err
+	}
+	return tx.OrderStatus.Query().
 		QueryStatusName().Where(statusname.StatusEQ(status)).QueryOrderStatus().Count(ctx)
 }
 
 func (r *orderFilterRepository) OrdersByPeriodAndStatusTotal(ctx context.Context,
 	from, to time.Time, status string) (int, error) {
-	return r.client.OrderStatus.Query().
+	tx, err := middlewares.TxFromContext(ctx)
+	if err != nil {
+		return 0, err
+	}
+	return tx.OrderStatus.Query().
 		QueryStatusName().Where(statusname.StatusEQ(status)).QueryOrderStatus().
 		Where(orderstatus.CurrentDateGT(from)).
 		Where(orderstatus.CurrentDateLTE(to)).
@@ -58,8 +66,11 @@ func (r *orderFilterRepository) OrdersByPeriodAndStatus(ctx context.Context, fro
 	if err != nil {
 		return nil, err
 	}
-
-	items, err := r.client.Order.Query().
+	tx, err := middlewares.TxFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+	items, err := tx.Order.Query().
 		QueryOrderStatus().
 		QueryStatusName().Where(statusname.StatusEQ(status)).
 		QueryOrderStatus().
@@ -83,8 +94,11 @@ func (r *orderFilterRepository) OrdersByStatus(ctx context.Context, status strin
 	if err != nil {
 		return nil, err
 	}
-
-	items, err := r.client.Order.Query().
+	tx, err := middlewares.TxFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+	items, err := tx.Order.Query().
 		QueryOrderStatus().
 		QueryStatusName().Where(statusname.StatusEQ(status)).
 		QueryOrderStatus().QueryOrder().

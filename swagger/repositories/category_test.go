@@ -14,6 +14,7 @@ import (
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/enttest"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/models"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/middlewares"
 )
 
 type categoryRepositorySuite struct {
@@ -33,7 +34,7 @@ func (s *categoryRepositorySuite) SetupTest() {
 	s.ctx = context.Background()
 	client := enttest.Open(t, "sqlite3", "file:category?mode=memory&cache=shared&_fk=1")
 	s.client = client
-	s.repository = NewCategoryRepository(client)
+	s.repository = NewCategoryRepository()
 
 	s.categories = []*ent.Category{
 		{
@@ -94,8 +95,13 @@ func (s *categoryRepositorySuite) TestCategoryRepository_CreateCategory() {
 		MaxReservationUnits: &maxReservationUnits,
 		HasSubcategory:      &hasSubcat,
 	}
-	createdCategory, err := s.repository.CreateCategory(s.ctx, newCategory)
+	ctx := s.ctx
+	tx, err := s.client.Tx(ctx)
 	assert.NoError(t, err)
+	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
+	createdCategory, err := s.repository.CreateCategory(ctx, newCategory)
+	assert.NoError(t, err)
+	assert.NoError(t, tx.Commit())
 	assert.Equal(t, name, createdCategory.Name)
 	assert.Equal(t, maxReservationTime, createdCategory.MaxReservationTime)
 	assert.Equal(t, maxReservationUnits, createdCategory.MaxReservationUnits)
@@ -108,8 +114,13 @@ func (s *categoryRepositorySuite) TestCategoryRepository_CreateCategory() {
 
 func (s *categoryRepositorySuite) TestCategoryRepository_AllCategoriesTotal() {
 	t := s.T()
-	total, err := s.repository.AllCategoriesTotal(s.ctx)
+	ctx := s.ctx
+	tx, err := s.client.Tx(ctx)
 	assert.NoError(t, err)
+	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
+	total, err := s.repository.AllCategoriesTotal(ctx)
+	assert.NoError(t, err)
+	assert.NoError(t, tx.Commit())
 	assert.Equal(t, len(s.categories), total)
 }
 func (s *categoryRepositorySuite) TestCategoryRepository_AllCategory_EmptyOrderBy() {
@@ -118,8 +129,13 @@ func (s *categoryRepositorySuite) TestCategoryRepository_AllCategory_EmptyOrderB
 	offset := 0
 	orderBy := ""
 	orderColumn := category.FieldID
-	categories, err := s.repository.AllCategories(s.ctx, limit, offset, orderBy, orderColumn)
+	ctx := s.ctx
+	tx, err := s.client.Tx(ctx)
+	assert.NoError(t, err)
+	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
+	categories, err := s.repository.AllCategories(ctx, limit, offset, orderBy, orderColumn)
 	assert.Error(t, err)
+	assert.NoError(t, tx.Commit())
 	assert.Nil(t, categories)
 }
 
@@ -129,8 +145,13 @@ func (s *categoryRepositorySuite) TestCategoryRepository_AllCategory_EmptyOrderC
 	offset := 0
 	orderBy := utils.AscOrder
 	orderColumn := ""
-	categories, err := s.repository.AllCategories(s.ctx, limit, offset, orderBy, orderColumn)
+	ctx := s.ctx
+	tx, err := s.client.Tx(ctx)
+	assert.NoError(t, err)
+	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
+	categories, err := s.repository.AllCategories(ctx, limit, offset, orderBy, orderColumn)
 	assert.Error(t, err)
+	assert.NoError(t, tx.Commit())
 	assert.Nil(t, categories)
 }
 
@@ -140,8 +161,13 @@ func (s *categoryRepositorySuite) TestCategoryRepository_AllCategory_WrongOrderC
 	offset := 0
 	orderBy := utils.AscOrder
 	orderColumn := category.FieldMaxReservationTime
-	categories, err := s.repository.AllCategories(s.ctx, limit, offset, orderBy, orderColumn)
+	ctx := s.ctx
+	tx, err := s.client.Tx(ctx)
+	assert.NoError(t, err)
+	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
+	categories, err := s.repository.AllCategories(ctx, limit, offset, orderBy, orderColumn)
 	assert.Error(t, err)
+	assert.NoError(t, tx.Commit())
 	assert.Nil(t, categories)
 }
 
@@ -151,8 +177,13 @@ func (s *categoryRepositorySuite) TestCategoryRepository_AllCategory_OrderByIDDe
 	offset := 0
 	orderBy := utils.DescOrder
 	orderColumn := category.FieldID
-	categories, err := s.repository.AllCategories(s.ctx, limit, offset, orderBy, orderColumn)
+	ctx := s.ctx
+	tx, err := s.client.Tx(ctx)
 	assert.NoError(t, err)
+	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
+	categories, err := s.repository.AllCategories(ctx, limit, offset, orderBy, orderColumn)
+	assert.NoError(t, err)
+	assert.NoError(t, tx.Commit())
 	assert.Equal(t, len(s.categories), len(categories))
 	prevCategoryID := math.MaxInt
 	for _, value := range categories {
@@ -168,8 +199,13 @@ func (s *categoryRepositorySuite) TestCategoryRepository_AllCategory_OrderByName
 	offset := 0
 	orderBy := utils.DescOrder
 	orderColumn := category.FieldName
-	categories, err := s.repository.AllCategories(s.ctx, limit, offset, orderBy, orderColumn)
+	ctx := s.ctx
+	tx, err := s.client.Tx(ctx)
 	assert.NoError(t, err)
+	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
+	categories, err := s.repository.AllCategories(ctx, limit, offset, orderBy, orderColumn)
+	assert.NoError(t, err)
+	assert.NoError(t, tx.Commit())
 	assert.Equal(t, len(s.categories), len(categories))
 	prevCategoryName := "zzzzzzzzzzzzzzzzzzzzz"
 	for _, value := range categories {
@@ -185,8 +221,13 @@ func (s *categoryRepositorySuite) TestCategoryRepository_AllCategory_OrderByIDAs
 	offset := 0
 	orderBy := utils.AscOrder
 	orderColumn := category.FieldID
-	categories, err := s.repository.AllCategories(s.ctx, limit, offset, orderBy, orderColumn)
+	ctx := s.ctx
+	tx, err := s.client.Tx(ctx)
 	assert.NoError(t, err)
+	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
+	categories, err := s.repository.AllCategories(ctx, limit, offset, orderBy, orderColumn)
+	assert.NoError(t, err)
+	assert.NoError(t, tx.Commit())
 	assert.Equal(t, len(s.categories), len(categories))
 	prevCategoryID := 0
 	for _, value := range categories {
@@ -202,8 +243,13 @@ func (s *categoryRepositorySuite) TestCategoryRepository_AllCategory_OrderByName
 	offset := 0
 	orderBy := utils.AscOrder
 	orderColumn := category.FieldName
-	categories, err := s.repository.AllCategories(s.ctx, limit, offset, orderBy, orderColumn)
+	ctx := s.ctx
+	tx, err := s.client.Tx(ctx)
 	assert.NoError(t, err)
+	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
+	categories, err := s.repository.AllCategories(ctx, limit, offset, orderBy, orderColumn)
+	assert.NoError(t, err)
+	assert.NoError(t, tx.Commit())
 	assert.Equal(t, len(s.categories), len(categories))
 	prevCategoryName := ""
 	for _, value := range categories {
@@ -219,10 +265,15 @@ func (s *categoryRepositorySuite) TestCategoryRepository_AllCategory_Limit() {
 	offset := 0
 	orderBy := utils.AscOrder
 	orderColumn := category.FieldID
-	categories, err := s.repository.AllCategories(s.ctx, limit, offset, orderBy, orderColumn)
+	ctx := s.ctx
+	tx, err := s.client.Tx(ctx)
+	assert.NoError(t, err)
+	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
+	categories, err := s.repository.AllCategories(ctx, limit, offset, orderBy, orderColumn)
 	if err != nil {
 		t.Fatal(err)
 	}
+	assert.NoError(t, tx.Commit())
 	assert.Equal(t, limit, len(categories))
 }
 
@@ -232,17 +283,27 @@ func (s *categoryRepositorySuite) TestCategoryRepository_AllCategory_Offset() {
 	offset := 5
 	orderBy := utils.AscOrder
 	orderColumn := category.FieldID
-	categories, err := s.repository.AllCategories(s.ctx, limit, offset, orderBy, orderColumn)
+	ctx := s.ctx
+	tx, err := s.client.Tx(ctx)
+	assert.NoError(t, err)
+	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
+	categories, err := s.repository.AllCategories(ctx, limit, offset, orderBy, orderColumn)
 	if err != nil {
 		t.Fatal(err)
 	}
+	assert.NoError(t, tx.Commit())
 	assert.Equal(t, len(s.categories)-offset, len(categories))
 }
 
 func (s *categoryRepositorySuite) TestCategoryRepository_CategoryByID() {
 	t := s.T()
-	category, err := s.repository.CategoryByID(s.ctx, s.categories[0].ID)
+	ctx := s.ctx
+	tx, err := s.client.Tx(ctx)
 	assert.NoError(t, err)
+	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
+	category, err := s.repository.CategoryByID(ctx, s.categories[0].ID)
+	assert.NoError(t, err)
+	assert.NoError(t, tx.Commit())
 	assert.Equal(t, s.categories[0].Name, category.Name)
 	assert.Equal(t, s.categories[0].MaxReservationTime, category.MaxReservationTime)
 	assert.Equal(t, s.categories[0].MaxReservationUnits, category.MaxReservationUnits)
@@ -265,8 +326,13 @@ func (s *categoryRepositorySuite) TestCategoryRepository_DeleteCategoryByID() {
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = s.repository.DeleteCategoryByID(s.ctx, createdCategory.ID)
+	ctx := s.ctx
+	tx, err := s.client.Tx(ctx)
 	assert.NoError(t, err)
+	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
+	err = s.repository.DeleteCategoryByID(ctx, createdCategory.ID)
+	assert.NoError(t, err)
+	assert.NoError(t, tx.Commit())
 }
 
 func (s *categoryRepositorySuite) TestCategoryRepository_UpdateCategory() {
@@ -275,8 +341,13 @@ func (s *categoryRepositorySuite) TestCategoryRepository_UpdateCategory() {
 	update := models.UpdateCategoryRequest{
 		Name: &name,
 	}
-	category, err := s.repository.UpdateCategory(s.ctx, s.categories[0].ID, update)
+	ctx := s.ctx
+	tx, err := s.client.Tx(ctx)
 	assert.NoError(t, err)
+	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
+	category, err := s.repository.UpdateCategory(ctx, s.categories[0].ID, update)
+	assert.NoError(t, err)
+	assert.NoError(t, tx.Commit())
 	assert.Equal(t, name, category.Name)
 	assert.Equal(t, s.categories[0].MaxReservationTime, category.MaxReservationTime)
 	assert.Equal(t, s.categories[0].MaxReservationUnits, category.MaxReservationUnits)

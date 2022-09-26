@@ -1,6 +1,8 @@
 package swagger
 
 import (
+	"net/http"
+
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/config"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/utils"
 
@@ -17,7 +19,7 @@ import (
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/services"
 )
 
-func SetupAPI(entClient *ent.Client, logger *zap.Logger, config *config.AppConfig) (*operations.BeAPI, error) {
+func SetupAPI(entClient *ent.Client, logger *zap.Logger, config *config.AppConfig) (http.Handler, error) {
 
 	passwordGenerator, err := utils.NewPasswordGenerator(config.PasswordConfig.PasswordLength)
 	if err != nil {
@@ -29,10 +31,10 @@ func SetupAPI(entClient *ent.Client, logger *zap.Logger, config *config.AppConfi
 		return nil, err
 	}
 	//repos
-	passwordRepo := repositories.NewPasswordResetRepository(entClient)
-	regConfirmRepo := repositories.NewRegistrationConfirmRepository(entClient)
-	userRepository := repositories.NewUserRepository(entClient)
-	tokenRepository := repositories.NewTokenRepository(entClient)
+	passwordRepo := repositories.NewPasswordResetRepository()
+	regConfirmRepo := repositories.NewRegistrationConfirmRepository()
+	userRepository := repositories.NewUserRepository()
+	tokenRepository := repositories.NewTokenRepository()
 	// config
 	passwordTTL := config.PasswordConfig.PasswordTokenTTL
 	jwtSecret := config.JWTSecret
@@ -48,20 +50,20 @@ func SetupAPI(entClient *ent.Client, logger *zap.Logger, config *config.AppConfi
 	api := operations.NewBeAPI(swaggerSpec)
 	api.UseSwaggerUI()
 	api.BearerAuth = middlewares.BearerAuthenticateFunc(jwtSecret, logger)
-	handlers.SetActiveAreaHandler(entClient, logger, api)
-	handlers.SetBlockerHandler(entClient, logger, api)
-	handlers.SetEquipmentHandler(entClient, logger, api, fileManager)
-	handlers.SetCategoryHandler(entClient, logger, api)
-	handlers.SetSubcategoryHandler(entClient, logger, api)
-	handlers.SetOrderHandler(entClient, logger, api)
-	handlers.SetOrderStatusHandler(entClient, logger, api)
+	handlers.SetActiveAreaHandler(logger, api)
+	handlers.SetBlockerHandler(logger, api)
+	handlers.SetEquipmentHandler(logger, api, fileManager)
+	handlers.SetCategoryHandler(logger, api)
+	handlers.SetSubcategoryHandler(logger, api)
+	handlers.SetOrderHandler(logger, api)
+	handlers.SetOrderStatusHandler(logger, api)
 	handlers.SetPasswordResetHandler(logger, api, passwordService)
-	handlers.SetPetSizeHandler(entClient, logger, api)
-	handlers.SetPhotoHandler(entClient, logger, api, fileManager)
+	handlers.SetPetSizeHandler(logger, api)
+	handlers.SetPhotoHandler(logger, api, fileManager)
 	handlers.SetRegistrationHandler(logger, api, regConfirmService)
-	handlers.SetRoleHandler(entClient, logger, api)
-	handlers.SetEquipmentStatusHandler(entClient, logger, api)
-	handlers.SetUserHandler(entClient, logger, api, tokenManager, regConfirmService)
-	handlers.SetPetKindHandler(entClient, logger, api)
-	return api, nil
+	handlers.SetRoleHandler(logger, api)
+	handlers.SetEquipmentStatusHandler(logger, api)
+	handlers.SetUserHandler(logger, api, tokenManager, regConfirmService)
+	handlers.SetPetKindHandler(logger, api)
+	return middlewares.Tx(entClient)(api.Serve(nil)), nil
 }

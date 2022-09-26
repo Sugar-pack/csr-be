@@ -1,10 +1,11 @@
 package handlers
 
 import (
-	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/order"
-	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/utils"
 	"math"
 	"net/http"
+
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/order"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/utils"
 
 	"github.com/go-openapi/runtime/middleware"
 	"go.uber.org/zap"
@@ -16,8 +17,8 @@ import (
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/repositories"
 )
 
-func SetActiveAreaHandler(client *ent.Client, logger *zap.Logger, api *operations.BeAPI) {
-	activeAreaRepo := repositories.NewActiveAreaRepository(client)
+func SetActiveAreaHandler(logger *zap.Logger, api *operations.BeAPI) {
+	activeAreaRepo := repositories.NewActiveAreaRepository()
 	activeAreaHandler := NewActiveArea(logger)
 	api.ActiveAreasGetAllActiveAreasHandler = activeAreaHandler.GetActiveAreasFunc(activeAreaRepo)
 }

@@ -21,10 +21,10 @@ import (
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/repositories"
 )
 
-func SetOrderStatusHandler(client *ent.Client, logger *zap.Logger, api *operations.BeAPI) {
-	orderStatusRepo := repositories.NewOrderStatusRepository(client)
-	orderFilterRepo := repositories.NewOrderFilter(client)
-	orderStatusNameRepo := repositories.NewStatusNameRepository(client)
+func SetOrderStatusHandler(logger *zap.Logger, api *operations.BeAPI) {
+	orderStatusRepo := repositories.NewOrderStatusRepository()
+	orderFilterRepo := repositories.NewOrderFilter()
+	orderStatusNameRepo := repositories.NewStatusNameRepository()
 	orderStatusHandler := NewOrderStatus(logger)
 
 	api.OrdersGetOrdersByStatusHandler = orderStatusHandler.GetOrdersByStatus(orderFilterRepo)

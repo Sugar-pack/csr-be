@@ -8,6 +8,7 @@ import (
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/category"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/utils"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/models"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/middlewares"
 )
 
 type CategoryRepository interface {
@@ -25,17 +26,18 @@ var fieldsToOrderCategories = []string{
 }
 
 type categoryRepository struct {
-	client *ent.Client
 }
 
-func NewCategoryRepository(client *ent.Client) CategoryRepository {
-	return &categoryRepository{
-		client: client,
-	}
+func NewCategoryRepository() CategoryRepository {
+	return &categoryRepository{}
 }
 
 func (r *categoryRepository) CreateCategory(ctx context.Context, newCategory models.CreateNewCategory) (*ent.Category, error) {
-	return r.client.Category.Create().
+	tx, err := middlewares.TxFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return tx.Category.Create().
 		SetName(*newCategory.Name).
 		SetMaxReservationUnits(*newCategory.MaxReservationUnits).
 		SetMaxReservationTime(*newCategory.MaxReservationTime).
@@ -44,7 +46,11 @@ func (r *categoryRepository) CreateCategory(ctx context.Context, newCategory mod
 }
 
 func (r *categoryRepository) AllCategoriesTotal(ctx context.Context) (int, error) {
-	return r.client.Category.Query().Count(ctx)
+	tx, err := middlewares.TxFromContext(ctx)
+	if err != nil {
+		return 0, err
+	}
+	return tx.Category.Query().Count(ctx)
 }
 
 func (r *categoryRepository) AllCategories(ctx context.Context, limit, offset int,
@@ -56,19 +62,35 @@ func (r *categoryRepository) AllCategories(ctx context.Context, limit, offset in
 	if err != nil {
 		return nil, err
 	}
-	return r.client.Category.Query().Order(orderFunc).Limit(limit).Offset(offset).All(ctx)
+	tx, err := middlewares.TxFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return tx.Category.Query().Order(orderFunc).Limit(limit).Offset(offset).All(ctx)
 }
 
 func (r *categoryRepository) CategoryByID(ctx context.Context, id int) (*ent.Category, error) {
-	return r.client.Category.Query().Where(category.ID(id)).Only(ctx)
+	tx, err := middlewares.TxFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return tx.Category.Query().Where(category.ID(id)).Only(ctx)
 }
 
 func (r *categoryRepository) DeleteCategoryByID(ctx context.Context, id int) error {
-	return r.client.Category.DeleteOneID(id).Exec(ctx)
+	tx, err := middlewares.TxFromContext(ctx)
+	if err != nil {
+		return err
+	}
+	return tx.Category.DeleteOneID(id).Exec(ctx)
 }
 
 func (r *categoryRepository) UpdateCategory(ctx context.Context, id int, update models.UpdateCategoryRequest) (*ent.Category, error) {
-	categoryUpdate := r.client.Category.UpdateOneID(id)
+	tx, err := middlewares.TxFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+	categoryUpdate := tx.Category.UpdateOneID(id)
 	if update.Name != nil {
 		categoryUpdate.SetName(*update.Name)
 	}

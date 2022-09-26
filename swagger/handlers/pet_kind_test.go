@@ -34,7 +34,7 @@ func TestSetPetKindHandler(t *testing.T) {
 		t.Fatal(err)
 	}
 	api := operations.NewBeAPI(swaggerSpec)
-	SetPetKindHandler(client, logger, api)
+	SetPetKindHandler(logger, api)
 	assert.NotEmpty(t, api.PetKindGetAllPetKindsHandler)
 	assert.NotEmpty(t, api.PetKindEditPetKindHandler)
 	assert.NotEmpty(t, api.PetKindDeletePetKindHandler)

@@ -20,8 +20,8 @@ import (
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/repositories"
 )
 
-func SetOrderHandler(client *ent.Client, logger *zap.Logger, api *operations.BeAPI) {
-	orderRepo := repositories.NewOrderRepository(client)
+func SetOrderHandler(logger *zap.Logger, api *operations.BeAPI) {
+	orderRepo := repositories.NewOrderRepository()
 	ordersHandler := NewOrder(logger)
 
 	api.OrdersGetAllOrdersHandler = ordersHandler.ListOrderFunc(orderRepo)

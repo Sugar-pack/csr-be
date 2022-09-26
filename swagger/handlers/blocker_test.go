@@ -31,7 +31,7 @@ func TestSetBlockerHandler(t *testing.T) {
 		t.Fatal(err)
 	}
 	api := operations.NewBeAPI(swaggerSpec)
-	SetBlockerHandler(client, logger, api)
+	SetBlockerHandler(logger, api)
 	assert.NotEmpty(t, api.UsersBlockUserHandler)
 	assert.NotEmpty(t, api.UsersUnblockUserHandler)
 }
