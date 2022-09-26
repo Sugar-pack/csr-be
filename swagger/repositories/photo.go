@@ -8,6 +8,7 @@ import (
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/photo"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/models"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/middlewares"
 )
 
 type PhotoRepository interface {
@@ -17,13 +18,10 @@ type PhotoRepository interface {
 }
 
 type photoRepository struct {
-	client *ent.Client
 }
 
-func NewPhotoRepository(client *ent.Client) PhotoRepository {
-	return &photoRepository{
-		client: client,
-	}
+func NewPhotoRepository() PhotoRepository {
+	return &photoRepository{}
 }
 
 func (r *photoRepository) CreatePhoto(ctx context.Context, newPhoto models.Photo) (*ent.Photo, error) {
@@ -33,7 +31,11 @@ func (r *photoRepository) CreatePhoto(ctx context.Context, newPhoto models.Photo
 	if newPhoto.FileName == "" {
 		newPhoto.FileName = fmt.Sprintf("%s.jpg", *newPhoto.ID)
 	}
-	p, err := r.client.Photo.Create().
+	tx, err := middlewares.TxFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+	p, err := tx.Photo.Create().
 		SetID(*newPhoto.ID).
 		SetFileName(newPhoto.FileName).
 		Save(ctx)
@@ -44,7 +46,11 @@ func (r *photoRepository) CreatePhoto(ctx context.Context, newPhoto models.Photo
 }
 
 func (r *photoRepository) PhotoByID(ctx context.Context, id string) (*ent.Photo, error) {
-	result, err := r.client.Photo.Query().Where(photo.ID(id)).Only(ctx)
+	tx, err := middlewares.TxFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+	result, err := tx.Photo.Query().Where(photo.ID(id)).Only(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -52,7 +58,11 @@ func (r *photoRepository) PhotoByID(ctx context.Context, id string) (*ent.Photo,
 }
 
 func (r *photoRepository) DeletePhotoByID(ctx context.Context, id string) error {
-	_, err := r.client.Photo.Delete().Where(photo.ID(id)).Exec(ctx)
+	tx, err := middlewares.TxFromContext(ctx)
+	if err != nil {
+		return err
+	}
+	_, err = tx.Photo.Delete().Where(photo.ID(id)).Exec(ctx)
 	if err != nil {
 		return err
 	}

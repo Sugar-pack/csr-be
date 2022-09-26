@@ -33,7 +33,7 @@ func TestSetRoleHandler(t *testing.T) {
 		t.Fatal(err)
 	}
 	api := operations.NewBeAPI(swaggerSpec)
-	SetRoleHandler(client, logger, api)
+	SetRoleHandler(logger, api)
 	assert.NotEmpty(t, api.RolesGetRolesHandler)
 }
 

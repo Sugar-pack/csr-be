@@ -16,6 +16,7 @@ import (
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/predicate"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/statuses"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/models"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/middlewares"
 )
 
 type EquipmentRepository interface {
@@ -38,13 +39,10 @@ var fieldsToOrderEquipments = []string{
 }
 
 type equipmentRepository struct {
-	client *ent.Client
 }
 
-func NewEquipmentRepository(client *ent.Client) EquipmentRepository {
-	return &equipmentRepository{
-		client: client,
-	}
+func NewEquipmentRepository() EquipmentRepository {
+	return &equipmentRepository{}
 }
 
 func (r *equipmentRepository) EquipmentsByFilter(ctx context.Context, filter models.EquipmentFilter,
@@ -56,7 +54,11 @@ func (r *equipmentRepository) EquipmentsByFilter(ctx context.Context, filter mod
 	if err != nil {
 		return nil, err
 	}
-	result, err := r.client.Equipment.Query().
+	tx, err := middlewares.TxFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+	result, err := tx.Equipment.Query().
 		QueryStatus().
 		Where(OptionalIntStatus(filter.Status, statuses.FieldID)).
 		QueryEquipments().
@@ -101,8 +103,11 @@ func (r *equipmentRepository) CreateEquipment(ctx context.Context, NewEquipment 
 	for _, id := range NewEquipment.PetKinds {
 		petKinds = append(petKinds, int(id))
 	}
-
-	eq, err := r.client.Equipment.Create().
+	tx, err := middlewares.TxFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+	eq, err := tx.Equipment.Create().
 		SetName(*NewEquipment.Name).
 		SetDescription(*NewEquipment.Description).
 		SetTermsOfUse(NewEquipment.TermsOfUse).
@@ -128,7 +133,7 @@ func (r *equipmentRepository) CreateEquipment(ctx context.Context, NewEquipment 
 	if err != nil {
 		return nil, err
 	}
-	result, err := r.client.Equipment.Query().Where(equipment.ID(eq.ID)).
+	result, err := tx.Equipment.Query().Where(equipment.ID(eq.ID)).
 		WithCategory().WithSubcategory().WithStatus().WithPhoto().WithPetKinds().WithPetSize().Only(ctx)
 	if err != nil {
 		return nil, err
@@ -137,7 +142,11 @@ func (r *equipmentRepository) CreateEquipment(ctx context.Context, NewEquipment 
 }
 
 func (r *equipmentRepository) EquipmentByID(ctx context.Context, id int) (*ent.Equipment, error) {
-	result, err := r.client.Equipment.Query().Where(equipment.ID(id)).
+	tx, err := middlewares.TxFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+	result, err := tx.Equipment.Query().Where(equipment.ID(id)).
 		WithCategory().WithSubcategory().WithStatus().WithPetKinds().WithPetSize().WithPhoto().Only(ctx)
 	if err != nil {
 		return nil, err
@@ -146,7 +155,11 @@ func (r *equipmentRepository) EquipmentByID(ctx context.Context, id int) (*ent.E
 }
 
 func (r *equipmentRepository) DeleteEquipmentByID(ctx context.Context, id int) error {
-	_, err := r.client.Equipment.Delete().Where(equipment.ID(id)).Exec(ctx)
+	tx, err := middlewares.TxFromContext(ctx)
+	if err != nil {
+		return err
+	}
+	_, err = tx.Equipment.Delete().Where(equipment.ID(id)).Exec(ctx)
 	if err != nil {
 		return err
 	}
@@ -154,7 +167,11 @@ func (r *equipmentRepository) DeleteEquipmentByID(ctx context.Context, id int) e
 }
 
 func (r *equipmentRepository) DeleteEquipmentPhoto(ctx context.Context, id string) error {
-	_, err := r.client.Photo.Delete().Where(photo.ID(id)).Exec(ctx)
+	tx, err := middlewares.TxFromContext(ctx)
+	if err != nil {
+		return err
+	}
+	_, err = tx.Photo.Delete().Where(photo.ID(id)).Exec(ctx)
 	if err != nil {
 		return err
 	}
@@ -169,7 +186,11 @@ func (r *equipmentRepository) AllEquipments(ctx context.Context, limit, offset i
 	if err != nil {
 		return nil, err
 	}
-	result, err := r.client.Equipment.Query().Order(orderFunc).Limit(limit).Offset(offset).
+	tx, err := middlewares.TxFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+	result, err := tx.Equipment.Query().Order(orderFunc).Limit(limit).Offset(offset).
 		WithCategory().WithSubcategory().WithStatus().WithPetKinds().WithPetSize().WithPhoto().
 		All(ctx)
 	if err != nil {
@@ -179,7 +200,11 @@ func (r *equipmentRepository) AllEquipments(ctx context.Context, limit, offset i
 }
 
 func (r *equipmentRepository) AllEquipmentsTotal(ctx context.Context) (int, error) {
-	total, err := r.client.Equipment.Query().
+	tx, err := middlewares.TxFromContext(ctx)
+	if err != nil {
+		return 0, err
+	}
+	total, err := tx.Equipment.Query().
 		Count(ctx)
 	if err != nil {
 		return 0, err
@@ -188,7 +213,11 @@ func (r *equipmentRepository) AllEquipmentsTotal(ctx context.Context) (int, erro
 }
 
 func (r *equipmentRepository) EquipmentsByFilterTotal(ctx context.Context, filter models.EquipmentFilter) (int, error) {
-	total, err := r.client.Equipment.Query().
+	tx, err := middlewares.TxFromContext(ctx)
+	if err != nil {
+		return 0, err
+	}
+	total, err := tx.Equipment.Query().
 		QueryStatus().
 		Where(OptionalIntStatus(filter.Status, statuses.FieldID)).
 		QueryEquipments().
@@ -221,7 +250,11 @@ func (r *equipmentRepository) EquipmentsByFilterTotal(ctx context.Context, filte
 }
 
 func (r *equipmentRepository) UpdateEquipmentByID(ctx context.Context, id int, eq *models.Equipment) (*ent.Equipment, error) {
-	eqToUpdate, err := r.client.Equipment.Get(ctx, id)
+	tx, err := middlewares.TxFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+	eqToUpdate, err := tx.Equipment.Get(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -286,7 +319,7 @@ func (r *equipmentRepository) UpdateEquipmentByID(ctx context.Context, id int, e
 	if err != nil {
 		return nil, err
 	}
-	result, err := r.client.Equipment.Query().Where(equipment.ID(eqToUpdate.ID)).
+	result, err := tx.Equipment.Query().Where(equipment.ID(eqToUpdate.ID)).
 		WithCategory().WithSubcategory().WithStatus().WithPetSize().WithPetKinds().WithPhoto().Only(ctx)
 	if err != nil {
 		return nil, err

@@ -10,6 +10,7 @@ import (
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/enttest"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/models"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/middlewares"
 )
 
 type photoRepositorySuite struct {
@@ -28,7 +29,7 @@ func (s *photoRepositorySuite) SetupTest() {
 	s.ctx = context.Background()
 	client := enttest.Open(t, "sqlite3", "file:photo?mode=memory&cache=shared&_fk=1")
 	s.client = client
-	s.repository = NewPhotoRepository(client)
+	s.repository = NewPhotoRepository()
 }
 
 func (s *photoRepositorySuite) TearDownSuite() {
@@ -39,8 +40,13 @@ func (s *photoRepositorySuite) TestPhotoRepository_CreatePhoto_EmptyID() {
 	t := s.T()
 	newPhoto := models.Photo{}
 
-	createdPhoto, err := s.repository.CreatePhoto(s.ctx, newPhoto)
+	ctx := s.ctx
+	tx, err := s.client.Tx(ctx)
+	assert.NoError(t, err)
+	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
+	createdPhoto, err := s.repository.CreatePhoto(ctx, newPhoto)
 	assert.Error(t, err)
+	assert.NoError(t, tx.Rollback())
 	assert.Errorf(t, err, "id must not be empty")
 	assert.Nil(t, createdPhoto)
 
@@ -58,8 +64,13 @@ func (s *photoRepositorySuite) TestPhotoRepository_CreatePhoto_EmptyFileName() {
 		ID: &id,
 	}
 
-	createdPhoto, err := s.repository.CreatePhoto(s.ctx, newPhoto)
+	ctx := s.ctx
+	tx, err := s.client.Tx(ctx)
 	assert.NoError(t, err)
+	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
+	createdPhoto, err := s.repository.CreatePhoto(ctx, newPhoto)
+	assert.NoError(t, err)
+	assert.NoError(t, tx.Commit())
 	assert.Equal(t, id, createdPhoto.ID)
 	assert.Equal(t, fileName, createdPhoto.FileName)
 
@@ -78,8 +89,13 @@ func (s *photoRepositorySuite) TestPhotoRepository_CreatePhoto_OK() {
 		FileName: fileName,
 	}
 
-	createdPhoto, err := s.repository.CreatePhoto(s.ctx, newPhoto)
+	ctx := s.ctx
+	tx, err := s.client.Tx(ctx)
 	assert.NoError(t, err)
+	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
+	createdPhoto, err := s.repository.CreatePhoto(ctx, newPhoto)
+	assert.NoError(t, err)
+	assert.NoError(t, tx.Commit())
 	assert.Equal(t, id, createdPhoto.ID)
 	assert.Equal(t, fileName, createdPhoto.FileName)
 
@@ -93,8 +109,13 @@ func (s *photoRepositorySuite) TestPhotoRepository_PhotoByID_NotFound() {
 	t := s.T()
 	id := "somegenerateduuid"
 
-	photo, err := s.repository.PhotoByID(s.ctx, id)
+	ctx := s.ctx
+	tx, err := s.client.Tx(ctx)
+	assert.NoError(t, err)
+	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
+	photo, err := s.repository.PhotoByID(ctx, id)
 	assert.Error(t, err)
+	assert.NoError(t, tx.Rollback())
 	assert.Errorf(t, err, "not found")
 	assert.Nil(t, photo)
 
@@ -115,8 +136,13 @@ func (s *photoRepositorySuite) TestPhotoRepository_PhotoByID_OK() {
 		t.Fatal(err)
 	}
 
-	photo, err := s.repository.PhotoByID(s.ctx, createdPhoto.ID)
+	ctx := s.ctx
+	tx, err := s.client.Tx(ctx)
 	assert.NoError(t, err)
+	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
+	photo, err := s.repository.PhotoByID(ctx, createdPhoto.ID)
+	assert.NoError(t, err)
+	assert.NoError(t, tx.Commit())
 	assert.Equal(t, id, photo.ID)
 	assert.Equal(t, fileName, photo.FileName)
 
@@ -130,8 +156,13 @@ func (s *photoRepositorySuite) TestPhotoRepository_DeletePhotoByID_NotExistsOK()
 	t := s.T()
 	id := "somegenerateduuid"
 
-	err := s.repository.DeletePhotoByID(s.ctx, id)
+	ctx := s.ctx
+	tx, err := s.client.Tx(ctx)
 	assert.NoError(t, err)
+	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
+	err = s.repository.DeletePhotoByID(ctx, id)
+	assert.NoError(t, err)
+	assert.NoError(t, tx.Commit())
 
 	_, err = s.client.Photo.Delete().Exec(s.ctx)
 	if err != nil {
@@ -150,8 +181,13 @@ func (s *photoRepositorySuite) TestPhotoRepository_DeletePhotoByID_OK() {
 		t.Fatal(err)
 	}
 
-	err = s.repository.DeletePhotoByID(s.ctx, createdPhoto.ID)
+	ctx := s.ctx
+	tx, err := s.client.Tx(ctx)
 	assert.NoError(t, err)
+	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
+	err = s.repository.DeletePhotoByID(ctx, createdPhoto.ID)
+	assert.NoError(t, err)
+	assert.NoError(t, tx.Commit())
 
 	_, err = s.client.Photo.Delete().Exec(s.ctx)
 	if err != nil {

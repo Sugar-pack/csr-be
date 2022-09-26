@@ -39,7 +39,7 @@ func TestSetCategoryHandler(t *testing.T) {
 		t.Fatal(err)
 	}
 	api := operations.NewBeAPI(swaggerSpec)
-	SetCategoryHandler(client, logger, api)
+	SetCategoryHandler(logger, api)
 	assert.NotEmpty(t, api.CategoriesCreateNewCategoryHandler)
 	assert.NotEmpty(t, api.CategoriesGetCategoryByIDHandler)
 	assert.NotEmpty(t, api.CategoriesDeleteCategoryHandler)

@@ -2,22 +2,23 @@ package repositories
 
 import (
 	"context"
+	"math"
+	"testing"
+
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/enttest"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/user"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/utils"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/middlewares"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
-	"math"
-	"testing"
 )
 
 type UserSuite struct {
 	suite.Suite
-	ctx        context.Context
-	client     *ent.Client
-	repository UserRepository
-	users      map[int]*ent.User
+	ctx    context.Context
+	client *ent.Client
+	users  map[int]*ent.User
 }
 
 func TestUserSuite(t *testing.T) {
@@ -90,11 +91,16 @@ func (s *UserSuite) TearDownSuite() {
 
 func (s *UserSuite) TestUserRepository_UsersListTotal() {
 	t := s.T()
-	repository := NewUserRepository(s.client)
-	totalUsers, err := repository.UsersListTotal(s.ctx)
+	repository := NewUserRepository()
+	ctx := s.ctx
+	tx, err := s.client.Tx(ctx)
+	assert.NoError(t, err)
+	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
+	totalUsers, err := repository.UsersListTotal(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
+	assert.NoError(t, tx.Commit())
 	assert.Equal(t, len(s.users), totalUsers)
 }
 
@@ -104,9 +110,14 @@ func (s *UserSuite) TestUserRepository_UserList_EmptyOrderBy() {
 	offset := 0
 	orderBy := ""
 	orderColumn := user.FieldID
-	repository := NewUserRepository(s.client)
-	users, err := repository.UserList(s.ctx, limit, offset, orderBy, orderColumn)
+	repository := NewUserRepository()
+	ctx := s.ctx
+	tx, err := s.client.Tx(ctx)
+	assert.NoError(t, err)
+	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
+	users, err := repository.UserList(ctx, limit, offset, orderBy, orderColumn)
 	assert.Error(t, err)
+	assert.NoError(t, tx.Rollback())
 	assert.Nil(t, users)
 }
 
@@ -116,9 +127,14 @@ func (s *UserSuite) TestUserRepository_UserList_EmptyOrderColumn() {
 	offset := 0
 	orderBy := utils.AscOrder
 	orderColumn := ""
-	repository := NewUserRepository(s.client)
-	users, err := repository.UserList(s.ctx, limit, offset, orderBy, orderColumn)
+	repository := NewUserRepository()
+	ctx := s.ctx
+	tx, err := s.client.Tx(ctx)
+	assert.NoError(t, err)
+	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
+	users, err := repository.UserList(ctx, limit, offset, orderBy, orderColumn)
 	assert.Error(t, err)
+	assert.NoError(t, tx.Rollback())
 	assert.Nil(t, users)
 }
 
@@ -128,9 +144,14 @@ func (s *UserSuite) TestUserRepository_UserList_WrongOrderColumn() {
 	offset := 0
 	orderBy := utils.AscOrder
 	orderColumn := user.FieldIsBlocked
-	repository := NewUserRepository(s.client)
-	users, err := repository.UserList(s.ctx, limit, offset, orderBy, orderColumn)
+	repository := NewUserRepository()
+	ctx := s.ctx
+	tx, err := s.client.Tx(ctx)
+	assert.NoError(t, err)
+	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
+	users, err := repository.UserList(ctx, limit, offset, orderBy, orderColumn)
 	assert.Error(t, err)
+	assert.NoError(t, tx.Rollback())
 	assert.Nil(t, users)
 }
 
@@ -140,9 +161,14 @@ func (s *UserSuite) TestUserRepository_UserList_OrderByIDDesc() {
 	offset := 0
 	orderBy := utils.DescOrder
 	orderColumn := user.FieldID
-	repository := NewUserRepository(s.client)
-	users, err := repository.UserList(s.ctx, limit, offset, orderBy, orderColumn)
+	repository := NewUserRepository()
+	ctx := s.ctx
+	tx, err := s.client.Tx(ctx)
 	assert.NoError(t, err)
+	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
+	users, err := repository.UserList(ctx, limit, offset, orderBy, orderColumn)
+	assert.NoError(t, err)
+	assert.NoError(t, tx.Commit())
 	assert.Equal(t, len(s.users), len(users))
 	prevUserID := math.MaxInt
 	for _, value := range users {
@@ -158,9 +184,14 @@ func (s *UserSuite) TestUserRepository_UserList_OrderByNameDesc() {
 	offset := 0
 	orderBy := utils.DescOrder
 	orderColumn := user.FieldName
-	repository := NewUserRepository(s.client)
-	users, err := repository.UserList(s.ctx, limit, offset, orderBy, orderColumn)
+	repository := NewUserRepository()
+	ctx := s.ctx
+	tx, err := s.client.Tx(ctx)
 	assert.NoError(t, err)
+	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
+	users, err := repository.UserList(ctx, limit, offset, orderBy, orderColumn)
+	assert.NoError(t, err)
+	assert.NoError(t, tx.Commit())
 	assert.Equal(t, len(s.users), len(users))
 	prevUserName := "zzzzzzzzzzzzzzzzzzzzz"
 	for _, value := range users {
@@ -176,9 +207,14 @@ func (s *UserSuite) TestUserRepository_UserList_OrderByIDAsc() {
 	offset := 0
 	orderBy := utils.AscOrder
 	orderColumn := user.FieldID
-	repository := NewUserRepository(s.client)
-	users, err := repository.UserList(s.ctx, limit, offset, orderBy, orderColumn)
+	repository := NewUserRepository()
+	ctx := s.ctx
+	tx, err := s.client.Tx(ctx)
 	assert.NoError(t, err)
+	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
+	users, err := repository.UserList(ctx, limit, offset, orderBy, orderColumn)
+	assert.NoError(t, err)
+	assert.NoError(t, tx.Commit())
 	assert.Equal(t, len(s.users), len(users))
 	prevUserID := 0
 	for _, value := range users {
@@ -194,9 +230,14 @@ func (s *UserSuite) TestUserRepository_UserList_OrderByNameAsc() {
 	offset := 0
 	orderBy := utils.AscOrder
 	orderColumn := user.FieldName
-	repository := NewUserRepository(s.client)
-	users, err := repository.UserList(s.ctx, limit, offset, orderBy, orderColumn)
+	repository := NewUserRepository()
+	ctx := s.ctx
+	tx, err := s.client.Tx(ctx)
 	assert.NoError(t, err)
+	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
+	users, err := repository.UserList(ctx, limit, offset, orderBy, orderColumn)
+	assert.NoError(t, err)
+	assert.NoError(t, tx.Commit())
 	assert.Equal(t, len(s.users), len(users))
 	prevUserName := ""
 	for _, value := range users {
@@ -212,11 +253,16 @@ func (s *UserSuite) TestUserRepository_UserList_Limit() {
 	offset := 0
 	orderBy := utils.AscOrder
 	orderColumn := user.FieldID
-	repository := NewUserRepository(s.client)
-	users, err := repository.UserList(s.ctx, limit, offset, orderBy, orderColumn)
+	repository := NewUserRepository()
+	ctx := s.ctx
+	tx, err := s.client.Tx(ctx)
+	assert.NoError(t, err)
+	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
+	users, err := repository.UserList(ctx, limit, offset, orderBy, orderColumn)
 	if err != nil {
 		t.Fatal(err)
 	}
+	assert.NoError(t, tx.Commit())
 	assert.Equal(t, limit, len(users))
 }
 
@@ -226,11 +272,16 @@ func (s *UserSuite) TestUserRepository_UserList_Offset() {
 	offset := 5
 	orderBy := utils.AscOrder
 	orderColumn := user.FieldID
-	repository := NewUserRepository(s.client)
-	users, err := repository.UserList(s.ctx, limit, offset, orderBy, orderColumn)
+	repository := NewUserRepository()
+	ctx := s.ctx
+	tx, err := s.client.Tx(ctx)
+	assert.NoError(t, err)
+	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
+	users, err := repository.UserList(ctx, limit, offset, orderBy, orderColumn)
 	if err != nil {
 		t.Fatal(err)
 	}
+	assert.NoError(t, tx.Commit())
 	assert.Equal(t, len(s.users)-offset, len(users))
 }
 

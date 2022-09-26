@@ -14,6 +14,7 @@ import (
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/user"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/utils"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/models"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/middlewares"
 )
 
 type OrderAccessDenied struct {
@@ -37,11 +38,10 @@ var fieldsToOrderOrders = []string{
 }
 
 type orderRepository struct {
-	client *ent.Client
 }
 
-func NewOrderRepository(client *ent.Client) OrderRepository {
-	return &orderRepository{client: client}
+func NewOrderRepository() OrderRepository {
+	return &orderRepository{}
 }
 
 func getDates(start *strfmt.DateTime, end *strfmt.DateTime, maxSeconds int) (*time.Time, *time.Time, error) {
@@ -67,7 +67,7 @@ func getDates(start *strfmt.DateTime, end *strfmt.DateTime, maxSeconds int) (*ti
 
 func getQuantity(quantity int, maxQuantity int) (*int, error) {
 	if quantity > maxQuantity {
-		return nil, errors.New(fmt.Sprintf("at most %d allowed", maxQuantity))
+		return nil, fmt.Errorf("quantity limit exceeded: %d allowed", maxQuantity)
 	}
 
 	return &quantity, nil
@@ -81,7 +81,11 @@ func (r *orderRepository) List(ctx context.Context, ownerId, limit, offset int, 
 	if err != nil {
 		return nil, err
 	}
-	items, err := r.client.Order.Query().
+	tx, err := middlewares.TxFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+	items, err := tx.Order.Query().
 		Where(order.HasUsersWith(user.ID(ownerId))).
 		Order(orderFunc).
 		Limit(limit).Offset(offset).
@@ -94,12 +98,20 @@ func (r *orderRepository) List(ctx context.Context, ownerId, limit, offset int, 
 }
 
 func (r *orderRepository) OrdersTotal(ctx context.Context, ownerId int) (int, error) {
-	return r.client.Order.Query().Where(order.HasUsersWith(user.ID(ownerId))).Count(ctx)
+	tx, err := middlewares.TxFromContext(ctx)
+	if err != nil {
+		return 0, err
+	}
+	return tx.Order.Query().Where(order.HasUsersWith(user.ID(ownerId))).Count(ctx)
 }
 
 func (r *orderRepository) Create(ctx context.Context, data *models.OrderCreateRequest, ownerId int) (*ent.Order, error) {
 	// equipment, err := r.client.Equipment.Get(ctx, int(*data.Equipment))
-	equipment, err := r.client.Equipment.Query().Where(equipment.ID(int(*data.Equipment))).
+	tx, err := middlewares.TxFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+	equipment, err := tx.Equipment.Query().Where(equipment.ID(int(*data.Equipment))).
 		WithCategory().WithStatus().WithPetKinds().WithPetSize().WithPhoto().Only(ctx)
 	if err != nil {
 		return nil, err
@@ -115,7 +127,7 @@ func (r *orderRepository) Create(ctx context.Context, data *models.OrderCreateRe
 		return nil, err
 	}
 
-	owner, err := r.client.User.Get(ctx, ownerId)
+	owner, err := tx.User.Get(ctx, ownerId)
 	if err != nil {
 		return nil, err
 	}
@@ -125,7 +137,7 @@ func (r *orderRepository) Create(ctx context.Context, data *models.OrderCreateRe
 		return nil, err
 	}
 
-	createdOrder, err := r.client.Order.
+	createdOrder, err := tx.Order.
 		Create().
 		SetDescription(*data.Description).
 		SetQuantity(*quantity).
@@ -138,7 +150,7 @@ func (r *orderRepository) Create(ctx context.Context, data *models.OrderCreateRe
 		return nil, err
 	}
 
-	returnOrder, err := r.client.Order.Query().Where(order.IDEQ(createdOrder.ID)).
+	returnOrder, err := tx.Order.Query().Where(order.IDEQ(createdOrder.ID)).
 		WithUsers().WithOrderStatus().WithEquipments().Only(ctx) // get order with relations
 	if err != nil {
 		return nil, err
@@ -167,7 +179,11 @@ func (r *orderRepository) Create(ctx context.Context, data *models.OrderCreateRe
 }
 
 func (r *orderRepository) Update(ctx context.Context, id int, data *models.OrderUpdateRequest, userId int) (*ent.Order, error) {
-	foundOrder, err := r.client.Order.Get(ctx, id)
+	tx, err := middlewares.TxFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+	foundOrder, err := tx.Order.Get(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -201,14 +217,17 @@ func (r *orderRepository) Update(ctx context.Context, id int, data *models.Order
 		return nil, err
 	}
 
-	createdOrder, err := r.client.Order.UpdateOne(foundOrder).
+	createdOrder, err := tx.Order.UpdateOne(foundOrder).
 		SetRentStart(*rentStart).
 		SetRentEnd(*rentEnd).
 		SetDescription(*data.Description).
 		SetQuantity(*quantity).
 		Save(ctx)
+	if err != nil {
+		return nil, err
+	}
 
-	returnOrder, err := r.client.Order.Query().Where(order.IDEQ(createdOrder.ID)). // get order with relations
+	returnOrder, err := tx.Order.Query().Where(order.IDEQ(createdOrder.ID)). // get order with relations
 											WithUsers().WithOrderStatus().WithEquipments().Only(ctx)
 	if err != nil {
 		return nil, err

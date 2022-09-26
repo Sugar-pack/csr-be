@@ -13,6 +13,7 @@ import (
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/equipment"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/utils"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/models"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/middlewares"
 )
 
 type EquipmentSuite struct {
@@ -33,7 +34,7 @@ func (s *EquipmentSuite) SetupTest() {
 	s.ctx = context.Background()
 	client := enttest.Open(t, "sqlite3", "file:equipments?mode=memory&cache=shared&_fk=1")
 	s.client = client
-	s.repository = NewEquipmentRepository(s.client)
+	s.repository = NewEquipmentRepository()
 
 	statusName := "status"
 	_, err := s.client.Statuses.Delete().Exec(s.ctx) // clean up
@@ -112,8 +113,13 @@ func (s *EquipmentSuite) TestEquipmentRepository_AllEquipmentsEmptyOrderBy() {
 	offset := 0
 	orderBy := ""
 	orderColumn := equipment.FieldID
-	equipments, err := s.repository.AllEquipments(s.ctx, limit, offset, orderBy, orderColumn)
+	ctx := s.ctx
+	tx, err := s.client.Tx(ctx)
+	assert.NoError(t, err)
+	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
+	equipments, err := s.repository.AllEquipments(ctx, limit, offset, orderBy, orderColumn)
 	assert.Error(t, err)
+	assert.NoError(t, tx.Rollback())
 	assert.Nil(t, equipments)
 }
 
@@ -123,9 +129,14 @@ func (s *EquipmentSuite) TestEquipmentRepository_AllEquipmentsWrongOrderColumn()
 	offset := 0
 	orderBy := utils.AscOrder
 	orderColumn := ""
-	equipments, err := s.repository.EquipmentsByFilter(s.ctx, models.EquipmentFilter{},
+	ctx := s.ctx
+	tx, err := s.client.Tx(ctx)
+	assert.NoError(t, err)
+	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
+	equipments, err := s.repository.EquipmentsByFilter(ctx, models.EquipmentFilter{},
 		limit, offset, orderBy, orderColumn)
 	assert.Error(t, err)
+	assert.NoError(t, tx.Rollback())
 	assert.Nil(t, equipments)
 }
 
@@ -135,8 +146,13 @@ func (s *EquipmentSuite) TestEquipmentRepository_AllEquipmentsOrderColumnNotExis
 	offset := 0
 	orderBy := utils.AscOrder
 	orderColumn := "price"
-	equipments, err := s.repository.AllEquipments(s.ctx, limit, offset, orderBy, orderColumn)
+	ctx := s.ctx
+	tx, err := s.client.Tx(ctx)
+	assert.NoError(t, err)
+	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
+	equipments, err := s.repository.AllEquipments(ctx, limit, offset, orderBy, orderColumn)
 	assert.Error(t, err)
+	assert.NoError(t, tx.Rollback())
 	assert.Nil(t, equipments)
 }
 
@@ -146,10 +162,15 @@ func (s *EquipmentSuite) TestEquipmentRepository_AllEquipmentsOrderByIDDesc() {
 	offset := 0
 	orderBy := utils.DescOrder
 	orderColumn := equipment.FieldID
-	equipments, err := s.repository.AllEquipments(s.ctx, limit, offset, orderBy, orderColumn)
+	ctx := s.ctx
+	tx, err := s.client.Tx(ctx)
+	assert.NoError(t, err)
+	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
+	equipments, err := s.repository.AllEquipments(ctx, limit, offset, orderBy, orderColumn)
 	if err != nil {
 		t.Fatal(err)
 	}
+	assert.NoError(t, tx.Commit())
 	assert.Equal(t, len(s.equipments), len(equipments))
 	prevEquipmentID := math.MaxInt
 	for _, value := range equipments {
@@ -165,10 +186,15 @@ func (s *EquipmentSuite) TestEquipmentRepository_AllEquipmentsOrderByNameDesc() 
 	offset := 0
 	orderBy := utils.DescOrder
 	orderColumn := equipment.FieldName
-	equipments, err := s.repository.AllEquipments(s.ctx, limit, offset, orderBy, orderColumn)
+	ctx := s.ctx
+	tx, err := s.client.Tx(ctx)
+	assert.NoError(t, err)
+	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
+	equipments, err := s.repository.AllEquipments(ctx, limit, offset, orderBy, orderColumn)
 	if err != nil {
 		t.Fatal(err)
 	}
+	assert.NoError(t, tx.Commit())
 	assert.Equal(t, len(s.equipments), len(equipments))
 	prevEquipmentName := "zzzzzzzzzzzzzzzzzzzzzzzzzzz"
 	for _, value := range equipments {
@@ -184,10 +210,15 @@ func (s *EquipmentSuite) TestEquipmentRepository_AllEquipmentsOrderByTitleDesc()
 	offset := 0
 	orderBy := utils.DescOrder
 	orderColumn := equipment.FieldTitle
-	equipments, err := s.repository.AllEquipments(s.ctx, limit, offset, orderBy, orderColumn)
+	ctx := s.ctx
+	tx, err := s.client.Tx(ctx)
+	assert.NoError(t, err)
+	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
+	equipments, err := s.repository.AllEquipments(ctx, limit, offset, orderBy, orderColumn)
 	if err != nil {
 		t.Fatal(err)
 	}
+	assert.NoError(t, tx.Commit())
 	assert.Equal(t, len(s.equipments), len(equipments))
 	prevEquipmentTitle := "zzzzzzzzzzzzzzzzzzzzzzzzzzz"
 	for _, value := range equipments {
@@ -203,10 +234,15 @@ func (s *EquipmentSuite) TestEquipmentRepository_AllEquipmentsOrderByIDAsc() {
 	offset := 0
 	orderBy := utils.AscOrder
 	orderColumn := equipment.FieldID
-	equipments, err := s.repository.AllEquipments(s.ctx, limit, offset, orderBy, orderColumn)
+	ctx := s.ctx
+	tx, err := s.client.Tx(ctx)
+	assert.NoError(t, err)
+	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
+	equipments, err := s.repository.AllEquipments(ctx, limit, offset, orderBy, orderColumn)
 	if err != nil {
 		t.Fatal(err)
 	}
+	assert.NoError(t, tx.Commit())
 	assert.Equal(t, len(s.equipments), len(equipments))
 	prevEquipmentID := 0
 	for _, value := range equipments {
@@ -222,10 +258,15 @@ func (s *EquipmentSuite) TestEquipmentRepository_AllEquipmentsOrderByNameAsc() {
 	offset := 0
 	orderBy := utils.AscOrder
 	orderColumn := equipment.FieldName
-	equipments, err := s.repository.AllEquipments(s.ctx, limit, offset, orderBy, orderColumn)
+	ctx := s.ctx
+	tx, err := s.client.Tx(ctx)
+	assert.NoError(t, err)
+	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
+	equipments, err := s.repository.AllEquipments(ctx, limit, offset, orderBy, orderColumn)
 	if err != nil {
 		t.Fatal(err)
 	}
+	assert.NoError(t, tx.Commit())
 	assert.Equal(t, len(s.equipments), len(equipments))
 	prevEquipmentName := ""
 	for _, value := range equipments {
@@ -241,10 +282,15 @@ func (s *EquipmentSuite) TestEquipmentRepository_AllEquipmentsOrderByTitleAsc() 
 	offset := 0
 	orderBy := utils.AscOrder
 	orderColumn := equipment.FieldTitle
-	equipments, err := s.repository.AllEquipments(s.ctx, limit, offset, orderBy, orderColumn)
+	ctx := s.ctx
+	tx, err := s.client.Tx(ctx)
+	assert.NoError(t, err)
+	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
+	equipments, err := s.repository.AllEquipments(ctx, limit, offset, orderBy, orderColumn)
 	if err != nil {
 		t.Fatal(err)
 	}
+	assert.NoError(t, tx.Commit())
 	assert.Equal(t, len(s.equipments), len(equipments))
 	prevEquipmentTitle := ""
 	for _, value := range equipments {
@@ -260,10 +306,15 @@ func (s *EquipmentSuite) TestEquipmentRepository_AllEquipmentsLimit() {
 	offset := 0
 	orderBy := utils.AscOrder
 	orderColumn := equipment.FieldTitle
-	equipments, err := s.repository.AllEquipments(s.ctx, limit, offset, orderBy, orderColumn)
+	ctx := s.ctx
+	tx, err := s.client.Tx(ctx)
+	assert.NoError(t, err)
+	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
+	equipments, err := s.repository.AllEquipments(ctx, limit, offset, orderBy, orderColumn)
 	if err != nil {
 		t.Fatal(err)
 	}
+	assert.NoError(t, tx.Commit())
 	assert.Equal(t, 3, len(equipments))
 	for i, value := range equipments {
 		assert.True(t, mapContainsEquipment(value, s.equipments))
@@ -277,10 +328,15 @@ func (s *EquipmentSuite) TestEquipmentRepository_AllEquipmentsOffset() {
 	offset := 3
 	orderBy := utils.AscOrder
 	orderColumn := equipment.FieldTitle
-	equipments, err := s.repository.AllEquipments(s.ctx, limit, offset, orderBy, orderColumn)
+	ctx := s.ctx
+	tx, err := s.client.Tx(ctx)
+	assert.NoError(t, err)
+	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
+	equipments, err := s.repository.AllEquipments(ctx, limit, offset, orderBy, orderColumn)
 	if err != nil {
 		t.Fatal(err)
 	}
+	assert.NoError(t, tx.Commit())
 	assert.Equal(t, 2, len(equipments))
 	for i, value := range equipments {
 		assert.True(t, mapContainsEquipment(value, s.equipments))
@@ -290,10 +346,15 @@ func (s *EquipmentSuite) TestEquipmentRepository_AllEquipmentsOffset() {
 
 func (s *EquipmentSuite) TestEquipmentRepository_AllEquipmentsTotal() {
 	t := s.T()
-	totalEquipment, err := s.repository.AllEquipmentsTotal(s.ctx)
+	ctx := s.ctx
+	tx, err := s.client.Tx(ctx)
+	assert.NoError(t, err)
+	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
+	totalEquipment, err := s.repository.AllEquipmentsTotal(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
+	assert.NoError(t, tx.Commit())
 	assert.Equal(t, len(s.equipments), totalEquipment)
 }
 
@@ -304,10 +365,15 @@ func (s *EquipmentSuite) TestEquipmentRepository_FindEquipmentsOrderByTitleDesc(
 	orderBy := "desc"
 	orderColumn := "title"
 	filter := models.EquipmentFilter{NameSubstring: "test"}
-	equipments, err := s.repository.EquipmentsByFilter(s.ctx, filter, limit, offset, orderBy, orderColumn)
+	ctx := s.ctx
+	tx, err := s.client.Tx(ctx)
+	assert.NoError(t, err)
+	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
+	equipments, err := s.repository.EquipmentsByFilter(ctx, filter, limit, offset, orderBy, orderColumn)
 	if err != nil {
 		t.Fatal(err)
 	}
+	assert.NoError(t, tx.Commit())
 	assert.Equal(t, 3, len(equipments))
 	prevEquipmentTitle := "zzzzzzzzzzzzzzzzzzzzzz"
 	for _, value := range equipments {
@@ -325,10 +391,15 @@ func (s *EquipmentSuite) TestEquipmentRepository_FindEquipmentsLimit() {
 	orderBy := "asc"
 	orderColumn := "title"
 	filter := models.EquipmentFilter{NameSubstring: "test"}
-	equipments, err := s.repository.EquipmentsByFilter(s.ctx, filter, limit, offset, orderBy, orderColumn)
+	ctx := s.ctx
+	tx, err := s.client.Tx(ctx)
+	assert.NoError(t, err)
+	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
+	equipments, err := s.repository.EquipmentsByFilter(ctx, filter, limit, offset, orderBy, orderColumn)
 	if err != nil {
 		t.Fatal(err)
 	}
+	assert.NoError(t, tx.Commit())
 	assert.Equal(t, 2, len(equipments))
 	prevEquipmentTitle := ""
 	for _, value := range equipments {
@@ -346,10 +417,15 @@ func (s *EquipmentSuite) TestEquipmentRepository_FindEquipmentsOffset() {
 	orderBy := "asc"
 	orderColumn := "name"
 	filter := models.EquipmentFilter{NameSubstring: "test"}
-	equipments, err := s.repository.EquipmentsByFilter(s.ctx, filter, limit, offset, orderBy, orderColumn)
+	ctx := s.ctx
+	tx, err := s.client.Tx(ctx)
+	assert.NoError(t, err)
+	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
+	equipments, err := s.repository.EquipmentsByFilter(ctx, filter, limit, offset, orderBy, orderColumn)
 	if err != nil {
 		t.Fatal(err)
 	}
+	assert.NoError(t, tx.Commit())
 	assert.Equal(t, 1, len(equipments))
 	for _, value := range equipments {
 		assert.True(t, mapContainsEquipment(value, s.equipments))
@@ -360,10 +436,15 @@ func (s *EquipmentSuite) TestEquipmentRepository_FindEquipmentsOffset() {
 func (s *EquipmentSuite) TestEquipmentRepository_FindEquipmentsTotal() {
 	t := s.T()
 	filter := models.EquipmentFilter{NameSubstring: "test"}
-	totalEquipment, err := s.repository.EquipmentsByFilterTotal(s.ctx, filter)
+	ctx := s.ctx
+	tx, err := s.client.Tx(ctx)
+	assert.NoError(t, err)
+	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
+	totalEquipment, err := s.repository.EquipmentsByFilterTotal(ctx, filter)
 	if err != nil {
 		t.Fatal(err)
 	}
+	assert.NoError(t, tx.Commit())
 	assert.Equal(t, 3, totalEquipment)
 }
 

@@ -2,10 +2,11 @@ package handlers
 
 import (
 	"errors"
-	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/user"
-	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/utils"
 	"math"
 	"net/http"
+
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/user"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/utils"
 
 	"github.com/go-openapi/runtime/middleware"
 	"go.uber.org/zap"
@@ -19,9 +20,9 @@ import (
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/services"
 )
 
-func SetUserHandler(client *ent.Client, logger *zap.Logger, api *operations.BeAPI,
+func SetUserHandler(logger *zap.Logger, api *operations.BeAPI,
 	tokenManager services.TokenManager, regConfirmService services.RegistrationConfirm) {
-	userRepo := repositories.NewUserRepository(client)
+	userRepo := repositories.NewUserRepository()
 	userHandler := NewUser(logger)
 
 	api.UsersLoginHandler = userHandler.LoginUserFunc(tokenManager)

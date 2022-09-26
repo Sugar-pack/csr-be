@@ -7,6 +7,7 @@ import (
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/category"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/subcategory"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/models"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/middlewares"
 )
 
 type SubcategoryRepository interface {
@@ -18,51 +19,71 @@ type SubcategoryRepository interface {
 }
 
 type subcategoryRepository struct {
-	client *ent.Client
 }
 
-func NewSubcategoryRepository(client *ent.Client) SubcategoryRepository {
-	return &subcategoryRepository{
-		client: client,
-	}
+func NewSubcategoryRepository() SubcategoryRepository {
+	return &subcategoryRepository{}
 }
 
 func (r *subcategoryRepository) CreateSubcategory(
 	ctx context.Context, categoryID int, newSubcategory models.NewSubcategory) (*ent.Subcategory, error) {
-	eqCategory, err := r.client.Category.Get(ctx, categoryID)
+	tx, err := middlewares.TxFromContext(ctx)
 	if err != nil {
 		return nil, err
 	}
-	saved, err := r.client.Subcategory.Create().
+	eqCategory, err := tx.Category.Get(ctx, categoryID)
+	if err != nil {
+		return nil, err
+	}
+	saved, err := tx.Subcategory.Create().
 		SetName(*newSubcategory.Name).
 		SetCategory(eqCategory).
 		Save(ctx)
-	return r.client.Subcategory.Query().Where(subcategory.ID(saved.ID)).
+	if err != nil {
+		return nil, err
+	}
+	return tx.Subcategory.Query().Where(subcategory.ID(saved.ID)).
 		WithCategory().Only(ctx)
 }
 
 func (r *subcategoryRepository) ListSubcategories(ctx context.Context, categoryID int) ([]*ent.Subcategory, error) {
-	return r.client.Subcategory.Query().
+	tx, err := middlewares.TxFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return tx.Subcategory.Query().
 		QueryCategory().Where(category.IDEQ(categoryID)).
 		QuerySubcategories().WithCategory().All(ctx)
 }
 
 func (r *subcategoryRepository) SubcategoryByID(ctx context.Context, id int) (*ent.Subcategory, error) {
-	return r.client.Subcategory.Query().Where(subcategory.ID(id)).WithCategory().Only(ctx)
-}
-
-func (r *subcategoryRepository) DeleteSubcategoryByID(ctx context.Context, id int) error {
-	return r.client.Subcategory.DeleteOneID(id).Exec(ctx)
-}
-
-func (r *subcategoryRepository) UpdateSubcategory(ctx context.Context, id int, update models.NewSubcategory) (*ent.Subcategory, error) {
-	subcategoryToUpdate := r.client.Subcategory.UpdateOneID(id)
-	if update.Name != nil {
-		subcategoryToUpdate.SetName(*update.Name)
-	}
-	_, err := subcategoryToUpdate.Save(ctx)
+	tx, err := middlewares.TxFromContext(ctx)
 	if err != nil {
 		return nil, err
 	}
-	return r.client.Subcategory.Query().Where(subcategory.ID(id)).WithCategory().Only(ctx)
+	return tx.Subcategory.Query().Where(subcategory.ID(id)).WithCategory().Only(ctx)
+}
+
+func (r *subcategoryRepository) DeleteSubcategoryByID(ctx context.Context, id int) error {
+	tx, err := middlewares.TxFromContext(ctx)
+	if err != nil {
+		return err
+	}
+	return tx.Subcategory.DeleteOneID(id).Exec(ctx)
+}
+
+func (r *subcategoryRepository) UpdateSubcategory(ctx context.Context, id int, update models.NewSubcategory) (*ent.Subcategory, error) {
+	tx, err := middlewares.TxFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+	subcategoryToUpdate := tx.Subcategory.UpdateOneID(id)
+	if update.Name != nil {
+		subcategoryToUpdate.SetName(*update.Name)
+	}
+	_, err = subcategoryToUpdate.Save(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return tx.Subcategory.Query().Where(subcategory.ID(id)).WithCategory().Only(ctx)
 }

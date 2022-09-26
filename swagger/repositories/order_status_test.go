@@ -12,6 +12,7 @@ import (
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/enttest"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/models"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/middlewares"
 )
 
 type orderStatusTestSuite struct {
@@ -79,7 +80,7 @@ func (s *orderStatusTestSuite) SetupTest() {
 	}
 	s.order = order
 
-	s.repository = NewOrderStatusRepository(client)
+	s.repository = NewOrderStatusRepository()
 }
 
 func (s *orderStatusTestSuite) TearDownSuite() {
@@ -102,8 +103,13 @@ func (s *orderStatusTestSuite) TestOrderStatusRepository_UpdateStatus() {
 		OrderID:   &orderID,
 		Status:    &status,
 	}
-	err := s.repository.UpdateStatus(s.ctx, userID, data)
+	ctx := s.ctx
+	tx, err := s.client.Tx(ctx)
 	assert.NoError(t, err)
+	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
+	err = s.repository.UpdateStatus(ctx, userID, data)
+	assert.NoError(t, err)
+	assert.NoError(t, tx.Commit())
 	_, err = s.client.OrderStatus.Delete().Exec(s.ctx)
 	if err != nil {
 		t.Fatal(err)
@@ -113,8 +119,13 @@ func (s *orderStatusTestSuite) TestOrderStatusRepository_UpdateStatus() {
 func (s *orderStatusTestSuite) TestOrderStatusRepository_StatusHistory_Empty() {
 	t := s.T()
 	orderID := s.order.ID
-	statuses, err := s.repository.StatusHistory(s.ctx, orderID)
+	ctx := s.ctx
+	tx, err := s.client.Tx(ctx)
 	assert.NoError(t, err)
+	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
+	statuses, err := s.repository.StatusHistory(ctx, orderID)
+	assert.NoError(t, err)
+	assert.NoError(t, tx.Commit())
 	assert.Empty(t, statuses)
 }
 
@@ -129,8 +140,13 @@ func (s *orderStatusTestSuite) TestOrderStatusRepository_StatusHistory() {
 		t.Fatal(err)
 	}
 
-	statuses, err := s.repository.StatusHistory(s.ctx, orderID)
+	ctx := s.ctx
+	tx, err := s.client.Tx(ctx)
 	assert.NoError(t, err)
+	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
+	statuses, err := s.repository.StatusHistory(ctx, orderID)
+	assert.NoError(t, err)
+	assert.NoError(t, tx.Commit())
 	assert.Equal(t, 1, len(statuses))
 	assert.Equal(t, orderStatus.ID, statuses[0].ID)
 	assert.Equal(t, orderStatus.Comment, statuses[0].Comment)
@@ -151,8 +167,13 @@ func (s *orderStatusTestSuite) TestOrderStatusRepository_GetOrderCurrentStatus()
 		t.Fatal(err)
 	}
 
-	status, err := s.repository.GetOrderCurrentStatus(s.ctx, orderID)
+	ctx := s.ctx
+	tx, err := s.client.Tx(ctx)
 	assert.NoError(t, err)
+	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
+	status, err := s.repository.GetOrderCurrentStatus(ctx, orderID)
+	assert.NoError(t, err)
+	assert.NoError(t, tx.Commit())
 	assert.Equal(t, orderStatus.ID, status.ID)
 	assert.Equal(t, orderStatus.Comment, status.Comment)
 	assert.Equal(t, orderStatus.CurrentDate, status.CurrentDate)
@@ -172,8 +193,13 @@ func (s *orderStatusTestSuite) TestOrderStatusRepository_GetUserStatusHistory() 
 		t.Fatal(err)
 	}
 
-	statuses, err := s.repository.GetUserStatusHistory(s.ctx, userID)
+	ctx := s.ctx
+	tx, err := s.client.Tx(ctx)
 	assert.NoError(t, err)
+	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
+	statuses, err := s.repository.GetUserStatusHistory(ctx, userID)
+	assert.NoError(t, err)
+	assert.NoError(t, tx.Commit())
 	assert.Equal(t, 1, len(statuses))
 	assert.Equal(t, orderStatus.ID, statuses[0].ID)
 	assert.Equal(t, orderStatus.Comment, statuses[0].Comment)

@@ -4,8 +4,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/utils"
 	"time"
+
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/utils"
 
 	"golang.org/x/crypto/bcrypt"
 
@@ -14,12 +15,13 @@ import (
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/role"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/user"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/models"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/middlewares"
 )
 
 type UserRepository interface {
 	SetUserRole(ctx context.Context, userId int, roleId int) error
 	UserByLogin(ctx context.Context, login string) (*ent.User, error)
-	ChangePasswordByLogin(ctx context.Context, login string, password string) (Transaction, error)
+	ChangePasswordByLogin(ctx context.Context, login string, password string) error
 	CreateUser(ctx context.Context, data *models.UserRegister) (*ent.User, error)
 	GetUserByLogin(ctx context.Context, login string) (*ent.User, error)
 	GetUserByID(ctx context.Context, id int) (*ent.User, error)
@@ -42,11 +44,14 @@ var fieldsToOrderUsers = []string{
 }
 
 type userRepository struct {
-	client *ent.Client
 }
 
 func (r *userRepository) UsersListTotal(ctx context.Context) (int, error) {
-	return r.client.User.Query().Count(ctx)
+	tx, err := middlewares.TxFromContext(ctx)
+	if err != nil {
+		return 0, err
+	}
+	return tx.User.Query().Count(ctx)
 }
 
 func (r *userRepository) UserList(ctx context.Context, limit, offset int,
@@ -58,14 +63,22 @@ func (r *userRepository) UserList(ctx context.Context, limit, offset int,
 	if err != nil {
 		return nil, err
 	}
-	return r.client.User.Query().WithRole().Order(orderFunc).Limit(limit).Offset(offset).All(ctx)
+	tx, err := middlewares.TxFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return tx.User.Query().WithRole().Order(orderFunc).Limit(limit).Offset(offset).All(ctx)
 }
 
 func (r *userRepository) UpdateUserByID(ctx context.Context, id int, patch *models.PatchUserRequest) error {
 	if patch == nil {
 		return errors.New("patch is nil")
 	}
-	userUpdate := r.client.User.Update().Where(user.ID(id))
+	tx, err := middlewares.TxFromContext(ctx)
+	if err != nil {
+		return err
+	}
+	userUpdate := tx.User.Update().Where(user.ID(id))
 	if patch.Name != "" {
 		userUpdate.SetName(patch.Name)
 	}
@@ -100,48 +113,64 @@ func (r *userRepository) UpdateUserByID(ctx context.Context, id int, patch *mode
 		userUpdate.SetWebsite(patch.Website)
 	}
 
-	_, err := userUpdate.Save(ctx)
+	_, err = userUpdate.Save(ctx)
 	return err
 }
 
 func (r *userRepository) GetUserByLogin(ctx context.Context, login string) (*ent.User, error) {
-	return r.client.User.Query().Where(user.Login(login)).WithGroups().WithRole().Only(ctx)
+	tx, err := middlewares.TxFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return tx.User.Query().Where(user.Login(login)).WithGroups().WithRole().Only(ctx)
 }
 
 func (r *userRepository) UserByLogin(ctx context.Context, login string) (*ent.User, error) {
-	return r.client.User.Query().Where(user.LoginEQ(login)).Only(ctx)
-}
-
-func (r *userRepository) ChangePasswordByLogin(ctx context.Context, login string, password string) (Transaction, error) {
-	tx, err := r.client.Tx(ctx)
+	tx, err := middlewares.TxFromContext(ctx)
 	if err != nil {
 		return nil, err
+	}
+	return tx.User.Query().Where(user.LoginEQ(login)).Only(ctx)
+}
+
+func (r *userRepository) ChangePasswordByLogin(ctx context.Context, login string, password string) error {
+	tx, err := middlewares.TxFromContext(ctx)
+	if err != nil {
+		return err
 	}
 	_, err = tx.User.Update().Where(user.LoginEQ(login)).SetPassword(password).Save(ctx)
-	if err != nil {
-		return nil, err
-	}
-	return tx, nil
-}
-
-func NewUserRepository(client *ent.Client) UserRepository {
-	return &userRepository{client: client}
-}
-
-func (r *userRepository) GetUserByID(ctx context.Context, id int) (*ent.User, error) {
-	return r.client.User.Query().Where(user.ID(id)).WithGroups().WithRole().Only(ctx)
-}
-
-func (r *userRepository) SetUserRole(ctx context.Context, userId int, roleId int) error {
-	_, err := r.client.User.UpdateOneID(userId).SetRoleID(roleId).Save(ctx)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func DefaultUserRole(ctx context.Context, client *ent.Client) (*ent.Role, error) {
-	defaultRole, err := client.Role.Query().Where(role.Slug(defaultRoleSlug)).Only(ctx)
+func NewUserRepository() UserRepository {
+	return &userRepository{}
+}
+
+func (r *userRepository) GetUserByID(ctx context.Context, id int) (*ent.User, error) {
+	tx, err := middlewares.TxFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return tx.User.Query().Where(user.ID(id)).WithGroups().WithRole().Only(ctx)
+}
+
+func (r *userRepository) SetUserRole(ctx context.Context, userId int, roleId int) error {
+	tx, err := middlewares.TxFromContext(ctx)
+	if err != nil {
+		return err
+	}
+	_, err = tx.User.UpdateOneID(userId).SetRoleID(roleId).Save(ctx)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func DefaultUserRole(ctx context.Context, tx *ent.Tx) (*ent.Role, error) {
+	defaultRole, err := tx.Role.Query().Where(role.Slug(defaultRoleSlug)).Only(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -155,13 +184,18 @@ func (r *userRepository) CreateUser(ctx context.Context, data *models.UserRegist
 		return nil, fmt.Errorf("create user error, failed to generate password hash: %s", err)
 	}
 
+	tx, err := middlewares.TxFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	var activeAreas ent.ActiveAreas
 	if len(data.ActiveAreas) > 0 {
 		activeAreasIds := make([]int, len(data.ActiveAreas))
 		for index, areaId := range data.ActiveAreas {
 			activeAreasIds[index] = int(areaId)
 		}
-		activeAreas, err = r.client.ActiveArea.Query().Where(activearea.IDIn(activeAreasIds...)).All(ctx)
+		activeAreas, err = tx.ActiveArea.Query().Where(activearea.IDIn(activeAreasIds...)).All(ctx)
 		if err != nil {
 			return nil, fmt.Errorf("unable to find active areas")
 		}
@@ -172,11 +206,11 @@ func (r *userRepository) CreateUser(ctx context.Context, data *models.UserRegist
 
 	userType := user.Type(*data.Type)
 	passportIssueDate := time.Time(data.PassportIssueDate)
-	defaultRole, err := DefaultUserRole(ctx, r.client)
+	defaultRole, err := DefaultUserRole(ctx, tx)
 	if err != nil {
 		return nil, fmt.Errorf("unable to find default role, %w", err)
 	}
-	createdUser, err = r.client.User.
+	createdUser, err = tx.User.
 		Create().
 		SetEmail(string(data.Email)).
 		SetLogin(*data.Login).
@@ -199,8 +233,11 @@ func (r *userRepository) CreateUser(ctx context.Context, data *models.UserRegist
 }
 
 func (r *userRepository) ConfirmRegistration(ctx context.Context, login string) error {
-
-	_, err := r.client.User.Update().Where(user.LoginEQ(login)).SetIsConfirmed(true).Save(ctx)
+	tx, err := middlewares.TxFromContext(ctx)
+	if err != nil {
+		return err
+	}
+	_, err = tx.User.Update().Where(user.LoginEQ(login)).SetIsConfirmed(true).Save(ctx)
 	if err != nil {
 		return err
 	}

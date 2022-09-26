@@ -14,6 +14,7 @@ import (
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/enttest"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/order"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/utils"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/middlewares"
 )
 
 type orderFilterTestSuite struct {
@@ -56,7 +57,7 @@ func (s *orderFilterTestSuite) SetupTest() {
 	s.ctx = context.Background()
 	client := enttest.Open(t, "sqlite3", "file:orderfilter?mode=memory&cache=shared&_fk=1")
 	s.client = client
-	s.repository = NewOrderFilter(s.client)
+	s.repository = NewOrderFilter()
 
 	if _, err := s.client.StatusName.Delete().Exec(s.ctx); err != nil {
 		t.Fatal(err)
@@ -125,7 +126,7 @@ func (s *orderFilterTestSuite) SetupTest() {
 		s.orders[i].Edges.OrderStatus[0].ID = orderStatus.ID
 	}
 
-	s.repository = NewOrderFilter(client)
+	s.repository = NewOrderFilter()
 }
 
 func (s *orderFilterTestSuite) TearDownSuite() {
@@ -136,17 +137,22 @@ func (s *orderFilterTestSuite) TestOrderRepositoryWithFilter_OrdersByStatusTotal
 	t := s.T()
 
 	status := s.statusesNames[0].Status
-	totalOrders, err := s.repository.OrdersByStatusTotal(s.ctx, status)
+	ctx := s.ctx
+	tx, err := s.client.Tx(ctx)
+	assert.NoError(t, err)
+	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
+	totalOrders, err := s.repository.OrdersByStatusTotal(ctx, status)
 	if err != nil {
 		t.Fatal(err)
 	}
 	assert.Equal(t, 2, totalOrders)
 
 	status = s.statusesNames[1].Status
-	totalOrders, err = s.repository.OrdersByStatusTotal(s.ctx, status)
+	totalOrders, err = s.repository.OrdersByStatusTotal(ctx, status)
 	if err != nil {
 		t.Fatal(err)
 	}
+	assert.NoError(t, tx.Commit())
 	assert.Equal(t, 3, totalOrders)
 }
 
@@ -158,8 +164,13 @@ func (s *orderFilterTestSuite) TestOrderRepositoryWithFilter_OrdersByStatus_Empt
 	orderBy := ""
 	orderColumn := order.FieldID
 	status := s.statusesNames[0].Status
-	orders, err := s.repository.OrdersByStatus(s.ctx, status, limit, offset, orderBy, orderColumn)
+	ctx := s.ctx
+	tx, err := s.client.Tx(ctx)
+	assert.NoError(t, err)
+	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
+	orders, err := s.repository.OrdersByStatus(ctx, status, limit, offset, orderBy, orderColumn)
 	assert.Error(t, err)
+	assert.NoError(t, tx.Rollback())
 	assert.Nil(t, orders)
 }
 
@@ -171,8 +182,13 @@ func (s *orderFilterTestSuite) TestOrderRepositoryWithFilter_OrdersByStatus_Wron
 	orderBy := utils.AscOrder
 	orderColumn := order.FieldQuantity
 	status := s.statusesNames[0].Status
-	orders, err := s.repository.OrdersByStatus(s.ctx, status, limit, offset, orderBy, orderColumn)
+	ctx := s.ctx
+	tx, err := s.client.Tx(ctx)
+	assert.NoError(t, err)
+	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
+	orders, err := s.repository.OrdersByStatus(ctx, status, limit, offset, orderBy, orderColumn)
 	assert.Error(t, err)
+	assert.NoError(t, tx.Rollback())
 	assert.Nil(t, orders)
 }
 
@@ -184,8 +200,13 @@ func (s *orderFilterTestSuite) TestOrderRepositoryWithFilter_OrdersByStatus_Orde
 	orderBy := utils.DescOrder
 	orderColumn := order.FieldID
 	status := s.statusesNames[1].Status
-	orders, err := s.repository.OrdersByStatus(s.ctx, status, limit, offset, orderBy, orderColumn)
+	ctx := s.ctx
+	tx, err := s.client.Tx(ctx)
 	assert.NoError(t, err)
+	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
+	orders, err := s.repository.OrdersByStatus(ctx, status, limit, offset, orderBy, orderColumn)
+	assert.NoError(t, err)
+	assert.NoError(t, tx.Commit())
 	assert.Equal(t, 3, len(orders))
 	prevOrderID := math.MaxInt
 	for _, o := range orders {
@@ -203,8 +224,13 @@ func (s *orderFilterTestSuite) TestOrderRepositoryWithFilter_OrdersByStatus_Orde
 	orderBy := utils.DescOrder
 	orderColumn := order.FieldCreatedAt
 	status := s.statusesNames[1].Status
-	orders, err := s.repository.OrdersByStatus(s.ctx, status, limit, offset, orderBy, orderColumn)
+	ctx := s.ctx
+	tx, err := s.client.Tx(ctx)
 	assert.NoError(t, err)
+	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
+	orders, err := s.repository.OrdersByStatus(ctx, status, limit, offset, orderBy, orderColumn)
+	assert.NoError(t, err)
+	assert.NoError(t, tx.Commit())
 	assert.Equal(t, 3, len(orders))
 	prevOrderCreatedAt := time.Unix(1<<63-62135596801, 999999999)
 	for _, o := range orders {
@@ -222,8 +248,13 @@ func (s *orderFilterTestSuite) TestOrderRepositoryWithFilter_OrdersByStatus_Orde
 	orderBy := utils.AscOrder
 	orderColumn := order.FieldID
 	status := s.statusesNames[1].Status
-	orders, err := s.repository.OrdersByStatus(s.ctx, status, limit, offset, orderBy, orderColumn)
+	ctx := s.ctx
+	tx, err := s.client.Tx(ctx)
 	assert.NoError(t, err)
+	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
+	orders, err := s.repository.OrdersByStatus(ctx, status, limit, offset, orderBy, orderColumn)
+	assert.NoError(t, err)
+	assert.NoError(t, tx.Commit())
 	assert.Equal(t, 3, len(orders))
 	prevOrderID := 0
 	for _, o := range orders {
@@ -241,8 +272,13 @@ func (s *orderFilterTestSuite) TestOrderRepositoryWithFilter_OrdersByStatus_Orde
 	orderBy := utils.AscOrder
 	orderColumn := order.FieldCreatedAt
 	status := s.statusesNames[1].Status
-	orders, err := s.repository.OrdersByStatus(s.ctx, status, limit, offset, orderBy, orderColumn)
+	ctx := s.ctx
+	tx, err := s.client.Tx(ctx)
 	assert.NoError(t, err)
+	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
+	orders, err := s.repository.OrdersByStatus(ctx, status, limit, offset, orderBy, orderColumn)
+	assert.NoError(t, err)
+	assert.NoError(t, tx.Commit())
 	assert.Equal(t, 3, len(orders))
 	prevOrderCreatedAt := time.Unix(0, 0)
 	for _, o := range orders {
@@ -260,8 +296,13 @@ func (s *orderFilterTestSuite) TestOrderRepositoryWithFilter_OrdersByStatus_Limi
 	orderBy := utils.AscOrder
 	orderColumn := order.FieldCreatedAt
 	status := s.statusesNames[1].Status
-	orders, err := s.repository.OrdersByStatus(s.ctx, status, limit, offset, orderBy, orderColumn)
+	ctx := s.ctx
+	tx, err := s.client.Tx(ctx)
 	assert.NoError(t, err)
+	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
+	orders, err := s.repository.OrdersByStatus(ctx, status, limit, offset, orderBy, orderColumn)
+	assert.NoError(t, err)
+	assert.NoError(t, tx.Commit())
 	assert.GreaterOrEqual(t, limit, len(orders))
 	assert.Greater(t, len(s.orders), len(orders))
 }
@@ -274,8 +315,13 @@ func (s *orderFilterTestSuite) TestOrderRepositoryWithFilter_OrdersByStatus_Offs
 	orderBy := utils.AscOrder
 	orderColumn := order.FieldCreatedAt
 	status := s.statusesNames[1].Status
-	orders, err := s.repository.OrdersByStatus(s.ctx, status, limit, offset, orderBy, orderColumn)
+	ctx := s.ctx
+	tx, err := s.client.Tx(ctx)
 	assert.NoError(t, err)
+	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
+	orders, err := s.repository.OrdersByStatus(ctx, status, limit, offset, orderBy, orderColumn)
+	assert.NoError(t, err)
+	assert.NoError(t, tx.Commit())
 	assert.GreaterOrEqual(t, len(s.orders)-offset, len(orders))
 	assert.Greater(t, len(s.orders), len(orders))
 }
@@ -286,7 +332,11 @@ func (s *orderFilterTestSuite) TestOrderRepositoryWithFilter_OrdersByPeriodAndSt
 	status := s.statusesNames[0].Status
 	from := time.Now().Add(-2*time.Hour - time.Minute)
 	to := time.Now().Add(3 * time.Hour)
-	totalOrders, err := s.repository.OrdersByPeriodAndStatusTotal(s.ctx, from, to, status)
+	ctx := s.ctx
+	tx, err := s.client.Tx(ctx)
+	assert.NoError(t, err)
+	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
+	totalOrders, err := s.repository.OrdersByPeriodAndStatusTotal(ctx, from, to, status)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -295,10 +345,11 @@ func (s *orderFilterTestSuite) TestOrderRepositoryWithFilter_OrdersByPeriodAndSt
 	status = s.statusesNames[1].Status
 	from = time.Now().Add(-6 * time.Hour)
 	to = time.Now().Add(6 * time.Hour)
-	totalOrders, err = s.repository.OrdersByPeriodAndStatusTotal(s.ctx, from, to, status)
+	totalOrders, err = s.repository.OrdersByPeriodAndStatusTotal(ctx, from, to, status)
 	if err != nil {
 		t.Fatal(err)
 	}
+	assert.NoError(t, tx.Commit())
 	assert.Equal(t, 3, totalOrders)
 }
 
@@ -312,8 +363,13 @@ func (s *orderFilterTestSuite) TestOrderRepositoryWithFilter_OrdersByPeriodAndSt
 	status := s.statusesNames[0].Status
 	from := time.Now().Add(-2*time.Hour - time.Minute)
 	to := time.Now().Add(3 * time.Hour)
-	orders, err := s.repository.OrdersByPeriodAndStatus(s.ctx, from, to, status, limit, offset, orderBy, orderColumn)
+	ctx := s.ctx
+	tx, err := s.client.Tx(ctx)
+	assert.NoError(t, err)
+	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
+	orders, err := s.repository.OrdersByPeriodAndStatus(ctx, from, to, status, limit, offset, orderBy, orderColumn)
 	assert.Error(t, err)
+	assert.NoError(t, tx.Rollback())
 	assert.Nil(t, orders)
 }
 
@@ -327,8 +383,13 @@ func (s *orderFilterTestSuite) TestOrderRepositoryWithFilter_OrdersByPeriodAndSt
 	status := s.statusesNames[0].Status
 	from := time.Now().Add(-2*time.Hour - time.Minute)
 	to := time.Now().Add(3 * time.Hour)
-	orders, err := s.repository.OrdersByPeriodAndStatus(s.ctx, from, to, status, limit, offset, orderBy, orderColumn)
+	ctx := s.ctx
+	tx, err := s.client.Tx(ctx)
+	assert.NoError(t, err)
+	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
+	orders, err := s.repository.OrdersByPeriodAndStatus(ctx, from, to, status, limit, offset, orderBy, orderColumn)
 	assert.Error(t, err)
+	assert.NoError(t, tx.Rollback())
 	assert.Nil(t, orders)
 }
 
@@ -342,8 +403,13 @@ func (s *orderFilterTestSuite) TestOrderRepositoryWithFilter_OrdersByPeriodAndSt
 	status := s.statusesNames[1].Status
 	from := time.Now().Add(-3*time.Hour - time.Minute)
 	to := time.Now().Add(3 * time.Hour)
-	orders, err := s.repository.OrdersByPeriodAndStatus(s.ctx, from, to, status, limit, offset, orderBy, orderColumn)
+	ctx := s.ctx
+	tx, err := s.client.Tx(ctx)
 	assert.NoError(t, err)
+	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
+	orders, err := s.repository.OrdersByPeriodAndStatus(ctx, from, to, status, limit, offset, orderBy, orderColumn)
+	assert.NoError(t, err)
+	assert.NoError(t, tx.Commit())
 	assert.Equal(t, 2, len(orders))
 	prevOrderID := math.MaxInt
 	for _, o := range orders {
@@ -363,8 +429,13 @@ func (s *orderFilterTestSuite) TestOrderRepositoryWithFilter_OrdersByPeriodAndSt
 	status := s.statusesNames[1].Status
 	from := time.Now().Add(-3*time.Hour - time.Minute)
 	to := time.Now().Add(3 * time.Hour)
-	orders, err := s.repository.OrdersByPeriodAndStatus(s.ctx, from, to, status, limit, offset, orderBy, orderColumn)
+	ctx := s.ctx
+	tx, err := s.client.Tx(ctx)
 	assert.NoError(t, err)
+	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
+	orders, err := s.repository.OrdersByPeriodAndStatus(ctx, from, to, status, limit, offset, orderBy, orderColumn)
+	assert.NoError(t, err)
+	assert.NoError(t, tx.Commit())
 	assert.Equal(t, 2, len(orders))
 	prevOrderCreatedAt := time.Unix(1<<63-62135596801, 999999999)
 	for _, o := range orders {
@@ -384,8 +455,13 @@ func (s *orderFilterTestSuite) TestOrderRepositoryWithFilter_OrdersByPeriodAndSt
 	status := s.statusesNames[1].Status
 	from := time.Now().Add(-4*time.Hour - time.Minute)
 	to := time.Now().Add(3 * time.Hour)
-	orders, err := s.repository.OrdersByPeriodAndStatus(s.ctx, from, to, status, limit, offset, orderBy, orderColumn)
+	ctx := s.ctx
+	tx, err := s.client.Tx(ctx)
 	assert.NoError(t, err)
+	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
+	orders, err := s.repository.OrdersByPeriodAndStatus(ctx, from, to, status, limit, offset, orderBy, orderColumn)
+	assert.NoError(t, err)
+	assert.NoError(t, tx.Commit())
 	assert.Equal(t, 2, len(orders))
 	prevOrderID := 0
 	for _, o := range orders {
@@ -405,8 +481,13 @@ func (s *orderFilterTestSuite) TestOrderRepositoryWithFilter_OrdersByPeriodAndSt
 	status := s.statusesNames[1].Status
 	from := time.Now().Add(-4*time.Hour - time.Minute)
 	to := time.Now().Add(3 * time.Hour)
-	orders, err := s.repository.OrdersByPeriodAndStatus(s.ctx, from, to, status, limit, offset, orderBy, orderColumn)
+	ctx := s.ctx
+	tx, err := s.client.Tx(ctx)
 	assert.NoError(t, err)
+	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
+	orders, err := s.repository.OrdersByPeriodAndStatus(ctx, from, to, status, limit, offset, orderBy, orderColumn)
+	assert.NoError(t, err)
+	assert.NoError(t, tx.Commit())
 	assert.Equal(t, 2, len(orders))
 	prevOrderCreatedAt := time.Unix(0, 0)
 	for _, o := range orders {
@@ -426,8 +507,13 @@ func (s *orderFilterTestSuite) TestOrderRepositoryWithFilter_OrdersByPeriodAndSt
 	status := s.statusesNames[1].Status
 	from := time.Now().Add(-4*time.Hour - time.Minute)
 	to := time.Now().Add(3 * time.Hour)
-	orders, err := s.repository.OrdersByPeriodAndStatus(s.ctx, from, to, status, limit, offset, orderBy, orderColumn)
+	ctx := s.ctx
+	tx, err := s.client.Tx(ctx)
 	assert.NoError(t, err)
+	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
+	orders, err := s.repository.OrdersByPeriodAndStatus(ctx, from, to, status, limit, offset, orderBy, orderColumn)
+	assert.NoError(t, err)
+	assert.NoError(t, tx.Commit())
 	assert.Equal(t, limit, len(orders))
 	assert.Greater(t, len(s.orders), len(orders))
 }
@@ -442,8 +528,13 @@ func (s *orderFilterTestSuite) TestOrderRepositoryWithFilter_OrdersByPeriodAndSt
 	status := s.statusesNames[1].Status
 	from := time.Now().Add(-4*time.Hour - time.Minute)
 	to := time.Now().Add(3 * time.Hour)
-	orders, err := s.repository.OrdersByPeriodAndStatus(s.ctx, from, to, status, limit, offset, orderBy, orderColumn)
+	ctx := s.ctx
+	tx, err := s.client.Tx(ctx)
 	assert.NoError(t, err)
+	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
+	orders, err := s.repository.OrdersByPeriodAndStatus(ctx, from, to, status, limit, offset, orderBy, orderColumn)
+	assert.NoError(t, err)
+	assert.NoError(t, tx.Commit())
 	assert.GreaterOrEqual(t, len(s.orders)-offset, len(orders))
 	assert.Greater(t, len(s.orders), len(orders))
 }

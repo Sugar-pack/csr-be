@@ -41,7 +41,7 @@ func TestSetOrderStatusHandler(t *testing.T) {
 		t.Fatal(err)
 	}
 	api := operations.NewBeAPI(swaggerSpec)
-	SetOrderStatusHandler(client, logger, api)
+	SetOrderStatusHandler(logger, api)
 	assert.NotEmpty(t, api.OrdersGetOrdersByStatusHandler)
 	assert.NotEmpty(t, api.OrdersGetOrdersByDateAndStatusHandler)
 	assert.NotEmpty(t, api.OrdersAddNewOrderStatusHandler)

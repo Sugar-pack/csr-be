@@ -13,8 +13,8 @@ import (
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/repositories"
 )
 
-func SetEquipmentStatusHandler(client *ent.Client, logger *zap.Logger, api *operations.BeAPI) {
-	equipmentStatusRepo := repositories.NewEquipmentStatusRepository(client)
+func SetEquipmentStatusHandler(logger *zap.Logger, api *operations.BeAPI) {
+	equipmentStatusRepo := repositories.NewEquipmentStatusRepository()
 	statusHandler := NewStatus(logger)
 
 	api.StatusPostStatusHandler = statusHandler.PostStatusFunc(equipmentStatusRepo)

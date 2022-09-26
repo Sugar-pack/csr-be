@@ -13,6 +13,7 @@ import (
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/enttest"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/order"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/utils"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/middlewares"
 )
 
 type OrderSuite struct {
@@ -34,7 +35,7 @@ func (s *OrderSuite) SetupTest() {
 	s.ctx = context.Background()
 	client := enttest.Open(t, "sqlite3", "file:orders?mode=memory&cache=shared&_fk=1")
 	s.client = client
-	s.repository = NewOrderRepository(s.client)
+	s.repository = NewOrderRepository()
 
 	s.users = []*ent.User{
 		{Login: "user1", Email: "user1@email.com", Password: "1234", Name: "user1"},
@@ -115,10 +116,15 @@ func (s *OrderSuite) TearDownSuite() {
 
 func (s *OrderSuite) TestOrderRepository_OrdersTotal() {
 	t := s.T()
-	totalOrders, err := s.repository.OrdersTotal(s.ctx, s.users[0].ID)
+	ctx := s.ctx
+	tx, err := s.client.Tx(ctx)
+	assert.NoError(t, err)
+	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
+	totalOrders, err := s.repository.OrdersTotal(ctx, s.users[0].ID)
 	if err != nil {
 		t.Fatal(err)
 	}
+	assert.NoError(t, tx.Commit())
 	assert.Equal(t, len(s.orders), totalOrders)
 }
 
@@ -128,8 +134,13 @@ func (s *OrderSuite) TestOrderRepository_List_EmptyOrderBy() {
 	offset := 0
 	orderBy := ""
 	orderColumn := order.FieldID
-	orders, err := s.repository.List(s.ctx, s.users[0].ID, limit, offset, orderBy, orderColumn)
+	ctx := s.ctx
+	tx, err := s.client.Tx(ctx)
+	assert.NoError(t, err)
+	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
+	orders, err := s.repository.List(ctx, s.users[0].ID, limit, offset, orderBy, orderColumn)
 	assert.Error(t, err)
+	assert.NoError(t, tx.Rollback())
 	assert.Nil(t, orders)
 }
 
@@ -139,8 +150,13 @@ func (s *OrderSuite) TestOrderRepository_List_WrongOrderColumn() {
 	offset := 0
 	orderBy := utils.AscOrder
 	orderColumn := order.FieldDescription
-	orders, err := s.repository.List(s.ctx, s.users[0].ID, limit, offset, orderBy, orderColumn)
+	ctx := s.ctx
+	tx, err := s.client.Tx(ctx)
+	assert.NoError(t, err)
+	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
+	orders, err := s.repository.List(ctx, s.users[0].ID, limit, offset, orderBy, orderColumn)
 	assert.Error(t, err)
+	assert.NoError(t, tx.Rollback())
 	assert.Nil(t, orders)
 }
 
@@ -150,10 +166,15 @@ func (s *OrderSuite) TestOrderRepository_List_OrderByIDDesc() {
 	offset := 0
 	orderBy := utils.DescOrder
 	orderColumn := order.FieldID
-	orders, err := s.repository.List(s.ctx, s.users[0].ID, limit, offset, orderBy, orderColumn)
+	ctx := s.ctx
+	tx, err := s.client.Tx(ctx)
+	assert.NoError(t, err)
+	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
+	orders, err := s.repository.List(ctx, s.users[0].ID, limit, offset, orderBy, orderColumn)
 	if err != nil {
 		t.Fatal(err)
 	}
+	assert.NoError(t, tx.Commit())
 	assert.Equal(t, len(s.orders), len(orders))
 	prevOrderID := math.MaxInt
 	for _, value := range orders {
@@ -169,10 +190,15 @@ func (s *OrderSuite) TestOrderRepository_List_OrderByRentStartDesc() {
 	offset := 0
 	orderBy := utils.DescOrder
 	orderColumn := order.FieldRentStart
-	orders, err := s.repository.List(s.ctx, s.users[0].ID, limit, offset, orderBy, orderColumn)
+	ctx := s.ctx
+	tx, err := s.client.Tx(ctx)
+	assert.NoError(t, err)
+	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
+	orders, err := s.repository.List(ctx, s.users[0].ID, limit, offset, orderBy, orderColumn)
 	if err != nil {
 		t.Fatal(err)
 	}
+	assert.NoError(t, tx.Commit())
 	assert.Equal(t, len(s.orders), len(orders))
 	prevOrderRentStart := time.Unix(1<<63-62135596801, 999999999)
 	for _, value := range orders {
@@ -188,10 +214,15 @@ func (s *OrderSuite) TestOrderRepository_List_OrderByIDAsc() {
 	offset := 0
 	orderBy := utils.AscOrder
 	orderColumn := order.FieldID
-	orders, err := s.repository.List(s.ctx, s.users[0].ID, limit, offset, orderBy, orderColumn)
+	ctx := s.ctx
+	tx, err := s.client.Tx(ctx)
+	assert.NoError(t, err)
+	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
+	orders, err := s.repository.List(ctx, s.users[0].ID, limit, offset, orderBy, orderColumn)
 	if err != nil {
 		t.Fatal(err)
 	}
+	assert.NoError(t, tx.Commit())
 	assert.Equal(t, len(s.orders), len(orders))
 	prevOrderID := 0
 	for _, value := range orders {
@@ -207,10 +238,15 @@ func (s *OrderSuite) TestOrderRepository_List_OrderByRentStartAsc() {
 	offset := 0
 	orderBy := utils.AscOrder
 	orderColumn := order.FieldRentStart
-	orders, err := s.repository.List(s.ctx, s.users[0].ID, limit, offset, orderBy, orderColumn)
+	ctx := s.ctx
+	tx, err := s.client.Tx(ctx)
+	assert.NoError(t, err)
+	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
+	orders, err := s.repository.List(ctx, s.users[0].ID, limit, offset, orderBy, orderColumn)
 	if err != nil {
 		t.Fatal(err)
 	}
+	assert.NoError(t, tx.Commit())
 	assert.Equal(t, len(s.orders), len(orders))
 	prevOrderRentStart := time.Unix(0, 0)
 	for _, value := range orders {
@@ -226,10 +262,15 @@ func (s *OrderSuite) TestOrderRepository_List_Limit() {
 	offset := 0
 	orderBy := utils.AscOrder
 	orderColumn := order.FieldID
-	orders, err := s.repository.List(s.ctx, s.users[0].ID, limit, offset, orderBy, orderColumn)
+	ctx := s.ctx
+	tx, err := s.client.Tx(ctx)
+	assert.NoError(t, err)
+	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
+	orders, err := s.repository.List(ctx, s.users[0].ID, limit, offset, orderBy, orderColumn)
 	if err != nil {
 		t.Fatal(err)
 	}
+	assert.NoError(t, tx.Commit())
 	assert.Equal(t, limit, len(orders))
 	assert.Greater(t, len(s.orders), len(orders))
 }
@@ -240,10 +281,15 @@ func (s *OrderSuite) TestOrderRepository_List_Offset() {
 	offset := 3
 	orderBy := utils.AscOrder
 	orderColumn := order.FieldID
-	orders, err := s.repository.List(s.ctx, s.users[0].ID, limit, offset, orderBy, orderColumn)
+	ctx := s.ctx
+	tx, err := s.client.Tx(ctx)
+	assert.NoError(t, err)
+	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
+	orders, err := s.repository.List(ctx, s.users[0].ID, limit, offset, orderBy, orderColumn)
 	if err != nil {
 		t.Fatal(err)
 	}
+	assert.NoError(t, tx.Commit())
 	assert.Equal(t, len(s.orders)-offset, len(orders))
 	assert.Greater(t, len(s.orders), len(orders))
 }

@@ -34,7 +34,7 @@ func TestSetEquipmentStatusHandler(t *testing.T) {
 		t.Fatal(err)
 	}
 	api := operations.NewBeAPI(swaggerSpec)
-	SetEquipmentStatusHandler(client, logger, api)
+	SetEquipmentStatusHandler(logger, api)
 	assert.NotEmpty(t, api.StatusPostStatusHandler)
 	assert.NotEmpty(t, api.StatusGetStatusesHandler)
 	assert.NotEmpty(t, api.StatusGetStatusHandler)

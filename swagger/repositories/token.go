@@ -4,8 +4,7 @@ import (
 	"context"
 
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/token"
-
-	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/middlewares"
 )
 
 type TokenRepository interface {
@@ -15,23 +14,30 @@ type TokenRepository interface {
 }
 
 type tokenRepository struct {
-	client *ent.Client
 }
 
 func (t *tokenRepository) UpdateAccessToken(ctx context.Context, accessToken, refreshToken string) error {
-	_, err := t.client.Token.Update().Where(token.RefreshToken(refreshToken)).SetAccessToken(accessToken).Save(ctx)
+	tx, err := middlewares.TxFromContext(ctx)
+	if err != nil {
+		return err
+	}
+	_, err = tx.Token.Update().Where(token.RefreshToken(refreshToken)).SetAccessToken(accessToken).Save(ctx)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func NewTokenRepository(client *ent.Client) TokenRepository {
-	return &tokenRepository{client: client}
+func NewTokenRepository() TokenRepository {
+	return &tokenRepository{}
 }
 
 func (t *tokenRepository) DeleteTokensByRefreshToken(ctx context.Context, refreshToken string) error {
-	_, err := t.client.Token.Delete().Where(token.RefreshTokenEQ(refreshToken)).Exec(ctx)
+	tx, err := middlewares.TxFromContext(ctx)
+	if err != nil {
+		return err
+	}
+	_, err = tx.Token.Delete().Where(token.RefreshTokenEQ(refreshToken)).Exec(ctx)
 	if err != nil {
 		return err
 	}
@@ -39,7 +45,11 @@ func (t *tokenRepository) DeleteTokensByRefreshToken(ctx context.Context, refres
 }
 
 func (t *tokenRepository) CreateTokens(ctx context.Context, ownerID int, accessToken, refreshToken string) error {
-	_, err := t.client.Token.
+	tx, err := middlewares.TxFromContext(ctx)
+	if err != nil {
+		return err
+	}
+	_, err = tx.Token.
 		Create().
 		SetOwnerID(ownerID).
 		SetAccessToken(accessToken).

@@ -10,6 +10,7 @@ import (
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/orderstatus"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/statusname"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/models"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/middlewares"
 )
 
 type OrderStatusRepository interface {
@@ -20,28 +21,31 @@ type OrderStatusRepository interface {
 }
 
 type orderStatusRepository struct {
-	client *ent.Client
 }
 
-func NewOrderStatusRepository(client *ent.Client) *orderStatusRepository {
-	return &orderStatusRepository{client: client}
+func NewOrderStatusRepository() *orderStatusRepository {
+	return &orderStatusRepository{}
 }
 
 func (r *orderStatusRepository) ApproveOrRejectOrder(ctx context.Context, userID int, status models.NewOrderStatus) error {
-	order, err := r.client.Order.Get(ctx, int(*status.OrderID))
+	tx, err := middlewares.TxFromContext(ctx)
+	if err != nil {
+		return err
+	}
+	order, err := tx.Order.Get(ctx, int(*status.OrderID))
 	if err != nil {
 		return fmt.Errorf("status history error, failed to get order: %s", err)
 	}
 
-	statusName, err := r.client.StatusName.Query().Where(statusname.Status(*status.Status)).Only(ctx)
+	statusName, err := tx.StatusName.Query().Where(statusname.Status(*status.Status)).Only(ctx)
 	if err != nil {
 		return fmt.Errorf("status history error, failed to get status name: %s", err)
 	}
-	user, err := r.client.User.Get(ctx, userID)
+	user, err := tx.User.Get(ctx, userID)
 	if err != nil {
 		return fmt.Errorf("status history error, failed to get user: %s", err)
 	}
-	_, err = r.client.OrderStatus.Create().
+	_, err = tx.OrderStatus.Create().
 		SetComment(*status.Comment).
 		SetCurrentDate(time.Time(*status.CreatedAt)).
 		SetOrder(order).
@@ -55,7 +59,11 @@ func (r *orderStatusRepository) ApproveOrRejectOrder(ctx context.Context, userID
 }
 
 func (r *orderStatusRepository) StatusHistory(ctx context.Context, orderId int) ([]*ent.OrderStatus, error) {
-	statuses, err := r.client.OrderStatus.Query().
+	tx, err := middlewares.TxFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+	statuses, err := tx.OrderStatus.Query().
 		QueryOrder().Where(order.IDEQ(orderId)).QueryOrderStatus().
 		WithOrder().WithStatusName().WithUsers().All(ctx)
 
@@ -66,20 +74,24 @@ func (r *orderStatusRepository) UpdateStatus(ctx context.Context, userID int, st
 	if status.OrderID == nil {
 		return fmt.Errorf("order id is required")
 	}
-	order, err := r.client.Order.Get(ctx, int(*status.OrderID))
+	tx, err := middlewares.TxFromContext(ctx)
+	if err != nil {
+		return err
+	}
+	order, err := tx.Order.Get(ctx, int(*status.OrderID))
 	if err != nil {
 		return fmt.Errorf("status history error, failed to get order: %s", err)
 	}
 
-	statusName, err := r.client.StatusName.Query().Where(statusname.Status(*status.Status)).Only(ctx)
+	statusName, err := tx.StatusName.Query().Where(statusname.Status(*status.Status)).Only(ctx)
 	if err != nil {
 		return fmt.Errorf("status history error, failed to get status name: %s", err)
 	}
-	user, err := r.client.User.Get(ctx, userID)
+	user, err := tx.User.Get(ctx, userID)
 	if err != nil {
 		return fmt.Errorf("status history error, failed to get user: %s", err)
 	}
-	_, err = r.client.OrderStatus.Create().
+	_, err = tx.OrderStatus.Create().
 		SetComment(*status.Comment).
 		SetCurrentDate(time.Time(*status.CreatedAt)).
 		SetOrder(order).
@@ -93,7 +105,11 @@ func (r *orderStatusRepository) UpdateStatus(ctx context.Context, userID int, st
 }
 
 func (r *orderStatusRepository) GetOrderCurrentStatus(ctx context.Context, orderId int) (*ent.OrderStatus, error) {
-	order, err := r.client.Order.Get(ctx, orderId)
+	tx, err := middlewares.TxFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+	order, err := tx.Order.Get(ctx, orderId)
 	if err != nil {
 		return nil, fmt.Errorf("status history error, failed to get order: %s", err)
 	}
@@ -106,7 +122,11 @@ func (r *orderStatusRepository) GetOrderCurrentStatus(ctx context.Context, order
 }
 
 func (r *orderStatusRepository) GetUserStatusHistory(ctx context.Context, userId int) ([]*ent.OrderStatus, error) {
-	user, err := r.client.User.Get(ctx, userId)
+	tx, err := middlewares.TxFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+	user, err := tx.User.Get(ctx, userId)
 	if err != nil {
 		return nil, fmt.Errorf("status history error, failed to get user: %s", err)
 	}

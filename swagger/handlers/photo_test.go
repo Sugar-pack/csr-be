@@ -43,7 +43,7 @@ func TestSetPhotoHandler(t *testing.T) {
 
 	manager := &servicesmock.FileManager{}
 
-	SetPhotoHandler(client, logger, api, manager)
+	SetPhotoHandler(logger, api, manager)
 	assert.NotEmpty(t, api.PhotosCreateNewPhotoHandler)
 	assert.NotEmpty(t, api.PhotosGetPhotoHandler)
 	assert.NotEmpty(t, api.PhotosDeletePhotoHandler)

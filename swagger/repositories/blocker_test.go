@@ -7,6 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/enttest"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/middlewares"
 
 	"github.com/stretchr/testify/suite"
 
@@ -43,7 +44,7 @@ func (s *blockerTestSuite) SetupTest() {
 	}
 	s.user = user
 
-	s.repository = NewBlockerRepository(s.client)
+	s.repository = NewBlockerRepository()
 }
 
 func (s *blockerTestSuite) TearDownSuite() {
@@ -52,9 +53,14 @@ func (s *blockerTestSuite) TearDownSuite() {
 
 func (s *blockerTestSuite) TestBlockerRepository_SetIsBlockedUser_SetTrue() {
 	t := s.T()
-	err := s.repository.SetIsBlockedUser(s.ctx, s.user.ID, true)
+	ctx := s.ctx
+	tx, err := s.client.Tx(ctx)
 	assert.NoError(t, err)
-	updatedUser, err := s.client.User.Get(s.ctx, s.user.ID)
+	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
+	err = s.repository.SetIsBlockedUser(ctx, s.user.ID, true)
+	assert.NoError(t, err)
+	assert.NoError(t, tx.Commit())
+	updatedUser, err := s.client.User.Get(ctx, s.user.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -63,9 +69,14 @@ func (s *blockerTestSuite) TestBlockerRepository_SetIsBlockedUser_SetTrue() {
 
 func (s *blockerTestSuite) TestBlockerRepository_SetIsBlockedUser_SetFalse() {
 	t := s.T()
-	err := s.repository.SetIsBlockedUser(s.ctx, s.user.ID, false)
+	ctx := s.ctx
+	tx, err := s.client.Tx(ctx)
 	assert.NoError(t, err)
-	updatedUser, err := s.client.User.Get(s.ctx, s.user.ID)
+	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
+	err = s.repository.SetIsBlockedUser(ctx, s.user.ID, false)
+	assert.NoError(t, err)
+	assert.NoError(t, tx.Commit())
+	updatedUser, err := s.client.User.Get(ctx, s.user.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -74,10 +85,15 @@ func (s *blockerTestSuite) TestBlockerRepository_SetIsBlockedUser_SetFalse() {
 
 func (s *blockerTestSuite) TestBlockerRepository_SetIsBlockedUser_NoUser() {
 	t := s.T()
-	err := s.client.User.DeleteOneID(s.user.ID).Exec(s.ctx)
+	ctx := s.ctx
+	tx, err := s.client.Tx(ctx)
+	assert.NoError(t, err)
+	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
+	err = s.client.User.DeleteOneID(s.user.ID).Exec(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = s.repository.SetIsBlockedUser(s.ctx, s.user.ID, false)
+	err = s.repository.SetIsBlockedUser(ctx, s.user.ID, false)
 	assert.Error(t, err)
+	assert.NoError(t, tx.Rollback())
 }

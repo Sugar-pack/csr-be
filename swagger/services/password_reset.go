@@ -94,7 +94,7 @@ func (p *passwordReset) VerifyTokenAndSendPassword(ctx context.Context, tokenToV
 		p.logger.Error("Error while hashing password", zap.String("password", password), zap.Error(err))
 		return err
 	}
-	tx, err := p.ChangePasswordByLogin(ctx, login, string(hashedPassword))
+	err = p.ChangePasswordByLogin(ctx, login, string(hashedPassword))
 	if err != nil {
 		p.logger.Error("Error while changing password", zap.String("login", login), zap.Error(err))
 		return err
@@ -102,23 +102,13 @@ func (p *passwordReset) VerifyTokenAndSendPassword(ctx context.Context, tokenToV
 	err = p.SendNewPassword(token.Edges.Users.Email, login, password)
 	if err != nil {
 		p.logger.Error("Error while sending new password to email", zap.String("login", login), zap.Error(err))
-		errRollback := tx.Rollback()
-		if errRollback != nil {
-			p.logger.Error("Error while rollback", zap.Error(errRollback))
-			return errRollback
-		}
-		return err
-	}
-	err = tx.Commit()
-	if err != nil {
-		p.logger.Error("Error while changing password", zap.String("login", login), zap.Error(err))
 		return err
 	}
 	errDelete := p.DeleteToken(ctx, tokenToVerify)
 	if errDelete != nil {
 		p.logger.Warn("Error while deleting token", zap.String("token", tokenToVerify), zap.Error(errDelete))
 	}
-	if p.Sender.IsSendRequired() == false {
+	if !p.Sender.IsSendRequired() {
 		p.logger.Info("password reset service: verified token, password wasn't send, sending parameter is set to false and send email is not required")
 	} else {
 		p.logger.Info("password reset service: verified token and send password")

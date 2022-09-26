@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/middlewares"
 )
 
 type BlockerRepository interface {
@@ -12,19 +12,22 @@ type BlockerRepository interface {
 }
 
 type blockerRepository struct {
-	client *ent.Client
 }
 
-func NewBlockerRepository(client *ent.Client) BlockerRepository {
-	return &blockerRepository{client: client}
+func NewBlockerRepository() BlockerRepository {
+	return &blockerRepository{}
 }
 
 func (r *blockerRepository) SetIsBlockedUser(ctx context.Context, userId int, isBlocked bool) error {
-	user, err := r.client.User.Get(ctx, userId)
+	tx, err := middlewares.TxFromContext(ctx)
+	if err != nil {
+		return err
+	}
+	user, err := tx.User.Get(ctx, userId)
 	if err != nil {
 		return fmt.Errorf("failed to get user: %w", err)
 	}
-	_, err = r.client.User.UpdateOne(user).SetIsBlocked(isBlocked).Save(ctx)
+	_, err = tx.User.UpdateOne(user).SetIsBlocked(isBlocked).Save(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to  update user's isBlocked status: %w", err)
 	}

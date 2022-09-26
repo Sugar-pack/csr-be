@@ -3,9 +3,11 @@ package repositories
 import (
 	"context"
 	"errors"
+
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/activearea"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/utils"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/middlewares"
 )
 
 type ActiveAreaRepository interface {
@@ -19,11 +21,10 @@ var fieldsToOrderAreas = []string{
 }
 
 type activeAreaRepository struct {
-	client *ent.Client
 }
 
-func NewActiveAreaRepository(client *ent.Client) ActiveAreaRepository {
-	return &activeAreaRepository{client: client}
+func NewActiveAreaRepository() ActiveAreaRepository {
+	return &activeAreaRepository{}
 }
 
 func (r *activeAreaRepository) AllActiveAreas(ctx context.Context, limit, offset int,
@@ -35,9 +36,17 @@ func (r *activeAreaRepository) AllActiveAreas(ctx context.Context, limit, offset
 	if err != nil {
 		return nil, err
 	}
-	return r.client.ActiveArea.Query().Order(orderFunc).Limit(limit).Offset(offset).All(ctx)
+	tx, err := middlewares.TxFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return tx.ActiveArea.Query().Order(orderFunc).Limit(limit).Offset(offset).All(ctx)
 }
 
 func (r *activeAreaRepository) TotalActiveAreas(ctx context.Context) (int, error) {
-	return r.client.ActiveArea.Query().Count(ctx)
+	tx, err := middlewares.TxFromContext(ctx)
+	if err != nil {
+		return 0, err
+	}
+	return tx.ActiveArea.Query().Count(ctx)
 }

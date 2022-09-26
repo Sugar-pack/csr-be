@@ -40,7 +40,7 @@ func TestSetOrderHandler(t *testing.T) {
 		t.Fatal(err)
 	}
 	api := operations.NewBeAPI(swaggerSpec)
-	SetOrderHandler(client, logger, api)
+	SetOrderHandler(logger, api)
 	assert.NotEmpty(t, api.OrdersGetAllOrdersHandler)
 	assert.NotEmpty(t, api.OrdersCreateOrderHandler)
 	assert.NotEmpty(t, api.OrdersUpdateOrderHandler)
@@ -173,8 +173,6 @@ func (s *orderTestSuite) TestOrder_ListOrder_NotFound() {
 	ctx := request.Context()
 
 	userID := 1
-	var orderList []*ent.Order
-	orderList = append(orderList, orderWithNoEdges())
 	s.orderRepository.On("OrdersTotal", ctx, userID).Return(0, nil)
 
 	handlerFunc := s.orderHandler.ListOrderFunc(s.orderRepository)

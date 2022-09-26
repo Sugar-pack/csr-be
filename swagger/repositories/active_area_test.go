@@ -2,12 +2,15 @@ package repositories
 
 import (
 	"context"
-	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/activearea"
-	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/utils"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/suite"
 	"math"
 	"testing"
+
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/activearea"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/utils"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/middlewares"
+	_ "github.com/mattn/go-sqlite3"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/suite"
 
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/enttest"
@@ -31,7 +34,7 @@ func (s *ActiveAreasSuite) SetupTest() {
 	s.ctx = context.Background()
 	client := enttest.Open(t, "sqlite3", "file:activeareas?mode=memory&cache=shared&_fk=1")
 	s.client = client
-	s.repository = NewActiveAreaRepository(s.client)
+	s.repository = NewActiveAreaRepository()
 
 	s.activeAreas = make(map[int]string)
 	s.activeAreas[1] = "area 1"
@@ -66,8 +69,13 @@ func (s *ActiveAreasSuite) TestActiveAreaRepository_AllActiveAreasEmptyOrderBy()
 	offset := 0
 	orderBy := ""
 	orderColumn := activearea.FieldName
-	activeAreas, err := s.repository.AllActiveAreas(s.ctx, limit, offset, orderBy, orderColumn)
+	ctx := s.ctx
+	tx, err := s.client.Tx(ctx)
+	assert.NoError(t, err)
+	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
+	activeAreas, err := s.repository.AllActiveAreas(ctx, limit, offset, orderBy, orderColumn)
 	assert.Error(t, err)
+	assert.NoError(t, tx.Rollback())
 	assert.Nil(t, activeAreas)
 }
 
@@ -77,8 +85,13 @@ func (s *ActiveAreasSuite) TestActiveAreaRepository_AllActiveAreasEmptyOrderColu
 	offset := 0
 	orderBy := utils.AscOrder
 	orderColumn := ""
-	activeAreas, err := s.repository.AllActiveAreas(s.ctx, limit, offset, orderBy, orderColumn)
+	ctx := s.ctx
+	tx, err := s.client.Tx(ctx)
+	assert.NoError(t, err)
+	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
+	activeAreas, err := s.repository.AllActiveAreas(ctx, limit, offset, orderBy, orderColumn)
 	assert.Error(t, err)
+	assert.NoError(t, tx.Rollback())
 	assert.Nil(t, activeAreas)
 }
 
@@ -88,10 +101,15 @@ func (s *ActiveAreasSuite) TestActiveAreaRepository_AllActiveAreasOrderByNameDes
 	offset := 0
 	orderBy := utils.DescOrder
 	orderColumn := activearea.FieldName
-	activeAreas, err := s.repository.AllActiveAreas(s.ctx, limit, offset, orderBy, orderColumn)
+	ctx := s.ctx
+	tx, err := s.client.Tx(ctx)
+	assert.NoError(t, err)
+	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
+	activeAreas, err := s.repository.AllActiveAreas(ctx, limit, offset, orderBy, orderColumn)
 	if err != nil {
 		t.Fatal(err)
 	}
+	assert.NoError(t, tx.Commit())
 	assert.Equal(t, len(s.activeAreas), len(activeAreas))
 	prevAreaName := "zzzzzzzzzzzzzzzzzzzzzzzzz"
 	for _, value := range activeAreas {
@@ -107,10 +125,15 @@ func (s *ActiveAreasSuite) TestActiveAreaRepository_AllActiveAreasOrderByIDDesc(
 	offset := 0
 	orderBy := utils.DescOrder
 	orderColumn := activearea.FieldID
-	activeAreas, err := s.repository.AllActiveAreas(s.ctx, limit, offset, orderBy, orderColumn)
+	ctx := s.ctx
+	tx, err := s.client.Tx(ctx)
+	assert.NoError(t, err)
+	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
+	activeAreas, err := s.repository.AllActiveAreas(ctx, limit, offset, orderBy, orderColumn)
 	if err != nil {
 		t.Fatal(err)
 	}
+	assert.NoError(t, tx.Commit())
 	assert.Equal(t, len(s.activeAreas), len(activeAreas))
 	prevAreaID := math.MaxInt
 	for _, value := range activeAreas {
@@ -126,10 +149,15 @@ func (s *ActiveAreasSuite) TestActiveAreaRepository_AllActiveAreasOrderByNameAsc
 	offset := 0
 	orderBy := utils.AscOrder
 	orderColumn := activearea.FieldName
-	activeAreas, err := s.repository.AllActiveAreas(s.ctx, limit, offset, orderBy, orderColumn)
+	ctx := s.ctx
+	tx, err := s.client.Tx(ctx)
+	assert.NoError(t, err)
+	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
+	activeAreas, err := s.repository.AllActiveAreas(ctx, limit, offset, orderBy, orderColumn)
 	if err != nil {
 		t.Fatal(err)
 	}
+	assert.NoError(t, tx.Commit())
 	assert.Equal(t, len(s.activeAreas), len(activeAreas))
 	prevAreaName := ""
 	for _, value := range activeAreas {
@@ -145,10 +173,15 @@ func (s *ActiveAreasSuite) TestActiveAreaRepository_AllActiveAreasOrderByIDAsc()
 	offset := 0
 	orderBy := utils.AscOrder
 	orderColumn := activearea.FieldID
-	activeAreas, err := s.repository.AllActiveAreas(s.ctx, limit, offset, orderBy, orderColumn)
+	ctx := s.ctx
+	tx, err := s.client.Tx(ctx)
+	assert.NoError(t, err)
+	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
+	activeAreas, err := s.repository.AllActiveAreas(ctx, limit, offset, orderBy, orderColumn)
 	if err != nil {
 		t.Fatal(err)
 	}
+	assert.NoError(t, tx.Commit())
 	assert.Equal(t, len(s.activeAreas), len(activeAreas))
 	prevAreaID := 0
 	for _, value := range activeAreas {
@@ -164,10 +197,15 @@ func (s *ActiveAreasSuite) TestActiveAreaRepository_LimitActiveAreas() {
 	offset := 0
 	orderBy := utils.AscOrder
 	orderColumn := activearea.FieldName
-	activeAreas, err := s.repository.AllActiveAreas(s.ctx, limit, offset, orderBy, orderColumn)
+	ctx := s.ctx
+	tx, err := s.client.Tx(ctx)
+	assert.NoError(t, err)
+	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
+	activeAreas, err := s.repository.AllActiveAreas(ctx, limit, offset, orderBy, orderColumn)
 	if err != nil {
 		t.Fatal(err)
 	}
+	assert.NoError(t, tx.Commit())
 	assert.GreaterOrEqual(t, limit, len(activeAreas))
 }
 
@@ -177,19 +215,29 @@ func (s *ActiveAreasSuite) TestActiveAreaRepository_OffsetActiveAreas() {
 	offset := 6
 	orderBy := utils.AscOrder
 	orderColumn := activearea.FieldName
-	activeAreas, err := s.repository.AllActiveAreas(s.ctx, limit, offset, orderBy, orderColumn)
+	ctx := s.ctx
+	tx, err := s.client.Tx(ctx)
+	assert.NoError(t, err)
+	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
+	activeAreas, err := s.repository.AllActiveAreas(ctx, limit, offset, orderBy, orderColumn)
 	if err != nil {
 		t.Fatal(err)
 	}
+	assert.NoError(t, tx.Commit())
 	assert.Equal(t, len(s.activeAreas)-offset, len(activeAreas))
 }
 
 func (s *ActiveAreasSuite) TestActiveAreaRepository_TotalActiveAreas() {
 	t := s.T()
-	totalAreas, err := s.repository.TotalActiveAreas(s.ctx)
+	ctx := s.ctx
+	tx, err := s.client.Tx(ctx)
+	assert.NoError(t, err)
+	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
+	totalAreas, err := s.repository.TotalActiveAreas(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
+	assert.NoError(t, tx.Commit())
 	assert.Equal(t, len(s.activeAreas), totalAreas)
 }
 
