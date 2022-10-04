@@ -60,6 +60,29 @@ func (_m *CategoryRepository) AllCategoriesTotal(ctx context.Context) (int, erro
 	return r0, r1
 }
 
+// CategoryByEquipmentID provides a mock function with given fields: ctx, equipmentID
+func (_m *CategoryRepository) CategoryByEquipmentID(ctx context.Context, equipmentID int) (*ent.Category, error) {
+	ret := _m.Called(ctx, equipmentID)
+
+	var r0 *ent.Category
+	if rf, ok := ret.Get(0).(func(context.Context, int) *ent.Category); ok {
+		r0 = rf(ctx, equipmentID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*ent.Category)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, int) error); ok {
+		r1 = rf(ctx, equipmentID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // CategoryByID provides a mock function with given fields: ctx, id
 func (_m *CategoryRepository) CategoryByID(ctx context.Context, id int) (*ent.Category, error) {
 	ret := _m.Called(ctx, id)

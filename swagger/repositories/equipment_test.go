@@ -37,11 +37,11 @@ func (s *EquipmentSuite) SetupTest() {
 	s.repository = NewEquipmentRepository()
 
 	statusName := "status"
-	_, err := s.client.Statuses.Delete().Exec(s.ctx) // clean up
+	_, err := s.client.EquipmentStatusName.Delete().Exec(s.ctx) // clean up
 	if err != nil {
 		t.Fatal(err)
 	}
-	status, err := s.client.Statuses.Create().SetName(statusName).Save(s.ctx)
+	status, err := s.client.EquipmentStatusName.Create().SetName(statusName).Save(s.ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -94,7 +94,7 @@ func (s *EquipmentSuite) SetupTest() {
 	}
 	for i, value := range s.equipments {
 		eq, errCreate := s.client.Equipment.Create().
-			SetName(value.Name).SetTitle(value.Title).SetStatus(status).SetCategory(category).SetSubcategory(subcategory).
+			SetName(value.Name).SetTitle(value.Title).SetCurrentStatus(status).SetCategory(category).SetSubcategory(subcategory).
 			Save(s.ctx)
 		if errCreate != nil {
 			t.Fatal(errCreate)

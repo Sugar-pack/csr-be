@@ -140,12 +140,17 @@ func mapSubcategory(subcategory *ent.Subcategory) (*models.Subcategory, error) {
 	if subcategory == nil {
 		return nil, errors.New("subcategory is nil")
 	}
-	model := &models.Subcategory{
-		ID:   int64(subcategory.ID),
-		Name: &subcategory.Name,
+	if subcategory.Edges.Category == nil {
+		return nil, errors.New("category is nil")
 	}
-	if subcategory.Edges.Category != nil {
-		model.Category = int64(subcategory.Edges.Category.ID)
+	subcategoryID := int64(subcategory.ID)
+	categoryID := int64(subcategory.Edges.Category.ID)
+	model := &models.Subcategory{
+		Category:            &categoryID,
+		ID:                  &subcategoryID,
+		MaxReservationTime:  &subcategory.MaxReservationTime,
+		MaxReservationUnits: &subcategory.MaxReservationUnits,
+		Name:                &subcategory.Name,
 	}
 	return model, nil
 }

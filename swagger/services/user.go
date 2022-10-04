@@ -16,7 +16,7 @@ import (
 )
 
 const (
-	accessExpireTime  = 15 * time.Minute
+	accessExpireTime  = 60 * time.Minute
 	refreshExpireTime = 148 * time.Hour
 )
 

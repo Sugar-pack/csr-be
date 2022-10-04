@@ -70,8 +70,8 @@ func ValidEquipment(t *testing.T, id int) *ent.Equipment {
 		ID:   id,
 		Name: fmt.Sprintf("test equipment %d", id),
 		Edges: ent.EquipmentEdges{
-			Category: &ent.Category{},
-			Status:   &ent.Statuses{},
+			Category:      &ent.Category{},
+			CurrentStatus: &ent.EquipmentStatusName{},
 			Photo: &ent.Photo{
 				ID: "photoid",
 			},

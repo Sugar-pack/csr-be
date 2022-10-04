@@ -12,10 +12,10 @@ import (
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/client"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/client/categories"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/client/equipment"
+	eqStatusName "git.epam.com/epm-lstr/epm-lstr-lc/be/client/equipment_status_name"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/client/pet_kind"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/client/pet_size"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/client/photos"
-	"git.epam.com/epm-lstr/epm-lstr-lc/be/client/status"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/models"
 	utils "git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/integration-tests/common"
 )
@@ -459,7 +459,8 @@ func setParameters(ctx context.Context, client *client.Be, auth runtime.ClientAu
 	catName := "Том"
 	rDate := "2018"
 
-	status, err := client.Status.GetStatus(status.NewGetStatusParamsWithContext(ctx).WithStatusID(1), auth)
+	status, err := client.EquipmentStatusName.GetEquipmentStatusName(
+		eqStatusName.NewGetEquipmentStatusNameParamsWithContext(ctx).WithStatusID(1), auth)
 	if err != nil {
 		return nil, err
 	}

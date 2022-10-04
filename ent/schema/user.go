@@ -46,7 +46,7 @@ func (User) Edges() []ent.Edge {
 		edge.From("role", Role.Type).Ref("users").Unique(),
 		edge.To("tokens", Token.Type),
 		edge.From("active_areas", ActiveArea.Type).Ref("users"),
-		edge.From("order", Order.Type).Ref("users"),
+		edge.To("order", Order.Type),
 		edge.To("order_status", OrderStatus.Type),
 		edge.To("password_reset", PasswordReset.Type),
 		edge.To("registration_confirm", RegistrationConfirm.Type),

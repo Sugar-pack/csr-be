@@ -28,6 +28,7 @@ import (
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/restapi"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/restapi/operations"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/restapi/operations/orders"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/repositories"
 )
 
 func TestSetOrderStatusHandler(t *testing.T) {
@@ -51,15 +52,20 @@ func TestSetOrderStatusHandler(t *testing.T) {
 
 type OrderStatusTestSuite struct {
 	suite.Suite
-	logger                *zap.Logger
-	statusNameRepository  *repomock.StatusNameRepository
-	orderStatusRepository *repomock.OrderStatusRepository
-	orderFilterRepository *repomock.OrderRepositoryWithFilter
-	orderStatus           *OrderStatus
+	logger                    *zap.Logger
+	statusNameRepository      *repomock.OrderStatusNameRepository
+	orderStatusRepository     *repomock.OrderStatusRepository
+	orderFilterRepository     *repomock.OrderRepositoryWithFilter
+	equipmentStatusRepository *repomock.EquipmentStatusRepository
+	orderStatus               *OrderStatus
 }
 
 func orderWithEdges(t *testing.T, id int) *ent.Order {
 	t.Helper()
+	equipment := &ent.Equipment{
+		ID:          id,
+		Description: "description",
+	}
 	return &ent.Order{
 		ID:          id,
 		Description: fmt.Sprintf("test description %d", id),
@@ -68,28 +74,33 @@ func orderWithEdges(t *testing.T, id int) *ent.Order {
 		RentEnd:     time.Now().Add(time.Duration(id*24) * time.Hour),
 		CreatedAt:   time.Now().Add(time.Duration(-id) * time.Hour),
 		Edges: ent.OrderEdges{
-			Users: []*ent.User{
-				{
-					ID:    1,
-					Login: "login",
-				},
+			Users: &ent.User{
+				ID:    1,
+				Login: "login",
 			},
-			Equipments: []*ent.Equipment{
-				{
-					Description: "description",
-				},
-			},
+			Equipments: []*ent.Equipment{equipment},
 			OrderStatus: []*ent.OrderStatus{
 				{
 					ID: id,
 					Edges: ent.OrderStatusEdges{
-						StatusName: &ent.StatusName{
+						OrderStatusName: &ent.OrderStatusName{
 							ID: id%2 + 1,
 						},
 						Users: &ent.User{
 							ID: 1,
 						},
+						Order: &ent.Order{
+							ID: id,
+							Edges: ent.OrderEdges{
+								Equipments: []*ent.Equipment{equipment},
+							},
+						},
 					},
+				},
+			},
+			EquipmentStatus: []*ent.EquipmentStatus{
+				{
+					ID: id,
 				},
 			},
 		},
@@ -103,26 +114,27 @@ func TestOrderStatusSuite(t *testing.T) {
 
 func (s *OrderStatusTestSuite) SetupTest() {
 	s.logger = zap.NewExample()
-	s.statusNameRepository = &repomock.StatusNameRepository{}
+	s.statusNameRepository = &repomock.OrderStatusNameRepository{}
 	s.orderStatusRepository = &repomock.OrderStatusRepository{}
 	s.orderFilterRepository = &repomock.OrderRepositoryWithFilter{}
+	s.equipmentStatusRepository = &repomock.EquipmentStatusRepository{}
 	s.orderStatus = NewOrderStatus(s.logger)
 }
 
-func (s *OrderStatusTestSuite) TestOrderStatus_GetAllStatusNames_OK() {
+func (s *OrderStatusTestSuite) TestOrderStatus_GetAllOrderStatusNames_OK() {
 	t := s.T()
 	request := http.Request{}
 	ctx := request.Context()
 	count := 1
-	statuses := make([]*ent.StatusName, count)
+	statuses := make([]*ent.OrderStatusName, count)
 	id := 1
 	statusName := "test status"
-	statuses[0] = &ent.StatusName{
+	statuses[0] = &ent.OrderStatusName{
 		ID:     id,
 		Status: statusName,
 	}
 
-	s.statusNameRepository.On("ListOfStatuses", ctx).Return(statuses, nil)
+	s.statusNameRepository.On("ListOfOrderStatusNames", ctx).Return(statuses, nil)
 	handlerFunc := s.orderStatus.GetAllStatusNames(s.statusNameRepository)
 	data := orders.GetAllStatusNamesParams{
 		HTTPRequest: &request,
@@ -141,12 +153,12 @@ func (s *OrderStatusTestSuite) TestOrderStatus_GetAllStatusNames_OK() {
 	assert.Equal(t, statusName, *expectedStatuses[0].Name)
 }
 
-func (s *OrderStatusTestSuite) TestOrderStatus_GetAllStatusNames_RepoErr() {
+func (s *OrderStatusTestSuite) TestOrderStatus_GetAllOrderStatusNames_RepoErr() {
 	t := s.T()
 	request := http.Request{}
 	ctx := request.Context()
 	err := errors.New("test error")
-	s.statusNameRepository.On("ListOfStatuses", ctx).Return(nil, err)
+	s.statusNameRepository.On("ListOfOrderStatusNames", ctx).Return(nil, err)
 	handlerFunc := s.orderStatus.GetAllStatusNames(s.statusNameRepository)
 	data := orders.GetAllStatusNamesParams{
 		HTTPRequest: &request,
@@ -158,13 +170,13 @@ func (s *OrderStatusTestSuite) TestOrderStatus_GetAllStatusNames_RepoErr() {
 	assert.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
 }
 
-func (s *OrderStatusTestSuite) TestOrderStatus_GetAllStatusNames_MapError() {
+func (s *OrderStatusTestSuite) TestOrderStatus_GetAllOrderStatusNames_MapError() {
 	t := s.T()
 	request := http.Request{}
 	ctx := request.Context()
-	statuses := make([]*ent.StatusName, 1)
+	statuses := make([]*ent.OrderStatusName, 1)
 	statuses[0] = nil
-	s.statusNameRepository.On("ListOfStatuses", ctx).Return(statuses, nil)
+	s.statusNameRepository.On("ListOfOrderStatusNames", ctx).Return(statuses, nil)
 	handlerFunc := s.orderStatus.GetAllStatusNames(s.statusNameRepository)
 	data := orders.GetAllStatusNamesParams{
 		HTTPRequest: &request,
@@ -316,7 +328,7 @@ func (s *OrderStatusTestSuite) TestOrderStatus_OrderStatusesHistory_OK() {
 		Comment:     "comment",
 		CurrentDate: time.Now().UTC(),
 		Edges: ent.OrderStatusEdges{
-			StatusName: &ent.StatusName{
+			OrderStatusName: &ent.OrderStatusName{
 				ID:     0,
 				Status: "test status",
 			},
@@ -342,7 +354,7 @@ func (s *OrderStatusTestSuite) TestOrderStatus_OrderStatusesHistory_OK() {
 	assert.Equal(t, history[0].ID, int(*(*response)[0].ID))
 	assert.Equal(t, history[0].Comment, *(*response)[0].Comment)
 	assert.Equal(t, strfmt.DateTime(history[0].CurrentDate).String(), (*response)[0].CreatedAt.String())
-	assert.Equal(t, history[0].Edges.StatusName.Status, *(*response)[0].Status)
+	assert.Equal(t, history[0].Edges.OrderStatusName.Status, *(*response)[0].Status)
 	assert.Equal(t, history[0].Edges.Users.Login, *(*response)[0].ChangedBy.Name)
 	assert.Equal(t, history[0].Edges.Users.ID, int(*(*response)[0].ChangedBy.ID))
 	s.orderStatusRepository.AssertExpectations(t)
@@ -362,10 +374,10 @@ func (s *OrderStatusTestSuite) TestOrderStatus_AddNewStatusToOrder_EmptyData() {
 		Login: login,
 		Role:  role,
 	}
-	handlerFunc := s.orderStatus.AddNewStatusToOrder(s.orderStatusRepository)
+	handlerFunc := s.orderStatus.AddNewStatusToOrder(s.orderStatusRepository, s.equipmentStatusRepository)
 	data := orders.AddNewOrderStatusParams{
 		HTTPRequest: &request,
-		Data:        nil,
+		Data:        &models.NewOrderStatus{},
 	}
 
 	resp := handlerFunc(data, access)
@@ -382,15 +394,24 @@ func (s *OrderStatusTestSuite) TestOrderStatus_AddNewStatusToOrder_NoAccess() {
 	login := "login"
 	role := &authentication.Role{
 		Id:   userID,
-		Slug: "not admin",
+		Slug: "user",
 	}
 	access := authentication.Auth{
 		Id:    userID,
 		Login: login,
 		Role:  role,
 	}
-	handlerFunc := s.orderStatus.AddNewStatusToOrder(s.orderStatusRepository)
-	data := &models.NewOrderStatus{}
+	handlerFunc := s.orderStatus.AddNewStatusToOrder(s.orderStatusRepository, s.equipmentStatusRepository)
+	statusComment := "test comment"
+	now := strfmt.DateTime(time.Now())
+	orderID := int64(1)
+	statusID := repositories.OrderStatusApproved
+	data := &models.NewOrderStatus{
+		Comment:   &statusComment,
+		CreatedAt: &now,
+		OrderID:   &orderID,
+		Status:    &statusID,
+	}
 	params := orders.AddNewOrderStatusParams{
 		HTTPRequest: &request,
 		Data:        data,
@@ -418,15 +439,24 @@ func (s *OrderStatusTestSuite) TestOrderStatus_AddNewStatusToOrder_RepoError() {
 		Login: login,
 		Role:  role,
 	}
-	handlerFunc := s.orderStatus.AddNewStatusToOrder(s.orderStatusRepository)
-	data := &models.NewOrderStatus{}
+	statusComment := "test comment"
+	now := strfmt.DateTime(time.Now())
+	orderID := int64(1)
+	statusID := repositories.OrderStatusApproved
+	data := &models.NewOrderStatus{
+		Comment:   &statusComment,
+		CreatedAt: &now,
+		OrderID:   &orderID,
+		Status:    &statusID,
+	}
+	handlerFunc := s.orderStatus.AddNewStatusToOrder(s.orderStatusRepository, s.equipmentStatusRepository)
 	params := orders.AddNewOrderStatusParams{
 		HTTPRequest: &request,
 		Data:        data,
 	}
 
 	err := errors.New("error")
-	s.orderStatusRepository.On("UpdateStatus", ctx, userID, *data).Return(err)
+	s.orderStatusRepository.On("GetOrderCurrentStatus", ctx, int(*data.OrderID)).Return(nil, err)
 
 	resp := handlerFunc(params, access)
 	responseRecorder := httptest.NewRecorder()
@@ -436,7 +466,7 @@ func (s *OrderStatusTestSuite) TestOrderStatus_AddNewStatusToOrder_RepoError() {
 	s.orderStatusRepository.AssertExpectations(t)
 }
 
-func (s *OrderStatusTestSuite) TestOrderStatus_AddNewStatusToOrder_OK() {
+func (s *OrderStatusTestSuite) TestOrderStatus_AddNewStatusToOrder_InReviewToApprovedOK() {
 	t := s.T()
 	request := http.Request{}
 	ctx := request.Context()
@@ -444,20 +474,34 @@ func (s *OrderStatusTestSuite) TestOrderStatus_AddNewStatusToOrder_OK() {
 	login := "login"
 	role := &authentication.Role{
 		Id:   userID,
-		Slug: authentication.AdminSlug,
+		Slug: authentication.ManagerSlug,
 	}
 	access := authentication.Auth{
 		Id:    userID,
 		Login: login,
 		Role:  role,
 	}
-	handlerFunc := s.orderStatus.AddNewStatusToOrder(s.orderStatusRepository)
-	data := &models.NewOrderStatus{}
+	handlerFunc := s.orderStatus.AddNewStatusToOrder(s.orderStatusRepository, s.equipmentStatusRepository)
+	statusComment := "test comment"
+	now := strfmt.DateTime(time.Now())
+	orderID := int64(1)
+	statusID := repositories.OrderStatusApproved
+	data := &models.NewOrderStatus{
+		Comment:   &statusComment,
+		CreatedAt: &now,
+		OrderID:   &orderID,
+		Status:    &statusID,
+	}
 	params := orders.AddNewOrderStatusParams{
 		HTTPRequest: &request,
 		Data:        data,
 	}
-
+	existingOrder := orderWithEdges(t, 1)
+	s.orderStatusRepository.On("GetOrderCurrentStatus", ctx, int(*data.OrderID)).
+		Return(existingOrder.Edges.OrderStatus[0], nil)
+	s.equipmentStatusRepository.On("GetEquipmentsStatusesByOrder", ctx,
+		existingOrder.ID).
+		Return(existingOrder.Edges.EquipmentStatus, nil)
 	s.orderStatusRepository.On("UpdateStatus", ctx, userID, *data).Return(nil)
 
 	resp := handlerFunc(params, access)

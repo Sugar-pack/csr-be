@@ -20,7 +20,7 @@ import (
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/models"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/restapi"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/restapi/operations"
-	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/restapi/operations/status"
+	eqStatusName "git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/restapi/operations/equipment_status_name"
 )
 
 func TestSetEquipmentStatusHandler(t *testing.T) {
@@ -34,18 +34,18 @@ func TestSetEquipmentStatusHandler(t *testing.T) {
 		t.Fatal(err)
 	}
 	api := operations.NewBeAPI(swaggerSpec)
-	SetEquipmentStatusHandler(logger, api)
-	assert.NotEmpty(t, api.StatusPostStatusHandler)
-	assert.NotEmpty(t, api.StatusGetStatusesHandler)
-	assert.NotEmpty(t, api.StatusGetStatusHandler)
-	assert.NotEmpty(t, api.StatusDeleteStatusHandler)
+	SetEquipmentStatusNameHandler(logger, api)
+	assert.NotEmpty(t, api.EquipmentStatusNamePostEquipmentStatusNameHandler)
+	assert.NotEmpty(t, api.EquipmentStatusNameGetEquipmentStatusNameHandler)
+	assert.NotEmpty(t, api.EquipmentStatusNameGetEquipmentStatusNameHandler)
+	assert.NotEmpty(t, api.EquipmentStatusNameDeleteEquipmentStatusNameHandler)
 }
 
 type StatusTestSuite struct {
 	suite.Suite
 	logger     *zap.Logger
-	repository *repomock.EquipmentStatusRepository
-	handler    *Status
+	repository *repomock.EquipmentStatusNameRepository
+	handler    *EquipmentStatusName
 }
 
 func TestStatusSuite(t *testing.T) {
@@ -54,8 +54,8 @@ func TestStatusSuite(t *testing.T) {
 
 func (s *StatusTestSuite) SetupTest() {
 	s.logger = zap.NewNop()
-	s.repository = &repomock.EquipmentStatusRepository{}
-	s.handler = NewStatus(s.logger)
+	s.repository = &repomock.EquipmentStatusNameRepository{}
+	s.handler = NewEquipmentStatusName(s.logger)
 }
 
 func (s *StatusTestSuite) TestStatus_PostStatus_RepoErr() {
@@ -64,16 +64,16 @@ func (s *StatusTestSuite) TestStatus_PostStatus_RepoErr() {
 	ctx := request.Context()
 
 	statusName := "statusName"
-	data := status.PostStatusParams{
+	data := eqStatusName.PostEquipmentStatusNameParams{
 		HTTPRequest: &request,
-		Name: &models.StatusName{
+		Name: &models.EquipmentStatusName{
 			Name: &statusName,
 		},
 	}
 	err := errors.New("test")
 	s.repository.On("Create", ctx, statusName).Return(nil, err)
 
-	handlerFunc := s.handler.PostStatusFunc(s.repository)
+	handlerFunc := s.handler.PostEquipmentStatusNameFunc(s.repository)
 	access := "dummy access"
 	resp := handlerFunc.Handle(data, access)
 
@@ -90,18 +90,18 @@ func (s *StatusTestSuite) TestStatus_PostStatus_OK() {
 	ctx := request.Context()
 
 	statusName := "statusName"
-	data := status.PostStatusParams{
+	data := eqStatusName.PostEquipmentStatusNameParams{
 		HTTPRequest: &request,
-		Name: &models.StatusName{
+		Name: &models.EquipmentStatusName{
 			Name: &statusName,
 		},
 	}
-	statusToReturn := &ent.Statuses{
+	statusToReturn := &ent.EquipmentStatusName{
 		ID: 1,
 	}
 	s.repository.On("Create", ctx, statusName).Return(statusToReturn, nil)
 
-	handlerFunc := s.handler.PostStatusFunc(s.repository)
+	handlerFunc := s.handler.PostEquipmentStatusNameFunc(s.repository)
 	access := "dummy access"
 	resp := handlerFunc.Handle(data, access)
 
@@ -110,7 +110,7 @@ func (s *StatusTestSuite) TestStatus_PostStatus_OK() {
 	resp.WriteResponse(responseRecorder, producer)
 	assert.Equal(t, http.StatusCreated, responseRecorder.Code)
 
-	responseStatus := models.SuccessStatusOperationResponse{}
+	responseStatus := models.SuccessEquipmentStatusNameOperationResponse{}
 	err := json.Unmarshal(responseRecorder.Body.Bytes(), &responseStatus)
 	if err != nil {
 		t.Errorf("Error unmarshalling response: %v", err)
@@ -120,18 +120,18 @@ func (s *StatusTestSuite) TestStatus_PostStatus_OK() {
 	s.repository.AssertExpectations(t)
 }
 
-func (s *StatusTestSuite) TestStatus_GetStatuses_RepoErr() {
+func (s *StatusTestSuite) TestStatus_ListEquipmentStatusNames_RepoErr() {
 	t := s.T()
 	request := http.Request{}
 	ctx := request.Context()
 
-	data := status.GetStatusesParams{
+	data := eqStatusName.ListEquipmentStatusNamesParams{
 		HTTPRequest: &request,
 	}
 	err := errors.New("test")
 	s.repository.On("GetAll", ctx).Return(nil, err)
 
-	handlerFunc := s.handler.GetStatusesFunc(s.repository)
+	handlerFunc := s.handler.ListEquipmentStatusNamesFunc(s.repository)
 	access := "dummy access"
 	resp := handlerFunc.Handle(data, access)
 
@@ -142,22 +142,22 @@ func (s *StatusTestSuite) TestStatus_GetStatuses_RepoErr() {
 	s.repository.AssertExpectations(t)
 }
 
-func (s *StatusTestSuite) TestStatus_GetStatuses_OK() {
+func (s *StatusTestSuite) TestStatus_ListEquipmentStatusNames_OK() {
 	t := s.T()
 	request := http.Request{}
 	ctx := request.Context()
 
-	data := status.GetStatusesParams{
+	data := eqStatusName.ListEquipmentStatusNamesParams{
 		HTTPRequest: &request,
 	}
-	var statusesToReturn []*ent.Statuses
-	statusToReturn := &ent.Statuses{
+	var statusesToReturn []*ent.EquipmentStatusName
+	statusToReturn := &ent.EquipmentStatusName{
 		ID: 1,
 	}
 	statusesToReturn = append(statusesToReturn, statusToReturn)
 	s.repository.On("GetAll", ctx).Return(statusesToReturn, nil)
 
-	handlerFunc := s.handler.GetStatusesFunc(s.repository)
+	handlerFunc := s.handler.ListEquipmentStatusNamesFunc(s.repository)
 	access := "dummy access"
 	resp := handlerFunc.Handle(data, access)
 
@@ -166,7 +166,7 @@ func (s *StatusTestSuite) TestStatus_GetStatuses_OK() {
 	resp.WriteResponse(responseRecorder, producer)
 	assert.Equal(t, http.StatusOK, responseRecorder.Code)
 
-	var responseStatus []models.Status
+	var responseStatus []models.EquipmentStatusName
 	err := json.Unmarshal(responseRecorder.Body.Bytes(), &responseStatus)
 	if err != nil {
 		t.Errorf("Error unmarshalling response: %v", err)
@@ -177,20 +177,20 @@ func (s *StatusTestSuite) TestStatus_GetStatuses_OK() {
 	s.repository.AssertExpectations(t)
 }
 
-func (s *StatusTestSuite) TestStatus_GetStatus_RepoErr() {
+func (s *StatusTestSuite) TestStatus_GetEquipmentStatusName_RepoErr() {
 	t := s.T()
 	request := http.Request{}
 	ctx := request.Context()
 
 	statusID := 1
-	data := status.GetStatusParams{
+	data := eqStatusName.GetEquipmentStatusNameParams{
 		HTTPRequest: &request,
 		StatusID:    int64(statusID),
 	}
 	err := errors.New("test")
 	s.repository.On("Get", ctx, statusID).Return(nil, err)
 
-	handlerFunc := s.handler.GetStatusFunc(s.repository)
+	handlerFunc := s.handler.GetEquipmentStatusNameFunc(s.repository)
 	access := "dummy access"
 	resp := handlerFunc.Handle(data, access)
 
@@ -201,33 +201,31 @@ func (s *StatusTestSuite) TestStatus_GetStatus_RepoErr() {
 	s.repository.AssertExpectations(t)
 }
 
-func (s *StatusTestSuite) TestStatus_GetStatus_OK() {
+func (s *StatusTestSuite) TestStatus_GetEquipmentStatusName_OK() {
 	t := s.T()
 	request := http.Request{}
 	ctx := request.Context()
 
-	statusName := "statusName"
-	data := status.PostStatusParams{
+	statusID := 1
+	data := eqStatusName.GetEquipmentStatusNameParams{
 		HTTPRequest: &request,
-		Name: &models.StatusName{
-			Name: &statusName,
-		},
+		StatusID:    int64(statusID),
 	}
-	statusToReturn := &ent.Statuses{
+	statusToReturn := &ent.EquipmentStatusName{
 		ID: 1,
 	}
-	s.repository.On("Create", ctx, statusName).Return(statusToReturn, nil)
+	s.repository.On("Get", ctx, statusID).Return(statusToReturn, nil)
 
-	handlerFunc := s.handler.PostStatusFunc(s.repository)
+	handlerFunc := s.handler.GetEquipmentStatusNameFunc(s.repository)
 	access := "dummy access"
 	resp := handlerFunc.Handle(data, access)
 
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusCreated, responseRecorder.Code)
+	assert.Equal(t, http.StatusOK, responseRecorder.Code)
 
-	responseStatus := models.SuccessStatusOperationResponse{}
+	responseStatus := models.SuccessEquipmentStatusNameOperationResponse{}
 	err := json.Unmarshal(responseRecorder.Body.Bytes(), &responseStatus)
 	if err != nil {
 		t.Errorf("Error unmarshalling response: %v", err)
@@ -237,20 +235,20 @@ func (s *StatusTestSuite) TestStatus_GetStatus_OK() {
 	s.repository.AssertExpectations(t)
 }
 
-func (s *StatusTestSuite) TestStatus_DeleteStatus_RepoErr() {
+func (s *StatusTestSuite) TestStatus_DeleteEquipmentStatusName_RepoErr() {
 	t := s.T()
 	request := http.Request{}
 	ctx := request.Context()
 
 	statusID := 1
-	data := status.DeleteStatusParams{
+	data := eqStatusName.DeleteEquipmentStatusNameParams{
 		HTTPRequest: &request,
 		StatusID:    int64(statusID),
 	}
 	err := errors.New("test")
 	s.repository.On("Delete", ctx, statusID).Return(nil, err)
 
-	handlerFunc := s.handler.DeleteStatusFunc(s.repository)
+	handlerFunc := s.handler.DeleteEquipmentStatusNameFunc(s.repository)
 	access := "dummy access"
 	resp := handlerFunc.Handle(data, access)
 
@@ -261,22 +259,22 @@ func (s *StatusTestSuite) TestStatus_DeleteStatus_RepoErr() {
 	s.repository.AssertExpectations(t)
 }
 
-func (s *StatusTestSuite) TestStatus_DeleteStatus_OK() {
+func (s *StatusTestSuite) TestStatus_DeleteEquipmentStatusName_OK() {
 	t := s.T()
 	request := http.Request{}
 	ctx := request.Context()
 
 	statusID := 1
-	data := status.DeleteStatusParams{
+	data := eqStatusName.DeleteEquipmentStatusNameParams{
 		HTTPRequest: &request,
 		StatusID:    int64(statusID),
 	}
-	statusToReturn := &ent.Statuses{
+	statusToReturn := &ent.EquipmentStatusName{
 		ID: 1,
 	}
 	s.repository.On("Delete", ctx, statusID).Return(statusToReturn, nil)
 
-	handlerFunc := s.handler.DeleteStatusFunc(s.repository)
+	handlerFunc := s.handler.DeleteEquipmentStatusNameFunc(s.repository)
 	access := "dummy access"
 	resp := handlerFunc.Handle(data, access)
 
@@ -285,7 +283,7 @@ func (s *StatusTestSuite) TestStatus_DeleteStatus_OK() {
 	resp.WriteResponse(responseRecorder, producer)
 	assert.Equal(t, http.StatusOK, responseRecorder.Code)
 
-	responseStatus := models.SuccessStatusOperationResponse{}
+	responseStatus := models.SuccessEquipmentStatusNameOperationResponse{}
 	err := json.Unmarshal(responseRecorder.Body.Bytes(), &responseStatus)
 	if err != nil {
 		t.Errorf("Error unmarshalling response: %v", err)

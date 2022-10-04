@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/go-openapi/strfmt"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 
@@ -13,6 +14,7 @@ import (
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/enttest"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/order"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/utils"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/models"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/middlewares"
 )
 
@@ -22,7 +24,8 @@ type OrderSuite struct {
 	repository OrderRepository
 	client     *ent.Client
 	orders     []*ent.Order
-	users      []*ent.User
+	user       *ent.User
+	equipments []*ent.Equipment
 }
 
 func TestOrdersSuite(t *testing.T) {
@@ -37,22 +40,64 @@ func (s *OrderSuite) SetupTest() {
 	s.client = client
 	s.repository = NewOrderRepository()
 
-	s.users = []*ent.User{
-		{Login: "user1", Email: "user1@email.com", Password: "1234", Name: "user1"},
+	s.user = &ent.User{
+		Login: "user1", Email: "user1@email.com", Password: "1234", Name: "user1",
 	}
 	_, err := s.client.User.Delete().Exec(s.ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
-	for i, user := range s.users {
-		u, err := s.client.User.Create().
-			SetLogin(user.Login).SetEmail(user.Email).
-			SetPassword(user.Password).SetName(user.Name).
+	u, err := s.client.User.Create().
+		SetLogin(s.user.Login).SetEmail(s.user.Email).
+		SetPassword(s.user.Password).SetName(s.user.Name).
+		Save(s.ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	s.user = u
+
+	category := &ent.Category{
+		Name:                "Клетка",
+		MaxReservationTime:  10 * 60 * 60 * 24,
+		MaxReservationUnits: 10,
+		HasSubcategory:      false,
+	}
+	_, err = s.client.Category.Delete().Exec(s.ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	cat, err := s.client.Category.Create().SetName(category.Name).
+		SetMaxReservationTime(category.MaxReservationTime).
+		SetMaxReservationUnits(category.MaxReservationUnits).
+		SetHasSubcategory(category.HasSubcategory).
+		Save(s.ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	s.equipments = []*ent.Equipment{
+		{
+			TermsOfUse:  "http://localhost",
+			Name:        "equipment 1",
+			Title:       "equipment1",
+			TechIssue:   "нет",
+			Description: "test equipment",
+		},
+	}
+	_, err = s.client.Equipment.Delete().Exec(s.ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for i, eq := range s.equipments {
+		e, err := s.client.Equipment.Create().SetName(eq.Name).
+			SetTitle(eq.Title).SetTermsOfUse(eq.TermsOfUse).
+			SetTechIssue(eq.TechIssue).SetDescription(eq.Description).
+			SetCategory(cat).
 			Save(s.ctx)
 		if err != nil {
 			t.Fatal(err)
 		}
-		s.users[i] = u
+		s.equipments[i] = e
 	}
 
 	s.orders = []*ent.Order{
@@ -61,7 +106,7 @@ func (s *OrderSuite) SetupTest() {
 			RentStart: time.Date(2022, time.January, 1, 12, 0, 0, 0, time.Local),
 			RentEnd:   time.Date(2022, time.January, 10, 12, 0, 0, 0, time.Local),
 			Edges: ent.OrderEdges{
-				Users: s.users,
+				Users: s.user,
 			},
 		},
 		{
@@ -69,7 +114,7 @@ func (s *OrderSuite) SetupTest() {
 			RentStart: time.Date(2022, time.January, 1, 12, 0, 0, 0, time.Local),
 			RentEnd:   time.Date(2022, time.February, 10, 12, 0, 0, 0, time.Local),
 			Edges: ent.OrderEdges{
-				Users: s.users,
+				Users: s.user,
 			},
 		},
 		{
@@ -77,7 +122,7 @@ func (s *OrderSuite) SetupTest() {
 			RentStart: time.Date(2022, time.February, 1, 12, 0, 0, 0, time.Local),
 			RentEnd:   time.Date(2022, time.February, 10, 12, 0, 0, 0, time.Local),
 			Edges: ent.OrderEdges{
-				Users: s.users,
+				Users: s.user,
 			},
 		},
 		{
@@ -85,7 +130,7 @@ func (s *OrderSuite) SetupTest() {
 			RentStart: time.Date(2022, time.March, 1, 12, 0, 0, 0, time.Local),
 			RentEnd:   time.Date(2022, time.March, 10, 12, 0, 0, 0, time.Local),
 			Edges: ent.OrderEdges{
-				Users: s.users,
+				Users: s.user,
 			},
 		},
 	}
@@ -100,7 +145,7 @@ func (s *OrderSuite) SetupTest() {
 			SetQuantity(order.Quantity).
 			SetRentStart(order.RentStart).
 			SetRentEnd(order.RentEnd).
-			AddUsers(order.Edges.Users[0]).
+			SetUsers(order.Edges.Users).
 			Save(s.ctx)
 		if err != nil {
 			t.Fatal(err)
@@ -108,10 +153,51 @@ func (s *OrderSuite) SetupTest() {
 		s.orders[i].ID = o.ID
 		s.orders[i].CreatedAt = o.CreatedAt
 	}
+
+	_, err = s.client.OrderStatusName.Delete().Exec(s.ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = s.client.OrderStatusName.Create().SetStatus(OrderStatusInReview).Save(s.ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
 }
 
 func (s *OrderSuite) TearDownSuite() {
 	s.client.Close()
+}
+
+func (s *OrderSuite) TestOrderRepository_Create_OK() {
+	t := s.T()
+	ctx := s.ctx
+	tx, err := s.client.Tx(ctx)
+	assert.NoError(t, err)
+	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
+
+	description := "test"
+	equipmentID := int64(s.equipments[0].ID)
+	quantity := int64(1)
+	startDate := strfmt.DateTime(time.Now().UTC())
+	endDate := strfmt.DateTime(time.Now().UTC().Add(time.Hour * 24 * 5))
+	data := &models.OrderCreateRequest{
+		Description: &description,
+		Quantity:    &quantity,
+		RentEnd:     &endDate,
+		RentStart:   &startDate,
+	}
+	createdOrder, err := s.repository.Create(ctx, data, s.user.ID, []int{s.equipments[0].ID})
+	assert.NoError(t, err)
+	assert.NoError(t, tx.Commit())
+	assert.NotEmpty(t, createdOrder)
+	assert.Equal(t, description, createdOrder.Description)
+	assert.Equal(t, int(quantity), createdOrder.Quantity)
+	assert.NotEmpty(t, createdOrder.Edges.Equipments)
+	assert.Equal(t, int(equipmentID), createdOrder.Edges.Equipments[0].ID)
+	assert.NotEmpty(t, createdOrder.Edges.Users)
+	assert.Equal(t, s.user.ID, createdOrder.Edges.Users.ID)
+	assert.NotEmpty(t, createdOrder.Edges.OrderStatus)
+	assert.Equal(t, OrderStatusInReview, createdOrder.Edges.OrderStatus[0].Edges.OrderStatusName.Status)
 }
 
 func (s *OrderSuite) TestOrderRepository_OrdersTotal() {
@@ -120,7 +206,7 @@ func (s *OrderSuite) TestOrderRepository_OrdersTotal() {
 	tx, err := s.client.Tx(ctx)
 	assert.NoError(t, err)
 	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
-	totalOrders, err := s.repository.OrdersTotal(ctx, s.users[0].ID)
+	totalOrders, err := s.repository.OrdersTotal(ctx, s.user.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -138,7 +224,7 @@ func (s *OrderSuite) TestOrderRepository_List_EmptyOrderBy() {
 	tx, err := s.client.Tx(ctx)
 	assert.NoError(t, err)
 	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
-	orders, err := s.repository.List(ctx, s.users[0].ID, limit, offset, orderBy, orderColumn)
+	orders, err := s.repository.List(ctx, s.user.ID, limit, offset, orderBy, orderColumn)
 	assert.Error(t, err)
 	assert.NoError(t, tx.Rollback())
 	assert.Nil(t, orders)
@@ -154,7 +240,7 @@ func (s *OrderSuite) TestOrderRepository_List_WrongOrderColumn() {
 	tx, err := s.client.Tx(ctx)
 	assert.NoError(t, err)
 	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
-	orders, err := s.repository.List(ctx, s.users[0].ID, limit, offset, orderBy, orderColumn)
+	orders, err := s.repository.List(ctx, s.user.ID, limit, offset, orderBy, orderColumn)
 	assert.Error(t, err)
 	assert.NoError(t, tx.Rollback())
 	assert.Nil(t, orders)
@@ -170,7 +256,7 @@ func (s *OrderSuite) TestOrderRepository_List_OrderByIDDesc() {
 	tx, err := s.client.Tx(ctx)
 	assert.NoError(t, err)
 	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
-	orders, err := s.repository.List(ctx, s.users[0].ID, limit, offset, orderBy, orderColumn)
+	orders, err := s.repository.List(ctx, s.user.ID, limit, offset, orderBy, orderColumn)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -194,7 +280,7 @@ func (s *OrderSuite) TestOrderRepository_List_OrderByRentStartDesc() {
 	tx, err := s.client.Tx(ctx)
 	assert.NoError(t, err)
 	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
-	orders, err := s.repository.List(ctx, s.users[0].ID, limit, offset, orderBy, orderColumn)
+	orders, err := s.repository.List(ctx, s.user.ID, limit, offset, orderBy, orderColumn)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -218,7 +304,7 @@ func (s *OrderSuite) TestOrderRepository_List_OrderByIDAsc() {
 	tx, err := s.client.Tx(ctx)
 	assert.NoError(t, err)
 	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
-	orders, err := s.repository.List(ctx, s.users[0].ID, limit, offset, orderBy, orderColumn)
+	orders, err := s.repository.List(ctx, s.user.ID, limit, offset, orderBy, orderColumn)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -242,7 +328,7 @@ func (s *OrderSuite) TestOrderRepository_List_OrderByRentStartAsc() {
 	tx, err := s.client.Tx(ctx)
 	assert.NoError(t, err)
 	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
-	orders, err := s.repository.List(ctx, s.users[0].ID, limit, offset, orderBy, orderColumn)
+	orders, err := s.repository.List(ctx, s.user.ID, limit, offset, orderBy, orderColumn)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -266,7 +352,7 @@ func (s *OrderSuite) TestOrderRepository_List_Limit() {
 	tx, err := s.client.Tx(ctx)
 	assert.NoError(t, err)
 	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
-	orders, err := s.repository.List(ctx, s.users[0].ID, limit, offset, orderBy, orderColumn)
+	orders, err := s.repository.List(ctx, s.user.ID, limit, offset, orderBy, orderColumn)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -285,7 +371,7 @@ func (s *OrderSuite) TestOrderRepository_List_Offset() {
 	tx, err := s.client.Tx(ctx)
 	assert.NoError(t, err)
 	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
-	orders, err := s.repository.List(ctx, s.users[0].ID, limit, offset, orderBy, orderColumn)
+	orders, err := s.repository.List(ctx, s.user.ID, limit, offset, orderBy, orderColumn)
 	if err != nil {
 		t.Fatal(err)
 	}

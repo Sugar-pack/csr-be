@@ -62,7 +62,7 @@ func SetupAPI(entClient *ent.Client, logger *zap.Logger, config *config.AppConfi
 	handlers.SetPhotoHandler(logger, api, fileManager)
 	handlers.SetRegistrationHandler(logger, api, regConfirmService)
 	handlers.SetRoleHandler(logger, api)
-	handlers.SetEquipmentStatusHandler(logger, api)
+	handlers.SetEquipmentStatusNameHandler(logger, api)
 	handlers.SetUserHandler(logger, api, tokenManager, regConfirmService)
 	handlers.SetPetKindHandler(logger, api)
 	return middlewares.Tx(entClient)(api.Serve(nil)), nil

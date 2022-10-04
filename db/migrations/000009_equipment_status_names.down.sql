@@ -1,0 +1,1 @@
+DELETE FROM equipment_status_names;

@@ -8,7 +8,7 @@ import (
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/order"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/orderstatus"
-	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/statusname"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/orderstatusname"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/models"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/middlewares"
 )
@@ -37,7 +37,7 @@ func (r *orderStatusRepository) ApproveOrRejectOrder(ctx context.Context, userID
 		return fmt.Errorf("status history error, failed to get order: %s", err)
 	}
 
-	statusName, err := tx.StatusName.Query().Where(statusname.Status(*status.Status)).Only(ctx)
+	statusName, err := tx.OrderStatusName.Query().Where(orderstatusname.Status(*status.Status)).Only(ctx)
 	if err != nil {
 		return fmt.Errorf("status history error, failed to get status name: %s", err)
 	}
@@ -49,7 +49,7 @@ func (r *orderStatusRepository) ApproveOrRejectOrder(ctx context.Context, userID
 		SetComment(*status.Comment).
 		SetCurrentDate(time.Time(*status.CreatedAt)).
 		SetOrder(order).
-		SetStatusName(statusName).
+		SetOrderStatusName(statusName).
 		SetUsers(user).Save(ctx)
 
 	if err != nil {
@@ -65,7 +65,7 @@ func (r *orderStatusRepository) StatusHistory(ctx context.Context, orderId int) 
 	}
 	statuses, err := tx.OrderStatus.Query().
 		QueryOrder().Where(order.IDEQ(orderId)).QueryOrderStatus().
-		WithOrder().WithStatusName().WithUsers().All(ctx)
+		WithOrder().WithOrderStatusName().WithUsers().All(ctx)
 
 	return statuses, err
 }
@@ -83,7 +83,9 @@ func (r *orderStatusRepository) UpdateStatus(ctx context.Context, userID int, st
 		return fmt.Errorf("status history error, failed to get order: %s", err)
 	}
 
-	statusName, err := tx.StatusName.Query().Where(statusname.Status(*status.Status)).Only(ctx)
+	statusName, err := tx.OrderStatusName.Query().
+		Where(orderstatusname.Status(*status.Status)).
+		Only(ctx)
 	if err != nil {
 		return fmt.Errorf("status history error, failed to get status name: %s", err)
 	}
@@ -95,7 +97,7 @@ func (r *orderStatusRepository) UpdateStatus(ctx context.Context, userID int, st
 		SetComment(*status.Comment).
 		SetCurrentDate(time.Time(*status.CreatedAt)).
 		SetOrder(order).
-		SetStatusName(statusName).
+		SetOrderStatusName(statusName).
 		SetUsers(user).Save(ctx)
 
 	if err != nil {
@@ -114,10 +116,18 @@ func (r *orderStatusRepository) GetOrderCurrentStatus(ctx context.Context, order
 		return nil, fmt.Errorf("status history error, failed to get order: %s", err)
 	}
 
-	status, err := order.QueryOrderStatus().Order(ent.Desc(orderstatus.FieldCurrentDate)).Only(ctx)
+	status, err := order.QueryOrderStatus().
+		WithOrderStatusName().
+		WithOrder().
+		Order(ent.Desc(orderstatus.FieldCurrentDate)).First(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("status history error, failed to get statuses: %s", err)
 	}
+	equipment, err := status.Edges.Order.QueryEquipments().All(ctx)
+	if err != nil {
+		return nil, err
+	}
+	status.Edges.Order.Edges.Equipments = equipment
 	return status, nil
 }
 

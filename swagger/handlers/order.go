@@ -4,12 +4,14 @@ import (
 	"errors"
 	"math"
 	"net/http"
+	"time"
 
 	"github.com/go-openapi/runtime/middleware"
 	"github.com/go-openapi/strfmt"
 	"go.uber.org/zap"
 
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent"
+	equipmentEnt "git.epam.com/epm-lstr/epm-lstr-lc/be/ent/equipment"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/order"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/utils"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/authentication"
@@ -22,10 +24,12 @@ import (
 
 func SetOrderHandler(logger *zap.Logger, api *operations.BeAPI) {
 	orderRepo := repositories.NewOrderRepository()
+	eqStatusRepo := repositories.NewEquipmentStatusRepository()
+	equipmentRepo := repositories.NewEquipmentRepository()
 	ordersHandler := NewOrder(logger)
 
 	api.OrdersGetAllOrdersHandler = ordersHandler.ListOrderFunc(orderRepo)
-	api.OrdersCreateOrderHandler = ordersHandler.CreateOrderFunc(orderRepo)
+	api.OrdersCreateOrderHandler = ordersHandler.CreateOrderFunc(orderRepo, eqStatusRepo, equipmentRepo)
 	api.OrdersUpdateOrderHandler = ordersHandler.UpdateOrderFunc(orderRepo)
 }
 
@@ -48,36 +52,73 @@ func mapOrder(o *ent.Order, log *zap.Logger) (*models.Order, error) {
 	quantity := int64(o.Quantity)
 	rentEnd := strfmt.DateTime(o.RentEnd)
 	rentStart := strfmt.DateTime(o.RentStart)
-	owners := o.Edges.Users
-	if owners == nil {
-		log.Warn("order has no owners")
-		return nil, errors.New("this order has no owners")
-	}
-	owner := owners[0]
-
+	owner := o.Edges.Users
 	equipments := o.Edges.Equipments
 	if equipments == nil {
 		log.Warn("order has no equipments")
 		return nil, errors.New("order has no equipments")
 	}
-	equipment := equipments[0]
+	orderEquipments := make([]*models.EquipmentResponse, len(equipments))
+	for i, eq := range equipments {
+		var statusId int64
+		var categoryId int64
+		if eq.Edges.Category != nil {
+			categoryId = int64(eq.Edges.Category.ID)
+		}
+		var subcategoryID int64
+		if eq.Edges.Subcategory != nil {
+			subcategoryID = int64(eq.Edges.Subcategory.ID)
+		}
+		if eq.Edges.CurrentStatus != nil {
+			statusId = int64(eq.Edges.CurrentStatus.ID)
+		}
+		var photoID string
+		if eq.Edges.Photo != nil {
+			photoID = eq.Edges.Photo.ID
+		}
+
+		var psID int64
+		eqID := int64(eq.ID)
+		if eq.Edges.PetSize != nil {
+			psID = int64(eq.Edges.PetSize.ID)
+		}
+
+		var petKinds []*models.PetKind
+		if eq.Edges.PetKinds != nil {
+			for _, petKind := range eq.Edges.PetKinds {
+				j := &models.PetKind{
+					ID:   int64(petKind.ID),
+					Name: &petKind.Name,
+				}
+				petKinds = append(petKinds, j)
+			}
+		}
+		orderEquipments[i] = &models.EquipmentResponse{
+			TermsOfUse:       &eq.TermsOfUse,
+			CompensationСost: &eq.CompensationCost,
+			Condition:        eq.Condition,
+			Description:      &eq.Description,
+			ID:               &eqID,
+			InventoryNumber:  &eq.InventoryNumber,
+			Category:         &categoryId,
+			Subcategory:      subcategoryID,
+			Location:         nil,
+			Name:             &eq.Name,
+			PhotoID:          &photoID,
+			PetSize:          &psID,
+			PetKinds:         petKinds,
+			ReceiptDate:      &eq.ReceiptDate,
+			Supplier:         &eq.Supplier,
+			TechnicalIssues:  &eq.TechIssue,
+			Title:            &eq.Title,
+			Status:           &statusId,
+		}
+	}
 	ownerId := int64(owner.ID)
 	ownerName := owner.Login
-	var categoryId int64
-	if equipment.Edges.Category != nil {
-		categoryId = int64(equipment.Edges.Category.ID)
-	}
-	var statusId int64
-	if equipment.Edges.Status != nil {
-		statusId = int64(equipment.Edges.Status.ID)
-	}
-	var photoID string
-	if equipment.Edges.Photo != nil {
-		photoID = equipment.Edges.Photo.ID
-	}
 
-	allStatuses := o.Edges.OrderStatus
 	var statusToOrder *models.OrderStatus
+	allStatuses := o.Edges.OrderStatus
 	if len(allStatuses) != 0 {
 		lastStatus := allStatuses[0]
 		for _, s := range allStatuses {
@@ -85,7 +126,7 @@ func mapOrder(o *ent.Order, log *zap.Logger) (*models.Order, error) {
 				lastStatus = s
 			}
 		}
-		mappedStatus, err := MapStatus(lastStatus)
+		mappedStatus, err := MapStatus(id, lastStatus)
 		if err != nil {
 			log.Error("failed to map status", zap.Error(err))
 			return nil, err
@@ -93,50 +134,13 @@ func mapOrder(o *ent.Order, log *zap.Logger) (*models.Order, error) {
 		statusToOrder = mappedStatus
 	}
 
-	var psID int64
-	eqID := int64(equipment.ID)
-	if equipment.Edges.PetSize != nil {
-		psID = int64(equipment.Edges.PetSize.ID)
-	}
-
-	petKinds := []*models.PetKind{}
-	if equipment.Edges.PetKinds != nil {
-		for _, petKind := range equipment.Edges.PetKinds {
-			j := &models.PetKind{
-				ID:   int64(petKind.ID),
-				Name: &petKind.Name,
-			}
-			petKinds = append(petKinds, j)
-		}
-	}
-
 	return &models.Order{
 		Description: &o.Description,
-		Equipment: &models.EquipmentResponse{
-			TermsOfUse:       &equipment.TermsOfUse,
-			CompensationСost: &equipment.CompensationCost,
-			Condition:        equipment.Condition,
-			Description:      &equipment.Description,
-			ID:               &eqID,
-			InventoryNumber:  &equipment.InventoryNumber,
-			Category:         &categoryId,
-			Location:         nil,
-			MaximumAmount:    &equipment.MaximumAmount,
-			MaximumDays:      &equipment.MaximumDays,
-			Name:             &equipment.Name,
-			PhotoID:          &photoID,
-			PetSize:          &psID,
-			PetKinds:         petKinds,
-			ReceiptDate:      &equipment.ReceiptDate,
-			Supplier:         &equipment.Supplier,
-			TechnicalIssues:  &equipment.TechIssue,
-			Title:            &equipment.Title,
-			Status:           &statusId,
-		},
-		ID:        &id,
-		Quantity:  &quantity,
-		RentEnd:   &rentEnd,
-		RentStart: &rentStart,
+		Equipments:  orderEquipments,
+		ID:          &id,
+		Quantity:    &quantity,
+		RentEnd:     &rentEnd,
+		RentStart:   &rentStart,
 		User: &models.UserEmbeddable{
 			ID:   &ownerId,
 			Name: &ownerName,
@@ -206,20 +210,66 @@ func (o Order) ListOrderFunc(repository repositories.OrderRepository) orders.Get
 	}
 }
 
-func (o Order) CreateOrderFunc(repository repositories.OrderRepository) orders.CreateOrderHandlerFunc {
+func (o Order) CreateOrderFunc(orderRepo repositories.OrderRepository,
+	eqStatusRepo repositories.EquipmentStatusRepository,
+	equipmentRepo repositories.EquipmentRepository) orders.CreateOrderHandlerFunc {
 	return func(p orders.CreateOrderParams, access interface{}) middleware.Responder {
 		ctx := p.HTTPRequest.Context()
-
 		ownerId, err := authentication.GetUserId(access)
 		if err != nil {
 			o.logger.Error("get user ID failed", zap.Error(err))
-			return orders.NewGetAllOrdersDefault(http.StatusInternalServerError).WithPayload(buildErrorPayload(err))
+			return orders.NewCreateOrderDefault(http.StatusInternalServerError).WithPayload(buildErrorPayload(err))
 		}
+		equipmentFilter := models.EquipmentFilter{Category: *p.Data.Category}
+		if p.Data.Subcategory > 0 {
+			equipmentFilter.Subcategory = p.Data.Subcategory
+		}
+		equipmentsByCategory, err := equipmentRepo.EquipmentsByFilter(ctx, equipmentFilter,
+			math.MaxInt, 0, utils.DescOrder, equipmentEnt.FieldID)
+		if err != nil {
+			o.logger.Error("error while getting equipments in category and subcategory", zap.Error(err))
+			return orders.NewCreateOrderDefault(http.StatusInternalServerError).WithPayload(buildErrorPayload(err))
+		}
+		var availableEquipments []int
+		for _, eq := range equipmentsByCategory {
+			isEquipmentAvailable, err := eqStatusRepo.IsAvailableByPeriod(ctx, eq.ID,
+				time.Time(*p.Data.RentStart), time.Time(*p.Data.RentEnd))
+			if err != nil {
+				o.logger.Error("error while checking if equipment is available for period", zap.Error(err))
+				return orders.NewCreateOrderDefault(http.StatusInternalServerError).WithPayload(buildErrorPayload(err))
+			}
+			if isEquipmentAvailable {
+				availableEquipments = append(availableEquipments, eq.ID)
+			}
+		}
+		if len(availableEquipments) < int(*p.Data.Quantity) {
+			o.logger.Warn("there is not so much free equipment")
+			return orders.NewCreateOrderDefault(http.StatusInternalServerError).
+				WithPayload(buildStringPayload("there is not so much free equipment"))
+		}
+		equipmentsToOrder := availableEquipments[:int(*p.Data.Quantity)]
 
-		order, err := repository.Create(ctx, p.Data, ownerId)
+		order, err := orderRepo.Create(ctx, p.Data, ownerId, equipmentsToOrder)
 		if err != nil {
 			o.logger.Error("map orders to response failed", zap.Error(err))
-			return orders.NewGetAllOrdersDefault(http.StatusInternalServerError).WithPayload(buildErrorPayload(err))
+			return orders.NewCreateOrderDefault(http.StatusInternalServerError).WithPayload(buildErrorPayload(err))
+		}
+		endDate := time.Time(*p.Data.RentEnd).AddDate(0, 0, 1)
+		equipmentBookedEndDate := strfmt.DateTime(endDate)
+		for _, equipmentID := range equipmentsToOrder {
+			eqID := int64(equipmentID)
+			_, err = eqStatusRepo.Create(ctx, &models.NewEquipmentStatus{
+				EndDate:     &equipmentBookedEndDate,
+				EquipmentID: &eqID,
+				StartDate:   p.Data.RentStart,
+				StatusName:  &repositories.EquipmentStatusBooked,
+				OrderID:     int64(order.ID),
+			})
+			if err != nil {
+				o.logger.Error("error while creating equipment status", zap.Error(err))
+				return orders.NewGetAllOrdersDefault(http.StatusInternalServerError).
+					WithPayload(buildErrorPayload(err))
+			}
 		}
 
 		mappedOrder, err := mapOrder(order, o.logger)
