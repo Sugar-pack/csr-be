@@ -21,7 +21,6 @@ func (EquipmentStatus) Fields() []ent.Field {
 		field.Time("updated_at").Default(time.Now()),
 		field.Time("start_date"),
 		field.Time("end_date"),
-		field.Time("closed_at").Optional(),
 	}
 }
 

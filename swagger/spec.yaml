@@ -2008,9 +2008,6 @@ definitions:
       created_at:
         type: string
         format: date-time
-      closed_at:
-        type: string
-        format: date-time
   NewEquipmentStatus:
     type: object
     required:

@@ -88,7 +88,6 @@ func (r *equipmentStatusRepository) GetEquipmentsStatusesByOrder(ctx context.Con
 	}
 	return tx.EquipmentStatus.Query().
 		QueryOrder().Where(order.IDEQ(orderID)).QueryEquipmentStatus().
-		Where(equipmentstatus.ClosedAtIsNil()).
 		WithEquipmentStatusName().
 		All(ctx)
 }
@@ -103,8 +102,7 @@ func (r *equipmentStatusRepository) IsAvailableByPeriod(ctx context.Context, eqI
 		QueryEquipments().Where(equipment.IDEQ(eqID)).QueryEquipmentStatus().
 		Where(equipmentstatus.And(
 			equipmentstatus.StartDateLTE(endDate.Add(time.Hour*24))),
-			equipmentstatus.EndDateGTE(startDate),
-			equipmentstatus.ClosedAtIsNil()).
+			equipmentstatus.EndDateGTE(startDate)).
 		WithEquipmentStatusName().
 		All(ctx)
 	if err != nil {
@@ -132,10 +130,6 @@ func (r *equipmentStatusRepository) Update(ctx context.Context, data *models.Equ
 			return nil, err
 		}
 		equipmentStatus.SetEquipmentStatusName(eqStatusName)
-	}
-	closedAt := time.Time(data.ClosedAt)
-	if !closedAt.IsZero() {
-		equipmentStatus.SetClosedAt(closedAt)
 	}
 	equipmentStatus.SetUpdatedAt(time.Now())
 	return equipmentStatus.Save(ctx)

@@ -185,13 +185,12 @@ func (h *OrderStatus) AddNewStatusToOrder(orderStatusRepo repositories.OrderStat
 		}
 
 		switch *newOrderStatus {
-		case repositories.OrderStatusRejected, repositories.OrderStatusClosed:
-			closedAt := time.Now()
+		case repositories.OrderStatusRejected:
 			for _, eqStatus := range orderEquipmentStatuses {
 				eqStatusID := int64(eqStatus.ID)
 				_, err = equipmentStatusRepo.Update(ctx, &models.EquipmentStatus{
-					ClosedAt: strfmt.DateTime(closedAt),
-					ID:       &eqStatusID,
+					StatusName: &repositories.EquipmentStatusAvailable,
+					ID:         &eqStatusID,
 				})
 				if err != nil {
 					h.logger.Error("Update equipment status error", zap.Error(err))
