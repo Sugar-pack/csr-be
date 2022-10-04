@@ -222,14 +222,18 @@ func mapEquipmentResponse(eq *ent.Equipment) (*models.EquipmentResponse, error) 
 		return nil, errors.New("equipment category is nil")
 	}
 	categoryID := int64(eq.Edges.Category.ID)
+	maxAmount := eq.Edges.Category.MaxReservationUnits
+	maxDays := eq.Edges.Category.MaxReservationTime
 	subcategoryID := int64(0)
-	if eq.Edges.Subcategory != nil {
+	if eq.Edges.Subcategory != nil && eq.Edges.Subcategory.ID > 0 {
 		subcategoryID = int64(eq.Edges.Subcategory.ID)
+		maxAmount = eq.Edges.Subcategory.MaxReservationUnits
+		maxDays = eq.Edges.Subcategory.MaxReservationTime
 	}
-	if eq.Edges.Status == nil {
+	if eq.Edges.CurrentStatus == nil {
 		return nil, errors.New("equipment status is nil")
 	}
-	statusID := int64(eq.Edges.Status.ID)
+	statusID := int64(eq.Edges.CurrentStatus.ID)
 
 	petKinds := make([]*models.PetKind, len(eq.Edges.PetKinds))
 	for i, petKindEdge := range eq.Edges.PetKinds {
@@ -259,8 +263,8 @@ func mapEquipmentResponse(eq *ent.Equipment) (*models.EquipmentResponse, error) 
 		InventoryNumber:  &eq.InventoryNumber,
 		Category:         &categoryID,
 		Subcategory:      subcategoryID,
-		MaximumAmount:    &eq.MaximumAmount,
-		MaximumDays:      &eq.MaximumDays,
+		MaximumAmount:    &maxAmount,
+		MaximumDays:      &maxDays,
 		Name:             &eq.Name,
 		ReceiptDate:      &eq.ReceiptDate,
 		Status:           &statusID,

@@ -296,26 +296,26 @@ paths:
             $ref: "#/definitions/Error"
 
 
-  /equipment/statuses:
+  /equipment/status_names:
     post:
-      summary: Creating a new status.
+      summary: Creating a new equipment status.
       security:
         - Bearer: [ ]
       tags:
-        - Status
-      operationId: postStatus
+        - EquipmentStatusName
+      operationId: postEquipmentStatusName
       parameters:
         - name: name
           in: body
-          description: Status Name
+          description: Status Name for equipment
           required: true
           schema:
-            $ref: "#/definitions/StatusName"
+            $ref: "#/definitions/EquipmentStatusName"
       responses:
         201:
-          description: Status has been created
+          description: Status name for equipment has been created
           schema:
-            $ref: "#/definitions/SuccessStatusOperationResponse"
+            $ref: "#/definitions/SuccessEquipmentStatusNameOperationResponse"
         default:
           description: Unexpected error.
           schema:
@@ -325,13 +325,13 @@ paths:
       security:
         - Bearer: [ ]
       tags:
-        - Status
-      operationId: GetStatuses
+        - EquipmentStatusName
+      operationId: ListEquipmentStatusNames
       responses:
         200:
           description: Success
           schema:
-            $ref: "#/definitions/ListStatuses"
+            $ref: "#/definitions/ListEquipmentStatusNames"
         default:
           description: Unexpected error.
           schema:
@@ -348,13 +348,13 @@ paths:
       security:
         - Bearer: [ ]
       tags:
-        - Status
-      operationId: GetStatus
+        - EquipmentStatusName
+      operationId: GetEquipmentStatusName
       responses:
         200:
-          description: Status has been created
+          description: Equipment Status Name found
           schema:
-            $ref: "#/definitions/SuccessStatusOperationResponse"
+            $ref: "#/definitions/SuccessEquipmentStatusNameOperationResponse"
         default:
           description: Unexpected error.
           schema:
@@ -364,13 +364,13 @@ paths:
       security:
         - Bearer: [ ]
       tags:
-        - Status
-      operationId: DeleteStatus
+        - EquipmentStatusName
+      operationId: DeleteEquipmentStatusName
       responses:
         200:
-          description: Status has been created
+          description: Equipment Status Name has been created
           schema:
-            $ref: "#/definitions/SuccessStatusOperationResponse"
+            $ref: "#/definitions/SuccessEquipmentStatusNameOperationResponse"
         default:
           description: Unexpected error.
           schema:
@@ -1952,8 +1952,8 @@ definitions:
     items:
       $ref: "#/definitions/Role"
 
-  #Status
-  Status:
+  #EquipmentStatusName
+  EquipmentStatusName:
     type: object
     required:
       - id
@@ -1963,17 +1963,17 @@ definitions:
         type: integer
       name:
         type: string
-  ListStatuses:
+  ListEquipmentStatusNames:
     type: array
     items:
-      $ref: "#/definitions/Status"
-  SuccessStatusOperationResponse:
+      $ref: "#/definitions/EquipmentStatusName"
+  SuccessEquipmentStatusNameOperationResponse:
     type: object
     required:
       - data
     properties:
       data:
-        $ref: "#/definitions/Status"
+        $ref: "#/definitions/EquipmentStatusName"
   StatusName:
     type: object
     required:
@@ -1981,6 +1981,58 @@ definitions:
     properties:
       name:
         type: string
+  #EquipmentStatus
+  EquipmentStatus:
+    type: object
+    required:
+      - id
+      - equipment_id
+      - status_name
+      - start_date
+      - end_date
+    properties:
+      id:
+        type: integer
+      equipment_id:
+        type: integer
+      status_name:
+        type: string
+      start_date:
+        type: string
+        format: date-time
+      end_date:
+        type: string
+        format: date-time
+      comment:
+        type: string
+      created_at:
+        type: string
+        format: date-time
+      closed_at:
+        type: string
+        format: date-time
+  NewEquipmentStatus:
+    type: object
+    required:
+      - equipment_id
+      - status_name
+      - start_date
+      - end_date
+    properties:
+      equipment_id:
+        type: integer
+      status_name:
+        type: string
+      start_date:
+        type: string
+        format: date-time
+      end_date:
+        type: string
+        format: date-time
+      comment:
+        type: string
+      order_id:
+        type: integer
   # Photo
   Photo:
     type: object
@@ -2101,13 +2153,21 @@ definitions:
   Subcategory:
     type: object
     required:
+      - id
       - name
+      - category
+      - max_reservation_time
+      - max_reservation_units
     properties:
       id:
         type: integer
       name:
         type: string
       category:
+        type: integer
+      max_reservation_time:
+        type: integer
+      max_reservation_units:
         type: integer
   ListOfSubcategories:
     type: array
@@ -2124,9 +2184,18 @@ definitions:
     type: object
     required:
       - name
+      - category
+      - max_reservation_time
+      - max_reservation_units
     properties:
       name:
         type: string
+      category:
+        type: integer
+      max_reservation_time:
+        type: integer
+      max_reservation_units:
+        type: integer
   # PetSize
   PetSize:
     type: object
@@ -2515,7 +2584,7 @@ definitions:
       - quantity
       - rent_start
       - rent_end
-      - equipment
+      - category
     properties:
       description:
         type: string
@@ -2528,9 +2597,11 @@ definitions:
       rent_end:
         type: string
         format: date-time
-      equipment:
+      category:
         type: integer
         minimum: 1
+      subcategory:
+        type: integer
   OrderUpdateRequest:
     type: object
     required:
@@ -2559,7 +2630,7 @@ definitions:
       - rent_start
       - rent_end
       - user
-      - equipment
+      - equipments
       - last_status
     properties:
       id:
@@ -2577,9 +2648,10 @@ definitions:
       user:
         type: object
         $ref: '#/definitions/UserEmbeddable'
-      equipment:
-        type: object
-        $ref: '#/definitions/EquipmentResponse'
+      equipments:
+        type: array
+        items:
+          $ref: '#/definitions/EquipmentResponse'
       last_status:
         type: object
         $ref: '#/definitions/OrderStatus'

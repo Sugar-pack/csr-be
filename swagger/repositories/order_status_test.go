@@ -37,14 +37,14 @@ func (s *orderStatusTestSuite) SetupTest() {
 	s.client = client
 
 	s.statusNameMap = map[int]string{ // list of statuses. copy of sql migration
-		1: "review",
+		1: "in review",
 		2: "approved",
 		3: "in progress",
 		4: "rejected",
 		5: "closed",
 	}
 
-	_, err := s.client.StatusName.Delete().Exec(s.ctx) // clean up
+	_, err := s.client.OrderStatusName.Delete().Exec(s.ctx) // clean up
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -60,7 +60,7 @@ func (s *orderStatusTestSuite) SetupTest() {
 	}
 
 	for _, statusName := range s.statusNameMap { // create statuses
-		_, errCreation := s.client.StatusName.Create().SetStatus(statusName).Save(s.ctx)
+		_, errCreation := s.client.OrderStatusName.Create().SetStatus(statusName).Save(s.ctx)
 		if errCreation != nil {
 			t.Fatal(errCreation)
 		}

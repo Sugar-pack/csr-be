@@ -5,6 +5,7 @@ import (
 
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/category"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/equipment"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/subcategory"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/models"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/middlewares"
@@ -16,6 +17,7 @@ type SubcategoryRepository interface {
 	SubcategoryByID(ctx context.Context, id int) (*ent.Subcategory, error)
 	DeleteSubcategoryByID(ctx context.Context, id int) error
 	UpdateSubcategory(ctx context.Context, id int, update models.NewSubcategory) (*ent.Subcategory, error)
+	SubcategoryByEquipmentID(ctx context.Context, equipmentID int) (*ent.Subcategory, error)
 }
 
 type subcategoryRepository struct {
@@ -38,6 +40,8 @@ func (r *subcategoryRepository) CreateSubcategory(
 	saved, err := tx.Subcategory.Create().
 		SetName(*newSubcategory.Name).
 		SetCategory(eqCategory).
+		SetMaxReservationUnits(*newSubcategory.MaxReservationUnits).
+		SetMaxReservationTime(*newSubcategory.MaxReservationTime).
 		Save(ctx)
 	if err != nil {
 		return nil, err
@@ -81,9 +85,25 @@ func (r *subcategoryRepository) UpdateSubcategory(ctx context.Context, id int, u
 	if update.Name != nil {
 		subcategoryToUpdate.SetName(*update.Name)
 	}
+	if update.MaxReservationTime != nil {
+		subcategoryToUpdate.SetMaxReservationTime(*update.MaxReservationTime)
+	}
+	if update.MaxReservationUnits != nil {
+		subcategoryToUpdate.SetMaxReservationUnits(*update.MaxReservationUnits)
+	}
 	_, err = subcategoryToUpdate.Save(ctx)
 	if err != nil {
 		return nil, err
 	}
 	return tx.Subcategory.Query().Where(subcategory.ID(id)).WithCategory().Only(ctx)
+}
+
+func (r *subcategoryRepository) SubcategoryByEquipmentID(ctx context.Context, equipmentID int) (*ent.Subcategory, error) {
+	tx, err := middlewares.TxFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return tx.Subcategory.Query().
+		QueryEquipments().Where(equipment.IDEQ(equipmentID)).QuerySubcategory().
+		Only(ctx)
 }

@@ -76,6 +76,29 @@ func (_m *SubcategoryRepository) ListSubcategories(ctx context.Context, category
 	return r0, r1
 }
 
+// SubcategoryByEquipmentID provides a mock function with given fields: ctx, equipmentID
+func (_m *SubcategoryRepository) SubcategoryByEquipmentID(ctx context.Context, equipmentID int) (*ent.Subcategory, error) {
+	ret := _m.Called(ctx, equipmentID)
+
+	var r0 *ent.Subcategory
+	if rf, ok := ret.Get(0).(func(context.Context, int) *ent.Subcategory); ok {
+		r0 = rf(ctx, equipmentID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*ent.Subcategory)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, int) error); ok {
+		r1 = rf(ctx, equipmentID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // SubcategoryByID provides a mock function with given fields: ctx, id
 func (_m *SubcategoryRepository) SubcategoryByID(ctx context.Context, id int) (*ent.Subcategory, error) {
 	ret := _m.Called(ctx, id)

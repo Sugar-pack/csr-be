@@ -16,13 +16,13 @@ type OrderRepository struct {
 	mock.Mock
 }
 
-// Create provides a mock function with given fields: ctx, data, ownerId
-func (_m *OrderRepository) Create(ctx context.Context, data *models.OrderCreateRequest, ownerId int) (*ent.Order, error) {
-	ret := _m.Called(ctx, data, ownerId)
+// Create provides a mock function with given fields: ctx, data, ownerId, equipmentIDs
+func (_m *OrderRepository) Create(ctx context.Context, data *models.OrderCreateRequest, ownerId int, equipmentIDs []int) (*ent.Order, error) {
+	ret := _m.Called(ctx, data, ownerId, equipmentIDs)
 
 	var r0 *ent.Order
-	if rf, ok := ret.Get(0).(func(context.Context, *models.OrderCreateRequest, int) *ent.Order); ok {
-		r0 = rf(ctx, data, ownerId)
+	if rf, ok := ret.Get(0).(func(context.Context, *models.OrderCreateRequest, int, []int) *ent.Order); ok {
+		r0 = rf(ctx, data, ownerId, equipmentIDs)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*ent.Order)
@@ -30,8 +30,8 @@ func (_m *OrderRepository) Create(ctx context.Context, data *models.OrderCreateR
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, *models.OrderCreateRequest, int) error); ok {
-		r1 = rf(ctx, data, ownerId)
+	if rf, ok := ret.Get(1).(func(context.Context, *models.OrderCreateRequest, int, []int) error); ok {
+		r1 = rf(ctx, data, ownerId, equipmentIDs)
 	} else {
 		r1 = ret.Error(1)
 	}

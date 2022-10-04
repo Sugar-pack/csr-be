@@ -14,7 +14,7 @@ type OrderStatus struct {
 // Fields of the OrderStatus.
 func (OrderStatus) Fields() []ent.Field {
 	return []ent.Field{
-		field.String("comment").Unique(),
+		field.String("comment"),
 		field.Time("current_date"),
 	}
 }
@@ -23,7 +23,7 @@ func (OrderStatus) Fields() []ent.Field {
 func (OrderStatus) Edges() []ent.Edge {
 	return []ent.Edge{
 		edge.From("order", Order.Type).Ref("order_status").Unique(),
-		edge.From("status_name", StatusName.Type).Ref("order_status").Unique(),
+		edge.From("order_status_name", OrderStatusName.Type).Ref("order_status").Unique(),
 		edge.From("users", User.Type).Ref("order_status").Unique(),
 	}
 }

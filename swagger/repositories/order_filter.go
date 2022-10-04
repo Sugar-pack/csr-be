@@ -8,7 +8,7 @@ import (
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/order"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/orderstatus"
-	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/statusname"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/orderstatusname"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/utils"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/middlewares"
 )
@@ -41,7 +41,7 @@ func (r *orderFilterRepository) OrdersByStatusTotal(ctx context.Context, status 
 		return 0, err
 	}
 	return tx.OrderStatus.Query().
-		QueryStatusName().Where(statusname.StatusEQ(status)).QueryOrderStatus().Count(ctx)
+		QueryOrderStatusName().Where(orderstatusname.StatusEQ(status)).QueryOrderStatus().Count(ctx)
 }
 
 func (r *orderFilterRepository) OrdersByPeriodAndStatusTotal(ctx context.Context,
@@ -51,7 +51,7 @@ func (r *orderFilterRepository) OrdersByPeriodAndStatusTotal(ctx context.Context
 		return 0, err
 	}
 	return tx.OrderStatus.Query().
-		QueryStatusName().Where(statusname.StatusEQ(status)).QueryOrderStatus().
+		QueryOrderStatusName().Where(orderstatusname.StatusEQ(status)).QueryOrderStatus().
 		Where(orderstatus.CurrentDateGT(from)).
 		Where(orderstatus.CurrentDateLTE(to)).
 		Count(ctx)
@@ -72,7 +72,7 @@ func (r *orderFilterRepository) OrdersByPeriodAndStatus(ctx context.Context, fro
 	}
 	items, err := tx.Order.Query().
 		QueryOrderStatus().
-		QueryStatusName().Where(statusname.StatusEQ(status)).
+		QueryOrderStatusName().Where(orderstatusname.StatusEQ(status)).
 		QueryOrderStatus().
 		Where(orderstatus.CurrentDateGT(from)).
 		Where(orderstatus.CurrentDateLTE(to)).
@@ -100,10 +100,12 @@ func (r *orderFilterRepository) OrdersByStatus(ctx context.Context, status strin
 	}
 	items, err := tx.Order.Query().
 		QueryOrderStatus().
-		QueryStatusName().Where(statusname.StatusEQ(status)).
+		QueryOrderStatusName().Where(orderstatusname.StatusEQ(status)).
 		QueryOrderStatus().QueryOrder().
 		WithOrderStatus().
-		Order(orderFunc).Limit(limit).Offset(offset).All(ctx)
+		Order(orderFunc).Limit(limit).Offset(offset).
+		WithUsers().WithOrderStatus().WithEquipments().
+		All(ctx)
 	if err != nil {
 		return nil, err
 	}

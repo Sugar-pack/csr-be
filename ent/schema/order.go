@@ -26,8 +26,9 @@ func (Order) Fields() []ent.Field {
 // Edges of the Order.
 func (Order) Edges() []ent.Edge {
 	return []ent.Edge{
-		edge.To("users", User.Type),
-		edge.To("equipments", Equipment.Type),
+		edge.From("users", User.Type).Ref("order").Unique(),
+		edge.From("equipments", Equipment.Type).Ref("order"),
 		edge.To("order_status", OrderStatus.Type),
+		edge.To("equipment_status", EquipmentStatus.Type),
 	}
 }

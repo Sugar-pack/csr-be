@@ -23,7 +23,7 @@ type orderFilterTestSuite struct {
 	client        *ent.Client
 	repository    OrderRepositoryWithFilter
 	orders        []*ent.Order
-	statusesNames []*ent.StatusName
+	statusesNames []*ent.OrderStatusName
 }
 
 func TestOrderFilterSuite(t *testing.T) {
@@ -45,7 +45,7 @@ func (s *orderFilterTestSuite) validOrder(id int) *ent.Order {
 				{
 					Comment:     fmt.Sprintf("updated status %d", id),
 					CurrentDate: time.Now().Add(time.Duration(-id) * time.Hour),
-					Edges:       ent.OrderStatusEdges{StatusName: s.statusesNames[id%2]},
+					Edges:       ent.OrderStatusEdges{OrderStatusName: s.statusesNames[id%2]},
 				},
 			},
 		},
@@ -59,12 +59,12 @@ func (s *orderFilterTestSuite) SetupTest() {
 	s.client = client
 	s.repository = NewOrderFilter()
 
-	if _, err := s.client.StatusName.Delete().Exec(s.ctx); err != nil {
+	if _, err := s.client.OrderStatusName.Delete().Exec(s.ctx); err != nil {
 		t.Fatal(err)
 	}
-	s.statusesNames = []*ent.StatusName{
+	s.statusesNames = []*ent.OrderStatusName{
 		{
-			Status: "review",
+			Status: "in review",
 		},
 		{
 			Status: "approved",
@@ -80,7 +80,7 @@ func (s *orderFilterTestSuite) SetupTest() {
 		},
 	}
 	for i, statusName := range s.statusesNames {
-		sName, err := s.client.StatusName.Create().SetStatus(statusName.Status).Save(s.ctx)
+		sName, err := s.client.OrderStatusName.Create().SetStatus(statusName.Status).Save(s.ctx)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -118,7 +118,7 @@ func (s *orderFilterTestSuite) SetupTest() {
 			SetComment(order.Edges.OrderStatus[0].Comment).
 			SetCurrentDate(order.Edges.OrderStatus[0].CurrentDate).
 			SetOrder(o).
-			SetStatusName(order.Edges.OrderStatus[0].Edges.StatusName).
+			SetOrderStatusName(order.Edges.OrderStatus[0].Edges.OrderStatusName).
 			Save(s.ctx)
 		if err != nil {
 			t.Fatal(err)

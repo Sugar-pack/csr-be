@@ -7,6 +7,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/category"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/equipmentstatusname"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/subcategory"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/utils"
 
@@ -14,7 +15,6 @@ import (
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/equipment"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/photo"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/predicate"
-	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/statuses"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/models"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/middlewares"
 )
@@ -59,8 +59,8 @@ func (r *equipmentRepository) EquipmentsByFilter(ctx context.Context, filter mod
 		return nil, err
 	}
 	result, err := tx.Equipment.Query().
-		QueryStatus().
-		Where(OptionalIntStatus(filter.Status, statuses.FieldID)).
+		QueryCurrentStatus().
+		Where(OptionalIntStatus(filter.Status, equipmentstatusname.FieldID)).
 		QueryEquipments().
 		QueryCategory().
 		Where(OptionalIntCategory(filter.Category, category.FieldID)).
@@ -77,8 +77,6 @@ func (r *equipmentRepository) EquipmentsByFilter(ctx context.Context, filter mod
 			OptionalIntEquipment(filter.InventoryNumber, equipment.FieldInventoryNumber),
 			OptionalStringEquipment(filter.Supplier, equipment.FieldSupplier),
 			OptionalStringEquipment(filter.ReceiptDate, equipment.FieldReceiptDate),
-			OptionalIntEquipment(filter.MaximumAmount, equipment.FieldMaximumAmount),
-			OptionalIntEquipment(filter.MaximumDays, equipment.FieldMaximumDays),
 			OptionalStringEquipment(filter.Title, equipment.FieldTitle),
 			OptionalStringEquipment(filter.TechnicalIssues, equipment.FieldTechIssue),
 			OptionalStringEquipment(filter.Condition, equipment.FieldCondition),
@@ -88,7 +86,7 @@ func (r *equipmentRepository) EquipmentsByFilter(ctx context.Context, filter mod
 		WithPetSize().
 		WithCategory().
 		WithSubcategory().
-		WithStatus().
+		WithCurrentStatus().
 		WithPhoto().
 		WithPetKinds().
 		All(ctx)
@@ -117,14 +115,12 @@ func (r *equipmentRepository) CreateEquipment(ctx context.Context, NewEquipment 
 		SetInventoryNumber(*NewEquipment.InventoryNumber).
 		SetSupplier(*NewEquipment.Supplier).
 		SetReceiptDate(*NewEquipment.ReceiptDate).
-		SetMaximumAmount(*NewEquipment.MaximumAmount).
-		SetMaximumDays(*NewEquipment.MaximumDays).
 		SetCategory(&ent.Category{ID: int(*NewEquipment.Category)}).
-		SetStatus(&ent.Statuses{ID: int(*NewEquipment.Status)}).
+		SetCurrentStatus(&ent.EquipmentStatusName{ID: int(*NewEquipment.Status)}).
 		SetCategoryID(int(*NewEquipment.Category)).
 		SetSubcategoryID(int(NewEquipment.Subcategory)).
 		SetSubcategory(&ent.Subcategory{ID: int(NewEquipment.Subcategory)}).
-		SetStatusID(int(*NewEquipment.Status)).
+		SetCurrentStatusID(int(*NewEquipment.Status)).
 		AddPetKindIDs(petKinds...).
 		SetTitle(*NewEquipment.Title).
 		SetPhoto(&ent.Photo{ID: *NewEquipment.PhotoID}).
@@ -134,7 +130,7 @@ func (r *equipmentRepository) CreateEquipment(ctx context.Context, NewEquipment 
 		return nil, err
 	}
 	result, err := tx.Equipment.Query().Where(equipment.ID(eq.ID)).
-		WithCategory().WithSubcategory().WithStatus().WithPhoto().WithPetKinds().WithPetSize().Only(ctx)
+		WithCategory().WithSubcategory().WithCurrentStatus().WithPhoto().WithPetKinds().WithPetSize().Only(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -147,7 +143,7 @@ func (r *equipmentRepository) EquipmentByID(ctx context.Context, id int) (*ent.E
 		return nil, err
 	}
 	result, err := tx.Equipment.Query().Where(equipment.ID(id)).
-		WithCategory().WithSubcategory().WithStatus().WithPetKinds().WithPetSize().WithPhoto().Only(ctx)
+		WithCategory().WithSubcategory().WithCurrentStatus().WithPetKinds().WithPetSize().WithPhoto().Only(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -191,7 +187,7 @@ func (r *equipmentRepository) AllEquipments(ctx context.Context, limit, offset i
 		return nil, err
 	}
 	result, err := tx.Equipment.Query().Order(orderFunc).Limit(limit).Offset(offset).
-		WithCategory().WithSubcategory().WithStatus().WithPetKinds().WithPetSize().WithPhoto().
+		WithCategory().WithSubcategory().WithCurrentStatus().WithPetKinds().WithPetSize().WithPhoto().
 		All(ctx)
 	if err != nil {
 		return nil, err
@@ -218,8 +214,8 @@ func (r *equipmentRepository) EquipmentsByFilterTotal(ctx context.Context, filte
 		return 0, err
 	}
 	total, err := tx.Equipment.Query().
-		QueryStatus().
-		Where(OptionalIntStatus(filter.Status, statuses.FieldID)).
+		QueryCurrentStatus().
+		Where(OptionalIntStatus(filter.Status, equipmentstatusname.FieldID)).
 		QueryEquipments().
 		QueryCategory().
 		Where(OptionalIntCategory(filter.Category, category.FieldID)).
@@ -236,8 +232,6 @@ func (r *equipmentRepository) EquipmentsByFilterTotal(ctx context.Context, filte
 			OptionalIntEquipment(filter.InventoryNumber, equipment.FieldInventoryNumber),
 			OptionalStringEquipment(filter.Supplier, equipment.FieldSupplier),
 			OptionalStringEquipment(filter.ReceiptDate, equipment.FieldReceiptDate),
-			OptionalIntEquipment(filter.MaximumAmount, equipment.FieldMaximumAmount),
-			OptionalIntEquipment(filter.MaximumDays, equipment.FieldMaximumDays),
 			OptionalStringEquipment(filter.Title, equipment.FieldTitle),
 			OptionalStringEquipment(filter.TechnicalIssues, equipment.FieldTechIssue),
 			OptionalStringEquipment(filter.Condition, equipment.FieldCondition),
@@ -284,12 +278,6 @@ func (r *equipmentRepository) UpdateEquipmentByID(ctx context.Context, id int, e
 	if *eq.ReceiptDate != "" {
 		edit.SetReceiptDate(*eq.ReceiptDate)
 	}
-	if *eq.MaximumAmount != 0 {
-		edit.SetMaximumAmount(*eq.MaximumAmount)
-	}
-	if *eq.MaximumDays != 0 {
-		edit.SetMaximumDays(*eq.MaximumDays)
-	}
 	if *eq.Category != 0 {
 		edit.SetCategory(&ent.Category{ID: int(*eq.Category)})
 	}
@@ -310,7 +298,7 @@ func (r *equipmentRepository) UpdateEquipmentByID(ctx context.Context, id int, e
 		edit.SetTitle(*eq.Title)
 	}
 	if *eq.Status != 0 {
-		edit.SetStatus(&ent.Statuses{ID: int(*eq.Status)})
+		edit.SetCurrentStatus(&ent.EquipmentStatusName{ID: int(*eq.Status)})
 	}
 	if *eq.PhotoID != "" {
 		edit.SetPhoto(&ent.Photo{ID: *eq.PhotoID})
@@ -320,7 +308,7 @@ func (r *equipmentRepository) UpdateEquipmentByID(ctx context.Context, id int, e
 		return nil, err
 	}
 	result, err := tx.Equipment.Query().Where(equipment.ID(eqToUpdate.ID)).
-		WithCategory().WithSubcategory().WithStatus().WithPetSize().WithPetKinds().WithPhoto().Only(ctx)
+		WithCategory().WithSubcategory().WithCurrentStatus().WithPetSize().WithPetKinds().WithPhoto().Only(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -337,7 +325,7 @@ func OptionalIntEquipment(v int64, field string) predicate.Equipment {
 	}
 }
 
-func OptionalIntStatus(v int64, field string) predicate.Statuses {
+func OptionalIntStatus(v int64, field string) predicate.EquipmentStatusName {
 	if v == 0 {
 		return func(s *sql.Selector) {
 		}

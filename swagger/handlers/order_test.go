@@ -19,6 +19,7 @@ import (
 
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/enttest"
+	equipmentEnt "git.epam.com/epm-lstr/epm-lstr-lc/be/ent/equipment"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/order"
 	repomock "git.epam.com/epm-lstr/epm-lstr-lc/be/internal/mocks/repositories"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/utils"
@@ -27,6 +28,7 @@ import (
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/restapi"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/restapi/operations"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/restapi/operations/orders"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/repositories"
 )
 
 func TestSetOrderHandler(t *testing.T) {
@@ -57,11 +59,9 @@ func orderWithAllEdges(t *testing.T, orderID int) *ent.Order {
 	return &ent.Order{
 		ID: orderID,
 		Edges: ent.OrderEdges{
-			Users: []*ent.User{
-				{
-					ID:    1,
-					Login: "login",
-				},
+			Users: &ent.User{
+				ID:    1,
+				Login: "login",
 			},
 			Equipments: []*ent.Equipment{
 				{
@@ -72,7 +72,7 @@ func orderWithAllEdges(t *testing.T, orderID int) *ent.Order {
 				{
 					ID: 1,
 					Edges: ent.OrderStatusEdges{
-						StatusName: &ent.StatusName{
+						OrderStatusName: &ent.OrderStatusName{
 							ID: 1,
 						},
 						Users: &ent.User{
@@ -87,9 +87,11 @@ func orderWithAllEdges(t *testing.T, orderID int) *ent.Order {
 
 type orderTestSuite struct {
 	suite.Suite
-	logger          *zap.Logger
-	orderRepository *repomock.OrderRepository
-	orderHandler    *Order
+	logger              *zap.Logger
+	orderRepository     *repomock.OrderRepository
+	eqStatusRepository  *repomock.EquipmentStatusRepository
+	equipmentRepository *repomock.EquipmentRepository
+	orderHandler        *Order
 }
 
 func TestOrderSuite(t *testing.T) {
@@ -99,6 +101,8 @@ func TestOrderSuite(t *testing.T) {
 func (s *orderTestSuite) SetupTest() {
 	s.logger = zap.NewExample()
 	s.orderRepository = &repomock.OrderRepository{}
+	s.eqStatusRepository = &repomock.EquipmentStatusRepository{}
+	s.equipmentRepository = &repomock.EquipmentRepository{}
 	s.orderHandler = NewOrder(s.logger)
 }
 
@@ -468,7 +472,7 @@ func (s *orderTestSuite) TestOrder_CreateOrder_AccessErr() {
 	t := s.T()
 	request := http.Request{}
 
-	handlerFunc := s.orderHandler.CreateOrderFunc(s.orderRepository)
+	handlerFunc := s.orderHandler.CreateOrderFunc(s.orderRepository, s.eqStatusRepository, s.equipmentRepository)
 	data := orders.CreateOrderParams{
 		HTTPRequest: &request,
 	}
@@ -488,22 +492,24 @@ func (s *orderTestSuite) TestOrder_CreateOrder_RepoErr() {
 	ctx := request.Context()
 
 	description := "description"
-	equipment := int64(1)
+	categoryID := int64(3)
 	quantity := int64(10)
 	rentStart := strfmt.DateTime(time.Now())
 	rentEnd := strfmt.DateTime(time.Now().Add(time.Hour * 24))
 	createOrder := &models.OrderCreateRequest{
 		Description: &description,
-		Equipment:   &equipment,
+		Category:    &categoryID,
 		Quantity:    &quantity,
 		RentStart:   &rentStart,
 		RentEnd:     &rentEnd,
 	}
 	userID := 1
 	err := errors.New("error")
-	s.orderRepository.On("Create", ctx, createOrder, userID).Return(nil, err)
+	s.equipmentRepository.On("EquipmentsByFilter", ctx, models.EquipmentFilter{
+		Category: categoryID,
+	}, math.MaxInt, 0, utils.DescOrder, equipmentEnt.FieldID).Return(nil, err)
 
-	handlerFunc := s.orderHandler.CreateOrderFunc(s.orderRepository)
+	handlerFunc := s.orderHandler.CreateOrderFunc(s.orderRepository, s.eqStatusRepository, s.equipmentRepository)
 	data := orders.CreateOrderParams{
 		HTTPRequest: &request,
 		Data:        createOrder,
@@ -524,13 +530,13 @@ func (s *orderTestSuite) TestOrder_CreateOrder_MapErr() {
 	ctx := request.Context()
 
 	description := "description"
-	equipment := int64(1)
-	quantity := int64(10)
+	categoryID := int64(1)
+	quantity := int64(1)
 	rentStart := strfmt.DateTime(time.Now())
 	rentEnd := strfmt.DateTime(time.Now().Add(time.Hour * 24))
 	createOrder := &models.OrderCreateRequest{
 		Description: &description,
-		Equipment:   &equipment,
+		Category:    &categoryID,
 		Quantity:    &quantity,
 		RentStart:   &rentStart,
 		RentEnd:     &rentEnd,
@@ -538,9 +544,25 @@ func (s *orderTestSuite) TestOrder_CreateOrder_MapErr() {
 	userID := 1
 
 	orderToReturn := orderWithNoEdges()
-	s.orderRepository.On("Create", ctx, createOrder, userID).Return(orderToReturn, nil)
+	equipment := orderWithEdges(t, 1).Edges.Equipments[0]
+	equipmentID := int64(equipment.ID)
+	endDate := time.Time(rentEnd).AddDate(0, 0, 1)
+	equipmentBookedEndDate := strfmt.DateTime(endDate)
+	s.equipmentRepository.On("EquipmentsByFilter", ctx, models.EquipmentFilter{
+		Category: categoryID,
+	}, math.MaxInt, 0, utils.DescOrder, equipmentEnt.FieldID).Return([]*ent.Equipment{equipment}, nil)
+	s.eqStatusRepository.On("IsAvailableByPeriod", ctx, equipment.ID,
+		time.Time(rentStart), time.Time(rentEnd)).Return(true, nil)
+	s.orderRepository.On("Create", ctx, createOrder, userID, []int{equipment.ID}).Return(orderToReturn, nil)
+	s.eqStatusRepository.On("Create", ctx, &models.NewEquipmentStatus{
+		EndDate:     &equipmentBookedEndDate,
+		EquipmentID: &equipmentID,
+		OrderID:     int64(orderToReturn.ID),
+		StartDate:   createOrder.RentStart,
+		StatusName:  &repositories.EquipmentStatusBooked,
+	}).Return(nil, nil)
 
-	handlerFunc := s.orderHandler.CreateOrderFunc(s.orderRepository)
+	handlerFunc := s.orderHandler.CreateOrderFunc(s.orderRepository, s.eqStatusRepository, s.equipmentRepository)
 	data := orders.CreateOrderParams{
 		HTTPRequest: &request,
 		Data:        createOrder,
@@ -561,13 +583,13 @@ func (s *orderTestSuite) TestOrder_CreateOrder_OK() {
 	ctx := request.Context()
 
 	description := "description"
-	equipment := int64(1)
-	quantity := int64(10)
+	categoryID := int64(3)
+	quantity := int64(1)
 	rentStart := strfmt.DateTime(time.Now())
 	rentEnd := strfmt.DateTime(time.Now().Add(time.Hour * 24))
 	createOrder := &models.OrderCreateRequest{
 		Description: &description,
-		Equipment:   &equipment,
+		Category:    &categoryID,
 		Quantity:    &quantity,
 		RentStart:   &rentStart,
 		RentEnd:     &rentEnd,
@@ -575,9 +597,25 @@ func (s *orderTestSuite) TestOrder_CreateOrder_OK() {
 	userID := 1
 
 	orderToReturn := orderWithAllEdges(t, 1)
-	s.orderRepository.On("Create", ctx, createOrder, userID).Return(orderToReturn, nil)
+	equipment := orderWithEdges(t, 1).Edges.Equipments[0]
+	equipmentID := int64(equipment.ID)
+	endDate := time.Time(rentEnd).AddDate(0, 0, 1)
+	equipmentBookedEndDate := strfmt.DateTime(endDate)
+	s.equipmentRepository.On("EquipmentsByFilter", ctx, models.EquipmentFilter{
+		Category: categoryID,
+	}, math.MaxInt, 0, utils.DescOrder, equipmentEnt.FieldID).Return([]*ent.Equipment{equipment}, nil)
+	s.eqStatusRepository.On("IsAvailableByPeriod", ctx, equipment.ID,
+		time.Time(rentStart), time.Time(rentEnd)).Return(true, nil)
+	s.orderRepository.On("Create", ctx, createOrder, userID, []int{equipment.ID}).Return(orderToReturn, nil)
+	s.eqStatusRepository.On("Create", ctx, &models.NewEquipmentStatus{
+		EndDate:     &equipmentBookedEndDate,
+		EquipmentID: &equipmentID,
+		OrderID:     int64(orderToReturn.ID),
+		StartDate:   createOrder.RentStart,
+		StatusName:  &repositories.EquipmentStatusBooked,
+	}).Return(nil, nil)
 
-	handlerFunc := s.orderHandler.CreateOrderFunc(s.orderRepository)
+	handlerFunc := s.orderHandler.CreateOrderFunc(s.orderRepository, s.eqStatusRepository, s.equipmentRepository)
 	data := orders.CreateOrderParams{
 		HTTPRequest: &request,
 		Data:        createOrder,
@@ -737,10 +775,10 @@ func containsOrder(t *testing.T, list []*ent.Order, order *models.Order) bool {
 	t.Helper()
 	for _, v := range list {
 		if v.ID == int(*order.ID) && v.Description == *order.Description &&
-			v.Quantity == int(*order.Quantity) && v.Edges.Users[0].ID == int(*order.User.ID) &&
+			v.Quantity == int(*order.Quantity) && v.Edges.Users.ID == int(*order.User.ID) &&
 			strfmt.DateTime(v.RentStart).String() == order.RentStart.String() &&
 			strfmt.DateTime(v.RentEnd).String() == order.RentEnd.String() &&
-			v.Edges.Equipments[0].Description == *order.Equipment.Description &&
+			v.Edges.Equipments[0].Description == *order.Equipments[0].Description &&
 			v.Edges.OrderStatus[0].ID == int(*order.LastStatus.ID) {
 			return true
 		}
