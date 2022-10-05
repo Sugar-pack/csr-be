@@ -53,7 +53,7 @@ func TestIntegration_CreateEquipment(t *testing.T) {
 		// for now it is not handled
 		// todo: uncomment string below when it's handled properly
 		assert.Equal(t, model.Category, res.Payload.Category)
-		assert.Equal(t, model.CompensationСost, res.Payload.CompensationСost)
+		assert.Equal(t, model.CompensationCost, res.Payload.CompensationCost)
 		assert.Equal(t, model.Condition, res.Payload.Condition)
 		assert.Equal(t, model.Description, res.Payload.Description)
 		assert.Equal(t, model.InventoryNumber, res.Payload.InventoryNumber)
@@ -186,7 +186,7 @@ func TestIntegration_GetEquipment(t *testing.T) {
 		// for now it is not handled
 		// todo: uncomment string below when it's handled properly
 		assert.Equal(t, model.Category, res.Payload.Category)
-		assert.Equal(t, model.CompensationСost, res.Payload.CompensationСost)
+		assert.Equal(t, model.CompensationCost, res.Payload.CompensationCost)
 		assert.Equal(t, model.Condition, res.Payload.Condition)
 		assert.Equal(t, model.Description, res.Payload.Description)
 		assert.Equal(t, model.InventoryNumber, res.Payload.InventoryNumber)
@@ -492,7 +492,7 @@ func setParameters(ctx context.Context, client *client.Be, auth runtime.ClientAu
 
 	return &models.Equipment{
 		TermsOfUse:       termsOfUse,
-		CompensationСost: &cost,
+		CompensationCost: &cost,
 		Condition:        condition,
 		Description:      &description,
 		InventoryNumber:  &inventoryNumber,
