@@ -222,13 +222,9 @@ func mapEquipmentResponse(eq *ent.Equipment) (*models.EquipmentResponse, error) 
 		return nil, errors.New("equipment category is nil")
 	}
 	categoryID := int64(eq.Edges.Category.ID)
-	maxAmount := eq.Edges.Category.MaxReservationUnits
-	maxDays := eq.Edges.Category.MaxReservationTime
 	subcategoryID := int64(0)
 	if eq.Edges.Subcategory != nil && eq.Edges.Subcategory.ID > 0 {
 		subcategoryID = int64(eq.Edges.Subcategory.ID)
-		maxAmount = eq.Edges.Subcategory.MaxReservationUnits
-		maxDays = eq.Edges.Subcategory.MaxReservationTime
 	}
 	if eq.Edges.CurrentStatus == nil {
 		return nil, errors.New("equipment status is nil")
@@ -255,7 +251,7 @@ func mapEquipmentResponse(eq *ent.Equipment) (*models.EquipmentResponse, error) 
 
 	return &models.EquipmentResponse{
 		TermsOfUse:       &eq.TermsOfUse,
-		CompensationСost: &eq.CompensationCost,
+		CompensationCost: &eq.CompensationCost,
 		TechnicalIssues:  &eq.TechIssue,
 		Condition:        eq.Condition,
 		Description:      &eq.Description,
@@ -263,8 +259,8 @@ func mapEquipmentResponse(eq *ent.Equipment) (*models.EquipmentResponse, error) 
 		InventoryNumber:  &eq.InventoryNumber,
 		Category:         &categoryID,
 		Subcategory:      subcategoryID,
-		MaximumAmount:    &maxAmount,
-		MaximumDays:      &maxDays,
+		MaximumAmount:    &eq.MaximumAmount,
+		MaximumDays:      &eq.MaximumDays,
 		Name:             &eq.Name,
 		ReceiptDate:      &eq.ReceiptDate,
 		Status:           &statusID,

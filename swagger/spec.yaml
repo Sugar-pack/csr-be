@@ -2264,7 +2264,7 @@ definitions:
       - category
       - status
       - petSize
-      - compensationСost
+      - compensationCost
       - technicalIssues
       - inventoryNumber
       - supplier
@@ -2300,7 +2300,7 @@ definitions:
       petSize:
         type: integer
         example: 1
-      compensationСost:
+      compensationCost:
         type: integer
         example: 3900
       technicalIssues:
@@ -2370,7 +2370,7 @@ definitions:
       petSize:
         type: integer
         example: 1
-      compensationСost:
+      compensationCost:
         type: integer
         example: 3900
       technicalIssues:
@@ -2420,7 +2420,7 @@ definitions:
       - category
       - status
       - petSize
-      - compensationСost
+      - compensationCost
       - technicalIssues
       - inventoryNumber
       - supplier
@@ -2455,7 +2455,7 @@ definitions:
       petSize:
         type: integer
         example: 1
-      compensationСost:
+      compensationCost:
         type: integer
         example: 3900
       technicalIssues:

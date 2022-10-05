@@ -95,7 +95,7 @@ func mapOrder(o *ent.Order, log *zap.Logger) (*models.Order, error) {
 		}
 		orderEquipments[i] = &models.EquipmentResponse{
 			TermsOfUse:       &eq.TermsOfUse,
-			CompensationСost: &eq.CompensationCost,
+			CompensationCost: &eq.CompensationCost,
 			Condition:        eq.Condition,
 			Description:      &eq.Description,
 			ID:               &eqID,

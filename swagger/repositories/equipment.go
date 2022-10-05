@@ -73,13 +73,15 @@ func (r *equipmentRepository) EquipmentsByFilter(ctx context.Context, filter mod
 			OptionalStringEquipment(filter.Name, equipment.FieldName),
 			OptionalStringEquipment(filter.Description, equipment.FieldDescription),
 			OptionalStringEquipment(filter.TermsOfUse, equipment.FieldTermsOfUse),
-			OptionalIntEquipment(filter.CompensationСost, equipment.FieldCompensationCost),
+			OptionalIntEquipment(filter.CompensationCost, equipment.FieldCompensationCost),
 			OptionalIntEquipment(filter.InventoryNumber, equipment.FieldInventoryNumber),
 			OptionalStringEquipment(filter.Supplier, equipment.FieldSupplier),
 			OptionalStringEquipment(filter.ReceiptDate, equipment.FieldReceiptDate),
 			OptionalStringEquipment(filter.Title, equipment.FieldTitle),
 			OptionalStringEquipment(filter.TechnicalIssues, equipment.FieldTechIssue),
 			OptionalStringEquipment(filter.Condition, equipment.FieldCondition),
+			OptionalIntEquipment(filter.MaximumAmount, equipment.FieldMaximumAmount),
+			OptionalIntEquipment(filter.MaximumDays, equipment.FieldMaximumDays),
 		).
 		Order(orderFunc).
 		Limit(limit).Offset(offset).
@@ -109,12 +111,14 @@ func (r *equipmentRepository) CreateEquipment(ctx context.Context, NewEquipment 
 		SetName(*NewEquipment.Name).
 		SetDescription(*NewEquipment.Description).
 		SetTermsOfUse(NewEquipment.TermsOfUse).
-		SetCompensationCost(*NewEquipment.CompensationСost).
+		SetCompensationCost(*NewEquipment.CompensationCost).
 		SetTechIssue(*NewEquipment.TechnicalIssues).
 		SetCondition(NewEquipment.Condition).
 		SetInventoryNumber(*NewEquipment.InventoryNumber).
 		SetSupplier(*NewEquipment.Supplier).
 		SetReceiptDate(*NewEquipment.ReceiptDate).
+		SetMaximumAmount(*NewEquipment.MaximumAmount).
+		SetMaximumDays(*NewEquipment.MaximumDays).
 		SetCategory(&ent.Category{ID: int(*NewEquipment.Category)}).
 		SetCurrentStatus(&ent.EquipmentStatusName{ID: int(*NewEquipment.Status)}).
 		SetCategoryID(int(*NewEquipment.Category)).
@@ -228,13 +232,15 @@ func (r *equipmentRepository) EquipmentsByFilterTotal(ctx context.Context, filte
 			OptionalStringEquipment(filter.Name, equipment.FieldName),
 			OptionalStringEquipment(filter.Description, equipment.FieldDescription),
 			OptionalStringEquipment(filter.TermsOfUse, equipment.FieldTermsOfUse),
-			OptionalIntEquipment(filter.CompensationСost, equipment.FieldCompensationCost),
+			OptionalIntEquipment(filter.CompensationCost, equipment.FieldCompensationCost),
 			OptionalIntEquipment(filter.InventoryNumber, equipment.FieldInventoryNumber),
 			OptionalStringEquipment(filter.Supplier, equipment.FieldSupplier),
 			OptionalStringEquipment(filter.ReceiptDate, equipment.FieldReceiptDate),
 			OptionalStringEquipment(filter.Title, equipment.FieldTitle),
 			OptionalStringEquipment(filter.TechnicalIssues, equipment.FieldTechIssue),
 			OptionalStringEquipment(filter.Condition, equipment.FieldCondition),
+			OptionalIntEquipment(filter.MaximumAmount, equipment.FieldMaximumAmount),
+			OptionalIntEquipment(filter.MaximumDays, equipment.FieldMaximumDays),
 		).
 		Count(ctx)
 	if err != nil {
@@ -262,8 +268,8 @@ func (r *equipmentRepository) UpdateEquipmentByID(ctx context.Context, id int, e
 	if *eq.Description != "" {
 		edit.SetDescription(*eq.Description)
 	}
-	if *eq.CompensationСost != 0 {
-		edit.SetCompensationCost(*eq.CompensationСost)
+	if *eq.CompensationCost != 0 {
+		edit.SetCompensationCost(*eq.CompensationCost)
 	}
 	if *eq.TechnicalIssues != "" {
 		edit.SetTechIssue(*eq.TechnicalIssues)
@@ -280,6 +286,12 @@ func (r *equipmentRepository) UpdateEquipmentByID(ctx context.Context, id int, e
 	}
 	if *eq.Category != 0 {
 		edit.SetCategory(&ent.Category{ID: int(*eq.Category)})
+	}
+	if *eq.MaximumAmount != 0 {
+		edit.SetMaximumAmount(*eq.MaximumAmount)
+	}
+	if *eq.MaximumDays != 0 {
+		edit.SetMaximumDays(*eq.MaximumDays)
 	}
 	if eq.Subcategory != 0 {
 		edit.SetSubcategory(&ent.Subcategory{ID: int(eq.Subcategory)})

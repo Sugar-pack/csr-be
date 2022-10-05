@@ -489,7 +489,7 @@ func setParameters(ctx context.Context, client *client.Be, auth runtime.ClientAu
 
 	return &models.Equipment{
 		TermsOfUse:       termsOfUse,
-		CompensationСost: &cost,
+		CompensationCost: &cost,
 		Condition:        condition,
 		Description:      &description,
 		InventoryNumber:  &inventoryNumber,
