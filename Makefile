@@ -38,7 +38,9 @@ local_lint:
 generate:
 	rm -rf ./swagger/generated
 	swagger generate server -f ./swagger/spec.yaml -s swagger/generated/restapi -m swagger/generated/models --exclude-main
+	rm -rf ./client
 	swagger generate client -f ./swagger/spec.yaml -m swagger/generated/models
+	git clean -X -f ./ent
 	go generate ./ent
 
 test:
@@ -55,6 +57,9 @@ integration-test: tag
 	docker-compose --env-file .env -f ./docker/docker-compose.test.yaml up -d
 	go test -race -v -timeout 10m ./... -run Integration
 	docker-compose --env-file .env -f ./docker/docker-compose.test.yaml down
+
+mocks:
+	make gen-repo-mock gen-email-client-mock gen-services-mocks
 
 gen-repo-mock:
 	@docker run -v `pwd`:/src -w /src vektra/mockery:v2.13.1 --case snake --dir swagger/repositories --output internal/mocks/repositories --outpkg repositories --all

@@ -64,20 +64,20 @@ func (_m *EquipmentStatusRepository) GetEquipmentsStatusesByOrder(ctx context.Co
 	return r0, r1
 }
 
-// IsAvailableByPeriod provides a mock function with given fields: ctx, eqID, startDate, endDate
-func (_m *EquipmentStatusRepository) IsAvailableByPeriod(ctx context.Context, eqID int, startDate time.Time, endDate time.Time) (bool, error) {
-	ret := _m.Called(ctx, eqID, startDate, endDate)
+// HasStatusByPeriod provides a mock function with given fields: ctx, status, eqID, startDate, endDate
+func (_m *EquipmentStatusRepository) HasStatusByPeriod(ctx context.Context, status string, eqID int, startDate time.Time, endDate time.Time) (bool, error) {
+	ret := _m.Called(ctx, status, eqID, startDate, endDate)
 
 	var r0 bool
-	if rf, ok := ret.Get(0).(func(context.Context, int, time.Time, time.Time) bool); ok {
-		r0 = rf(ctx, eqID, startDate, endDate)
+	if rf, ok := ret.Get(0).(func(context.Context, string, int, time.Time, time.Time) bool); ok {
+		r0 = rf(ctx, status, eqID, startDate, endDate)
 	} else {
 		r0 = ret.Get(0).(bool)
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, int, time.Time, time.Time) error); ok {
-		r1 = rf(ctx, eqID, startDate, endDate)
+	if rf, ok := ret.Get(1).(func(context.Context, string, int, time.Time, time.Time) error); ok {
+		r1 = rf(ctx, status, eqID, startDate, endDate)
 	} else {
 		r1 = ret.Error(1)
 	}

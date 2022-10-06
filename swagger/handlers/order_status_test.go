@@ -15,6 +15,7 @@ import (
 	"github.com/go-openapi/strfmt"
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/zap"
 
@@ -101,6 +102,9 @@ func orderWithEdges(t *testing.T, id int) *ent.Order {
 			EquipmentStatus: []*ent.EquipmentStatus{
 				{
 					ID: id,
+					Edges: ent.EquipmentStatusEdges{
+						EquipmentStatusName: &ent.EquipmentStatusName{},
+					},
 				},
 			},
 		},
@@ -215,6 +219,37 @@ func (s *OrderStatusTestSuite) TestOrderStatus_OrderStatusesHistory_CantAccess()
 	request := http.Request{}
 	ctx := request.Context()
 	access := "definitely not access"
+	handlerFunc := s.orderStatus.OrderStatusesHistory(s.orderStatusRepository)
+	orderID := int64(1)
+	data := orders.GetFullOrderHistoryParams{
+		HTTPRequest: &request,
+		OrderID:     orderID,
+	}
+
+	s.orderStatusRepository.On("StatusHistory", ctx, int(orderID)).Return(nil, nil)
+
+	resp := handlerFunc(data, access)
+	responseRecorder := httptest.NewRecorder()
+	producer := runtime.JSONProducer()
+	resp.WriteResponse(responseRecorder, producer)
+	assert.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
+	s.orderStatusRepository.AssertExpectations(t)
+}
+
+func (s *OrderStatusTestSuite) TestOrderStatus_OrderStatusesHistory_CantAccess_HaveNoRight() {
+	t := s.T()
+	request := http.Request{}
+	ctx := request.Context()
+	userID := 1
+	role := &authentication.Role{
+		Id:   userID,
+		Slug: authentication.UserSlug,
+	}
+	access := authentication.Auth{
+		Id:    userID,
+		Login: "login",
+		Role:  role,
+	}
 	handlerFunc := s.orderStatus.OrderStatusesHistory(s.orderStatusRepository)
 	orderID := int64(1)
 	data := orders.GetFullOrderHistoryParams{
@@ -512,6 +547,139 @@ func (s *OrderStatusTestSuite) TestOrderStatus_AddNewStatusToOrder_InReviewToApp
 	s.orderStatusRepository.AssertExpectations(t)
 }
 
+func (s *OrderStatusTestSuite) TestOrderStatus_AddNewStatusToOrder_ApprovedToPreparedOK() {
+	t := s.T()
+	request := http.Request{}
+	ctx := request.Context()
+	userID := 1
+	login := "login"
+	role := &authentication.Role{
+		Id:   userID,
+		Slug: authentication.OperatorSlug,
+	}
+	access := authentication.Auth{
+		Id:    userID,
+		Login: login,
+		Role:  role,
+	}
+	handlerFunc := s.orderStatus.AddNewStatusToOrder(s.orderStatusRepository, s.equipmentStatusRepository)
+	statusComment := "test comment"
+	now := strfmt.DateTime(time.Now())
+	orderID := int64(1)
+	statusID := repositories.OrderStatusPrepared
+	data := &models.NewOrderStatus{
+		Comment:   &statusComment,
+		CreatedAt: &now,
+		OrderID:   &orderID,
+		Status:    &statusID,
+	}
+	params := orders.AddNewOrderStatusParams{
+		HTTPRequest: &request,
+		Data:        data,
+	}
+	existingOrder := orderWithEdges(t, 1)
+	existingOrder.Edges.EquipmentStatus[0].Edges.EquipmentStatusName.Name = repositories.EquipmentStatusBooked
+	s.orderStatusRepository.On("GetOrderCurrentStatus", ctx, int(*data.OrderID)).
+		Return(existingOrder.Edges.OrderStatus[0], nil)
+	s.equipmentStatusRepository.On("GetEquipmentsStatusesByOrder", ctx,
+		existingOrder.ID).
+		Return(existingOrder.Edges.EquipmentStatus, nil)
+	s.orderStatusRepository.On("UpdateStatus", ctx, userID, *data).Return(nil)
+
+	resp := handlerFunc(params, access)
+	responseRecorder := httptest.NewRecorder()
+	producer := runtime.JSONProducer()
+	resp.WriteResponse(responseRecorder, producer)
+	assert.Equal(t, http.StatusOK, responseRecorder.Code)
+	s.orderStatusRepository.AssertExpectations(t)
+}
+
+func (s *OrderStatusTestSuite) TestOrderStatus_AddNewStatusToOrder_ApprovedToPrepared_ErrStatus() {
+	t := s.T()
+	request := http.Request{}
+	ctx := request.Context()
+	userID := 1
+	login := "login"
+	role := &authentication.Role{
+		Id:   userID,
+		Slug: authentication.OperatorSlug,
+	}
+	access := authentication.Auth{
+		Id:    userID,
+		Login: login,
+		Role:  role,
+	}
+	handlerFunc := s.orderStatus.AddNewStatusToOrder(s.orderStatusRepository, s.equipmentStatusRepository)
+	statusComment := "test comment"
+	now := strfmt.DateTime(time.Now())
+	orderID := int64(1)
+	statusID := repositories.OrderStatusPrepared
+	data := &models.NewOrderStatus{
+		Comment:   &statusComment,
+		CreatedAt: &now,
+		OrderID:   &orderID,
+		Status:    &statusID,
+	}
+	params := orders.AddNewOrderStatusParams{
+		HTTPRequest: &request,
+		Data:        data,
+	}
+	existingOrder := orderWithEdges(t, 1)
+	existingOrder.Edges.EquipmentStatus[0].Edges.EquipmentStatusName.Name = repositories.EquipmentStatusInUse
+	s.orderStatusRepository.On("GetOrderCurrentStatus", ctx, int(*data.OrderID)).
+		Return(existingOrder.Edges.OrderStatus[0], nil)
+	s.equipmentStatusRepository.On("GetEquipmentsStatusesByOrder", ctx,
+		existingOrder.ID).
+		Return(existingOrder.Edges.EquipmentStatus, nil)
+
+	resp := handlerFunc(params, access)
+	responseRecorder := httptest.NewRecorder()
+	producer := runtime.JSONProducer()
+	resp.WriteResponse(responseRecorder, producer)
+	response := models.Error{}
+	err := json.Unmarshal(responseRecorder.Body.Bytes(), &response)
+	require.NoError(t, err)
+	assert.NotEmpty(t, response)
+	assert.NotEmpty(t, response.Data)
+	assert.Contains(t, response.Data.Message, "last equipment status must be Booked")
+	assert.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
+	s.orderStatusRepository.AssertExpectations(t)
+}
+
+func (s *OrderStatusTestSuite) TestOrderStatus_AddNewStatusToOrder_AccessErr() {
+	t := s.T()
+	request := http.Request{}
+	access := "dummy access"
+	handlerFunc := s.orderStatus.AddNewStatusToOrder(s.orderStatusRepository, s.equipmentStatusRepository)
+	statusComment := "test comment"
+	now := strfmt.DateTime(time.Now())
+	orderID := int64(1)
+	statusID := repositories.OrderStatusPrepared
+	data := &models.NewOrderStatus{
+		Comment:   &statusComment,
+		CreatedAt: &now,
+		OrderID:   &orderID,
+		Status:    &statusID,
+	}
+	params := orders.AddNewOrderStatusParams{
+		HTTPRequest: &request,
+		Data:        data,
+	}
+
+	resp := handlerFunc(params, access)
+	responseRecorder := httptest.NewRecorder()
+	producer := runtime.JSONProducer()
+	resp.WriteResponse(responseRecorder, producer)
+	response := models.Error{}
+	err := json.Unmarshal(responseRecorder.Body.Bytes(), &response)
+	require.NoError(t, err)
+	assert.NotEmpty(t, response)
+	assert.NotEmpty(t, response.Data)
+	assert.Contains(t, response.Data.Message, "Can't get authorization")
+	assert.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
+	s.orderStatusRepository.AssertExpectations(t)
+}
+
 func (s *OrderStatusTestSuite) TestOrderStatus_GetOrdersByStatus_NoAccess() {
 	t := s.T()
 	request := http.Request{}
@@ -538,6 +706,30 @@ func (s *OrderStatusTestSuite) TestOrderStatus_GetOrdersByStatus_NoAccess() {
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
 	assert.Equal(t, http.StatusForbidden, responseRecorder.Code)
+}
+
+func (s *OrderStatusTestSuite) TestOrderStatus_GetOrdersByStatus_AccessErr() {
+	t := s.T()
+	request := http.Request{}
+	access := "dummy access"
+	handlerFunc := s.orderStatus.GetOrdersByStatus(s.orderFilterRepository)
+	statusName := "status"
+	params := orders.GetOrdersByStatusParams{
+		HTTPRequest: &request,
+		Status:      statusName,
+	}
+
+	resp := handlerFunc(params, access)
+	responseRecorder := httptest.NewRecorder()
+	producer := runtime.JSONProducer()
+	resp.WriteResponse(responseRecorder, producer)
+	response := models.Error{}
+	err := json.Unmarshal(responseRecorder.Body.Bytes(), &response)
+	require.NoError(t, err)
+	assert.NotEmpty(t, response)
+	assert.NotEmpty(t, response.Data)
+	assert.Contains(t, response.Data.Message, "Can't get authorization")
+	assert.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
 }
 
 func (s *OrderStatusTestSuite) TestOrderStatus_GetOrdersByStatus_RepoErr() {
@@ -1033,6 +1225,28 @@ func (s *OrderStatusTestSuite) TestOrderStatus_GetOrdersByPeriodAndStatus_NoAcce
 	resp.WriteResponse(responseRecorder, producer)
 	assert.Equal(t, http.StatusForbidden, responseRecorder.Code)
 	s.orderFilterRepository.AssertExpectations(t)
+}
+
+func (s *OrderStatusTestSuite) TestOrderStatus_GetOrdersByPeriodAndStatus_AccessErr() {
+	t := s.T()
+	request := http.Request{}
+	access := "dummy access"
+	handlerFunc := s.orderStatus.GetOrdersByPeriodAndStatus(s.orderFilterRepository)
+	params := orders.GetOrdersByDateAndStatusParams{
+		HTTPRequest: &request,
+	}
+
+	resp := handlerFunc(params, access)
+	responseRecorder := httptest.NewRecorder()
+	producer := runtime.JSONProducer()
+	resp.WriteResponse(responseRecorder, producer)
+	response := models.Error{}
+	err := json.Unmarshal(responseRecorder.Body.Bytes(), &response)
+	require.NoError(t, err)
+	assert.NotEmpty(t, response)
+	assert.NotEmpty(t, response.Data)
+	assert.Contains(t, response.Data.Message, "Can't get authorization")
+	assert.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
 }
 
 func (s *OrderStatusTestSuite) TestOrderStatus_GetOrdersByPeriodAndStatus_RepoErr() {

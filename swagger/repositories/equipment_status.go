@@ -23,7 +23,7 @@ var (
 type EquipmentStatusRepository interface {
 	Create(ctx context.Context, data *models.NewEquipmentStatus) (*ent.EquipmentStatus, error)
 	GetEquipmentsStatusesByOrder(ctx context.Context, orderID int) ([]*ent.EquipmentStatus, error)
-	IsAvailableByPeriod(ctx context.Context, eqID int, startDate, endDate time.Time) (bool, error)
+	HasStatusByPeriod(ctx context.Context, status string, eqID int, startDate, endDate time.Time) (bool, error)
 	Update(ctx context.Context, data *models.EquipmentStatus) (*ent.EquipmentStatus, error)
 }
 
@@ -92,7 +92,7 @@ func (r *equipmentStatusRepository) GetEquipmentsStatusesByOrder(ctx context.Con
 		All(ctx)
 }
 
-func (r *equipmentStatusRepository) IsAvailableByPeriod(ctx context.Context, eqID int,
+func (r *equipmentStatusRepository) HasStatusByPeriod(ctx context.Context, status string, eqID int,
 	startDate, endDate time.Time) (bool, error) {
 	tx, err := middlewares.TxFromContext(ctx)
 	if err != nil {
@@ -109,7 +109,7 @@ func (r *equipmentStatusRepository) IsAvailableByPeriod(ctx context.Context, eqI
 		return false, err
 	}
 	for _, s := range statuses {
-		if s.Edges.EquipmentStatusName.Name != EquipmentStatusAvailable {
+		if s.Edges.EquipmentStatusName.Name != status {
 			return false, nil
 		}
 	}

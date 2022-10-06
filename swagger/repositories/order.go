@@ -44,6 +44,7 @@ var (
 	OrderStatusInProgress = "in progress"
 	OrderStatusRejected   = "rejected"
 	OrderStatusClosed     = "closed"
+	OrderStatusPrepared   = "prepared"
 )
 
 type orderRepository struct {

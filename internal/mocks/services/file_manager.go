@@ -9,27 +9,6 @@ type FileManager struct {
 	mock.Mock
 }
 
-// BuildFileURL provides a mock function with given fields: server, path, name
-func (_m *FileManager) BuildFileURL(server string, path string, name string) (string, error) {
-	ret := _m.Called(server, path, name)
-
-	var r0 string
-	if rf, ok := ret.Get(0).(func(string, string, string) string); ok {
-		r0 = rf(server, path, name)
-	} else {
-		r0 = ret.Get(0).(string)
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func(string, string, string) error); ok {
-		r1 = rf(server, path, name)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
 // DeleteFile provides a mock function with given fields: name
 func (_m *FileManager) DeleteFile(name string) error {
 	ret := _m.Called(name)
