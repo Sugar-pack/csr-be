@@ -13,6 +13,7 @@ type Role struct {
 const AdminSlug = "administrator"
 const ManagerSlug = "manager"
 const OperatorSlug = "operator"
+const UserSlug = "user"
 
 type Auth struct {
 	Id    int
@@ -63,7 +64,7 @@ func IsAdmin(access interface{}) (bool, error) {
 		return false, err
 	}
 	if !auth.IsAdmin() {
-		return false, errors.New("user is not admin")
+		return false, nil
 	}
 	return true, nil
 }
@@ -74,7 +75,7 @@ func IsManager(access interface{}) (bool, error) {
 		return false, err
 	}
 	if !auth.IsManager() {
-		return false, errors.New("user is not manager")
+		return false, nil
 	}
 	return true, nil
 }
@@ -85,7 +86,7 @@ func IsOperator(access interface{}) (bool, error) {
 		return false, err
 	}
 	if !auth.IsOperator() {
-		return false, errors.New("user is not operator")
+		return false, nil
 	}
 	return true, nil
 }

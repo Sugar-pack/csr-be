@@ -551,7 +551,7 @@ func (s *orderTestSuite) TestOrder_CreateOrder_MapErr() {
 	s.equipmentRepository.On("EquipmentsByFilter", ctx, models.EquipmentFilter{
 		Category: categoryID,
 	}, math.MaxInt, 0, utils.DescOrder, equipmentEnt.FieldID).Return([]*ent.Equipment{equipment}, nil)
-	s.eqStatusRepository.On("IsAvailableByPeriod", ctx, equipment.ID,
+	s.eqStatusRepository.On("HasStatusByPeriod", ctx, repositories.EquipmentStatusAvailable, equipment.ID,
 		time.Time(rentStart), time.Time(rentEnd)).Return(true, nil)
 	s.orderRepository.On("Create", ctx, createOrder, userID, []int{equipment.ID}).Return(orderToReturn, nil)
 	s.eqStatusRepository.On("Create", ctx, &models.NewEquipmentStatus{
@@ -604,7 +604,7 @@ func (s *orderTestSuite) TestOrder_CreateOrder_OK() {
 	s.equipmentRepository.On("EquipmentsByFilter", ctx, models.EquipmentFilter{
 		Category: categoryID,
 	}, math.MaxInt, 0, utils.DescOrder, equipmentEnt.FieldID).Return([]*ent.Equipment{equipment}, nil)
-	s.eqStatusRepository.On("IsAvailableByPeriod", ctx, equipment.ID,
+	s.eqStatusRepository.On("HasStatusByPeriod", ctx, repositories.EquipmentStatusAvailable, equipment.ID,
 		time.Time(rentStart), time.Time(rentEnd)).Return(true, nil)
 	s.orderRepository.On("Create", ctx, createOrder, userID, []int{equipment.ID}).Return(orderToReturn, nil)
 	s.eqStatusRepository.On("Create", ctx, &models.NewEquipmentStatus{

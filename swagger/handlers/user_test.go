@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"entgo.io/ent/entc/integration/ent/user"
+
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/utils"
 
 	"github.com/go-openapi/loads"
