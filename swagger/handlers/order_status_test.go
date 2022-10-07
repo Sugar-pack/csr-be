@@ -425,38 +425,48 @@ func (s *OrderStatusTestSuite) TestOrderStatus_AddNewStatusToOrder_EmptyData() {
 func (s *OrderStatusTestSuite) TestOrderStatus_AddNewStatusToOrder_NoAccess() {
 	t := s.T()
 	request := http.Request{}
-	userID := 1
-	login := "login"
-	role := &authentication.Role{
-		Id:   userID,
-		Slug: "user",
-	}
-	access := authentication.Auth{
-		Id:    userID,
-		Login: login,
-		Role:  role,
-	}
 	handlerFunc := s.orderStatus.AddNewStatusToOrder(s.orderStatusRepository, s.equipmentStatusRepository)
 	statusComment := "test comment"
 	now := strfmt.DateTime(time.Now())
 	orderID := int64(1)
-	statusID := repositories.OrderStatusApproved
-	data := &models.NewOrderStatus{
-		Comment:   &statusComment,
-		CreatedAt: &now,
-		OrderID:   &orderID,
-		Status:    &statusID,
-	}
-	params := orders.AddNewOrderStatusParams{
-		HTTPRequest: &request,
-		Data:        data,
+
+	testsStatus := []string{
+		repositories.OrderStatusApproved,
+		repositories.OrderStatusPrepared,
+		repositories.OrderStatusInReview,
+		repositories.OrderStatusClosed,
+		repositories.OrderStatusRejected,
+		repositories.OrderStatusInProgress,
 	}
 
-	resp := handlerFunc(params, access)
-	responseRecorder := httptest.NewRecorder()
-	producer := runtime.JSONProducer()
-	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusForbidden, responseRecorder.Code)
+	for _, testStatus := range testsStatus {
+		userID := 1
+		login := "login"
+		role := &authentication.Role{
+			Id:   userID,
+			Slug: authentication.UserSlug,
+		}
+		access := authentication.Auth{
+			Id:    userID,
+			Login: login,
+			Role:  role,
+		}
+		data := &models.NewOrderStatus{
+			Comment:   &statusComment,
+			CreatedAt: &now,
+			OrderID:   &orderID,
+			Status:    &testStatus,
+		}
+		params := orders.AddNewOrderStatusParams{
+			HTTPRequest: &request,
+			Data:        data,
+		}
+		resp := handlerFunc(params, access)
+		responseRecorder := httptest.NewRecorder()
+		producer := runtime.JSONProducer()
+		resp.WriteResponse(responseRecorder, producer)
+		assert.Equal(t, http.StatusForbidden, responseRecorder.Code)
+	}
 }
 
 func (s *OrderStatusTestSuite) TestOrderStatus_AddNewStatusToOrder_RepoError() {
@@ -644,6 +654,68 @@ func (s *OrderStatusTestSuite) TestOrderStatus_AddNewStatusToOrder_ApprovedToPre
 	assert.Contains(t, response.Data.Message, "last equipment status must be Booked")
 	assert.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
 	s.orderStatusRepository.AssertExpectations(t)
+}
+
+func (s *OrderStatusTestSuite) TestOrderStatus_AddNewStatusToOrder_PreparedToByOperatorOK() {
+	t := s.T()
+	request := http.Request{}
+	ctx := request.Context()
+	userID := 1
+	login := "login"
+	role := &authentication.Role{
+		Id:   userID,
+		Slug: authentication.OperatorSlug,
+	}
+	access := authentication.Auth{
+		Id:    userID,
+		Login: login,
+		Role:  role,
+	}
+	handlerFunc := s.orderStatus.AddNewStatusToOrder(s.orderStatusRepository, s.equipmentStatusRepository)
+	statusComment := "test comment"
+	now := strfmt.DateTime(time.Now())
+	orderID := int64(1)
+
+	testsStatus := []string{
+		repositories.OrderStatusClosed,
+		repositories.OrderStatusInProgress,
+	}
+
+	for _, testStatus := range testsStatus {
+		data := &models.NewOrderStatus{
+			Comment:   &statusComment,
+			CreatedAt: &now,
+			OrderID:   &orderID,
+			Status:    &testStatus,
+		}
+		params := orders.AddNewOrderStatusParams{
+			HTTPRequest: &request,
+			Data:        data,
+		}
+		existingOrder := orderWithEdges(t, 1)
+		existingOrder.Edges.OrderStatus[0].Edges.OrderStatusName.Status = repositories.OrderStatusPrepared
+		s.orderStatusRepository.On("GetOrderCurrentStatus", ctx, int(*data.OrderID)).
+			Return(existingOrder.Edges.OrderStatus[0], nil)
+		s.equipmentStatusRepository.On("GetEquipmentsStatusesByOrder", ctx,
+			existingOrder.ID).
+			Return(existingOrder.Edges.EquipmentStatus, nil)
+		s.orderStatusRepository.On("UpdateStatus", ctx, userID, *data).Return(nil)
+		eqStatusID := int64(existingOrder.Edges.EquipmentStatus[0].ID)
+
+		if testStatus == repositories.OrderStatusClosed {
+			s.equipmentStatusRepository.On("Update", ctx, &models.EquipmentStatus{
+				StatusName: &repositories.EquipmentStatusAvailable,
+				ID:         &eqStatusID,
+			}).Return(nil, nil)
+		}
+
+		resp := handlerFunc(params, access)
+		responseRecorder := httptest.NewRecorder()
+		producer := runtime.JSONProducer()
+		resp.WriteResponse(responseRecorder, producer)
+		assert.Equal(t, http.StatusOK, responseRecorder.Code)
+		s.orderStatusRepository.AssertExpectations(t)
+	}
 }
 
 func (s *OrderStatusTestSuite) TestOrderStatus_AddNewStatusToOrder_AccessErr() {
