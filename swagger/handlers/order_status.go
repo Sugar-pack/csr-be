@@ -212,7 +212,7 @@ func (h *OrderStatus) AddNewStatusToOrder(orderStatusRepo repositories.OrderStat
 		}
 
 		switch *newOrderStatus {
-		case repositories.OrderStatusRejected:
+		case repositories.OrderStatusRejected, repositories.OrderStatusClosed:
 			for _, eqStatus := range orderEquipmentStatuses {
 				eqStatusID := int64(eqStatus.ID)
 				_, err = equipmentStatusRepo.Update(ctx, &models.EquipmentStatus{
@@ -443,6 +443,11 @@ func rightForStatusCreation(access interface{}, currentStatus, newStatus string)
 		return false, nil
 	case repositories.OrderStatusApproved:
 		if newStatus == repositories.OrderStatusPrepared {
+			return isOperator, nil
+		}
+		return false, nil
+	case repositories.OrderStatusPrepared:
+		if newStatus == repositories.OrderStatusClosed || newStatus == repositories.OrderStatusInProgress {
 			return isOperator, nil
 		}
 		return false, nil
