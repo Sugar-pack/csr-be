@@ -651,7 +651,7 @@ func (s *OrderStatusTestSuite) TestOrderStatus_AddNewStatusToOrder_ApprovedToPre
 	require.NoError(t, err)
 	assert.NotEmpty(t, response)
 	assert.NotEmpty(t, response.Data)
-	assert.Contains(t, response.Data.Message, "last equipment status must be Booked")
+	assert.Contains(t, response.Data.Message, "equipment IDs don't have correspondent status: [1]")
 	assert.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
 	s.orderStatusRepository.AssertExpectations(t)
 }
@@ -694,6 +694,7 @@ func (s *OrderStatusTestSuite) TestOrderStatus_AddNewStatusToOrder_PreparedToByO
 		}
 		existingOrder := orderWithEdges(t, 1)
 		existingOrder.Edges.OrderStatus[0].Edges.OrderStatusName.Status = repositories.OrderStatusPrepared
+		existingOrder.Edges.EquipmentStatus[0].Edges.EquipmentStatusName.Name = repositories.EquipmentStatusBooked
 		s.orderStatusRepository.On("GetOrderCurrentStatus", ctx, int(*data.OrderID)).
 			Return(existingOrder.Edges.OrderStatus[0], nil)
 		s.equipmentStatusRepository.On("GetEquipmentsStatusesByOrder", ctx,
@@ -702,12 +703,17 @@ func (s *OrderStatusTestSuite) TestOrderStatus_AddNewStatusToOrder_PreparedToByO
 		s.orderStatusRepository.On("UpdateStatus", ctx, userID, *data).Return(nil)
 		eqStatusID := int64(existingOrder.Edges.EquipmentStatus[0].ID)
 
-		if testStatus == repositories.OrderStatusClosed {
-			s.equipmentStatusRepository.On("Update", ctx, &models.EquipmentStatus{
-				StatusName: &repositories.EquipmentStatusAvailable,
-				ID:         &eqStatusID,
-			}).Return(nil, nil)
+		var status string
+		switch testStatus {
+		case repositories.OrderStatusClosed:
+			status = repositories.EquipmentStatusAvailable
+		case repositories.OrderStatusInProgress:
+			status = repositories.EquipmentStatusInUse
 		}
+		s.equipmentStatusRepository.On("Update", ctx, &models.EquipmentStatus{
+			StatusName: &status,
+			ID:         &eqStatusID,
+		}).Return(nil, nil)
 
 		resp := handlerFunc(params, access)
 		responseRecorder := httptest.NewRecorder()
