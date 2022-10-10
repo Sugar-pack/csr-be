@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"math"
@@ -9,7 +10,6 @@ import (
 
 	"github.com/go-openapi/runtime/middleware"
 	"github.com/go-openapi/strfmt"
-	errs "github.com/pkg/errors"
 	"go.uber.org/zap"
 
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent"
@@ -198,7 +198,7 @@ func (h *OrderStatus) AddNewStatusToOrder(orderStatusRepo repositories.OrderStat
 				WithPayload(buildStringPayload("can't get equipment status"))
 		}
 
-		err = checkStatusRequirements(*newOrderStatus, h.logger, orderEquipmentStatuses)
+		err = checkEqStatusRequirements(*newOrderStatus, h.logger, orderEquipmentStatuses)
 		if err != nil {
 			return orders.NewAddNewOrderStatusDefault(http.StatusInternalServerError).
 				WithPayload(buildErrorPayload(err))
@@ -213,17 +213,18 @@ func (h *OrderStatus) AddNewStatusToOrder(orderStatusRepo repositories.OrderStat
 
 		switch *newOrderStatus {
 		case repositories.OrderStatusRejected, repositories.OrderStatusClosed:
-			for _, eqStatus := range orderEquipmentStatuses {
-				eqStatusID := int64(eqStatus.ID)
-				_, err = equipmentStatusRepo.Update(ctx, &models.EquipmentStatus{
-					StatusName: &repositories.EquipmentStatusAvailable,
-					ID:         &eqStatusID,
-				})
-				if err != nil {
-					h.logger.Error("Update equipment status error", zap.Error(err))
-					return orders.NewAddNewOrderStatusDefault(http.StatusInternalServerError).
-						WithPayload(buildStringPayload("Can't update equipment status"))
-				}
+			err = updateEqStatuses(ctx, equipmentStatusRepo, orderEquipmentStatuses, repositories.EquipmentStatusAvailable)
+			if err != nil {
+				h.logger.Error("Update equipment status error", zap.Error(err))
+				return orders.NewAddNewOrderStatusDefault(http.StatusInternalServerError).
+					WithPayload(buildStringPayload("Can't update equipment status"))
+			}
+		case repositories.OrderStatusInProgress:
+			err = updateEqStatuses(ctx, equipmentStatusRepo, orderEquipmentStatuses, repositories.EquipmentStatusInUse)
+			if err != nil {
+				h.logger.Error("Update equipment status error", zap.Error(err))
+				return orders.NewAddNewOrderStatusDefault(http.StatusInternalServerError).
+					WithPayload(buildStringPayload("Can't update equipment status"))
 			}
 		}
 
@@ -370,27 +371,37 @@ func (h *OrderStatus) GetAllStatusNames(repository repositories.OrderStatusNameR
 	}
 }
 
-func checkStatusRequirements(newStatus string, logger *zap.Logger, eqStatus []*ent.EquipmentStatus) error {
+func checkEqStatusRequirements(newStatus string, logger *zap.Logger, eqStatuses []*ent.EquipmentStatus) error {
 	switch newStatus {
-	case repositories.OrderStatusPrepared:
-		return checkPreparedStatusRequirements(logger, eqStatus)
+	case repositories.OrderStatusPrepared, repositories.OrderStatusInProgress:
+		return checkEqStatuses(logger, eqStatuses, repositories.EquipmentStatusBooked)
 	}
 	return nil
 }
 
-func checkPreparedStatusRequirements(logger *zap.Logger, eqStatuses []*ent.EquipmentStatus) error {
-	// The equipment items in the order with "Prepared" status should be with the "Booked" status for
-	// the period of time from Start Date to End date+1 Day of the prepared order.
-	var errEqIds []int
+func checkEqStatuses(logger *zap.Logger, eqStatuses []*ent.EquipmentStatus, status string) error {
+	errEqIds := make([]int, 0, len(eqStatuses))
 	for _, eqStatus := range eqStatuses {
-		if !(eqStatus.Edges.EquipmentStatusName.Name == repositories.EquipmentStatusBooked) {
+		if eqStatus.Edges.EquipmentStatusName.Name != status {
 			errEqIds = append(errEqIds, eqStatus.ID)
 		}
 	}
-	if len(errEqIds) != 0 {
-		err := errors.New("last equipment status must be Booked")
-		logger.Error(err.Error())
-		return errs.Wrapf(err, "equipment ID doesn't have correspondent status: %s", fmt.Sprint(errEqIds))
+	if len(errEqIds) > 0 {
+		logger.Error("Equipment statuses don't match expected", zap.String("status", status))
+		return fmt.Errorf("equipment IDs don't have correspondent status: %v", errEqIds)
+	}
+	return nil
+}
+
+func updateEqStatuses(ctx context.Context, equipmentStatusRepo repositories.EquipmentStatusRepository, eqStatuses []*ent.EquipmentStatus, newEqStatus string) error {
+	for _, eqStatus := range eqStatuses {
+		eqStatusID := int64(eqStatus.ID)
+		if _, err := equipmentStatusRepo.Update(ctx, &models.EquipmentStatus{
+			StatusName: &newEqStatus,
+			ID:         &eqStatusID,
+		}); err != nil {
+			return err
+		}
 	}
 	return nil
 }

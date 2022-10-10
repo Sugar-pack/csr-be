@@ -28,8 +28,7 @@ func SetPhotoHandler(logger *zap.Logger, api *operations.BeAPI, manager services
 }
 
 type Photo struct {
-	serverURL string
-	logger    *zap.Logger
+	logger *zap.Logger
 }
 
 func NewPhoto(logger *zap.Logger) *Photo {
