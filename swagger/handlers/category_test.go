@@ -674,6 +674,7 @@ func validCategory(t *testing.T, id int) *ent.Category {
 		Name:                fmt.Sprintf("category %d", id),
 		MaxReservationTime:  10,
 		MaxReservationUnits: 5,
+		HasSubcategory:      true,
 	}
 }
 func categoriesDuplicated(t *testing.T, array1, array2 []*models.Category) bool {

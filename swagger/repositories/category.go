@@ -6,7 +6,6 @@ import (
 
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/category"
-	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent/equipment"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/utils"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/models"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/middlewares"
@@ -19,7 +18,6 @@ type CategoryRepository interface {
 	CategoryByID(ctx context.Context, id int) (*ent.Category, error)
 	DeleteCategoryByID(ctx context.Context, id int) error
 	UpdateCategory(ctx context.Context, id int, update models.UpdateCategoryRequest) (*ent.Category, error)
-	CategoryByEquipmentID(ctx context.Context, equipmentID int) (*ent.Category, error)
 }
 
 var fieldsToOrderCategories = []string{
@@ -106,14 +104,4 @@ func (r *categoryRepository) UpdateCategory(ctx context.Context, id int, update 
 		categoryUpdate.SetHasSubcategory(*update.HasSubcategory)
 	}
 	return categoryUpdate.Save(ctx)
-}
-
-func (r *categoryRepository) CategoryByEquipmentID(ctx context.Context, equipmentID int) (*ent.Category, error) {
-	tx, err := middlewares.TxFromContext(ctx)
-	if err != nil {
-		return nil, err
-	}
-	return tx.Category.Query().
-		QueryEquipments().Where(equipment.IDEQ(equipmentID)).QueryCategory().
-		Only(ctx)
 }
