@@ -577,6 +577,54 @@ func (s *orderTestSuite) TestOrder_CreateOrder_MapErr() {
 	s.orderRepository.AssertExpectations(t)
 }
 
+func (s *orderTestSuite) TestOrder_CreateOrder_NoAvailableEquipments() {
+	t := s.T()
+	request := http.Request{}
+	ctx := request.Context()
+
+	description := "description"
+	categoryID := int64(3)
+	quantity := int64(1)
+	rentStart := strfmt.DateTime(time.Now())
+	rentEnd := strfmt.DateTime(time.Now().Add(time.Hour * 24))
+	createOrder := &models.OrderCreateRequest{
+		Description: &description,
+		Category:    &categoryID,
+		Quantity:    &quantity,
+		RentStart:   &rentStart,
+		RentEnd:     &rentEnd,
+	}
+	userID := 1
+
+	equipment := orderWithEdges(t, 1).Edges.Equipments[0]
+	s.equipmentRepository.On("EquipmentsByFilter", ctx, models.EquipmentFilter{
+		Category: categoryID,
+	}, math.MaxInt, 0, utils.DescOrder, equipmentEnt.FieldID).Return([]*ent.Equipment{equipment}, nil)
+	s.eqStatusRepository.On("HasStatusByPeriod", ctx, repositories.EquipmentStatusAvailable, equipment.ID,
+		time.Time(rentStart), time.Time(rentEnd)).Return(false, nil)
+
+	handlerFunc := s.orderHandler.CreateOrderFunc(s.orderRepository, s.eqStatusRepository, s.equipmentRepository)
+	data := orders.CreateOrderParams{
+		HTTPRequest: &request,
+		Data:        createOrder,
+	}
+	access := authentication.Auth{Id: userID}
+	resp := handlerFunc.Handle(data, access)
+
+	responseRecorder := httptest.NewRecorder()
+	producer := runtime.JSONProducer()
+	resp.WriteResponse(responseRecorder, producer)
+	assert.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
+	responseOrder := models.Order{}
+	err := json.Unmarshal(responseRecorder.Body.Bytes(), &responseOrder)
+	if err != nil {
+		t.Fatal(err)
+	}
+	assert.Empty(t, responseOrder)
+
+	s.orderRepository.AssertExpectations(t)
+}
+
 func (s *orderTestSuite) TestOrder_CreateOrder_OK() {
 	t := s.T()
 	request := http.Request{}

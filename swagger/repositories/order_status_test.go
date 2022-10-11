@@ -87,7 +87,79 @@ func (s *orderStatusTestSuite) TearDownSuite() {
 	s.client.Close()
 }
 
-func (s *orderStatusTestSuite) TestOrderStatusRepository_UpdateStatus() {
+func (s *orderStatusTestSuite) TestOrderStatusRepository_UpdateStatus_OrderNotExists() {
+	t := s.T()
+	userID := s.adminUser.ID
+	comment := "test comment"
+	createdAt := strfmt.DateTime(time.Now().UTC())
+	orderID := int64(s.order.ID + 10)
+	status, ok := s.statusNameMap[1]
+	if !ok {
+		t.Error("cant find status with id 1")
+	}
+	data := models.NewOrderStatus{
+		Comment:   &comment,
+		CreatedAt: &createdAt,
+		OrderID:   &orderID,
+		Status:    &status,
+	}
+	ctx := s.ctx
+	tx, err := s.client.Tx(ctx)
+	assert.NoError(t, err)
+	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
+	err = s.repository.UpdateStatus(ctx, userID, data)
+	assert.Error(t, err)
+	assert.NoError(t, tx.Rollback())
+}
+
+func (s *orderStatusTestSuite) TestOrderStatusRepository_UpdateStatus_StatusNameNotExists() {
+	t := s.T()
+	userID := s.adminUser.ID
+	comment := "test comment"
+	createdAt := strfmt.DateTime(time.Now().UTC())
+	orderID := int64(s.order.ID)
+	status := "test status"
+	data := models.NewOrderStatus{
+		Comment:   &comment,
+		CreatedAt: &createdAt,
+		OrderID:   &orderID,
+		Status:    &status,
+	}
+	ctx := s.ctx
+	tx, err := s.client.Tx(ctx)
+	assert.NoError(t, err)
+	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
+	err = s.repository.UpdateStatus(ctx, userID, data)
+	assert.Error(t, err)
+	assert.NoError(t, tx.Rollback())
+}
+
+func (s *orderStatusTestSuite) TestOrderStatusRepository_UpdateStatus_UserNotExists() {
+	t := s.T()
+	userID := s.adminUser.ID + 10
+	comment := "test comment"
+	createdAt := strfmt.DateTime(time.Now().UTC())
+	orderID := int64(s.order.ID)
+	status, ok := s.statusNameMap[1]
+	if !ok {
+		t.Error("cant find status with id 1")
+	}
+	data := models.NewOrderStatus{
+		Comment:   &comment,
+		CreatedAt: &createdAt,
+		OrderID:   &orderID,
+		Status:    &status,
+	}
+	ctx := s.ctx
+	tx, err := s.client.Tx(ctx)
+	assert.NoError(t, err)
+	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
+	err = s.repository.UpdateStatus(ctx, userID, data)
+	assert.Error(t, err)
+	assert.NoError(t, tx.Rollback())
+}
+
+func (s *orderStatusTestSuite) TestOrderStatusRepository_UpdateStatus_OK() {
 	t := s.T()
 	userID := s.adminUser.ID
 	comment := "test comment"

@@ -557,6 +557,57 @@ func (s *OrderStatusTestSuite) TestOrderStatus_AddNewStatusToOrder_InReviewToApp
 	s.orderStatusRepository.AssertExpectations(t)
 }
 
+func (s *OrderStatusTestSuite) TestOrderStatus_AddNewStatusToOrder_InReviewToRejectedOK() {
+	t := s.T()
+	request := http.Request{}
+	ctx := request.Context()
+	userID := 1
+	login := "login"
+	role := &authentication.Role{
+		Id:   userID,
+		Slug: authentication.ManagerSlug,
+	}
+	access := authentication.Auth{
+		Id:    userID,
+		Login: login,
+		Role:  role,
+	}
+	handlerFunc := s.orderStatus.AddNewStatusToOrder(s.orderStatusRepository, s.equipmentStatusRepository)
+	statusComment := "test comment"
+	now := strfmt.DateTime(time.Now())
+	orderID := int64(1)
+	statusID := repositories.OrderStatusRejected
+	data := &models.NewOrderStatus{
+		Comment:   &statusComment,
+		CreatedAt: &now,
+		OrderID:   &orderID,
+		Status:    &statusID,
+	}
+	params := orders.AddNewOrderStatusParams{
+		HTTPRequest: &request,
+		Data:        data,
+	}
+	existingOrder := orderWithEdges(t, 1)
+	equipmentID := int64(existingOrder.Edges.Equipments[0].ID)
+	s.orderStatusRepository.On("GetOrderCurrentStatus", ctx, int(*data.OrderID)).
+		Return(existingOrder.Edges.OrderStatus[0], nil)
+	s.equipmentStatusRepository.On("GetEquipmentsStatusesByOrder", ctx,
+		existingOrder.ID).
+		Return(existingOrder.Edges.EquipmentStatus, nil)
+	s.orderStatusRepository.On("UpdateStatus", ctx, userID, *data).Return(nil)
+	s.equipmentStatusRepository.On("Update", ctx, &models.EquipmentStatus{
+		StatusName: &repositories.EquipmentStatusAvailable,
+		ID:         &equipmentID,
+	}).Return(nil, nil)
+
+	resp := handlerFunc(params, access)
+	responseRecorder := httptest.NewRecorder()
+	producer := runtime.JSONProducer()
+	resp.WriteResponse(responseRecorder, producer)
+	assert.Equal(t, http.StatusOK, responseRecorder.Code)
+	s.orderStatusRepository.AssertExpectations(t)
+}
+
 func (s *OrderStatusTestSuite) TestOrderStatus_AddNewStatusToOrder_ApprovedToPreparedOK() {
 	t := s.T()
 	request := http.Request{}
