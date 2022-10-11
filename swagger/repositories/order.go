@@ -126,6 +126,9 @@ func (r *orderRepository) Create(ctx context.Context, data *models.OrderCreateRe
 	if err != nil {
 		return nil, err
 	}
+	if len(equipmentIDs) == 0 {
+		return nil, errors.New("no equipments for order")
+	}
 	equipments := make([]*ent.Equipment, len(equipmentIDs))
 	for i, eqID := range equipmentIDs {
 		eq, err := tx.Equipment.Query().Where(equipment.ID(eqID)).

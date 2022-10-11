@@ -168,6 +168,28 @@ func (s *OrderSuite) TearDownSuite() {
 	s.client.Close()
 }
 
+func (s *OrderSuite) TestOrderRepository_Create_EmptyEquipments() {
+	t := s.T()
+	ctx := s.ctx
+	tx, err := s.client.Tx(ctx)
+	assert.NoError(t, err)
+	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
+
+	description := "test"
+	quantity := int64(1)
+	startDate := strfmt.DateTime(time.Now().UTC())
+	endDate := strfmt.DateTime(time.Now().UTC().Add(time.Hour * 24 * 5))
+	data := &models.OrderCreateRequest{
+		Description: &description,
+		Quantity:    &quantity,
+		RentEnd:     &endDate,
+		RentStart:   &startDate,
+	}
+	createdOrder, err := s.repository.Create(ctx, data, s.user.ID, []int{})
+	assert.Error(t, err)
+	assert.Nil(t, createdOrder)
+}
+
 func (s *OrderSuite) TestOrderRepository_Create_OK() {
 	t := s.T()
 	ctx := s.ctx
