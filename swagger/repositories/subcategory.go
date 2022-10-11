@@ -17,7 +17,6 @@ type SubcategoryRepository interface {
 	SubcategoryByID(ctx context.Context, id int) (*ent.Subcategory, error)
 	DeleteSubcategoryByID(ctx context.Context, id int) error
 	UpdateSubcategory(ctx context.Context, id int, update models.NewSubcategory) (*ent.Subcategory, error)
-	SubcategoryByEquipmentID(ctx context.Context, equipmentID int) (*ent.Subcategory, error)
 }
 
 type subcategoryRepository struct {

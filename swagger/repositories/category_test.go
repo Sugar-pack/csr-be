@@ -101,15 +101,10 @@ func (s *categoryRepositorySuite) TestCategoryRepository_CreateCategory() {
 	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
 	createdCategory, err := s.repository.CreateCategory(ctx, newCategory)
 	assert.NoError(t, err)
-	assert.NoError(t, tx.Commit())
 	assert.Equal(t, name, createdCategory.Name)
 	assert.Equal(t, maxReservationTime, createdCategory.MaxReservationTime)
 	assert.Equal(t, maxReservationUnits, createdCategory.MaxReservationUnits)
-
-	_, err = s.client.Category.Delete().Where(category.IDEQ(createdCategory.ID)).Exec(s.ctx)
-	if err != nil {
-		t.Fatal()
-	}
+	assert.NoError(t, tx.Rollback())
 }
 
 func (s *categoryRepositorySuite) TestCategoryRepository_AllCategoriesTotal() {
@@ -307,11 +302,6 @@ func (s *categoryRepositorySuite) TestCategoryRepository_CategoryByID() {
 	assert.Equal(t, s.categories[0].Name, category.Name)
 	assert.Equal(t, s.categories[0].MaxReservationTime, category.MaxReservationTime)
 	assert.Equal(t, s.categories[0].MaxReservationUnits, category.MaxReservationUnits)
-
-	_, err = s.client.Category.Delete().Exec(s.ctx)
-	if err != nil {
-		t.Fatal()
-	}
 }
 
 func (s *categoryRepositorySuite) TestCategoryRepository_DeleteCategoryByID() {
