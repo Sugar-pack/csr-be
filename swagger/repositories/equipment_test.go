@@ -3,9 +3,11 @@ package repositories
 import (
 	"context"
 	"math"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent"
@@ -56,6 +58,13 @@ func (s *EquipmentSuite) SetupTest() {
 		t.Fatal(err)
 	}
 
+	photoID := "photoID"
+	_, err = s.client.Photo.Delete().Exec(s.ctx) // clean up
+	require.NoError(t, err)
+
+	photo, err := s.client.Photo.Create().SetID(photoID).Save(s.ctx)
+	require.NoError(t, err)
+
 	subcategoryName := "subcategory"
 	_, err = s.client.Subcategory.Delete().Exec(s.ctx) // clean up
 	if err != nil {
@@ -84,8 +93,14 @@ func (s *EquipmentSuite) SetupTest() {
 		Title: "equipment 4",
 	}
 	s.equipments[5] = &ent.Equipment{
-		Name:  "test 5",
-		Title: "equipment 5",
+		Name:        "test 5",
+		Title:       "equipment 5",
+		TermsOfUse:  "https://site.com",
+		TechIssue:   "есть",
+		Supplier:    "Виталий",
+		ReceiptDate: "2018",
+		Description: "удовлетворительное, местами облупляется краска",
+		Condition:   "WARNING: do not put on cats!",
 	}
 
 	_, err = s.client.Equipment.Delete().Exec(s.ctx)
@@ -94,7 +109,18 @@ func (s *EquipmentSuite) SetupTest() {
 	}
 	for i, value := range s.equipments {
 		eq, errCreate := s.client.Equipment.Create().
-			SetName(value.Name).SetTitle(value.Title).SetCurrentStatus(status).SetCategory(category).SetSubcategory(subcategory).
+			SetName(value.Name).
+			SetTitle(value.Title).
+			SetTermsOfUse(value.TermsOfUse).
+			SetTechIssue(value.TechIssue).
+			SetSupplier(value.Supplier).
+			SetReceiptDate(value.ReceiptDate).
+			SetDescription(value.Description).
+			SetCondition(value.Condition).
+			SetCurrentStatus(status).
+			SetCategory(category).
+			SetSubcategory(subcategory).
+			SetPhoto(photo).
 			Save(s.ctx)
 		if errCreate != nil {
 			t.Fatal(errCreate)
@@ -384,6 +410,42 @@ func (s *EquipmentSuite) TestEquipmentRepository_FindEquipmentsOrderByTitleDesc(
 	}
 }
 
+func (s *EquipmentSuite) TestEquipmentRepository_FindEquipment_CaseInsensitiveString() {
+	t := s.T()
+	limit := 1
+	offset := 0
+	orderBy := "asc"
+	orderColumn := "title"
+	filter := models.EquipmentFilter{
+		Name:            "tEsT 5",
+		Title:           "EQuiPmeNT 5",
+		TermsOfUse:      "htTps://SITE.coM",
+		TechnicalIssues: "естЬ",
+		Supplier:        "виталий",
+		ReceiptDate:     "2018",
+		Description:     "удовлетворительное, МЕСТАМИ облупляется краска",
+		Condition:       "warning: do not PUT on cats!",
+	}
+	ctx := s.ctx
+	tx, err := s.client.Tx(ctx)
+	require.NoError(t, err)
+	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
+	equipments, err := s.repository.EquipmentsByFilter(ctx, filter, limit, offset, orderBy, orderColumn)
+	require.NoError(t, err)
+	require.NoError(t, tx.Commit())
+	assert.Equal(t, 1, len(equipments))
+	for _, value := range equipments {
+		assert.True(t, strings.EqualFold(value.Name, filter.Name))
+		assert.True(t, strings.EqualFold(value.Title, filter.Title))
+		assert.True(t, strings.EqualFold(value.Description, filter.Description))
+		assert.True(t, strings.EqualFold(value.TermsOfUse, filter.TermsOfUse))
+		assert.True(t, strings.EqualFold(value.TechIssue, filter.TechnicalIssues))
+		assert.True(t, strings.EqualFold(value.Supplier, filter.Supplier))
+		assert.True(t, strings.EqualFold(value.ReceiptDate, filter.ReceiptDate))
+		assert.True(t, strings.EqualFold(value.Condition, filter.Condition))
+	}
+}
+
 func (s *EquipmentSuite) TestEquipmentRepository_FindEquipmentsLimit() {
 	t := s.T()
 	limit := 2
@@ -416,7 +478,8 @@ func (s *EquipmentSuite) TestEquipmentRepository_FindEquipmentsOffset() {
 	offset := 2
 	orderBy := "asc"
 	orderColumn := "name"
-	filter := models.EquipmentFilter{NameSubstring: "test"}
+	name := "test"
+	filter := models.EquipmentFilter{NameSubstring: "tEsT"}
 	ctx := s.ctx
 	tx, err := s.client.Tx(ctx)
 	assert.NoError(t, err)
@@ -429,7 +492,7 @@ func (s *EquipmentSuite) TestEquipmentRepository_FindEquipmentsOffset() {
 	assert.Equal(t, 1, len(equipments))
 	for _, value := range equipments {
 		assert.True(t, mapContainsEquipment(value, s.equipments))
-		assert.Contains(t, value.Name, filter.NameSubstring)
+		assert.Contains(t, value.Name, name)
 	}
 }
 

@@ -373,6 +373,6 @@ func OptionalStringEquipment(str string, field string) predicate.Equipment {
 		}
 	}
 	return func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(field), str))
+		s.Where(sql.EqualFold(s.C(field), str))
 	}
 }

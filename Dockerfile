@@ -12,7 +12,7 @@ COPY internal/migration internal/migration
 COPY go.mod go.sum ./
 
 RUN apk add build-base
-RUN CGO_ENABLED=1 GOOS=linux GOARCH=amd64 CGO_LDFLAGS="-static" go build ./cmd/swagger/main.go
+RUN CGO_ENABLED=1 GOOS=linux GOARCH=amd64 CGO_LDFLAGS="-static" go build -tags="sqlite_icu"./cmd/swagger/main.go
 
 
 FROM alpine:3.15 as run

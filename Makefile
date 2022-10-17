@@ -44,7 +44,7 @@ generate:
 	go generate ./ent
 
 test:
-	go test -race ./... -coverprofile=coverage.out -short
+	go test -tags="sqlite_icu" -race ./... -coverprofile=coverage.out -short
 
 coverage:
 	go tool cover -func=coverage.out
@@ -55,7 +55,7 @@ integration-test: tag
 	docker volume prune -f && \
 	DOCKER_BUILDKIT=1  docker build -f Dockerfile.test --network host --no-cache -t test_go_run:${TAG} --target run . && \
 	docker-compose --env-file .env -f ./docker/docker-compose.test.yaml up -d
-	go test -race -v -timeout 10m ./... -run Integration
+	go test -tags="sqlite_icu" -race -v -timeout 10m ./... -run Integration
 	docker-compose --env-file .env -f ./docker/docker-compose.test.yaml down
 
 mocks:
