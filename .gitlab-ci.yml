@@ -19,7 +19,7 @@ test:
   rules:
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
   script:
-    - apk add --update --no-cache git build-base icu-libs icu-dev && rm -rf /var/cache/apk/*
+    - apk add --update --no-cache git build-base icu-libs icu-dev icu-static && rm -rf /var/cache/apk/*
     - go install github.com/go-swagger/go-swagger/cmd/swagger@v0.30.0 && go install entgo.io/ent/cmd/ent@v0.11.2
     - make generate && make test && make coverage
 
@@ -58,11 +58,11 @@ build:
   image: golang:1.17-alpine
   stage: build
   script:
-    - apk add --update --no-cache git make icu-libs icu-dev && rm -rf /var/cache/apk/*
+    - apk add --update --no-cache git make icu-dev icu-static && rm -rf /var/cache/apk/*
     - apk add build-base 
     - go install github.com/go-swagger/go-swagger/cmd/swagger@v0.30.0 && go install entgo.io/ent/cmd/ent@v0.11.2
     - make generate
-    - CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go build -tags="sqlite_icu" -o $CI_PROJECT_DIR/csr $CI_PROJECT_DIR/cmd/swagger/main.go
+    - CGO_ENABLED=1 GOOS=linux GOARCH=amd64 CGO_LDFLAGS="-static" go build -tags="sqlite_icu" -o $CI_PROJECT_DIR/csr $CI_PROJECT_DIR/cmd/swagger/main.go
   artifacts:
     paths:
       - csr
