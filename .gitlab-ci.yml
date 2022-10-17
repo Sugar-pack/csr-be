@@ -62,7 +62,7 @@ build:
     - apk add build-base 
     - go install github.com/go-swagger/go-swagger/cmd/swagger@v0.30.0 && go install entgo.io/ent/cmd/ent@v0.11.2
     - make generate
-    - CGO_ENABLED=1 GOOS=linux GOARCH=amd64 CGO_LDFLAGS="-static" go build -tags="sqlite_icu" -o $CI_PROJECT_DIR/csr $CI_PROJECT_DIR/cmd/swagger/main.go
+    - CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go build -tags="sqlite_icu" -o $CI_PROJECT_DIR/csr $CI_PROJECT_DIR/cmd/swagger/main.go
   artifacts:
     paths:
       - csr
