@@ -32,7 +32,7 @@ Checked from unix-compatible OS.
     ```
 7. Run the service: 
     ```shell
-    export $(grep -v '^#' local.env | xargs) && go run cmd/swagger/main.go
+    export $(grep -v '^#' local.env | xargs) && go run -tags="sqlite_icu" cmd/swagger/main.go
     ```
    The server is here - http://127.0.0.1:8080/api
    Swagger docs are here - http://127.0.0.1:8080/api/docs
