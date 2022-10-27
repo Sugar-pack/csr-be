@@ -72,10 +72,10 @@ deploy_stage:
   environment:
     name: staging
   stage: deploy
-  rules:
-    - if: $START_DEPLOY_TO_STAGE == "true"
-    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
-      when: always
+  # rules:
+  #   - if: $START_DEPLOY_TO_STAGE == "true"
+  #   - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+  #     when: always
   script:
     - mkdir -p ~/.ssh
     - echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
