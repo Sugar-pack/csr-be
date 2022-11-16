@@ -2,6 +2,7 @@ package email
 
 import (
 	"fmt"
+
 	"github.com/matcornic/hermes/v2"
 )
 
@@ -21,22 +22,22 @@ func generateSendLinkReset(userName, websiteUrl, token string) hermes.Email {
 		Body: hermes.Body{
 			Name: userName,
 			Intros: []string{
-				"You have received this email because a password reset request for Lyonkin Kot account was received.",
+				"Вы получили это электронное письмо, потому что был получен запрос на сброс пароля для учетной записи в сервисе Лёнькин Кот.",
 			},
 			Actions: []hermes.Action{
 				{
-					Instructions: "Click the button below to reset your password:",
+					Instructions: "Нажмите кнопку ниже, чтобы сбросить свой пароль:",
 					Button: hermes.Button{
 						Color: "#DC4D2F",
-						Text:  "Reset your password",
+						Text:  "Сбросить пароль",
 						Link:  fmt.Sprintf("%sapi/password_reset/%s", websiteUrl, token),
 					},
 				},
 			},
 			Outros: []string{
-				"If you did not request a password reset, no further action is required on your part.",
+				"Если вы не запрашивали сброс пароля, никаких дальнейших действий с вашей стороны не требуется.",
 			},
-			Signature: "Thanks",
+			Signature: "Спасибо",
 		},
 	}
 }
@@ -46,14 +47,14 @@ func generateGetPasswordReset(userName, password string) hermes.Email {
 		Body: hermes.Body{
 			Name: userName,
 			Intros: []string{
-				"You have received this email because a password reset request for Lyonkin Kot account was received.",
-				"This is your new password:",
+				"Вы получили это электронное письмо, потому что был получен запрос на сброс пароля для учетной записи в сервисе Лёнькин Кот.",
+				"Ваш новый пароль:",
 				password,
 			},
 			Outros: []string{
-				"If you did not request a password reset, no further action is required on your part.",
+				"Если вы не запрашивали сброс пароля, никаких дальнейших действий с вашей стороны не требуется.",
 			},
-			Signature: "Thanks",
+			Signature: "Спасибо",
 		},
 	}
 }
@@ -63,22 +64,22 @@ func generateRegistrationConfirmMessage(userName, websiteUrl, token string) herm
 		Body: hermes.Body{
 			Name: userName,
 			Intros: []string{
-				"You have received this email because you've registered Lyonkin Kot account.",
+				"Вы получили это электронное письмо, потому что зарегистрировали учетную запись в сервисе Лёнькин Кот.",
 			},
 			Actions: []hermes.Action{
 				{
-					Instructions: "Click the button below to confirm registration:",
+					Instructions: "Нажмите кнопку ниже для подтверждения регистрации:",
 					Button: hermes.Button{
 						Color: "#DC4D2F",
-						Text:  "Confirm",
+						Text:  "Подтвердить",
 						Link:  fmt.Sprintf("%sapi/registration_confirm/%s", websiteUrl, token),
 					},
 				},
 			},
 			Outros: []string{
-				"If you did not register, no further action is required on your part.",
+				"Если вы не регистрировались, никаких дальнейших действий с вашей стороны не требуется.",
 			},
-			Signature: "Thanks",
+			Signature: "Спасибо",
 		},
 	}
 }
