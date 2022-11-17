@@ -45,6 +45,7 @@ var (
 	OrderStatusRejected   = "rejected"
 	OrderStatusClosed     = "closed"
 	OrderStatusPrepared   = "prepared"
+	OrderStatusOverdue    = "overdue"
 )
 
 type orderRepository struct {

@@ -73,7 +73,7 @@ func main() {
 		logger.Fatal("fail to setup app config", zap.Error(err))
 	}
 	// setup swagger api
-	h, err := swagger.SetupAPI(entClient, logger, appConfig)
+	h, checker, err := swagger.SetupAPI(entClient, logger, appConfig)
 	if err != nil {
 		logger.Fatal("error setup swagger api", zap.Error(err))
 	}
@@ -91,6 +91,18 @@ func main() {
 	}
 
 	server.SetHandler(h)
+	go func() {
+		checker.Checkup(ctx, entClient, logger)
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-time.After(appConfig.OverdueTimeCheckHours):
+				checker.Checkup(ctx, entClient, logger)
+			}
+		}
+	}()
+
 	if err := server.Serve(); err != nil {
 		logger.Error("server fatal error", zap.Error(err))
 		return

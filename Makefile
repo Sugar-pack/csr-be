@@ -44,7 +44,7 @@ generate:
 	go generate ./ent
 
 test:
-	go test -tags="sqlite_icu" -race ./... -coverprofile=coverage.out -short
+	go test -tags="sqlite_icu" -v -race ./... -coverprofile=coverage.out -short
 
 coverage:
 	go tool cover -func=coverage.out

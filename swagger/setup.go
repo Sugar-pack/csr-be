@@ -3,13 +3,13 @@ package swagger
 import (
 	"net/http"
 
-	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/config"
-	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/utils"
-
 	"github.com/go-openapi/loads"
 	"go.uber.org/zap"
 
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/cmd/swagger/overdue"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/ent"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/config"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/utils"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/email"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/restapi"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/generated/restapi/operations"
@@ -19,18 +19,17 @@ import (
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/services"
 )
 
-func SetupAPI(entClient *ent.Client, logger *zap.Logger, config *config.AppConfig) (http.Handler, error) {
-
+func SetupAPI(entClient *ent.Client, logger *zap.Logger, config *config.AppConfig) (http.Handler, overdue.OverdueCheckup, error) {
 	passwordGenerator, err := utils.NewPasswordGenerator(config.PasswordConfig.PasswordLength)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	swaggerSpec, err := loads.Analyzed(restapi.SwaggerJSON, "")
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-	//repos
+	// repos
 	passwordRepo := repositories.NewPasswordResetRepository()
 	regConfirmRepo := repositories.NewRegistrationConfirmRepository()
 	userRepository := repositories.NewUserRepository()
@@ -56,7 +55,7 @@ func SetupAPI(entClient *ent.Client, logger *zap.Logger, config *config.AppConfi
 	handlers.SetCategoryHandler(logger, api)
 	handlers.SetSubcategoryHandler(logger, api)
 	handlers.SetOrderHandler(logger, api)
-	handlers.SetOrderStatusHandler(logger, api)
+	orderStatusRepo, orderFilterRepo, equipmentStatusRepo := handlers.SetOrderStatusHandler(logger, api)
 	handlers.SetPasswordResetHandler(logger, api, passwordService)
 	handlers.SetPetSizeHandler(logger, api)
 	handlers.SetPhotoHandler(logger, api, fileManager)
@@ -65,5 +64,5 @@ func SetupAPI(entClient *ent.Client, logger *zap.Logger, config *config.AppConfi
 	handlers.SetEquipmentStatusNameHandler(logger, api)
 	handlers.SetUserHandler(logger, api, tokenManager, regConfirmService)
 	handlers.SetPetKindHandler(logger, api)
-	return middlewares.Tx(entClient)(api.Serve(nil)), nil
+	return middlewares.Tx(entClient)(api.Serve(nil)), overdue.NewOverdueCheckup(orderStatusRepo, orderFilterRepo, equipmentStatusRepo), nil
 }
