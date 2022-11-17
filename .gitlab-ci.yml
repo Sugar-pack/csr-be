@@ -82,10 +82,16 @@ deploy_stage:
     - chmod -R 700 ~/.ssh
     - echo "$SSH_KNOWN_HOSTS" >> ~/.ssh/known_hosts
     - chmod 644 ~/.ssh/known_hosts
+    - mkdir ~/csr
+    - cat $STAGE_FILE >> ~/csr/stage_file
     - scp -o "StrictHostKeyChecking=no" -P$SSH_PORT -r ./csr $SSH_USER@$SSH_HOST:~/tmp_csr
     - ssh -o "StrictHostKeyChecking=no" $SSH_USER@$SSH_HOST 'rm -rf /var/www/csr/db'
     - scp -o "StrictHostKeyChecking=no" -P$SSH_PORT -r ./db $SSH_USER@$SSH_HOST:/var/www/csr/
-    - ssh -o "StrictHostKeyChecking=no" -p$SSH_PORT $SSH_USER@$SSH_HOST STAGE_FILE="$STAGE_FILE" 'sudo service csr stop && cp ~/tmp_csr /var/www/csr/server && sudo service csr start'
+    - scp -o "StrictHostKeyChecking=no" -P$SSH_PORT -r ~/csr $SSH_USER@$SSH_HOST:/var/www/csr/
+    - ssh -o "StrictHostKeyChecking=no" $SSH_USER@$SSH_HOST 'sudo mv /var/www/csr/csr /etc'
+    - ssh -o "StrictHostKeyChecking=no" -p$SSH_PORT $SSH_USER@$SSH_HOST 'sudo systemctl daemon-reload && sudo service csr stop && cp ~/tmp_csr /var/www/csr/server && sudo service csr start'
+    - rm ~/csr/stage_file
+    - ssh -o "StrictHostKeyChecking=no" $SSH_USER@$SSH_HOST 'sudo rm /etc/csr/stage_file'
 
 deploy_to_prod:
   image: kroniak/ssh-client
