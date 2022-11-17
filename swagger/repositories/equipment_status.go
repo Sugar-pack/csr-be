@@ -131,6 +131,12 @@ func (r *equipmentStatusRepository) Update(ctx context.Context, data *models.Equ
 		}
 		equipmentStatus.SetEquipmentStatusName(eqStatusName)
 	}
+	if data.StartDate != nil {
+		equipmentStatus.SetStartDate(time.Time(*data.StartDate))
+	}
+	if data.EndDate != nil {
+		equipmentStatus.SetEndDate(time.Time(*data.EndDate))
+	}
 	equipmentStatus.SetUpdatedAt(time.Now())
 	return equipmentStatus.Save(ctx)
 }

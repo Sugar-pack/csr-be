@@ -22,7 +22,7 @@ import (
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/repositories"
 )
 
-func SetOrderStatusHandler(logger *zap.Logger, api *operations.BeAPI) {
+func SetOrderStatusHandler(logger *zap.Logger, api *operations.BeAPI) (repositories.OrderStatusRepository, repositories.OrderRepositoryWithFilter, repositories.EquipmentStatusRepository) {
 	orderStatusRepo := repositories.NewOrderStatusRepository()
 	orderFilterRepo := repositories.NewOrderFilter()
 	orderStatusNameRepo := repositories.NewOrderStatusNameRepository()
@@ -34,6 +34,7 @@ func SetOrderStatusHandler(logger *zap.Logger, api *operations.BeAPI) {
 	api.OrdersAddNewOrderStatusHandler = orderStatusHandler.AddNewStatusToOrder(orderStatusRepo, equipmentStatusRepo)
 	api.OrdersGetFullOrderHistoryHandler = orderStatusHandler.OrderStatusesHistory(orderStatusRepo)
 	api.OrdersGetAllStatusNamesHandler = orderStatusHandler.GetAllStatusNames(orderStatusNameRepo)
+	return orderStatusRepo, orderFilterRepo, equipmentStatusRepo
 }
 
 type OrderStatus struct {
@@ -213,14 +214,23 @@ func (h *OrderStatus) AddNewStatusToOrder(orderStatusRepo repositories.OrderStat
 
 		switch *newOrderStatus {
 		case repositories.OrderStatusRejected, repositories.OrderStatusClosed:
-			err = updateEqStatuses(ctx, equipmentStatusRepo, orderEquipmentStatuses, repositories.EquipmentStatusAvailable)
+			status := repositories.EquipmentStatusAvailable
+			model := &models.EquipmentStatus{
+				StatusName: &status,
+			}
+			err = UpdateEqStatuses(ctx, equipmentStatusRepo, orderEquipmentStatuses, model)
 			if err != nil {
 				h.logger.Error("Update equipment status error", zap.Error(err))
 				return orders.NewAddNewOrderStatusDefault(http.StatusInternalServerError).
 					WithPayload(buildStringPayload("Can't update equipment status"))
 			}
+
 		case repositories.OrderStatusInProgress:
-			err = updateEqStatuses(ctx, equipmentStatusRepo, orderEquipmentStatuses, repositories.EquipmentStatusInUse)
+			status := repositories.EquipmentStatusInUse
+			model := &models.EquipmentStatus{
+				StatusName: &status,
+			}
+			err = UpdateEqStatuses(ctx, equipmentStatusRepo, orderEquipmentStatuses, model)
 			if err != nil {
 				h.logger.Error("Update equipment status error", zap.Error(err))
 				return orders.NewAddNewOrderStatusDefault(http.StatusInternalServerError).
@@ -374,12 +384,12 @@ func (h *OrderStatus) GetAllStatusNames(repository repositories.OrderStatusNameR
 func checkEqStatusRequirements(newStatus string, logger *zap.Logger, eqStatuses []*ent.EquipmentStatus) error {
 	switch newStatus {
 	case repositories.OrderStatusPrepared, repositories.OrderStatusInProgress:
-		return checkEqStatuses(logger, eqStatuses, repositories.EquipmentStatusBooked)
+		return CheckEqStatuses(logger, eqStatuses, repositories.EquipmentStatusBooked)
 	}
 	return nil
 }
 
-func checkEqStatuses(logger *zap.Logger, eqStatuses []*ent.EquipmentStatus, status string) error {
+func CheckEqStatuses(logger *zap.Logger, eqStatuses []*ent.EquipmentStatus, status string) error {
 	errEqIds := make([]int, 0, len(eqStatuses))
 	for _, eqStatus := range eqStatuses {
 		if eqStatus.Edges.EquipmentStatusName.Name != status {
@@ -393,12 +403,14 @@ func checkEqStatuses(logger *zap.Logger, eqStatuses []*ent.EquipmentStatus, stat
 	return nil
 }
 
-func updateEqStatuses(ctx context.Context, equipmentStatusRepo repositories.EquipmentStatusRepository, eqStatuses []*ent.EquipmentStatus, newEqStatus string) error {
+func UpdateEqStatuses(ctx context.Context, equipmentStatusRepo repositories.EquipmentStatusRepository, eqStatuses []*ent.EquipmentStatus, equipmentStatusModel *models.EquipmentStatus) error {
 	for _, eqStatus := range eqStatuses {
 		eqStatusID := int64(eqStatus.ID)
 		if _, err := equipmentStatusRepo.Update(ctx, &models.EquipmentStatus{
-			StatusName: &newEqStatus,
+			StatusName: equipmentStatusModel.StatusName,
 			ID:         &eqStatusID,
+			StartDate:  equipmentStatusModel.StartDate,
+			EndDate:    equipmentStatusModel.EndDate,
 		}); err != nil {
 			return err
 		}

@@ -599,7 +599,6 @@ func (s *OrderStatusTestSuite) TestOrderStatus_AddNewStatusToOrder_InReviewToRej
 		StatusName: &repositories.EquipmentStatusAvailable,
 		ID:         &equipmentID,
 	}).Return(nil, nil)
-
 	resp := handlerFunc(params, access)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
