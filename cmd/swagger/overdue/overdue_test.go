@@ -32,7 +32,6 @@ type CheckupTestSuite struct {
 	orderStatusRepo *repomock.OrderStatusRepository
 	orderFilterRepo *repomock.OrderRepositoryWithFilter
 	setupApi        OverdueCheckup
-	client          *ent.Client
 }
 
 func TestStatusSuite(t *testing.T) {

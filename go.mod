@@ -1,6 +1,6 @@
 module git.epam.com/epm-lstr/epm-lstr-lc/be
 
-go 1.17
+go 1.19
 
 require (
 	entgo.io/ent v0.10.1

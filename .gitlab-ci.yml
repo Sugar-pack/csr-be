@@ -1,13 +1,7 @@
-variables:
-  TEST: "123"
-#  START_DEPLOY_TO_STAGE: "true"
-#  START_DEPLOY_TO_PROD: "true"
-
 stages:
   - test
   - build
   - deploy
-#  - integration_test
 
 test:
   image: golang:1.17-alpine
@@ -44,22 +38,22 @@ test:
 
 lint:
   image: registry.gitlab.com/gitlab-org/gitlab-build-images:golangci-lint-alpine
-  when: manual
   stage: test
   script:
+    - apk add --update --no-cache git make icu-dev icu-static build-base && rm -rf /var/cache/apk/*
+    - go install github.com/go-swagger/go-swagger/cmd/swagger@v0.30.0 && go install entgo.io/ent/cmd/ent@v0.11.2
+    - make generate
     - '[ -e .golangci.yml ] || cp /golangci/.golangci.yml .'
     - golangci-lint run --out-format tab | tee ./report.txt
   artifacts:
     paths:
       - report.txt
-  allow_failure: true
 
 build:
-  image: golang:1.17-alpine
+  image: golang:1.19-alpine
   stage: build
   script:
-    - apk add --update --no-cache git make icu-dev icu-static && rm -rf /var/cache/apk/*
-    - apk add build-base 
+    - apk add --update --no-cache git make icu-dev icu-static build-base && rm -rf /var/cache/apk/*
     - go install github.com/go-swagger/go-swagger/cmd/swagger@v0.30.0 && go install entgo.io/ent/cmd/ent@v0.11.2
     - make generate
     - CGO_ENABLED=1 GOOS=linux GOARCH=amd64 CGO_LDFLAGS="-lstdc++ -licudata -licuuc" go build -ldflags '-extldflags "-fno-PIC -static"' -buildmode pie -tags 'osusergo netgo static_build sqlite_icu' -o $CI_PROJECT_DIR/csr $CI_PROJECT_DIR/cmd/swagger/main.go
