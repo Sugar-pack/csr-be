@@ -2,7 +2,7 @@ package logger
 
 import "go.uber.org/zap"
 
-func Setup() (*zap.Logger, error) {
+func Get() (*zap.Logger, error) {
 	var loggerConfig = zap.NewProductionConfig()
 	loggerConfig.Level.SetLevel(zap.DebugLevel)
 
@@ -10,5 +10,6 @@ func Setup() (*zap.Logger, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	return logger, nil
 }

@@ -1,0 +1,13 @@
+[Unit]
+Description=stage.csr
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/var/www/csr/stage
+User=csr
+ExecStart=/var/www/csr/stage/server
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

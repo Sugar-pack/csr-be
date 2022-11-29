@@ -1,1 +1,0 @@
-DELETE FROM order_status_names;
