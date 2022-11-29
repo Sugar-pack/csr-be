@@ -1,1 +1,0 @@
-DELETE FROM active_areas;

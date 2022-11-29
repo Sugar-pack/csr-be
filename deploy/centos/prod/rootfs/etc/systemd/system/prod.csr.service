@@ -1,0 +1,13 @@
+[Unit]
+Description=prod.csr
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/var/www/csr/prod
+User=csr
+ExecStart=/var/www/csr/prod/server
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

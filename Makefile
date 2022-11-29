@@ -2,77 +2,62 @@ ifndef ${TAG}
 	TAG=$$(git rev-parse --short HEAD)
 endif
 
-tag:
-	echo "TAG=${TAG}" > .env
+packagesToTest=$$(go list ./... | grep -v generated)
 
-build: tag generate
-	DOCKER_BUILDKIT=1 docker build --no-cache -t go_run:${TAG} --target run .
+setup:
+	go install github.com/go-swagger/go-swagger/cmd/swagger@v0.30.0
+	go install entgo.io/ent/cmd/ent@v0.11.2
+	go install github.com/vektra/mockery/v2@v2.15.0
 
-up: 
-	docker-compose --env-file .env -f ./docker/docker-compose.yaml up -d
+setup_alpine:
+	apk add --update --no-cache git build-base && rm -rf /var/cache/apk/*
 
-run: build up
+run:
+	go run ./cmd/swagger/
 
-stop:
-	docker-compose --env-file .env -f ./docker/docker-compose.yaml stop
+clean/mocks:
+	find ./internal/generated/mocks/* -exec rm -rf {} \; || true
 
-down:
-	docker-compose --env-file .env -f ./docker/docker-compose.yaml down
+generate/mocks: clean/mocks
+	mockery --all --case snake --dir ./pkg/domain --output ./internal/generated/mocks
 
-clean:
-	docker-compose --env-file .env -f ./docker/docker-compose.yaml down || true
-	docker rm lc_lint || true
-	docker rmi $$(docker images -q go_lint:${TAG}) || true
-	docker rmi $$(docker images -q go_run:${TAG}) || true
+clean/swagger:
+	rm -rf ./internal/generated/swagger
+
+generate/swagger: clean/swagger
+	swagger generate server -f ./swagger.yaml -s ./internal/generated/swagger/restapi -m ./internal/generated/swagger/models --exclude-main
+	swagger generate client -c ./internal/generated/swagger/client -f ./swagger.yaml -m ./internal/generated/swagger/models
+
+clean/ent:
+	find ./internal/generated/ent/* ! -name "generate.go" -exec rm -rf {} \; || true
+
+generate/ent: clean/ent
+	go run -mod=mod entgo.io/ent/cmd/ent generate --target ./internal/generated/ent ./internal/ent/schema
+
+generate: generate/swagger generate/ent generate/mocks
+
+clean: clean/swagger clean/ent
+	rm csr coverage.out report.txt
+
+build:
+	CGO_ENABLED=0 go build -o csr ./cmd/swagger/...
 
 lint:
-	DOCKER_BUILDKIT=1 docker build -t go_lint:${TAG} --target lint .
-	docker run -it --name lc_lint go_lint:${TAG} || true
-
-local_run:
-	go run cmd/swagger/main.go
-
-local_lint:
-	golangci-lint run --out-format tab
-
-generate:
-	rm -rf ./swagger/generated
-	swagger generate server -f ./swagger/spec.yaml -s swagger/generated/restapi -m swagger/generated/models --exclude-main
-	rm -rf ./client
-	swagger generate client -f ./swagger/spec.yaml -m swagger/generated/models
-	git clean -X -f ./ent
-	go generate ./ent
+	golangci-lint run --out-format tab | tee ./report.txt
 
 test:
-	go test -tags="sqlite_icu" -v -race ./... -coverprofile=coverage.out -short
+	go test ${packagesToTest} -race -coverprofile=coverage.out -short
 
 coverage:
 	go tool cover -func=coverage.out
 
-# to run first time required to run "make generate" before tests
-# generate is in gitlab-ci file before running tests
-integration-test: tag
-	docker volume prune -f && \
-	DOCKER_BUILDKIT=1  docker build -f Dockerfile.test --network host --no-cache -t test_go_run:${TAG} --target run . && \
-	docker-compose --env-file .env -f ./docker/docker-compose.test.yaml up -d
-	go test -tags="sqlite_icu" -race -v -timeout 10m ./... -run Integration
-	docker-compose --env-file .env -f ./docker/docker-compose.test.yaml down
+coverage_total:
+	go tool cover -func=coverage.out | tail -n1 | awk '{print $3}' | grep -Eo '\d+(.\d+)?'
 
-mocks:
-	make gen-repo-mock gen-email-client-mock gen-services-mocks
-
-gen-repo-mock:
-	@docker run -v `pwd`:/src -w /src vektra/mockery:v2.13.1 --case snake --dir swagger/repositories --output internal/mocks/repositories --outpkg repositories --all
-
-gen-email-client-mock:
-	@docker run -v `pwd`:/src -w /src vektra/mockery:v2.13.1 --case snake --dir swagger/email --output internal/mocks/email --outpkg email --all
-
-gen-services-mocks:
-	@docker run -v `pwd`:/src -w /src vektra/mockery:v2.13.1 --case snake --dir swagger/services --output internal/mocks/services --all
-
-linux-build-mac-version:
-	CGO_ENABLED=1 GOOS=linux CGO_LDFLAGS="-static" GOARCH=amd64 CC=x86_64-linux-musl-gcc CXX=x86_64-linux-musl-g++ go build ./cmd/swagger/main.go
-
-linux-build:
-	CGO_ENABLED=1 GOOS=linux GOARCH=amd64 CGO_LDFLAGS="-static" go build ./cmd/swagger/main.go
+deploy_ssh:
+	ssh -o "StrictHostKeyChecking=no" -i ~/.ssh/ssh_deploy -p"${deploy_ssh_port}" "${deploy_ssh_user}@${deploy_ssh_host}" 'mkdir -p /var/www/csr/${env}/'
+	scp -o "StrictHostKeyChecking=no" -i ~/.ssh/ssh_deploy -P"${deploy_ssh_port}" -r ./csr "${deploy_ssh_user}@${deploy_ssh_host}:~/tmp_csr"
+	scp -o "StrictHostKeyChecking=no" -i ~/.ssh/ssh_deploy -P"${deploy_ssh_port}" -r ./config.json "${deploy_ssh_user}@${deploy_ssh_host}:/var/www/csr/${env}/"
+	ssh -o "StrictHostKeyChecking=no" -i ~/.ssh/ssh_deploy -p"${deploy_ssh_port}" "${deploy_ssh_user}@${deploy_ssh_host}" \
+	"sudo systemctl daemon-reload && sudo service ${env}.csr stop && cp ~/tmp_csr /var/www/csr/${env}/server && sudo service ${env}.csr start"
 

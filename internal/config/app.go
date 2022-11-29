@@ -4,49 +4,107 @@ import (
 	"fmt"
 	"time"
 
-	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/utils"
-	"git.epam.com/epm-lstr/epm-lstr-lc/be/swagger/email"
+	"github.com/go-playground/validator"
+	"github.com/spf13/viper"
 )
 
 type AppConfig struct {
-	PasswordConfig        *PasswordService
-	PhotoService          *PhotoService
-	JWTSecret             string
-	EmailService          email.ServiceConfig
-	OverdueTimeCheckHours time.Duration
+	Password                            Password
+	JWTSecretKey                        string `validate:"required"`
+	Email                               Email
+	OrderStatusOverdueTimeCheckDuration time.Duration `validate:"required"`
+	Server                              Server
+	DB                                  DB
 }
 
-func SetupAppConfig() (*AppConfig, error) {
-	jwtSecretKey := utils.GetEnv("JWT_SECRET_KEY", "")
-	if jwtSecretKey == "" {
-		return nil, fmt.Errorf("JWT_SECRET_KEY not specified")
+type DB struct {
+	Host          string `validate:"required"`
+	Port          string
+	User          string `validate:"required"`
+	Password      string
+	Database      string `validate:"required"`
+	EntMigrations bool
+}
+
+func (db DB) GetConnectionString() string {
+	s := fmt.Sprintf("host=%s", db.Host)
+	if db.Port != "" {
+		s = fmt.Sprintf("%s port=%s", s, db.Port)
 	}
-	overdueTimeCheck := utils.GetEnv("OVERDUE_TIME_CHECK_HOURS", "4h")
-	if overdueTimeCheck == "" {
-		return nil, fmt.Errorf("OVERDUE_TIME_CHECK_HOURS not specified")
+	if db.User != "" {
+		s = fmt.Sprintf("%s user=%s", s, db.User)
 	}
-	overdueDurHours, err := time.ParseDuration(overdueTimeCheck)
-	if err != nil {
-		return nil, fmt.Errorf("OVERDUE_TIME_CHECK_HOURS must be in duration format, e.x. 4h")
+	if db.Database != "" {
+		s = fmt.Sprintf("%s database=%s", s, db.Database)
+	}
+	if db.Password != "" {
+		s = fmt.Sprintf("%s password=%s", s, db.Password)
 	}
 
-	emailServiceConfig, err := email.SetupEmailServiceConfig()
-	if err != nil {
-		return nil, err
+	return s
+}
+
+type Email struct {
+	ServerHost        string `validate:"required"`
+	ServerPort        string `validate:"required"`
+	Password          string `validate:"required"`
+	SenderFromAddress string `validate:"required"`
+	SenderFromName    string `validate:"required"`
+	SenderWebsiteUrl  string `validate:"required"`
+	IsSendRequired    bool
+}
+
+type Password struct {
+	ResetExpirationMinutes time.Duration `validate:"required"`
+	Length                 int           `validate:"required,gte=8"`
+}
+
+type Server struct {
+	Host string `validate:"required"`
+	Port int    `validate:"required,gte=1024"`
+}
+
+func GetAppConfig(additionalDirectories ...string) (*AppConfig, error) {
+	viper.SetConfigName("config")
+	viper.SetConfigType("json")
+	viper.AddConfigPath(".")
+
+	for _, d := range additionalDirectories {
+		viper.AddConfigPath(d)
 	}
 
-	passwordServiceConfig, err := NewPasswordService()
-	if err != nil {
-		return nil, err
+	if err := viper.ReadInConfig(); err != nil {
+		return nil, fmt.Errorf("failed to read in config: %w", err)
 	}
 
-	photoServiceConfig := NewPhotoServiceConfig()
+	conf := getDefaultConfig()
+	if err := viper.Unmarshal(&conf); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal config into struct: %w", err)
+	}
 
+	if err := validator.New().Struct(conf); err != nil {
+		return nil, fmt.Errorf("failed to validate config: %w", err)
+	}
+
+	return conf, nil
+}
+
+func getDefaultConfig() *AppConfig {
 	return &AppConfig{
-		PasswordConfig:        passwordServiceConfig,
-		PhotoService:          photoServiceConfig,
-		JWTSecret:             jwtSecretKey,
-		EmailService:          emailServiceConfig,
-		OverdueTimeCheckHours: overdueDurHours,
-	}, nil
+		DB: DB{
+			Host: "localhost",
+			User: "csr",
+		},
+		Password: Password{
+			Length:                 8,
+			ResetExpirationMinutes: 15 * time.Minute,
+		},
+		Email: Email{
+			SenderWebsiteUrl: "https://csr.golangforall.com/",
+		},
+		Server: Server{
+			Host: "127.0.0.1",
+			Port: 8080,
+		},
+	}
 }

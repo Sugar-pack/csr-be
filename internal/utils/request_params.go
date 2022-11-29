@@ -1,15 +1,9 @@
 package utils
 
-func GetParamInt(param *int64, defaultValue int) int {
-	if param != nil {
-		return int(*param)
-	}
-	return defaultValue
-}
-
-func GetParamString(param *string, defaultValue string) string {
+func GetValueByPointerOrDefaultValue[T any](param *T, defaultValue T) T {
 	if param != nil {
 		return *param
 	}
+
 	return defaultValue
 }
