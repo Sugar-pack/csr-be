@@ -16,7 +16,7 @@ Go 1.19.2 is the current version.
     ```
 3. Run the service: 
     ```shell
-    export $(grep -v '^#' local.env | xargs) && go run -tags="sqlite_icu" cmd/swagger/main.go
+    make run
     ```
    The server is here - http://127.0.0.1:8080/api
    Swagger docs are here - http://127.0.0.1:8080/api/docs
