@@ -31,7 +31,7 @@ func main() {
 
 	entClient, db, err := internalDB.GetDB(conf.DB.GetConnectionString())
 	if err != nil {
-		lg.Fatal("failed to clear pid file", zap.Error(err))
+		lg.Fatal("failed to db connection", zap.Error(err))
 	}
 
 	if conf.DB.EntMigrations {

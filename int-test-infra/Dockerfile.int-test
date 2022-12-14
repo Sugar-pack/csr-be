@@ -1,0 +1,15 @@
+FROM golang:1.19.2-alpine as build
+
+WORKDIR /go/src
+COPY . .
+
+RUN apk add --update --no-cache build-base
+RUN make build
+
+FROM alpine:latest as run
+
+WORKDIR /go
+COPY --from=build /go/src/int-test-infra/config.json ./
+COPY --from=build /go/src/csr ./
+
+ENTRYPOINT [ "./csr" ]

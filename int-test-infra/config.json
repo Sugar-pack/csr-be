@@ -1,0 +1,28 @@
+{
+  "db": {
+    "host": "db",
+    "port": "5432",
+    "user": "csr",
+    "password": "password",
+    "database": "csr",
+    "ent_migrations": false
+  },
+  "JWTSecretKey": 123,
+  "email": {
+    "serverHost": "any",
+    "serverPort": 1,
+    "password": "any",
+    "senderFromAddress": "any",
+    "senderFromName": "any",
+    "isSendRequired": false
+  },
+  "password": {
+    "length": 8,
+    "resetExpirationMinutes": 15
+  },
+  "orderStatusOverdueTimeCheckDuration": "4h",
+  "server": {
+    "host": "0.0.0.0",
+    "port": 8080
+  }
+}

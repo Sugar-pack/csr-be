@@ -38,7 +38,7 @@ const (
 
 func GenerateLoginAndPassword() (string, string, error) {
 	login := gofakeit.Username()
-	generator, err := utils.NewPasswordGenerator(6)
+	generator, err := utils.NewPasswordGenerator(8)
 	if err != nil {
 		return "", "", err
 	}
@@ -105,18 +105,38 @@ func GetUser(ctx context.Context, client *client.Be, authInfo runtime.ClientAuth
 }
 
 func SetupClient() *client.Be {
-	serverConfig, err := config.GetAppConfig()
+	serverConfig, err := config.GetAppConfig("../../../int-test-infra/")
 	if err != nil {
 		log.Fatal("fail to setup server config", zap.Error(err))
 	}
 
 	host := "localhost"
 	schemes := []string{"http"}
+	apiURL := fmt.Sprintf("%s:%v", host, serverConfig.Server.Port)
 
-	swaggerClient, err := NewAPIClient(fmt.Sprintf("%s:%v", host, serverConfig.Server.Port), schemes)
+	swaggerClient, err := NewAPIClient(apiURL, schemes)
 	if err != nil {
 		log.Fatal("fail to setup client", zap.Error(err))
 	}
+
+	l, p, err := GenerateLoginAndPassword()
+	if err != nil {
+		log.Fatal("fail to setup client", zap.Error(err))
+	}
+
+	dc := time.After(time.Second * 15)
+	for {
+		select {
+		case <-dc:
+			log.Fatal("fail to wait for app", zap.Error(err))
+		default:
+			_, err = CreateUser(context.TODO(), swaggerClient, l, p)
+			if err == nil {
+				break
+			}
+		}
+	}
+
 	return swaggerClient
 }
 

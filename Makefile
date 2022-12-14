@@ -54,6 +54,12 @@ coverage:
 coverage_total:
 	go tool cover -func=coverage.out | tail -n1 | awk '{print $3}' | grep -Eo '\d+(.\d+)?'
 
+int-test:
+	DOCKER_BUILDKIT=1  docker build -f ./int-test-infra/Dockerfile.int-test --network host --no-cache -t test_go_run:int-test --target run . && \
+	docker-compose -f ./int-test-infra/docker-compose.int-test.yml up -d
+	go test -v -timeout 10m ./... -run Integration
+	docker-compose -f ./int-test-infra/docker-compose.int-test.yml down
+
 deploy_ssh:
 	ssh -o "StrictHostKeyChecking=no" -i ~/.ssh/ssh_deploy -p"${deploy_ssh_port}" "${deploy_ssh_user}@${deploy_ssh_host}" 'mkdir -p /var/www/csr/${env}/'
 	scp -o "StrictHostKeyChecking=no" -i ~/.ssh/ssh_deploy -P"${deploy_ssh_port}" -r ./csr "${deploy_ssh_user}@${deploy_ssh_host}:~/tmp_csr"

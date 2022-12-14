@@ -1,0 +1,27 @@
+version: '3'
+services:
+  test_goapp:
+    image: test_go_run:int-test
+    container_name: lc_golang_test
+    ports:
+      - 8080:8080
+    networks:
+      - go-network
+    restart: "on-failure:3"
+  postgres:
+    image: "postgres:14-alpine"
+    container_name: db
+    environment:
+      - POSTGRES_USER=csr
+      - POSTGRES_DB=csr
+      - POSTGRES_PASSWORD=password
+    networks:
+      - go-network
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres -p 5432" ]
+      interval: 2s
+      timeout: 1s
+      retries: 5
+
+networks:
+  go-network:
