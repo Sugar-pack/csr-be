@@ -119,24 +119,6 @@ func SetupClient() *client.Be {
 		log.Fatal("fail to setup client", zap.Error(err))
 	}
 
-	l, p, err := GenerateLoginAndPassword()
-	if err != nil {
-		log.Fatal("fail to setup client", zap.Error(err))
-	}
-
-	dc := time.After(time.Second * 15)
-	for {
-		select {
-		case <-dc:
-			log.Fatal("fail to wait for app", zap.Error(err))
-		default:
-			_, err = CreateUser(context.TODO(), swaggerClient, l, p)
-			if err == nil {
-				break
-			}
-		}
-	}
-
 	return swaggerClient
 }
 

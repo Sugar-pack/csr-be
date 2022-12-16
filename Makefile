@@ -55,8 +55,8 @@ coverage_total:
 	go tool cover -func=coverage.out | tail -n1 | awk '{print $3}' | grep -Eo '\d+(.\d+)?'
 
 int-test:
-	DOCKER_BUILDKIT=1  docker build -f ./int-test-infra/Dockerfile.int-test --network host --no-cache -t test_go_run:int-test --target run . && \
-	docker-compose -f ./int-test-infra/docker-compose.int-test.yml up -d
+	DOCKER_BUILDKIT=1  docker build -f ./int-test-infra/Dockerfile.int-test --network host --no-cache -t csr:int-test --target run . && \
+	docker-compose -f ./int-test-infra/docker-compose.int-test.yml up -d --wait
 	go test -v -timeout 10m ./... -run Integration
 	docker-compose -f ./int-test-infra/docker-compose.int-test.yml down
 

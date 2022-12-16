@@ -1,13 +1,21 @@
 version: '3'
 services:
-  test_goapp:
-    image: test_go_run:int-test
-    container_name: lc_golang_test
+  csr:
+    image: csr:int-test
+    container_name: csr
     ports:
-      - 8080:8080
+      - 8089:8089
     networks:
       - go-network
     restart: "on-failure:3"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: [ "CMD-SHELL", "wget http://localhost:8089/api/health -q -O - > /dev/null 2>&1" ]
+      interval: 5s
+      timeout: 2s
+      retries: 15
   postgres:
     image: "postgres:14-alpine"
     container_name: db
@@ -15,10 +23,11 @@ services:
       - POSTGRES_USER=csr
       - POSTGRES_DB=csr
       - POSTGRES_PASSWORD=password
+    command: -p 9432
     networks:
       - go-network
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U postgres -p 5432" ]
+      test: [ "CMD-SHELL", "pg_isready -U postgres -p 9432" ]
       interval: 2s
       timeout: 1s
       retries: 5

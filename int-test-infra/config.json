@@ -1,7 +1,7 @@
 {
   "db": {
     "host": "db",
-    "port": "5432",
+    "port": "9432",
     "user": "csr",
     "password": "password",
     "database": "csr",
@@ -23,6 +23,6 @@
   "orderStatusOverdueTimeCheckDuration": "4h",
   "server": {
     "host": "0.0.0.0",
-    "port": 8080
+    "port": 8089
   }
 }

@@ -20,6 +20,19 @@ produces:
   - application/json
 
 paths:
+  /health:
+    get:
+      summary: Healthcheck endpoint
+      tags:
+        - System
+      operationId: GetHealth
+      responses:
+        200:
+          description: Success
+        default:
+          description: Unexpected error.
+          schema:
+            $ref: "#/definitions/Error"
   /v1/login:
     post:
       description: 'Returns token for authorized User'

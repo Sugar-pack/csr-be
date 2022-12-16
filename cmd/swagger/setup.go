@@ -66,6 +66,7 @@ func SetupAPI(entClient *ent.Client, lg *zap.Logger, conf *config.AppConfig) (*r
 	handlers.SetEquipmentStatusNameHandler(lg, api)
 	handlers.SetUserHandler(lg, api, tokenManager, regConfirmService)
 	handlers.SetPetKindHandler(lg, api)
+	handlers.SetHealthHandler(lg, api)
 
 	// run server
 	server := restapi.NewServer(api)
