@@ -104,7 +104,7 @@ func (c EquipmentStatusName) DeleteEquipmentStatusNameFunc(repository domain.Equ
 func mapEquipmentStatusName(status *ent.EquipmentStatusName) *models.EquipmentStatusName {
 	id := int64(status.ID)
 	return &models.EquipmentStatusName{
-		ID:   &id,
+		ID:   id,
 		Name: &status.Name,
 	}
 }

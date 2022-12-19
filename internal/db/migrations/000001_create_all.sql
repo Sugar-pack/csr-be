@@ -1,49 +1,49 @@
 -- +migrate Up
 BEGIN TRANSACTION;
 CREATE TABLE "active_areas"("id" SERIAL PRIMARY KEY NOT NULL, "name" varchar(255) UNIQUE NOT NULL);
-INSERT INTO "active_areas" VALUES(1,'Адмиралтейский район');
-INSERT INTO "active_areas" VALUES(2,'Василеостровский район');
-INSERT INTO "active_areas" VALUES(3,'Выборгский район');
-INSERT INTO "active_areas" VALUES(4,'Калининский район');
-INSERT INTO "active_areas" VALUES(5,'Кировский район');
-INSERT INTO "active_areas" VALUES(6,'Колпинский район');
-INSERT INTO "active_areas" VALUES(7,'Красногвардейский район');
-INSERT INTO "active_areas" VALUES(8,'Красносельский район');
-INSERT INTO "active_areas" VALUES(9,'Кронштадтский район');
-INSERT INTO "active_areas" VALUES(10,'Курортный район');
-INSERT INTO "active_areas" VALUES(19,'Ленинградская область');
-INSERT INTO "active_areas" VALUES(11,'Московский район');
-INSERT INTO "active_areas" VALUES(12,'Невский район');
-INSERT INTO "active_areas" VALUES(13,'Петроградский район');
-INSERT INTO "active_areas" VALUES(14,'Петродворцовый район');
-INSERT INTO "active_areas" VALUES(15,'Приморский район');
-INSERT INTO "active_areas" VALUES(16,'Пушкинский район');
-INSERT INTO "active_areas" VALUES(17,'Фрунзенский район');
-INSERT INTO "active_areas" VALUES(18,'Центральный район');
+INSERT INTO "active_areas" VALUES(DEFAULT,'Адмиралтейский район');
+INSERT INTO "active_areas" VALUES(DEFAULT,'Василеостровский район');
+INSERT INTO "active_areas" VALUES(DEFAULT,'Выборгский район');
+INSERT INTO "active_areas" VALUES(DEFAULT,'Калининский район');
+INSERT INTO "active_areas" VALUES(DEFAULT,'Кировский район');
+INSERT INTO "active_areas" VALUES(DEFAULT,'Колпинский район');
+INSERT INTO "active_areas" VALUES(DEFAULT,'Красногвардейский район');
+INSERT INTO "active_areas" VALUES(DEFAULT,'Красносельский район');
+INSERT INTO "active_areas" VALUES(DEFAULT,'Кронштадтский район');
+INSERT INTO "active_areas" VALUES(DEFAULT,'Курортный район');
+INSERT INTO "active_areas" VALUES(DEFAULT,'Ленинградская область');
+INSERT INTO "active_areas" VALUES(DEFAULT,'Московский район');
+INSERT INTO "active_areas" VALUES(DEFAULT,'Невский район');
+INSERT INTO "active_areas" VALUES(DEFAULT,'Петроградский район');
+INSERT INTO "active_areas" VALUES(DEFAULT,'Петродворцовый район');
+INSERT INTO "active_areas" VALUES(DEFAULT,'Приморский район');
+INSERT INTO "active_areas" VALUES(DEFAULT,'Пушкинский район');
+INSERT INTO "active_areas" VALUES(DEFAULT,'Фрунзенский район');
+INSERT INTO "active_areas" VALUES(DEFAULT,'Центральный район');
 CREATE TABLE "categories"("id" SERIAL PRIMARY KEY NOT NULL, "name" varchar(255) NOT NULL DEFAULT 'unknown', "has_subcategory" bool NOT NULL DEFAULT false, "max_reservation_time" integer NOT NULL DEFAULT 120000000, "max_reservation_units" integer NOT NULL DEFAULT 10);
-INSERT INTO "categories" VALUES(1,'Клетки','t',120000000,10);
-INSERT INTO "categories" VALUES(2,'Шприцевые дозаторы(инфузоматы)','f',120000000,10);
-INSERT INTO "categories" VALUES(3,'Рециркуляторы','f',120000000,10);
-INSERT INTO "categories" VALUES(4,'Бактерицидные лампы','f',120000000,10);
-INSERT INTO "categories" VALUES(5,'Концентратор кислорода','f',120000000,10);
-INSERT INTO "categories" VALUES(6,'Кислородная камера','f',120000000,10);
-INSERT INTO "categories" VALUES(7,'Лампы Вуда','f',120000000,10);
-INSERT INTO "categories" VALUES(8,'Котоловки','f',120000000,10);
-INSERT INTO "categories" VALUES(9,'Бокс-переноски','f',120000000,10);
+INSERT INTO "categories" (id, name, has_subcategory, max_reservation_time, max_reservation_units) VALUES(DEFAULT,'Клетки','t',120000000,10);
+INSERT INTO "categories" VALUES(DEFAULT,'Шприцевые дозаторы(инфузоматы)','f',120000000,10);
+INSERT INTO "categories" VALUES(DEFAULT,'Рециркуляторы','f',120000000,10);
+INSERT INTO "categories" VALUES(DEFAULT,'Бактерицидные лампы','f',120000000,10);
+INSERT INTO "categories" VALUES(DEFAULT,'Концентратор кислорода','f',120000000,10);
+INSERT INTO "categories" VALUES(DEFAULT,'Кислородная камера','f',120000000,10);
+INSERT INTO "categories" VALUES(DEFAULT,'Лампы Вуда','f',120000000,10);
+INSERT INTO "categories" VALUES(DEFAULT,'Котоловки','f',120000000,10);
+INSERT INTO "categories" VALUES(DEFAULT,'Бокс-переноски','f',120000000,10);
 
 
 CREATE TABLE "equipment_status_names"("id" SERIAL PRIMARY KEY NOT NULL, "name" varchar(255) UNIQUE NOT NULL);
-INSERT INTO "equipment_status_names" VALUES(1,'available');
-INSERT INTO "equipment_status_names" VALUES(2,'booked');
-INSERT INTO "equipment_status_names" VALUES(3,'in use');
-INSERT INTO "equipment_status_names" VALUES(4,'not available');
+INSERT INTO "equipment_status_names" VALUES(DEFAULT,'available');
+INSERT INTO "equipment_status_names" VALUES(DEFAULT,'booked');
+INSERT INTO "equipment_status_names" VALUES(DEFAULT,'in use');
+INSERT INTO "equipment_status_names" VALUES(DEFAULT,'not available');
 
 CREATE TABLE "pet_sizes"("id" SERIAL PRIMARY KEY NOT NULL, "name" varchar(255) NOT NULL DEFAULT 'unknown',
                          "size" varchar(255) NOT NULL DEFAULT 'unknown', "is_universal" bool NOT NULL DEFAULT false);
-INSERT INTO "pet_sizes" VALUES(1,'маленькие','51-76 см',FALSE);
-INSERT INTO "pet_sizes" VALUES(2,'средние','76-91 см',FALSE);
-INSERT INTO "pet_sizes" VALUES(3,'большие','91-120 см',FALSE);
-INSERT INTO "pet_sizes" VALUES(4,'универсальный','универсальный',TRUE);
+INSERT INTO "pet_sizes" VALUES(DEFAULT,'маленькие','51-76 см',FALSE);
+INSERT INTO "pet_sizes" VALUES(DEFAULT,'средние','76-91 см',FALSE);
+INSERT INTO "pet_sizes" VALUES(DEFAULT,'большие','91-120 см',FALSE);
+INSERT INTO "pet_sizes" VALUES(DEFAULT,'универсальный','универсальный',TRUE);
 
 CREATE TABLE "photos"("id" varchar(255) UNIQUE NOT NULL, "file_name" varchar(255) NOT NULL DEFAULT 'unknown.jpg',
                       content bytea, PRIMARY KEY("id"));

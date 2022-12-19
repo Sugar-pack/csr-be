@@ -5,7 +5,6 @@ import (
 	"errors"
 
 	"entgo.io/ent/dialect/sql"
-
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/ent"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/ent/category"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/ent/equipment"
@@ -85,7 +84,7 @@ func (r *equipmentRepository) EquipmentsByFilter(ctx context.Context, filter mod
 	return result, nil
 }
 
-func (r *equipmentRepository) CreateEquipment(ctx context.Context, NewEquipment models.Equipment) (*ent.Equipment, error) {
+func (r *equipmentRepository) CreateEquipment(ctx context.Context, NewEquipment models.Equipment, status *ent.EquipmentStatusName) (*ent.Equipment, error) {
 	var petKinds []int
 	for _, id := range NewEquipment.PetKinds {
 		petKinds = append(petKinds, int(id))
@@ -107,7 +106,7 @@ func (r *equipmentRepository) CreateEquipment(ctx context.Context, NewEquipment 
 		SetMaximumAmount(*NewEquipment.MaximumAmount).
 		SetMaximumDays(*NewEquipment.MaximumDays).
 		SetCategory(&ent.Category{ID: int(*NewEquipment.Category)}).
-		SetCurrentStatus(&ent.EquipmentStatusName{ID: int(*NewEquipment.Status)}).
+		SetCurrentStatus(status).
 		SetCategoryID(int(*NewEquipment.Category)).
 		SetSubcategoryID(int(NewEquipment.Subcategory)).
 		SetSubcategory(&ent.Subcategory{ID: int(NewEquipment.Subcategory)}).

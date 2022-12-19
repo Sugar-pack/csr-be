@@ -79,6 +79,28 @@ func TestEquipmentStatusNameRepository_Get(t *testing.T) {
 	assert.Equal(t, 1, status.ID)
 	assert.Equal(t, statusName, status.Name)
 }
+func TestEquipmentStatusNameRepository_GetByName(t *testing.T) {
+	ctx := context.Background()
+	client := getClient(t, equipmentStatusNameEntityName)
+	statusName := "test"
+	_, err := client.EquipmentStatusName.Create().SetName(statusName).Save(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer client.Close()
+
+	repo := NewEquipmentStatusNameRepository()
+	tx, err := client.Tx(ctx)
+	assert.NoError(t, err)
+
+	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
+	status, err := repo.GetByName(ctx, statusName)
+	assert.NoError(t, err)
+	assert.NoError(t, tx.Commit())
+
+	assert.Equal(t, 1, status.ID)
+	assert.Equal(t, statusName, status.Name)
+}
 
 func TestEquipmentStatusNameRepository_Delete(t *testing.T) {
 	ctx := context.Background()
