@@ -48,6 +48,15 @@ type StatusTestSuite struct {
 	handler    *EquipmentStatusName
 }
 
+func ValidStatus(t *testing.T) *ent.EquipmentStatusName {
+	t.Helper()
+	return &ent.EquipmentStatusName{
+		ID:   1,
+		Name: "available",
+	}
+
+}
+
 func TestStatusSuite(t *testing.T) {
 	suite.Run(t, new(StatusTestSuite))
 }
@@ -115,7 +124,7 @@ func (s *StatusTestSuite) TestStatus_PostStatus_OK() {
 	if err != nil {
 		t.Errorf("Error unmarshalling response: %v", err)
 	}
-	assert.Equal(t, statusToReturn.ID, int(*responseStatus.Data.ID))
+	assert.Equal(t, statusToReturn.ID, int(responseStatus.Data.ID))
 
 	s.repository.AssertExpectations(t)
 }
@@ -172,7 +181,7 @@ func (s *StatusTestSuite) TestStatus_ListEquipmentStatusNames_OK() {
 		t.Errorf("Error unmarshalling response: %v", err)
 	}
 	assert.Equal(t, len(statusesToReturn), len(responseStatus))
-	assert.Equal(t, statusToReturn.ID, int(*responseStatus[0].ID))
+	assert.Equal(t, statusToReturn.ID, int(responseStatus[0].ID))
 
 	s.repository.AssertExpectations(t)
 }
@@ -230,7 +239,7 @@ func (s *StatusTestSuite) TestStatus_GetEquipmentStatusName_OK() {
 	if err != nil {
 		t.Errorf("Error unmarshalling response: %v", err)
 	}
-	assert.Equal(t, statusToReturn.ID, int(*responseStatus.Data.ID))
+	assert.Equal(t, statusToReturn.ID, int(responseStatus.Data.ID))
 
 	s.repository.AssertExpectations(t)
 }
@@ -288,7 +297,7 @@ func (s *StatusTestSuite) TestStatus_DeleteEquipmentStatusName_OK() {
 	if err != nil {
 		t.Errorf("Error unmarshalling response: %v", err)
 	}
-	assert.Equal(t, statusToReturn.ID, int(*responseStatus.Data.ID))
+	assert.Equal(t, statusToReturn.ID, int(responseStatus.Data.ID))
 
 	s.repository.AssertExpectations(t)
 }

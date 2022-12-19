@@ -35,8 +35,8 @@ func TestIntegration_GetStatuses(t *testing.T) {
 		params := eqStatusName.NewListEquipmentStatusNamesParamsWithContext(ctx)
 		got, err := client.EquipmentStatusName.ListEquipmentStatusNames(params, utils.AuthInfoFunc(token))
 		require.NoError(t, err)
-		// expect len 5 according to migration
-		want := 5
+		// expect len 4 according to migration
+		want := 4
 		assert.Equal(t, want, len(got.GetPayload()))
 	})
 
@@ -78,7 +78,7 @@ func TestIntegration_GetStatus(t *testing.T) {
 		require.NoError(t, err)
 
 		got := *res.Payload.Data.Name
-		want := "in review"
+		want := "available"
 		assert.Equal(t, want, got)
 	})
 
@@ -192,8 +192,8 @@ func TestIntegration_DeleteStatus(t *testing.T) {
 
 	t.Run("Delete Status successfully", func(t *testing.T) {
 		params := eqStatusName.NewDeleteEquipmentStatusNameParamsWithContext(ctx)
-		// StatusID = 6 is "test status"
-		params.StatusID = 6
+		// StatusID = 5 is "test status"
+		params.StatusID = 5
 		res, err := client.EquipmentStatusName.DeleteEquipmentStatusName(params, utils.AuthInfoFunc(token))
 		require.NoError(t, err)
 

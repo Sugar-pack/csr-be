@@ -20,14 +20,15 @@ import (
 )
 
 func SetEquipmentHandler(logger *zap.Logger, api *operations.BeAPI) {
-	equipmentRepo := repositories.NewEquipmentRepository()
+	eqRepo := repositories.NewEquipmentRepository()
+	eqStatusNameRepo := repositories.NewEquipmentStatusNameRepository()
 	equipmentHandler := NewEquipment(logger)
-	api.EquipmentCreateNewEquipmentHandler = equipmentHandler.PostEquipmentFunc(equipmentRepo)
-	api.EquipmentGetEquipmentHandler = equipmentHandler.GetEquipmentFunc(equipmentRepo)
-	api.EquipmentDeleteEquipmentHandler = equipmentHandler.DeleteEquipmentFunc(equipmentRepo)
-	api.EquipmentGetAllEquipmentHandler = equipmentHandler.ListEquipmentFunc(equipmentRepo)
-	api.EquipmentEditEquipmentHandler = equipmentHandler.EditEquipmentFunc(equipmentRepo)
-	api.EquipmentFindEquipmentHandler = equipmentHandler.FindEquipmentFunc(equipmentRepo)
+	api.EquipmentCreateNewEquipmentHandler = equipmentHandler.PostEquipmentFunc(eqRepo, eqStatusNameRepo)
+	api.EquipmentGetEquipmentHandler = equipmentHandler.GetEquipmentFunc(eqRepo)
+	api.EquipmentDeleteEquipmentHandler = equipmentHandler.DeleteEquipmentFunc(eqRepo)
+	api.EquipmentGetAllEquipmentHandler = equipmentHandler.ListEquipmentFunc(eqRepo)
+	api.EquipmentEditEquipmentHandler = equipmentHandler.EditEquipmentFunc(eqRepo)
+	api.EquipmentFindEquipmentHandler = equipmentHandler.FindEquipmentFunc(eqRepo)
 }
 
 type Equipment struct {
@@ -40,10 +41,16 @@ func NewEquipment(logger *zap.Logger) *Equipment {
 	}
 }
 
-func (c Equipment) PostEquipmentFunc(repository domain.EquipmentRepository) equipment.CreateNewEquipmentHandlerFunc {
+func (c Equipment) PostEquipmentFunc(eqRepo domain.EquipmentRepository, eqStatusNameRepo domain.EquipmentStatusNameRepository) equipment.CreateNewEquipmentHandlerFunc {
 	return func(s equipment.CreateNewEquipmentParams, access interface{}) middleware.Responder {
 		ctx := s.HTTPRequest.Context()
-		eq, err := repository.CreateEquipment(ctx, *s.NewEquipment)
+		status, err := eqStatusNameRepo.GetByName(ctx, "available")
+		if err != nil {
+			c.logger.Error("Error while getting status", zap.Error(err))
+			return equipment.NewCreateNewEquipmentDefault(http.StatusInternalServerError).
+				WithPayload(buildStringPayload("Error while creating equipment"))
+		}
+		eq, err := eqRepo.CreateEquipment(ctx, *s.NewEquipment, status)
 		if err != nil {
 			c.logger.Error("Error while creating equipment", zap.Error(err))
 			return equipment.NewCreateNewEquipmentDefault(http.StatusInternalServerError).

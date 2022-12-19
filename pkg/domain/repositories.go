@@ -29,7 +29,7 @@ type CategoryRepository interface {
 type EquipmentRepository interface {
 	EquipmentsByFilter(ctx context.Context, filter models.EquipmentFilter, limit, offset int,
 		orderBy, orderColumn string) ([]*ent.Equipment, error)
-	CreateEquipment(ctx context.Context, eq models.Equipment) (*ent.Equipment, error)
+	CreateEquipment(ctx context.Context, eq models.Equipment, status *ent.EquipmentStatusName) (*ent.Equipment, error)
 	EquipmentByID(ctx context.Context, id int) (*ent.Equipment, error)
 	DeleteEquipmentByID(ctx context.Context, id int) error
 	DeleteEquipmentPhoto(ctx context.Context, id string) error
@@ -50,6 +50,7 @@ type EquipmentStatusNameRepository interface {
 	Create(ctx context.Context, name string) (*ent.EquipmentStatusName, error)
 	GetAll(ctx context.Context) ([]*ent.EquipmentStatusName, error)
 	Get(ctx context.Context, id int) (*ent.EquipmentStatusName, error)
+	GetByName(ctx context.Context, name string) (*ent.EquipmentStatusName, error)
 	Delete(ctx context.Context, id int) (*ent.EquipmentStatusName, error)
 }
 

@@ -51,6 +51,7 @@ type EquipmentTestSuite struct {
 	suite.Suite
 	logger        *zap.Logger
 	equipmentRepo *mocks.EquipmentRepository
+	statusRepo    *mocks.EquipmentStatusNameRepository
 	equipment     *Equipment
 }
 
@@ -84,6 +85,7 @@ func TestEquipmentSuite(t *testing.T) {
 func (s *EquipmentTestSuite) SetupTest() {
 	s.logger = zap.NewNop()
 	s.equipmentRepo = &mocks.EquipmentRepository{}
+	s.statusRepo = &mocks.EquipmentStatusNameRepository{}
 	s.equipment = NewEquipment(s.logger)
 }
 
@@ -92,7 +94,35 @@ func (s *EquipmentTestSuite) TestEquipment_PostEquipmentFunc_RepoErr() {
 	request := http.Request{}
 	ctx := request.Context()
 
-	handlerFunc := s.equipment.PostEquipmentFunc(s.equipmentRepo)
+	handlerFunc := s.equipment.PostEquipmentFunc(s.equipmentRepo, s.statusRepo)
+	equipmentToAdd := models.Equipment{
+		NameSubstring: "test",
+	}
+	statusToAdd := ValidStatus(t)
+	data := equipment.CreateNewEquipmentParams{
+		HTTPRequest:  &request,
+		NewEquipment: &equipmentToAdd,
+	}
+	err := errors.New("test error")
+
+	s.statusRepo.On("GetByName", ctx, "available").Return(statusToAdd, nil)
+	s.equipmentRepo.On("CreateEquipment", ctx, equipmentToAdd, statusToAdd).Return(nil, err)
+
+	access := "dummy access"
+	resp := handlerFunc(data, access)
+	responseRecorder := httptest.NewRecorder()
+	producer := runtime.JSONProducer()
+	resp.WriteResponse(responseRecorder, producer)
+	assert.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
+	s.equipmentRepo.AssertExpectations(t)
+}
+
+func (s *EquipmentTestSuite) TestEquipment_PostEquipmentFunc_RepoStatusErr() {
+	t := s.T()
+	request := http.Request{}
+	ctx := request.Context()
+
+	handlerFunc := s.equipment.PostEquipmentFunc(s.equipmentRepo, s.statusRepo)
 	equipmentToAdd := models.Equipment{
 		NameSubstring: "test",
 	}
@@ -102,7 +132,7 @@ func (s *EquipmentTestSuite) TestEquipment_PostEquipmentFunc_RepoErr() {
 	}
 	err := errors.New("test error")
 
-	s.equipmentRepo.On("CreateEquipment", ctx, equipmentToAdd).Return(nil, err)
+	s.statusRepo.On("GetByName", ctx, "available").Return(nil, err)
 
 	access := "dummy access"
 	resp := handlerFunc(data, access)
@@ -118,7 +148,7 @@ func (s *EquipmentTestSuite) TestEquipment_PostEquipmentFunc_MapErr() {
 	request := http.Request{}
 	ctx := request.Context()
 
-	handlerFunc := s.equipment.PostEquipmentFunc(s.equipmentRepo)
+	handlerFunc := s.equipment.PostEquipmentFunc(s.equipmentRepo, s.statusRepo)
 	equipmentToAdd := models.Equipment{
 		NameSubstring: "test",
 	}
@@ -126,10 +156,11 @@ func (s *EquipmentTestSuite) TestEquipment_PostEquipmentFunc_MapErr() {
 		HTTPRequest:  &request,
 		NewEquipment: &equipmentToAdd,
 	}
-
+	statusToAdd := ValidStatus(t)
 	equipmentToReturn := InvalidEquipment(t)
 
-	s.equipmentRepo.On("CreateEquipment", ctx, equipmentToAdd).Return(equipmentToReturn, nil)
+	s.statusRepo.On("GetByName", ctx, "available").Return(statusToAdd, nil)
+	s.equipmentRepo.On("CreateEquipment", ctx, equipmentToAdd, statusToAdd).Return(equipmentToReturn, nil)
 
 	access := "dummy access"
 	resp := handlerFunc(data, access)
@@ -145,7 +176,7 @@ func (s *EquipmentTestSuite) TestEquipment_PostEquipmentFunc_OK() {
 	request := http.Request{}
 	ctx := request.Context()
 
-	handlerFunc := s.equipment.PostEquipmentFunc(s.equipmentRepo)
+	handlerFunc := s.equipment.PostEquipmentFunc(s.equipmentRepo, s.statusRepo)
 	equipmentToAdd := models.Equipment{
 		NameSubstring: "test",
 	}
@@ -153,10 +184,11 @@ func (s *EquipmentTestSuite) TestEquipment_PostEquipmentFunc_OK() {
 		HTTPRequest:  &request,
 		NewEquipment: &equipmentToAdd,
 	}
-
+	statusToAdd := ValidStatus(t)
 	equipmentToReturn := ValidEquipment(t, 1)
 
-	s.equipmentRepo.On("CreateEquipment", ctx, equipmentToAdd).Return(equipmentToReturn, nil)
+	s.statusRepo.On("GetByName", ctx, "available").Return(statusToAdd, nil)
+	s.equipmentRepo.On("CreateEquipment", ctx, equipmentToAdd, statusToAdd).Return(equipmentToReturn, nil)
 
 	access := "dummy access"
 	resp := handlerFunc(data, access)

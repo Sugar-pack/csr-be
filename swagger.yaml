@@ -1969,7 +1969,6 @@ definitions:
   EquipmentStatusName:
     type: object
     required:
-      - id
       - name
     properties:
       id:
