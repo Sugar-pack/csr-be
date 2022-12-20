@@ -20,6 +20,7 @@ func (Order) Fields() []ent.Field {
 		field.Time("rent_start"),
 		field.Time("rent_end"),
 		field.Time("created_at").Default(time.Now),
+		field.Bool("is_first").Default(false),
 	}
 }
 

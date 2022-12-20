@@ -11,6 +11,7 @@ import (
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/ent"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/ent/equipment"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/ent/order"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/ent/orderstatus"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/ent/orderstatusname"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/ent/user"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/swagger/models"
@@ -143,6 +144,21 @@ func (r *orderRepository) Create(ctx context.Context, data *models.OrderCreateRe
 	if err != nil {
 		return nil, err
 	}
+	
+	ordersWithApprovedStatus, err := tx.Order.Query().
+		Where(order.HasOrderStatusWith(orderstatus.
+			HasOrderStatusNameWith(orderstatusname.StatusEQ(domain.OrderStatusApproved)))).
+		Where(order.HasUsersWith(user.ID(ownerId))).
+		Count(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	var isFirst bool
+
+	if ordersWithApprovedStatus == 0 {
+		isFirst = true
+	}
 
 	createdOrder, err := tx.Order.
 		Create().
@@ -152,6 +168,7 @@ func (r *orderRepository) Create(ctx context.Context, data *models.OrderCreateRe
 		SetRentEnd(*rentEnd).
 		SetUsers(owner).
 		SetUsersID(owner.ID).
+		SetIsFirst(isFirst).
 		AddEquipments(equipments...).
 		AddEquipmentIDs(equipmentIDs...).
 		Save(ctx)

@@ -147,6 +147,7 @@ func mapOrder(o *ent.Order, log *zap.Logger) (*models.Order, error) {
 			Name: &ownerName,
 		},
 		LastStatus: statusToOrder,
+		IsFirst:    &o.IsFirst,
 	}, nil
 }
 
