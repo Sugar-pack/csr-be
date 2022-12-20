@@ -9,8 +9,10 @@ import (
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/ent/order"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/ent/orderstatus"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/ent/orderstatusname"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/ent/user"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/swagger/models"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/middlewares"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/pkg/domain"
 )
 
 type orderStatusRepository struct {
@@ -71,7 +73,7 @@ func (r *orderStatusRepository) UpdateStatus(ctx context.Context, userID int, st
 	if err != nil {
 		return err
 	}
-	order, err := tx.Order.Get(ctx, int(*status.OrderID))
+	receivedOrder, err := tx.Order.Get(ctx, int(*status.OrderID))
 	if err != nil {
 		return fmt.Errorf("status history error, failed to get order: %s", err)
 	}
@@ -82,20 +84,32 @@ func (r *orderStatusRepository) UpdateStatus(ctx context.Context, userID int, st
 	if err != nil {
 		return fmt.Errorf("status history error, failed to get status name: %s", err)
 	}
-	user, err := tx.User.Get(ctx, userID)
+	receivedUser, err := tx.User.Get(ctx, userID)
 	if err != nil {
 		return fmt.Errorf("status history error, failed to get user: %s", err)
 	}
 	_, err = tx.OrderStatus.Create().
 		SetComment(*status.Comment).
 		SetCurrentDate(time.Time(*status.CreatedAt)).
-		SetOrder(order).
+		SetOrder(receivedOrder).
 		SetOrderStatusName(statusName).
-		SetUsers(user).Save(ctx)
+		SetUsers(receivedUser).Save(ctx)
 
 	if err != nil {
 		return fmt.Errorf("status history error, failed to create order status: %s", err)
 	}
+
+	if *status.Status == domain.OrderStatusApproved {
+		_, err = tx.Order.Update().Where(order.IsFirstEQ(true)).
+			Where(order.HasUsersWith(user.ID(userID))).
+			SetIsFirst(false).
+			Save(ctx)
+
+		if err != nil {
+			return fmt.Errorf("unable to update is_first field for orders: %s", err)
+		}
+	}
+
 	return nil
 }
 
