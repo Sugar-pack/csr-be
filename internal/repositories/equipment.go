@@ -9,6 +9,8 @@ import (
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/ent/category"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/ent/equipment"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/ent/equipmentstatusname"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/ent/petkind"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/ent/petsize"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/ent/photo"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/ent/predicate"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/ent/subcategory"
@@ -44,6 +46,7 @@ func (r *equipmentRepository) EquipmentsByFilter(ctx context.Context, filter mod
 	if err != nil {
 		return nil, err
 	}
+
 	result, err := tx.Equipment.Query().
 		QueryCurrentStatus().
 		Where(OptionalIntStatus(filter.Status, equipmentstatusname.FieldID)).
@@ -68,6 +71,8 @@ func (r *equipmentRepository) EquipmentsByFilter(ctx context.Context, filter mod
 			OptionalStringEquipment(filter.Condition, equipment.FieldCondition),
 			OptionalIntEquipment(filter.MaximumAmount, equipment.FieldMaximumAmount),
 			OptionalIntEquipment(filter.MaximumDays, equipment.FieldMaximumDays),
+			equipment.HasPetKindsWith(OptionalIntsPetKind(filter.PetKinds, petkind.FieldID)),
+			equipment.HasPetSizeWith(OptionalIntsPetSize(filter.PetSize, petsize.FieldID)),
 		).
 		Order(orderFunc).
 		Limit(limit).Offset(offset).
@@ -203,6 +208,7 @@ func (r *equipmentRepository) EquipmentsByFilterTotal(ctx context.Context, filte
 	if err != nil {
 		return 0, err
 	}
+
 	total, err := tx.Equipment.Query().
 		QueryCurrentStatus().
 		Where(OptionalIntStatus(filter.Status, equipmentstatusname.FieldID)).
@@ -227,6 +233,8 @@ func (r *equipmentRepository) EquipmentsByFilterTotal(ctx context.Context, filte
 			OptionalStringEquipment(filter.Condition, equipment.FieldCondition),
 			OptionalIntEquipment(filter.MaximumAmount, equipment.FieldMaximumAmount),
 			OptionalIntEquipment(filter.MaximumDays, equipment.FieldMaximumDays),
+			equipment.HasPetKindsWith(OptionalIntsPetKind(filter.PetKinds, petkind.FieldID)),
+			equipment.HasPetSizeWith(OptionalIntsPetSize(filter.PetSize, petsize.FieldID)),
 		).
 		Count(ctx)
 	if err != nil {
@@ -360,5 +368,37 @@ func OptionalStringEquipment(str string, field string) predicate.Equipment {
 	}
 	return func(s *sql.Selector) {
 		s.Where(sql.EqualFold(s.C(field), str))
+	}
+}
+
+func OptionalIntsPetSize(p []int64, field string) predicate.PetSize {
+	if len(p) == 0 {
+		return func(s *sql.Selector) {
+		}
+	}
+
+	petSize := make([]int, len(p))
+	for i, v := range p {
+		petSize[i] = int(v)
+	}
+
+	return func(s *sql.Selector) {
+		s.Where(sql.InInts(s.C(field), petSize...))
+	}
+}
+
+func OptionalIntsPetKind(k []int64, field string) predicate.PetKind {
+	if len(k) == 0 {
+		return func(s *sql.Selector) {
+		}
+	}
+
+	petKind := make([]int, len(k))
+	for i, v := range k {
+		petKind[i] = int(v)
+	}
+
+	return func(s *sql.Selector) {
+		s.Where(sql.InInts(s.C(field), petKind...))
 	}
 }

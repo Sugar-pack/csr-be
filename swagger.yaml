@@ -2382,8 +2382,9 @@ definitions:
         type: integer
         example: 1
       petSize:
-        type: integer
-        example: 1
+        type: array
+        items:
+          type: integer
       compensationCost:
         type: integer
         example: 3900
@@ -2422,7 +2423,7 @@ definitions:
       petKinds:
         type: array
         items:
-          $ref: "#/definitions/PetKind"
+          type: integer
 
   EquipmentResponse:
     type: object

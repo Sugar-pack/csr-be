@@ -75,6 +75,21 @@ func (s *EquipmentSuite) SetupTest() {
 		t.Fatal(err)
 	}
 
+	petSize, err := s.client.PetSize.Create().SetSize("testSize").SetName("testSizeName").Save(s.ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = s.client.PetKind.Delete().Exec(s.ctx) // clean up
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	petKind, err := s.client.PetKind.Create().SetName("testNamePetKind").Save(s.ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	s.equipments = make(map[int]*ent.Equipment)
 	s.equipments[1] = &ent.Equipment{
 		Name:  "test 1",
@@ -121,6 +136,7 @@ func (s *EquipmentSuite) SetupTest() {
 			SetCategory(category).
 			SetSubcategory(subcategory).
 			SetPhoto(photo).
+			SetPetSizeID(petSize.ID).AddPetKinds(petKind).
 			Save(s.ctx)
 		if errCreate != nil {
 			t.Fatal(errCreate)
