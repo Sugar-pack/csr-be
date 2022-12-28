@@ -25,6 +25,7 @@ import (
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/swagger/restapi/operations"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/swagger/restapi/operations/categories"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/utils"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/pkg/domain"
 )
 
 func TestSetCategoryHandler(t *testing.T) {
@@ -206,10 +207,13 @@ func (s *CategoryTestSuite) TestCategory_GetAllCategories_EmptyParams() {
 	request := http.Request{}
 	ctx := request.Context()
 
-	limit := math.MaxInt
-	offset := 0
-	orderBy := utils.AscOrder
-	orderColumn := category.FieldID
+	filter := domain.CategoryFilter{
+		Filter: domain.Filter{
+			Limit:       math.MaxInt,
+			OrderBy:     utils.AscOrder,
+			OrderColumn: category.FieldID,
+		},
+	}
 	data := categories.GetAllCategoriesParams{
 		HTTPRequest: &request,
 	}
@@ -221,8 +225,7 @@ func (s *CategoryTestSuite) TestCategory_GetAllCategories_EmptyParams() {
 	}
 
 	s.repository.On("AllCategoriesTotal", ctx).Return(len(categoriesToReturn), nil)
-	s.repository.On("AllCategories", ctx, limit, offset, orderBy, orderColumn).
-		Return(categoriesToReturn, nil)
+	s.repository.On("AllCategories", ctx, filter).Return(categoriesToReturn, nil)
 
 	handlerFunc := s.handler.GetAllCategoriesFunc(s.repository)
 	access := "dummy access"
@@ -253,6 +256,14 @@ func (s *CategoryTestSuite) TestCategory_GetAllCategories_LimitGreaterThanTotal(
 	offset := int64(0)
 	orderBy := utils.AscOrder
 	orderColumn := category.FieldID
+
+	filter := domain.CategoryFilter{
+		Filter: domain.Filter{
+			Limit:       10,
+			OrderBy:     utils.AscOrder,
+			OrderColumn: category.FieldID,
+		},
+	}
 	data := categories.GetAllCategoriesParams{
 		HTTPRequest: &request,
 		Limit:       &limit,
@@ -268,8 +279,7 @@ func (s *CategoryTestSuite) TestCategory_GetAllCategories_LimitGreaterThanTotal(
 	}
 
 	s.repository.On("AllCategoriesTotal", ctx).Return(len(categoriesToReturn), nil)
-	s.repository.On("AllCategories", ctx, int(limit), int(offset), orderBy, orderColumn).
-		Return(categoriesToReturn, nil)
+	s.repository.On("AllCategories", ctx, filter).Return(categoriesToReturn, nil)
 
 	handlerFunc := s.handler.GetAllCategoriesFunc(s.repository)
 	access := "dummy access"
@@ -301,6 +311,14 @@ func (s *CategoryTestSuite) TestCategory_GetAllCategories_LimitLessThanTotal() {
 	offset := int64(0)
 	orderBy := utils.AscOrder
 	orderColumn := category.FieldID
+	filter := domain.CategoryFilter{
+		Filter: domain.Filter{
+			Limit:       2,
+			OrderBy:     utils.AscOrder,
+			OrderColumn: category.FieldID,
+		},
+	}
+
 	data := categories.GetAllCategoriesParams{
 		HTTPRequest: &request,
 		Limit:       &limit,
@@ -316,8 +334,7 @@ func (s *CategoryTestSuite) TestCategory_GetAllCategories_LimitLessThanTotal() {
 	}
 
 	s.repository.On("AllCategoriesTotal", ctx).Return(len(categoriesToReturn), nil)
-	s.repository.On("AllCategories", ctx, int(limit), int(offset), orderBy, orderColumn).
-		Return(categoriesToReturn[:limit], nil)
+	s.repository.On("AllCategories", ctx, filter).Return(categoriesToReturn[:limit], nil)
 
 	handlerFunc := s.handler.GetAllCategoriesFunc(s.repository)
 	access := "dummy access"
@@ -349,6 +366,15 @@ func (s *CategoryTestSuite) TestCategory_GetAllCategories_SecondPage() {
 	offset := int64(2)
 	orderBy := utils.AscOrder
 	orderColumn := category.FieldID
+	filter := domain.CategoryFilter{
+		Filter: domain.Filter{
+			Limit:       2,
+			Offset:      2,
+			OrderBy:     utils.AscOrder,
+			OrderColumn: category.FieldID,
+		},
+	}
+
 	data := categories.GetAllCategoriesParams{
 		HTTPRequest: &request,
 		Limit:       &limit,
@@ -364,8 +390,7 @@ func (s *CategoryTestSuite) TestCategory_GetAllCategories_SecondPage() {
 	}
 
 	s.repository.On("AllCategoriesTotal", ctx).Return(len(categoriesToReturn), nil)
-	s.repository.On("AllCategories", ctx, int(limit), int(offset), orderBy, orderColumn).
-		Return(categoriesToReturn[offset:], nil)
+	s.repository.On("AllCategories", ctx, filter).Return(categoriesToReturn[offset:], nil)
 
 	handlerFunc := s.handler.GetAllCategoriesFunc(s.repository)
 	access := "dummy access"
@@ -398,6 +423,13 @@ func (s *CategoryTestSuite) TestCategory_GetAllCategories_SeveralPages() {
 	offset := int64(0)
 	orderBy := utils.AscOrder
 	orderColumn := category.FieldID
+	filter := domain.CategoryFilter{
+		Filter: domain.Filter{
+			Limit:       3,
+			OrderBy:     utils.AscOrder,
+			OrderColumn: category.FieldID,
+		},
+	}
 	data := categories.GetAllCategoriesParams{
 		HTTPRequest: &request,
 		Limit:       &limit,
@@ -415,8 +447,7 @@ func (s *CategoryTestSuite) TestCategory_GetAllCategories_SeveralPages() {
 	}
 
 	s.repository.On("AllCategoriesTotal", ctx).Return(len(categoriesToReturn), nil)
-	s.repository.On("AllCategories", ctx, int(limit), int(offset), orderBy, orderColumn).
-		Return(categoriesToReturn[:limit], nil)
+	s.repository.On("AllCategories", ctx, filter).Return(categoriesToReturn[:limit], nil)
 
 	handlerFunc := s.handler.GetAllCategoriesFunc(s.repository)
 	access := "dummy access"
@@ -437,6 +468,7 @@ func (s *CategoryTestSuite) TestCategory_GetAllCategories_SeveralPages() {
 	assert.Equal(t, int(limit), len(firstPage.Items))
 
 	offset = limit
+	filter.Offset = filter.Limit
 	data = categories.GetAllCategoriesParams{
 		HTTPRequest: &request,
 		Limit:       &limit,
@@ -445,8 +477,7 @@ func (s *CategoryTestSuite) TestCategory_GetAllCategories_SeveralPages() {
 		OrderColumn: &orderColumn,
 	}
 	s.repository.On("AllCategoriesTotal", ctx).Return(len(categoriesToReturn), nil)
-	s.repository.On("AllCategories", ctx, int(limit), int(offset), orderBy, orderColumn).
-		Return(categoriesToReturn[offset:], nil)
+	s.repository.On("AllCategories", ctx, filter).Return(categoriesToReturn[offset:], nil)
 
 	resp = handlerFunc.Handle(data, access)
 	responseRecorder = httptest.NewRecorder()

@@ -421,6 +421,12 @@ paths:
             - id
             - name
           default: id
+        - name: has_equipments
+          in: query
+          required: false
+          description: if true, only categories related to equipments are returned
+          type: boolean
+          default: false
       summary: Get all categories.
       security:
         - Bearer: [ ]
