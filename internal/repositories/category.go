@@ -45,20 +45,31 @@ func (r *categoryRepository) AllCategoriesTotal(ctx context.Context) (int, error
 	return tx.Category.Query().Count(ctx)
 }
 
-func (r *categoryRepository) AllCategories(ctx context.Context, limit, offset int,
-	orderBy, orderColumn string) ([]*ent.Category, error) {
-	if !utils.IsValueInList(orderColumn, fieldsToOrderCategories) {
+func (r *categoryRepository) AllCategories(ctx context.Context, filter domain.CategoryFilter) ([]*ent.Category, error) {
+	if !utils.IsValueInList(filter.OrderColumn, fieldsToOrderCategories) {
 		return nil, errors.New("wrong column to order by")
 	}
-	orderFunc, err := utils.GetOrderFunc(orderBy, orderColumn)
+
+	orderFunc, err := utils.GetOrderFunc(filter.OrderBy, filter.OrderColumn)
 	if err != nil {
 		return nil, err
 	}
+
 	tx, err := middlewares.TxFromContext(ctx)
 	if err != nil {
 		return nil, err
 	}
-	return tx.Category.Query().Order(orderFunc).Limit(limit).Offset(offset).All(ctx)
+
+	q := tx.Category.Query()
+
+	if filter.HasEquipments {
+		q = q.QueryEquipments().QueryCategory()
+	}
+
+	return q.Order(orderFunc).
+		Limit(filter.Limit).
+		Offset(filter.Offset).
+		All(ctx)
 }
 
 func (r *categoryRepository) CategoryByID(ctx context.Context, id int) (*ent.Category, error) {

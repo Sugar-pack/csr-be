@@ -17,9 +17,19 @@ type BlockerRepository interface {
 	SetIsBlockedUser(ctx context.Context, userId int, isBlocked bool) error
 }
 
+type Filter struct {
+	Limit, Offset        int
+	OrderBy, OrderColumn string
+}
+
+type CategoryFilter struct {
+	Filter
+	HasEquipments bool
+}
+
 type CategoryRepository interface {
 	CreateCategory(ctx context.Context, newCategory models.CreateNewCategory) (*ent.Category, error)
-	AllCategories(ctx context.Context, limit, offset int, orderBy, orderColumn string) ([]*ent.Category, error)
+	AllCategories(ctx context.Context, filter CategoryFilter) ([]*ent.Category, error)
 	AllCategoriesTotal(ctx context.Context) (int, error)
 	CategoryByID(ctx context.Context, id int) (*ent.Category, error)
 	DeleteCategoryByID(ctx context.Context, id int) error
