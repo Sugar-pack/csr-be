@@ -2324,11 +2324,9 @@ definitions:
         type: integer
         example: 3900
       technicalIssues:
-        type: string
-        enum:
-          - есть
-          - нет
-        example: "есть"
+        type: boolean
+        example: false
+        x-nullable: true
       condition:
         type: string
         example: "удовлетворительное, местами облупляется краска"
@@ -2395,11 +2393,9 @@ definitions:
         type: integer
         example: 3900
       technicalIssues:
-        type: string
-        enum:
-          - есть
-          - нет
-        example: "есть"
+        type: boolean
+        example: false
+        x-nullable: true
       condition:
         type: string
         example: "удовлетворительное, местами облупляется краска"
@@ -2480,11 +2476,9 @@ definitions:
         type: integer
         example: 3900
       technicalIssues:
-        type: string
-        enum:
-          - есть
-          - нет
-        example: "есть"
+        type: boolean
+        example: false
+        x-nullable: true
       condition:
         type: string
         example: "удовлетворительное, местами облупляется краска"

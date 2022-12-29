@@ -18,7 +18,7 @@ func (Equipment) Fields() []ent.Field {
 		field.String("name").Default("unknown"),
 		field.String("title").Default("unknown"),
 		field.Int64("compensationCost").Optional(),
-		field.String("tech_issue").Default("нет"),
+		field.Bool("tech_issue").Optional(),
 		field.String("condition").Optional(),
 		field.Int64("inventoryNumber").Optional(),
 		field.String("supplier").Default("unknown"),
