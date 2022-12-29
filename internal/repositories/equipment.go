@@ -67,7 +67,7 @@ func (r *equipmentRepository) EquipmentsByFilter(ctx context.Context, filter mod
 			OptionalStringEquipment(filter.Supplier, equipment.FieldSupplier),
 			OptionalStringEquipment(filter.ReceiptDate, equipment.FieldReceiptDate),
 			OptionalStringEquipment(filter.Title, equipment.FieldTitle),
-			OptionalStringEquipment(filter.TechnicalIssues, equipment.FieldTechIssue),
+			OptionalBoolEquipment(filter.TechnicalIssues, equipment.FieldTechIssue),
 			OptionalStringEquipment(filter.Condition, equipment.FieldCondition),
 			OptionalIntEquipment(filter.MaximumAmount, equipment.FieldMaximumAmount),
 			OptionalIntEquipment(filter.MaximumDays, equipment.FieldMaximumDays),
@@ -229,7 +229,7 @@ func (r *equipmentRepository) EquipmentsByFilterTotal(ctx context.Context, filte
 			OptionalStringEquipment(filter.Supplier, equipment.FieldSupplier),
 			OptionalStringEquipment(filter.ReceiptDate, equipment.FieldReceiptDate),
 			OptionalStringEquipment(filter.Title, equipment.FieldTitle),
-			OptionalStringEquipment(filter.TechnicalIssues, equipment.FieldTechIssue),
+			OptionalBoolEquipment(filter.TechnicalIssues, equipment.FieldTechIssue),
 			OptionalStringEquipment(filter.Condition, equipment.FieldCondition),
 			OptionalIntEquipment(filter.MaximumAmount, equipment.FieldMaximumAmount),
 			OptionalIntEquipment(filter.MaximumDays, equipment.FieldMaximumDays),
@@ -265,7 +265,7 @@ func (r *equipmentRepository) UpdateEquipmentByID(ctx context.Context, id int, e
 	if *eq.CompensationCost != 0 {
 		edit.SetCompensationCost(*eq.CompensationCost)
 	}
-	if *eq.TechnicalIssues != "" {
+	if eq.TechnicalIssues != nil {
 		edit.SetTechIssue(*eq.TechnicalIssues)
 		edit.SetCondition(eq.Condition)
 	}
@@ -368,6 +368,16 @@ func OptionalStringEquipment(str string, field string) predicate.Equipment {
 	}
 	return func(s *sql.Selector) {
 		s.Where(sql.EqualFold(s.C(field), str))
+	}
+}
+
+func OptionalBoolEquipment(b *bool, field string) predicate.Equipment {
+	if b == nil {
+		return func(s *sql.Selector) {
+		}
+	}
+	return func(s *sql.Selector) {
+		s.Where(sql.EQ(s.C(field), b))
 	}
 }
 

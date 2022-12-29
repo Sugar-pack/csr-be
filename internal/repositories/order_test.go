@@ -83,7 +83,7 @@ func (s *OrderSuite) SetupTest() {
 			TermsOfUse:  "http://localhost",
 			Name:        "equipment 1",
 			Title:       "equipment1",
-			TechIssue:   "нет",
+			TechIssue:   false,
 			Description: "test equipment",
 		},
 	}
