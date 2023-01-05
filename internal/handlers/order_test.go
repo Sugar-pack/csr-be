@@ -20,7 +20,6 @@ import (
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/authentication"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/ent"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/ent/enttest"
-	equipmentEnt "git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/ent/equipment"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/ent/order"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/mocks"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/swagger/models"
@@ -492,22 +491,20 @@ func (s *orderTestSuite) TestOrder_CreateOrder_RepoErr() {
 	ctx := request.Context()
 
 	description := "description"
-	categoryID := int64(3)
-	quantity := int64(10)
+	id := 0
+	equipmentID := int64(id)
 	rentStart := strfmt.DateTime(time.Now())
 	rentEnd := strfmt.DateTime(time.Now().Add(time.Hour * 24))
 	createOrder := &models.OrderCreateRequest{
-		Description: &description,
-		Category:    &categoryID,
-		Quantity:    &quantity,
-		RentStart:   &rentStart,
+		Description: description,
+		EquipmentID: &equipmentID,
 		RentEnd:     &rentEnd,
+		RentStart:   &rentStart,
 	}
 	userID := 1
 	err := errors.New("error")
-	s.equipmentRepository.On("EquipmentsByFilter", ctx, models.EquipmentFilter{
-		Category: categoryID,
-	}, math.MaxInt, 0, utils.DescOrder, equipmentEnt.FieldID).Return(nil, err)
+	s.eqStatusRepository.On("HasStatusByPeriod", ctx, domain.EquipmentStatusAvailable, id,
+		time.Time(rentStart), time.Time(rentEnd)).Return(false, err)
 
 	handlerFunc := s.orderHandler.CreateOrderFunc(s.orderRepository, s.eqStatusRepository, s.equipmentRepository)
 	data := orders.CreateOrderParams{
@@ -529,28 +526,25 @@ func (s *orderTestSuite) TestOrder_CreateOrder_MapErr() {
 	request := http.Request{}
 	ctx := request.Context()
 
+	id := 1
+	eqID := int64(id)
 	description := "description"
-	categoryID := int64(1)
-	quantity := int64(1)
 	rentStart := strfmt.DateTime(time.Now())
 	rentEnd := strfmt.DateTime(time.Now().Add(time.Hour * 24))
 	createOrder := &models.OrderCreateRequest{
-		Description: &description,
-		Category:    &categoryID,
-		Quantity:    &quantity,
-		RentStart:   &rentStart,
+		Description: description,
+		EquipmentID: &eqID,
 		RentEnd:     &rentEnd,
+		RentStart:   &rentStart,
 	}
 	userID := 1
 
 	orderToReturn := orderWithNoEdges()
-	equipment := orderWithEdges(t, 1).Edges.Equipments[0]
+	equipment := orderWithEdges(t, id).Edges.Equipments[0]
 	equipmentID := int64(equipment.ID)
 	endDate := time.Time(rentEnd).AddDate(0, 0, 1)
 	equipmentBookedEndDate := strfmt.DateTime(endDate)
-	s.equipmentRepository.On("EquipmentsByFilter", ctx, models.EquipmentFilter{
-		Category: categoryID,
-	}, math.MaxInt, 0, utils.DescOrder, equipmentEnt.FieldID).Return([]*ent.Equipment{equipment}, nil)
+
 	s.eqStatusRepository.On("HasStatusByPeriod", ctx, domain.EquipmentStatusAvailable, equipment.ID,
 		time.Time(rentStart), time.Time(rentEnd)).Return(true, nil)
 	s.orderRepository.On("Create", ctx, createOrder, userID, []int{equipment.ID}).Return(orderToReturn, nil)
@@ -582,24 +576,20 @@ func (s *orderTestSuite) TestOrder_CreateOrder_NoAvailableEquipments() {
 	request := http.Request{}
 	ctx := request.Context()
 
+	id := 1
+	eqID := int64(id)
 	description := "description"
-	categoryID := int64(3)
-	quantity := int64(1)
 	rentStart := strfmt.DateTime(time.Now())
 	rentEnd := strfmt.DateTime(time.Now().Add(time.Hour * 24))
 	createOrder := &models.OrderCreateRequest{
-		Description: &description,
-		Category:    &categoryID,
-		Quantity:    &quantity,
-		RentStart:   &rentStart,
+		Description: description,
+		EquipmentID: &eqID,
 		RentEnd:     &rentEnd,
+		RentStart:   &rentStart,
 	}
 	userID := 1
 
-	equipment := orderWithEdges(t, 1).Edges.Equipments[0]
-	s.equipmentRepository.On("EquipmentsByFilter", ctx, models.EquipmentFilter{
-		Category: categoryID,
-	}, math.MaxInt, 0, utils.DescOrder, equipmentEnt.FieldID).Return([]*ent.Equipment{equipment}, nil)
+	equipment := orderWithEdges(t, id).Edges.Equipments[0]
 	s.eqStatusRepository.On("HasStatusByPeriod", ctx, domain.EquipmentStatusAvailable, equipment.ID,
 		time.Time(rentStart), time.Time(rentEnd)).Return(false, nil)
 
@@ -631,16 +621,15 @@ func (s *orderTestSuite) TestOrder_CreateOrder_OK() {
 	ctx := request.Context()
 
 	description := "description"
-	categoryID := int64(3)
-	quantity := int64(1)
+	id := 1
+	eqID := int64(id)
 	rentStart := strfmt.DateTime(time.Now())
 	rentEnd := strfmt.DateTime(time.Now().Add(time.Hour * 24))
 	createOrder := &models.OrderCreateRequest{
-		Description: &description,
-		Category:    &categoryID,
-		Quantity:    &quantity,
-		RentStart:   &rentStart,
+		Description: description,
+		EquipmentID: &eqID,
 		RentEnd:     &rentEnd,
+		RentStart:   &rentStart,
 	}
 	userID := 1
 
@@ -649,9 +638,7 @@ func (s *orderTestSuite) TestOrder_CreateOrder_OK() {
 	equipmentID := int64(equipment.ID)
 	endDate := time.Time(rentEnd).AddDate(0, 0, 1)
 	equipmentBookedEndDate := strfmt.DateTime(endDate)
-	s.equipmentRepository.On("EquipmentsByFilter", ctx, models.EquipmentFilter{
-		Category: categoryID,
-	}, math.MaxInt, 0, utils.DescOrder, equipmentEnt.FieldID).Return([]*ent.Equipment{equipment}, nil)
+
 	s.eqStatusRepository.On("HasStatusByPeriod", ctx, domain.EquipmentStatusAvailable, equipment.ID,
 		time.Time(rentStart), time.Time(rentEnd)).Return(true, nil)
 	s.orderRepository.On("Create", ctx, createOrder, userID, []int{equipment.ID}).Return(orderToReturn, nil)

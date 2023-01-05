@@ -86,7 +86,9 @@ func (r *equipmentStatusRepository) HasStatusByPeriod(ctx context.Context, statu
 		return false, err
 	}
 	statuses, err := tx.EquipmentStatus.Query().
-		QueryEquipments().Where(equipment.IDEQ(eqID)).QueryEquipmentStatus().
+		QueryEquipments().
+		Where(equipment.IDEQ(eqID)).
+		QueryEquipmentStatus().
 		Where(equipmentstatus.And(
 			equipmentstatus.StartDateLTE(endDate.Add(time.Hour*24))),
 			equipmentstatus.EndDateGTE(startDate)).

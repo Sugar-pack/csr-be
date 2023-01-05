@@ -12,7 +12,6 @@ import (
 
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/authentication"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/ent"
-	equipmentEnt "git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/ent/equipment"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/ent/order"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/swagger/models"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/swagger/restapi/operations"
@@ -212,9 +211,11 @@ func (o Order) ListOrderFunc(repository domain.OrderRepository) orders.GetAllOrd
 	}
 }
 
-func (o Order) CreateOrderFunc(orderRepo domain.OrderRepository,
+func (o Order) CreateOrderFunc(
+	orderRepo domain.OrderRepository,
 	eqStatusRepo domain.EquipmentStatusRepository,
-	equipmentRepo domain.EquipmentRepository) orders.CreateOrderHandlerFunc {
+	equipmentRepo domain.EquipmentRepository,
+) orders.CreateOrderHandlerFunc {
 	return func(p orders.CreateOrderParams, access interface{}) middleware.Responder {
 		ctx := p.HTTPRequest.Context()
 		ownerId, err := authentication.GetUserId(access)
@@ -222,56 +223,40 @@ func (o Order) CreateOrderFunc(orderRepo domain.OrderRepository,
 			o.logger.Error("get user ID failed", zap.Error(err))
 			return orders.NewCreateOrderDefault(http.StatusInternalServerError).WithPayload(buildErrorPayload(err))
 		}
-		equipmentFilter := models.EquipmentFilter{Category: *p.Data.Category}
-		if p.Data.Subcategory > 0 {
-			equipmentFilter.Subcategory = p.Data.Subcategory
-		}
-		equipmentsByCategory, err := equipmentRepo.EquipmentsByFilter(ctx, equipmentFilter,
-			math.MaxInt, 0, utils.DescOrder, equipmentEnt.FieldID)
+
+		id := int(*p.Data.EquipmentID)
+		isEquipmentAvailable, err := eqStatusRepo.HasStatusByPeriod(ctx, domain.EquipmentStatusAvailable, id,
+			time.Time(*p.Data.RentStart), time.Time(*p.Data.RentEnd))
 		if err != nil {
-			o.logger.Error("error while getting equipments in category and subcategory", zap.Error(err))
+			o.logger.Error("error while checking if equipment is available for period", zap.Error(err))
 			return orders.NewCreateOrderDefault(http.StatusInternalServerError).WithPayload(buildErrorPayload(err))
 		}
-		var availableEquipments []int
-		for _, eq := range equipmentsByCategory {
-			isEquipmentAvailable, err := eqStatusRepo.HasStatusByPeriod(ctx, domain.EquipmentStatusAvailable, eq.ID,
-				time.Time(*p.Data.RentStart), time.Time(*p.Data.RentEnd))
-			if err != nil {
-				o.logger.Error("error while checking if equipment is available for period", zap.Error(err))
-				return orders.NewCreateOrderDefault(http.StatusInternalServerError).WithPayload(buildErrorPayload(err))
-			}
-			if isEquipmentAvailable {
-				availableEquipments = append(availableEquipments, eq.ID)
-			}
-		}
-		if len(availableEquipments) < int(*p.Data.Quantity) {
-			o.logger.Warn("there is not so much free equipment")
-			return orders.NewCreateOrderDefault(http.StatusInternalServerError).
-				WithPayload(buildStringPayload("there is not so much free equipment"))
-		}
-		equipmentsToOrder := availableEquipments[:int(*p.Data.Quantity)]
 
-		order, err := orderRepo.Create(ctx, p.Data, ownerId, equipmentsToOrder)
+		if !isEquipmentAvailable {
+			o.logger.Warn("equipment is not free")
+			return orders.NewCreateOrderDefault(http.StatusInternalServerError).
+				WithPayload(buildStringPayload("requested equipment is not free"))
+		}
+
+		order, err := orderRepo.Create(ctx, p.Data, ownerId, []int{id})
 		if err != nil {
 			o.logger.Error("map orders to response failed", zap.Error(err))
 			return orders.NewCreateOrderDefault(http.StatusInternalServerError).WithPayload(buildErrorPayload(err))
 		}
+
 		endDate := time.Time(*p.Data.RentEnd).AddDate(0, 0, 1)
 		equipmentBookedEndDate := strfmt.DateTime(endDate)
-		for _, equipmentID := range equipmentsToOrder {
-			eqID := int64(equipmentID)
-			_, err = eqStatusRepo.Create(ctx, &models.NewEquipmentStatus{
-				EndDate:     &equipmentBookedEndDate,
-				EquipmentID: &eqID,
-				StartDate:   p.Data.RentStart,
-				StatusName:  &domain.EquipmentStatusBooked,
-				OrderID:     int64(order.ID),
-			})
-			if err != nil {
-				o.logger.Error("error while creating equipment status", zap.Error(err))
-				return orders.NewGetAllOrdersDefault(http.StatusInternalServerError).
-					WithPayload(buildErrorPayload(err))
-			}
+		eqID := int64(id)
+		if _, err = eqStatusRepo.Create(ctx, &models.NewEquipmentStatus{
+			EndDate:     &equipmentBookedEndDate,
+			EquipmentID: &eqID,
+			StartDate:   p.Data.RentStart,
+			StatusName:  &domain.EquipmentStatusBooked,
+			OrderID:     int64(order.ID),
+		}); err != nil {
+			o.logger.Error("error while creating equipment status", zap.Error(err))
+			return orders.NewGetAllOrdersDefault(http.StatusInternalServerError).
+				WithPayload(buildErrorPayload(err))
 		}
 
 		mappedOrder, err := mapOrder(order, o.logger)

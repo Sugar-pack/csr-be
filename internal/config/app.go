@@ -92,8 +92,9 @@ func GetAppConfig(additionalDirectories ...string) (*AppConfig, error) {
 func getDefaultConfig() *AppConfig {
 	return &AppConfig{
 		DB: DB{
-			Host: "localhost",
-			User: "csr",
+			Host:     "localhost",
+			User:     "csr",
+			Password: "password",
 		},
 		Password: Password{
 			Length:                 8,
