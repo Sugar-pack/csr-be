@@ -2282,6 +2282,7 @@ definitions:
       - name
       - title
       - category
+      - subcategory
       - status
       - petSize
       - compensationCost
