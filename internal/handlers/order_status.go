@@ -149,16 +149,12 @@ func (h *OrderStatus) AddNewStatusToOrder(orderStatusRepo domain.OrderStatusRepo
 	return func(params orders.AddNewOrderStatusParams, access interface{}) middleware.Responder {
 		h.logger.Info("AddNewStatusToOrder begin")
 		ctx := params.HTTPRequest.Context()
-		ok, err := orderStatusAccessRights(access)
+
+		userID, err := authentication.GetUserId(access)
 		if err != nil {
-			h.logger.Error("error while getting authorization", zap.Error(err))
+			h.logger.Error("AddNewStatusToOrder error", zap.Error(err))
 			return orders.NewAddNewOrderStatusDefault(http.StatusInternalServerError).
-				WithPayload(&models.Error{Data: &models.ErrorData{Message: "Can't get authorization"}})
-		}
-		if !ok {
-			h.logger.Error("User have no right to create order status", zap.Any("access", access))
-			return orders.NewAddNewOrderStatusDefault(http.StatusForbidden).
-				WithPayload(&models.Error{Data: &models.ErrorData{Message: "You don't have rights to add new status"}})
+				WithPayload(buildStringPayload("Can't get authorization"))
 		}
 
 		newOrderStatus := params.Data.Status
@@ -167,11 +163,26 @@ func (h *OrderStatus) AddNewStatusToOrder(orderStatusRepo domain.OrderStatusRepo
 			return orders.NewAddNewOrderStatusDefault(http.StatusBadRequest).
 				WithPayload(buildStringPayload("Status is empty"))
 		}
+
 		currentOrderStatus, err := orderStatusRepo.GetOrderCurrentStatus(ctx, int(*params.Data.OrderID))
 		if err != nil {
 			h.logger.Error("getting order current status failed", zap.Error(err))
 			return orders.NewAddNewOrderStatusDefault(http.StatusInternalServerError).
 				WithPayload(buildStringPayload("Can't get order current status"))
+		}
+
+		ownerCanCancelOrder := ownerCanCancelOrder(*newOrderStatus, currentOrderStatus, userID)
+
+		ok, err := orderStatusAccessRights(access)
+		if err != nil {
+			h.logger.Error("error while getting authorization", zap.Error(err))
+			return orders.NewAddNewOrderStatusDefault(http.StatusInternalServerError).
+				WithPayload(&models.Error{Data: &models.ErrorData{Message: "Can't get authorization"}})
+		}
+		if !ok && !(ownerCanCancelOrder) {
+			h.logger.Error("User have no right to create order status", zap.Any("access", access))
+			return orders.NewAddNewOrderStatusDefault(http.StatusForbidden).
+				WithPayload(&models.Error{Data: &models.ErrorData{Message: "You don't have rights to add new status"}})
 		}
 
 		haveRight, err := rightForStatusCreation(access, currentOrderStatus.Edges.OrderStatusName.Status, *newOrderStatus)
@@ -180,16 +191,10 @@ func (h *OrderStatus) AddNewStatusToOrder(orderStatusRepo domain.OrderStatusRepo
 			return orders.NewAddNewOrderStatusDefault(http.StatusInternalServerError).
 				WithPayload(&models.Error{Data: &models.ErrorData{Message: "Can't get authorization"}})
 		}
-		if !haveRight {
+		if !haveRight && !(ownerCanCancelOrder) {
 			h.logger.Error("User have no right to create order status", zap.Any("access", access))
 			return orders.NewAddNewOrderStatusDefault(http.StatusForbidden).
 				WithPayload(&models.Error{Data: &models.ErrorData{Message: "You don't have rights to add new status"}})
-		}
-		userID, err := authentication.GetUserId(access)
-		if err != nil {
-			h.logger.Error("AddNewStatusToOrder error", zap.Error(err))
-			return orders.NewAddNewOrderStatusDefault(http.StatusInternalServerError).
-				WithPayload(buildStringPayload("Can't get user id"))
 		}
 
 		orderID := currentOrderStatus.Edges.Order.ID
@@ -447,6 +452,7 @@ func orderStatusAccessRights(access interface{}) (bool, error) {
 }
 
 func rightForStatusCreation(access interface{}, currentStatus, newStatus string) (bool, error) {
+
 	isAdmin, err := authentication.IsAdmin(access)
 	if err != nil {
 		return false, err
@@ -478,4 +484,23 @@ func rightForStatusCreation(access interface{}, currentStatus, newStatus string)
 	default:
 		return isAdmin || isManager || isOperator, nil
 	}
+}
+
+func ownerCanCancelOrder(newOrderStatus string, currentOrderStatus *ent.OrderStatus, userID int) bool {
+	if userID != currentOrderStatus.Edges.Order.Edges.Users.ID {
+		return false
+	}
+
+	if newOrderStatus != domain.OrderStatusClosed {
+		return false
+	}
+
+	switch currentOrderStatus.Edges.OrderStatusName.Status {
+	case
+		domain.OrderStatusApproved,
+		domain.OrderStatusInReview,
+		domain.OrderStatusPrepared:
+		return true
+	}
+	return false
 }
