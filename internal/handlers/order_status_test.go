@@ -94,6 +94,9 @@ func orderWithEdges(t *testing.T, id int) *ent.Order {
 							ID: id,
 							Edges: ent.OrderEdges{
 								Equipments: []*ent.Equipment{equipment},
+								Users: &ent.User{
+									ID: 1,
+								},
 							},
 						},
 					},
@@ -451,12 +454,20 @@ func (s *OrderStatusTestSuite) TestOrderStatus_AddNewStatusToOrder_NoAccess() {
 			Login: login,
 			Role:  role,
 		}
+
 		data := &models.NewOrderStatus{
 			Comment:   &statusComment,
 			CreatedAt: &now,
 			OrderID:   &orderID,
 			Status:    &testStatus,
 		}
+
+		ctx := request.Context()
+		existingOrder := orderWithEdges(t, 1)
+		existingOrder.Edges.EquipmentStatus[0].Edges.EquipmentStatusName.Name = domain.EquipmentStatusBooked
+		s.orderStatusRepository.On("GetOrderCurrentStatus", ctx, int(*data.OrderID)).
+			Return(existingOrder.Edges.OrderStatus[0], nil)
+
 		params := orders.AddNewOrderStatusParams{
 			HTTPRequest: &request,
 			Data:        data,
