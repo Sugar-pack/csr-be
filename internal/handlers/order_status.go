@@ -219,7 +219,7 @@ func (h *OrderStatus) AddNewStatusToOrder(orderStatusRepo domain.OrderStatusRepo
 		}
 
 		switch *newOrderStatus {
-		case domain.OrderStatusRejected, domain.OrderStatusClosed:
+		case domain.OrderStatusRejected:
 			status := domain.EquipmentStatusAvailable
 			model := &models.EquipmentStatus{
 				StatusName: &status,
@@ -236,6 +236,27 @@ func (h *OrderStatus) AddNewStatusToOrder(orderStatusRepo domain.OrderStatusRepo
 			model := &models.EquipmentStatus{
 				StatusName: &status,
 			}
+			err = UpdateEqStatuses(ctx, equipmentStatusRepo, orderEquipmentStatuses, model)
+			if err != nil {
+				h.logger.Error("Update equipment status error", zap.Error(err))
+				return orders.NewAddNewOrderStatusDefault(http.StatusInternalServerError).
+					WithPayload(buildStringPayload("Can't update equipment status"))
+			}
+
+		case domain.OrderStatusClosed:
+			status := domain.EquipmentStatusAvailable
+			model := &models.EquipmentStatus{
+				StatusName: &status,
+			}
+
+			if currentOrderStatus.Edges.OrderStatusName.Status == domain.OrderStatusInProgress ||
+				currentOrderStatus.Edges.OrderStatusName.Status == domain.OrderStatusOverdue {
+				addOneDayToCurrentEndDate := strfmt.DateTime(
+					time.Time(orderEquipmentStatuses[0].EndDate).AddDate(0, 0, 1),
+				)
+				model.EndDate = &addOneDayToCurrentEndDate
+			}
+
 			err = UpdateEqStatuses(ctx, equipmentStatusRepo, orderEquipmentStatuses, model)
 			if err != nil {
 				h.logger.Error("Update equipment status error", zap.Error(err))
@@ -478,6 +499,11 @@ func rightForStatusCreation(access interface{}, currentStatus, newStatus string)
 		return false, nil
 	case domain.OrderStatusPrepared:
 		if newStatus == domain.OrderStatusClosed || newStatus == domain.OrderStatusInProgress {
+			return isOperator, nil
+		}
+		return false, nil
+	case domain.OrderStatusInProgress, domain.OrderStatusOverdue:
+		if newStatus == domain.OrderStatusClosed {
 			return isOperator, nil
 		}
 		return false, nil
