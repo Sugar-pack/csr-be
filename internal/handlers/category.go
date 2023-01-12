@@ -60,6 +60,7 @@ func (c *Category) GetAllCategoriesFunc(repository domain.CategoryRepository) ca
 		offset := utils.GetValueByPointerOrDefaultValue(s.Offset, 0)
 		orderBy := utils.GetValueByPointerOrDefaultValue(s.OrderBy, utils.AscOrder)
 		orderColumn := utils.GetValueByPointerOrDefaultValue(s.OrderColumn, category.FieldID)
+
 		total, err := repository.AllCategoriesTotal(ctx)
 		if err != nil {
 			c.logger.Error("query total categories error", zap.Error(err))
@@ -68,7 +69,18 @@ func (c *Category) GetAllCategoriesFunc(repository domain.CategoryRepository) ca
 		}
 		var allCategories []*ent.Category
 		if total > 0 {
-			allCategories, err = repository.AllCategories(ctx, int(limit), int(offset), orderBy, orderColumn)
+			filter := domain.CategoryFilter{
+				Filter: domain.Filter{
+					Limit:       int(limit),
+					Offset:      int(offset),
+					OrderBy:     orderBy,
+					OrderColumn: orderColumn,
+				},
+			}
+			if s.HasEquipments != nil {
+				filter.HasEquipments = *s.HasEquipments
+			}
+			allCategories, err = repository.AllCategories(ctx, filter)
 			if err != nil {
 				c.logger.Error("query all category error", zap.Error(err))
 				return categories.NewGetAllCategoriesDefault(http.StatusInternalServerError).

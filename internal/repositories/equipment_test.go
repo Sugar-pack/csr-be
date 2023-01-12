@@ -111,7 +111,7 @@ func (s *EquipmentSuite) SetupTest() {
 		Name:        "test 5",
 		Title:       "equipment 5",
 		TermsOfUse:  "https://site.com",
-		TechIssue:   "есть",
+		TechIssue:   true,
 		Supplier:    "Виталий",
 		ReceiptDate: "2018",
 		Description: "удовлетворительное, местами облупляется краска",

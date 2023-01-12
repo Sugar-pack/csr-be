@@ -487,7 +487,7 @@ func setParameters(ctx context.Context, client *client.Be, auth runtime.ClientAu
 	}
 
 	supp := "ИП Григорьев Виталий Васильевич"
-	techIss := "нет"
+	techIss := false
 	title := "клетка midwest icrate 1"
 
 	return &models.Equipment{

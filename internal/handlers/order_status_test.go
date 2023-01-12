@@ -94,6 +94,9 @@ func orderWithEdges(t *testing.T, id int) *ent.Order {
 							ID: id,
 							Edges: ent.OrderEdges{
 								Equipments: []*ent.Equipment{equipment},
+								Users: &ent.User{
+									ID: 1,
+								},
 							},
 						},
 					},
@@ -451,12 +454,20 @@ func (s *OrderStatusTestSuite) TestOrderStatus_AddNewStatusToOrder_NoAccess() {
 			Login: login,
 			Role:  role,
 		}
+
 		data := &models.NewOrderStatus{
 			Comment:   &statusComment,
 			CreatedAt: &now,
 			OrderID:   &orderID,
 			Status:    &testStatus,
 		}
+
+		ctx := request.Context()
+		existingOrder := orderWithEdges(t, 1)
+		existingOrder.Edges.EquipmentStatus[0].Edges.EquipmentStatusName.Name = domain.EquipmentStatusBooked
+		s.orderStatusRepository.On("GetOrderCurrentStatus", ctx, int(*data.OrderID)).
+			Return(existingOrder.Edges.OrderStatus[0], nil)
+
 		params := orders.AddNewOrderStatusParams{
 			HTTPRequest: &request,
 			Data:        data,
@@ -599,6 +610,132 @@ func (s *OrderStatusTestSuite) TestOrderStatus_AddNewStatusToOrder_InReviewToRej
 		StatusName: &domain.EquipmentStatusAvailable,
 		ID:         &equipmentID,
 	}).Return(nil, nil)
+	resp := handlerFunc(params, access)
+	responseRecorder := httptest.NewRecorder()
+	producer := runtime.JSONProducer()
+	resp.WriteResponse(responseRecorder, producer)
+	assert.Equal(t, http.StatusOK, responseRecorder.Code)
+	s.orderStatusRepository.AssertExpectations(t)
+}
+
+func (s *OrderStatusTestSuite) TestOrderStatus_AddNewStatusToOrder_OperatorInProgressToClosedOK() {
+	t := s.T()
+	request := http.Request{}
+	ctx := request.Context()
+	userID := 1
+	login := "login"
+	role := &authentication.Role{
+		Id:   userID,
+		Slug: authentication.OperatorSlug,
+	}
+	access := authentication.Auth{
+		Id:    userID,
+		Login: login,
+		Role:  role,
+	}
+	handlerFunc := s.orderStatus.AddNewStatusToOrder(s.orderStatusRepository, s.equipmentStatusRepository)
+	statusComment := "test comment"
+	now := strfmt.DateTime(time.Now())
+	orderID := int64(1)
+	statusID := domain.OrderStatusClosed
+	data := &models.NewOrderStatus{
+		Comment:   &statusComment,
+		CreatedAt: &now,
+		OrderID:   &orderID,
+		Status:    &statusID,
+	}
+	params := orders.AddNewOrderStatusParams{
+		HTTPRequest: &request,
+		Data:        data,
+	}
+	existingOrder := orderWithEdges(t, 1)
+	equipmentID := int64(existingOrder.Edges.Equipments[0].ID)
+
+	existingOrder.Edges.EquipmentStatus[0].EndDate = time.Time(now)
+	existingOrder.Edges.OrderStatus[0].ID = 3
+	existingOrder.Edges.OrderStatus[0].Edges.OrderStatusName = &ent.OrderStatusName{
+		Status: domain.OrderStatusInProgress,
+	}
+
+	s.orderStatusRepository.On("GetOrderCurrentStatus", ctx, int(*data.OrderID)).
+		Return(existingOrder.Edges.OrderStatus[0], nil)
+	s.equipmentStatusRepository.On("GetEquipmentsStatusesByOrder", ctx,
+		existingOrder.ID).
+		Return(existingOrder.Edges.EquipmentStatus, nil)
+	s.orderStatusRepository.On("UpdateStatus", ctx, userID, *data).Return(nil)
+
+	addOneDayToCurrentEndDate := strfmt.DateTime(
+		existingOrder.Edges.EquipmentStatus[0].EndDate.AddDate(0, 0, 1),
+	)
+	s.equipmentStatusRepository.On("Update", ctx, &models.EquipmentStatus{
+		StatusName: &domain.EquipmentStatusAvailable,
+		ID:         &equipmentID,
+		EndDate:    &addOneDayToCurrentEndDate,
+	}).Return(nil, nil)
+
+	resp := handlerFunc(params, access)
+	responseRecorder := httptest.NewRecorder()
+	producer := runtime.JSONProducer()
+	resp.WriteResponse(responseRecorder, producer)
+	assert.Equal(t, http.StatusOK, responseRecorder.Code)
+	s.orderStatusRepository.AssertExpectations(t)
+}
+
+func (s *OrderStatusTestSuite) TestOrderStatus_AddNewStatusToOrder_OperatorOverdueToClosedOK() {
+	t := s.T()
+	request := http.Request{}
+	ctx := request.Context()
+	userID := 1
+	login := "login"
+	role := &authentication.Role{
+		Id:   userID,
+		Slug: authentication.OperatorSlug,
+	}
+	access := authentication.Auth{
+		Id:    userID,
+		Login: login,
+		Role:  role,
+	}
+	handlerFunc := s.orderStatus.AddNewStatusToOrder(s.orderStatusRepository, s.equipmentStatusRepository)
+	statusComment := "test comment"
+	now := strfmt.DateTime(time.Now())
+	orderID := int64(1)
+	statusID := domain.OrderStatusClosed
+	data := &models.NewOrderStatus{
+		Comment:   &statusComment,
+		CreatedAt: &now,
+		OrderID:   &orderID,
+		Status:    &statusID,
+	}
+	params := orders.AddNewOrderStatusParams{
+		HTTPRequest: &request,
+		Data:        data,
+	}
+	existingOrder := orderWithEdges(t, 1)
+	equipmentID := int64(existingOrder.Edges.Equipments[0].ID)
+
+	existingOrder.Edges.EquipmentStatus[0].EndDate = time.Time(now)
+	existingOrder.Edges.OrderStatus[0].ID = 3
+	existingOrder.Edges.OrderStatus[0].Edges.OrderStatusName = &ent.OrderStatusName{
+		Status: domain.OrderStatusOverdue,
+	}
+
+	s.orderStatusRepository.On("GetOrderCurrentStatus", ctx, int(*data.OrderID)).
+		Return(existingOrder.Edges.OrderStatus[0], nil)
+	s.equipmentStatusRepository.On("GetEquipmentsStatusesByOrder", ctx,
+		existingOrder.ID).
+		Return(existingOrder.Edges.EquipmentStatus, nil)
+	s.orderStatusRepository.On("UpdateStatus", ctx, userID, *data).Return(nil)
+
+	addOneDayToCurrentEndDate := strfmt.DateTime(
+		existingOrder.Edges.EquipmentStatus[0].EndDate.AddDate(0, 0, 1),
+	)
+	s.equipmentStatusRepository.On("Update", ctx, &models.EquipmentStatus{
+		StatusName: &domain.EquipmentStatusAvailable,
+		ID:         &equipmentID,
+		EndDate:    &addOneDayToCurrentEndDate,
+	}).Return(nil, nil)
+
 	resp := handlerFunc(params, access)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
