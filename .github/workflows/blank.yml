@@ -1,0 +1,93 @@
+name: build-deploy
+on:
+  workflow_dispatch:
+  push:
+    branches: ["master"]
+  pull_request:
+    branches: ["master"]
+jobs:
+  test:
+    runs-on: ubuntu-22.04
+    container: golang:1.19-alpine
+    steps:
+      - uses: actions/checkout@v3
+      - name: Test
+        env:
+          min_coverage: '70'
+          coverage_result: '/total:\s+\(statements\)\s+(\d+.\d+)\%/'
+        run: |
+          set -e
+          apk add --update --no-cache make
+          make setup_alpine && make setup && make generate
+          go test $(go list ./... | grep -v generated) -race -coverprofile=coverage.out -short
+          make coverage && coverage_total=$(make coverage_total | tail -n1) && echo $coverage_total
+          if [ $min_coverage -gt $coverage_total ]; then exit 1; else echo "unit tests OK"; fi
+  lint:
+    runs-on: ubuntu-latest
+    container: registry.gitlab.com/gitlab-org/gitlab-build-images:golangci-lint-alpine
+    steps:
+      - uses: actions/checkout@v3
+      - name: Lint
+        run: |
+          set -e
+          apk add --update --no-cache make
+          make setup_alpine && make setup && make generate
+          make lint
+          ls
+          echo "---"
+          cat report.txt
+          echo "---"
+      - name: 'Upload Artifact'
+        uses: actions/upload-artifact@v3
+        with:
+          name: lint-report
+          path: report.txt
+          retention-days: 5
+  build:
+    runs-on: ubuntu-latest
+    container: golang:1.19-alpine
+    needs: [lint,test]
+    steps:
+      - uses: actions/checkout@v3
+      - name: Build
+        run: |
+          apk add --update --no-cache make
+          make setup_alpine && make setup && make generate && make build
+      - name: 'Upload Artifact'
+        uses: actions/upload-artifact@v3
+        with:
+          name: artifact
+          path: csr
+          retention-days: 5
+  deploy:
+    if: github.ref == 'refs/heads/master'
+    environment:
+      stage
+    runs-on: ubuntu-latest
+    needs: [build]
+    steps:
+      - uses: actions/download-artifact@v3
+        with:
+          name: artifact
+      - name: Uploady csr
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.DEPLOY_SSH_HOST }}
+          username: ${{ secrets.DEPLOY_SSH_USER }}
+          key: ${{ secrets.DEPLOY_SSH_PRIVATE_KEY }}
+          port: ${{ secrets.DEPLOY_SSH_PORT }}
+          source: csr
+          target: ~/
+      - name: Deploy
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.DEPLOY_SSH_HOST }}
+          username: ${{ secrets.DEPLOY_SSH_USER }}
+          key: ${{ secrets.DEPLOY_SSH_PRIVATE_KEY }}
+          port: ${{ secrets.DEPLOY_SSH_PORT }}
+          script: |
+            mkdir -p /var/www/csr/stage/
+            echo '${{ secrets.DEPLOY_CONFIG }}' > /var/www/csr/stage/config.json
+            sudo systemctl daemon-reload && sudo service stage.csr stop  
+            cp ~/csr /var/www/csr/stage/server 
+            sudo service stage.csr start
