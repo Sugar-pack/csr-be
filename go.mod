@@ -89,7 +89,10 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
-require github.com/google/uuid v1.3.0
+require (
+	github.com/google/uuid v1.3.0
+	github.com/rs/cors v1.8.3
+)
 
 require (
 	github.com/agext/levenshtein v1.2.3 // indirect

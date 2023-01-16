@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/go-openapi/loads"
+	"github.com/rs/cors"
 	"go.uber.org/zap"
 
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/config"
@@ -75,7 +76,11 @@ func SetupAPI(entClient *ent.Client, lg *zap.Logger, conf *config.AppConfig) (*r
 	server.EnabledListeners = listeners
 	server.Host = conf.Server.Host
 	server.Port = conf.Server.Port
-	server.SetHandler(middlewares.Tx(entClient)(api.Serve(nil)))
+	server.SetHandler(
+		cors.Default().Handler(
+			middlewares.Tx(entClient)(api.Serve(nil)),
+		),
+	)
 
 	return server,
 		overdue.NewOverdueCheckup(orderStatusRepo, orderFilterRepo, equipmentStatusRepo, lg),
