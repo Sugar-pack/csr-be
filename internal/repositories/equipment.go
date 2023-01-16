@@ -48,16 +48,10 @@ func (r *equipmentRepository) EquipmentsByFilter(ctx context.Context, filter mod
 	}
 
 	result, err := tx.Equipment.Query().
-		QueryCurrentStatus().
-		Where(OptionalIntStatus(filter.Status, equipmentstatusname.FieldID)).
-		QueryEquipments().
-		QueryCategory().
-		Where(OptionalIntCategory(filter.Category, category.FieldID)).
-		QueryEquipments().
-		QuerySubcategory().
-		Where(OptionalIntSubcategory(filter.Subcategory, subcategory.FieldID)).
-		QueryEquipments().
 		Where(
+			equipment.HasCategoryWith(OptionalIntCategory(filter.Category, category.FieldID)),
+			equipment.HasSubcategoryWith(OptionalIntSubcategory(filter.Subcategory, subcategory.FieldID)),
+			equipment.HasCurrentStatusWith(OptionalIntStatus(filter.Status, equipmentstatusname.FieldID)),
 			equipment.NameContains(filter.NameSubstring),
 			OptionalStringEquipment(filter.Name, equipment.FieldName),
 			OptionalStringEquipment(filter.Description, equipment.FieldDescription),
@@ -210,16 +204,10 @@ func (r *equipmentRepository) EquipmentsByFilterTotal(ctx context.Context, filte
 	}
 
 	total, err := tx.Equipment.Query().
-		QueryCurrentStatus().
-		Where(OptionalIntStatus(filter.Status, equipmentstatusname.FieldID)).
-		QueryEquipments().
-		QueryCategory().
-		Where(OptionalIntCategory(filter.Category, category.FieldID)).
-		QueryEquipments().
-		QuerySubcategory().
-		Where(OptionalIntSubcategory(filter.Subcategory, subcategory.FieldID)).
-		QueryEquipments().
 		Where(
+			equipment.HasCategoryWith(OptionalIntCategory(filter.Category, category.FieldID)),
+			equipment.HasSubcategoryWith(OptionalIntSubcategory(filter.Subcategory, subcategory.FieldID)),
+			equipment.HasCurrentStatusWith(OptionalIntStatus(filter.Status, equipmentstatusname.FieldID)),
 			equipment.NameContains(filter.NameSubstring),
 			OptionalStringEquipment(filter.Name, equipment.FieldName),
 			OptionalStringEquipment(filter.Description, equipment.FieldDescription),
