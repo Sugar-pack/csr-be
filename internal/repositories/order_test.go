@@ -179,12 +179,10 @@ func (s *OrderSuite) TestOrderRepository_Create_EmptyEquipments() {
 	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
 
 	description := "test"
-	quantity := int64(1)
 	startDate := strfmt.DateTime(time.Now().UTC())
 	endDate := strfmt.DateTime(time.Now().UTC().Add(time.Hour * 24 * 5))
 	data := &models.OrderCreateRequest{
-		Description: &description,
-		Quantity:    &quantity,
+		Description: description,
 		RentEnd:     &endDate,
 		RentStart:   &startDate,
 	}
@@ -202,12 +200,12 @@ func (s *OrderSuite) TestOrderRepository_Create_OK() {
 
 	description := "test"
 	equipmentID := int64(s.equipments[0].ID)
-	quantity := int64(1)
+	eqID := int64(1)
 	startDate := strfmt.DateTime(time.Now().UTC())
 	endDate := strfmt.DateTime(time.Now().UTC().Add(time.Hour * 24 * 5))
 	data := &models.OrderCreateRequest{
-		Description: &description,
-		Quantity:    &quantity,
+		Description: description,
+		EquipmentID: &eqID,
 		RentEnd:     &endDate,
 		RentStart:   &startDate,
 	}
@@ -216,7 +214,6 @@ func (s *OrderSuite) TestOrderRepository_Create_OK() {
 	assert.NoError(t, tx.Commit())
 	assert.NotEmpty(t, createdOrder)
 	assert.Equal(t, description, createdOrder.Description)
-	assert.Equal(t, int(quantity), createdOrder.Quantity)
 	assert.NotEmpty(t, createdOrder.Edges.Equipments)
 	assert.Equal(t, int(equipmentID), createdOrder.Edges.Equipments[0].ID)
 	assert.NotEmpty(t, createdOrder.Edges.Users)
@@ -236,12 +233,11 @@ func (s *OrderSuite) TestOrderRepository_Create_isFirstCreatedOrderIsFalseIfOneO
 
 	description := "test"
 	equipmentID := int64(s.equipments[0].ID)
-	quantity := int64(1)
 	startDate := strfmt.DateTime(time.Now().UTC())
 	endDate := strfmt.DateTime(time.Now().UTC().Add(time.Hour * 24 * 5))
 	data := &models.OrderCreateRequest{
-		Description: &description,
-		Quantity:    &quantity,
+		Description: description,
+		EquipmentID: &equipmentID,
 		RentEnd:     &endDate,
 		RentStart:   &startDate,
 	}
@@ -266,7 +262,6 @@ func (s *OrderSuite) TestOrderRepository_Create_isFirstCreatedOrderIsFalseIfOneO
 
 	assert.NotEmpty(t, createdOrder)
 	assert.Equal(t, description, createdOrder.Description)
-	assert.Equal(t, int(quantity), createdOrder.Quantity)
 	assert.NotEmpty(t, createdOrder.Edges.Equipments)
 	assert.Equal(t, int(equipmentID), createdOrder.Edges.Equipments[0].ID)
 	assert.NotEmpty(t, createdOrder.Edges.Users)
@@ -288,12 +283,11 @@ func (s *OrderSuite) TestOrderRepository_Create_isFirstCreatedOrderIsTrueIfOneOf
 
 	description := "test"
 	equipmentID := int64(s.equipments[0].ID)
-	quantity := int64(1)
 	startDate := strfmt.DateTime(time.Now().UTC())
 	endDate := strfmt.DateTime(time.Now().UTC().Add(time.Hour * 24 * 5))
 	data := &models.OrderCreateRequest{
-		Description: &description,
-		Quantity:    &quantity,
+		Description: description,
+		EquipmentID: &equipmentID,
 		RentEnd:     &endDate,
 		RentStart:   &startDate,
 	}
@@ -318,7 +312,6 @@ func (s *OrderSuite) TestOrderRepository_Create_isFirstCreatedOrderIsTrueIfOneOf
 
 	assert.NotEmpty(t, createdOrder)
 	assert.Equal(t, description, createdOrder.Description)
-	assert.Equal(t, int(quantity), createdOrder.Quantity)
 	assert.NotEmpty(t, createdOrder.Edges.Equipments)
 	assert.Equal(t, int(equipmentID), createdOrder.Edges.Equipments[0].ID)
 	assert.NotEmpty(t, createdOrder.Edges.Users)
@@ -340,12 +333,11 @@ func (s *OrderSuite) TestOrderRepository_Create_isFirstFieldIsTrueForSeveralNewC
 
 	description := "test"
 	equipmentID := int64(s.equipments[0].ID)
-	quantity := int64(1)
 	startDate := strfmt.DateTime(time.Now().UTC())
 	endDate := strfmt.DateTime(time.Now().UTC().Add(time.Hour * 24 * 5))
 	data := &models.OrderCreateRequest{
-		Description: &description,
-		Quantity:    &quantity,
+		Description: description,
+		EquipmentID: &equipmentID,
 		RentEnd:     &endDate,
 		RentStart:   &startDate,
 	}
@@ -355,7 +347,6 @@ func (s *OrderSuite) TestOrderRepository_Create_isFirstFieldIsTrueForSeveralNewC
 
 	assert.NotEmpty(t, createdFirstOrder)
 	assert.Equal(t, description, createdFirstOrder.Description)
-	assert.Equal(t, int(quantity), createdFirstOrder.Quantity)
 	assert.NotEmpty(t, createdFirstOrder.Edges.Equipments)
 	assert.Equal(t, int(equipmentID), createdFirstOrder.Edges.Equipments[0].ID)
 	assert.NotEmpty(t, createdFirstOrder.Edges.Users)
@@ -369,7 +360,6 @@ func (s *OrderSuite) TestOrderRepository_Create_isFirstFieldIsTrueForSeveralNewC
 
 	assert.NotEmpty(t, createdSecondOrder)
 	assert.Equal(t, description, createdSecondOrder.Description)
-	assert.Equal(t, int(quantity), createdSecondOrder.Quantity)
 	assert.NotEmpty(t, createdSecondOrder.Edges.Equipments)
 	assert.Equal(t, int(equipmentID), createdSecondOrder.Edges.Equipments[0].ID)
 	assert.NotEmpty(t, createdSecondOrder.Edges.Users)
@@ -391,12 +381,11 @@ func (s *OrderSuite) TestOrderRepository_Create_isFirstFieldForPreviousCreatedOr
 
 	description := "test"
 	equipmentID := int64(s.equipments[0].ID)
-	quantity := int64(1)
 	startDate := strfmt.DateTime(time.Now().UTC())
 	endDate := strfmt.DateTime(time.Now().UTC().Add(time.Hour * 24 * 5))
 	data := &models.OrderCreateRequest{
-		Description: &description,
-		Quantity:    &quantity,
+		Description: description,
+		EquipmentID: &equipmentID,
 		RentEnd:     &endDate,
 		RentStart:   &startDate,
 	}
@@ -420,7 +409,6 @@ func (s *OrderSuite) TestOrderRepository_Create_isFirstFieldForPreviousCreatedOr
 
 	assert.NotEmpty(t, createdFirstOrder)
 	assert.Equal(t, description, createdFirstOrder.Description)
-	assert.Equal(t, int(quantity), createdFirstOrder.Quantity)
 	assert.NotEmpty(t, createdFirstOrder.Edges.Equipments)
 	assert.Equal(t, int(equipmentID), createdFirstOrder.Edges.Equipments[0].ID)
 	assert.NotEmpty(t, createdFirstOrder.Edges.Users)
@@ -434,7 +422,6 @@ func (s *OrderSuite) TestOrderRepository_Create_isFirstFieldForPreviousCreatedOr
 
 	assert.NotEmpty(t, createdSecondOrder)
 	assert.Equal(t, description, createdSecondOrder.Description)
-	assert.Equal(t, int(quantity), createdSecondOrder.Quantity)
 	assert.NotEmpty(t, createdSecondOrder.Edges.Equipments)
 	assert.Equal(t, int(equipmentID), createdSecondOrder.Edges.Equipments[0].ID)
 	assert.NotEmpty(t, createdSecondOrder.Edges.Users)

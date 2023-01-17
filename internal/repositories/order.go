@@ -140,11 +140,6 @@ func (r *orderRepository) Create(ctx context.Context, data *models.OrderCreateRe
 		return nil, err
 	}
 
-	quantity, err := getQuantity(int(*data.Quantity), int(category.MaxReservationUnits))
-	if err != nil {
-		return nil, err
-	}
-	
 	ordersWithApprovedStatus, err := tx.Order.Query().
 		Where(order.HasOrderStatusWith(orderstatus.
 			HasOrderStatusNameWith(orderstatusname.StatusEQ(domain.OrderStatusApproved)))).
@@ -162,8 +157,8 @@ func (r *orderRepository) Create(ctx context.Context, data *models.OrderCreateRe
 
 	createdOrder, err := tx.Order.
 		Create().
-		SetDescription(*data.Description).
-		SetQuantity(*quantity).
+		SetDescription(data.Description).
+		SetQuantity(1).
 		SetRentStart(*rentStart).
 		SetRentEnd(*rentEnd).
 		SetUsers(owner).

@@ -2282,6 +2282,7 @@ definitions:
       - name
       - title
       - category
+      - subcategory
       - status
       - petSize
       - compensationCost
@@ -2592,15 +2593,13 @@ definitions:
   OrderCreateRequest:
     type: object
     required:
-      - description
-      - quantity
+      - equipment_id
       - rent_start
       - rent_end
-      - category
     properties:
       description:
         type: string
-      quantity:
+      equipment_id:
         type: integer
         minimum: 1
       rent_start:
@@ -2609,11 +2608,6 @@ definitions:
       rent_end:
         type: string
         format: date-time
-      category:
-        type: integer
-        minimum: 1
-      subcategory:
-        type: integer
   OrderUpdateRequest:
     type: object
     required:
