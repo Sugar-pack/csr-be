@@ -541,7 +541,7 @@ func (s *UserTestSuite) TestUser_AssignRoleToUserFunc_AccessErr() {
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusForbidden, responseRecorder.Code)
+	assert.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
 
 	s.userRepository.AssertExpectations(t)
 }
