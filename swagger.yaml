@@ -175,6 +175,22 @@ paths:
           description: Unexpected error.
           schema:
             $ref: "#/definitions/Error"
+    delete:
+      summary: Delete user by id
+      security:
+        - Bearer: [ ]
+      tags:
+        - Users
+      operationId: DeleteUser
+      responses:
+        200:
+          description: User deleted
+          schema:
+            type: string
+        default:
+          description: Unexpected error.
+          schema:
+            $ref: "#/definitions/Error"
   /management/listUsers:
     get:
       parameters:

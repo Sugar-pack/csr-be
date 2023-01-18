@@ -151,6 +151,7 @@ type UserRepository interface {
 	GetUserByID(ctx context.Context, id int) (*ent.User, error)
 	UpdateUserByID(ctx context.Context, id int, patch *models.PatchUserRequest) error
 	UserList(ctx context.Context, limit, offset int, orderBy, orderColumn string) ([]*ent.User, error)
+	Delete(ctx context.Context, id int) error
 	UsersListTotal(ctx context.Context) (int, error)
 	ConfirmRegistration(ctx context.Context, login string) error
 }

@@ -33,6 +33,7 @@ func SetUserHandler(logger *zap.Logger, api *operations.BeAPI,
 	api.UsersGetUserHandler = userHandler.GetUserById(userRepo)
 	api.UsersGetAllUsersHandler = userHandler.GetUsersList(userRepo)
 	api.UsersAssignRoleToUserHandler = userHandler.AssignRoleToUserFunc(userRepo)
+	api.UsersDeleteUserHandler = userHandler.DeleteUserByID(userRepo)
 }
 
 type User struct {
@@ -250,6 +251,50 @@ func (c User) GetUsersList(repository domain.UserRepository) users.GetAllUsersHa
 		}
 
 		return users.NewGetAllUsersOK().WithPayload(listUsers)
+	}
+}
+
+func (c User) DeleteUserByID(repo domain.UserRepository) users.DeleteUserHandlerFunc {
+	return func(p users.DeleteUserParams, access interface{}) middleware.Responder {
+		// #todo: add test
+
+		isAdmin, err := authentication.IsAdmin(access)
+		if err != nil {
+			c.logger.Error("error while getting authorization", zap.Error(err))
+			return users.NewDeleteUserDefault(http.StatusInternalServerError).
+				WithPayload(&models.Error{Data: &models.ErrorData{Message: "Can't get authorization"}})
+		}
+		if !isAdmin {
+			c.logger.Error("user is not admin", zap.Any("access", access))
+			return users.NewDeleteUserDefault(http.StatusForbidden).
+				WithPayload(&models.Error{Data: &models.ErrorData{Message: "You don't have rights"}})
+		}
+
+		ctx := p.HTTPRequest.Context()
+		userToDelete, err := repo.GetUserByID(ctx, int(p.UserID))
+		if err != nil {
+			c.logger.Error("getting user failed", zap.Error(err))
+			return users.NewDeleteUserDefault(http.StatusInternalServerError).
+				WithPayload(buildStringPayload("Can't get user by id"))
+		}
+
+		if userToDelete.IsBlocked != true {
+			c.logger.Error("user must be blocked before delete", zap.Any("access", access))
+			return users.NewDeleteUserDefault(http.StatusConflict).
+				WithPayload(&models.Error{Data: &models.ErrorData{Message: "User must be blocked before delete"}})
+		}
+
+		err = repo.Delete(ctx, int(p.UserID))
+		if err != nil {
+			c.logger.Error("Error while deleting user by id", zap.Error(err))
+			return users.NewDeleteUserDefault(http.StatusInternalServerError).WithPayload(
+				&models.Error{
+					Data: &models.ErrorData{
+						Message: "Error while deleting user",
+					},
+				})
+		}
+		return users.NewDeleteUserOK().WithPayload("User deleted")
 	}
 }
 
