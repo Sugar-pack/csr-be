@@ -50,6 +50,7 @@ func TestSetUserHandler(t *testing.T) {
 	assert.NotEmpty(t, api.UsersGetUserHandler)
 	assert.NotEmpty(t, api.UsersGetAllUsersHandler)
 	assert.NotEmpty(t, api.UsersAssignRoleToUserHandler)
+	assert.NotEmpty(t, api.UsersDeleteUserHandler)
 }
 
 type UserTestSuite struct {
@@ -1016,6 +1017,7 @@ func (s *UserTestSuite) TestUser_GetUserById_OK() {
 			Role: &ent.Role{},
 		},
 	}
+
 	s.userRepository.On("GetUserByID", ctx, userID).Return(user, nil)
 
 	access := "dummy access"
@@ -1032,6 +1034,62 @@ func (s *UserTestSuite) TestUser_GetUserById_OK() {
 	}
 	assert.Equal(t, user.ID, int(*responseUsers.ID))
 
+	s.userRepository.AssertExpectations(t)
+}
+
+func (s *UserTestSuite) TestUser_DeleteUserFunc_Err() {
+	t := s.T()
+	request := http.Request{}
+	idToDelete := 3
+	handlerFunc := s.user.DeleteUserByID(s.userRepository)
+	data := users.DeleteUserParams{
+		HTTPRequest: &request,
+		UserID:      int64(idToDelete),
+	}
+
+	access := "dummy access"
+	resp := handlerFunc(data, access)
+	responseRecorder := httptest.NewRecorder()
+	producer := runtime.JSONProducer()
+	resp.WriteResponse(responseRecorder, producer)
+	assert.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
+	s.userRepository.AssertExpectations(t)
+}
+
+func (s *UserTestSuite) TestUser_DeleteUserFunc_OK() {
+	t := s.T()
+	request := http.Request{}
+	ctx := request.Context()
+	idToDelete := 3
+	handlerFunc := s.user.DeleteUserByID(s.userRepository)
+	data := users.DeleteUserParams{
+		HTTPRequest: &request,
+		UserID:      int64(idToDelete),
+	}
+
+	userToDelete := &ent.User{
+		ID: 3,
+		Edges: ent.UserEdges{
+			Role: &ent.Role{},
+		},
+		IsBlocked: true,
+	}
+
+	s.userRepository.On("Delete", ctx, idToDelete).Return(nil)
+	s.userRepository.On("GetUserByID", ctx, idToDelete).Return(userToDelete, nil)
+
+	access := authentication.Auth{
+		Id: 1,
+		Role: &authentication.Role{
+			Slug: authentication.AdminSlug,
+		},
+	}
+
+	resp := handlerFunc(data, access)
+	responseRecorder := httptest.NewRecorder()
+	producer := runtime.JSONProducer()
+	resp.WriteResponse(responseRecorder, producer)
+	assert.Equal(t, http.StatusOK, responseRecorder.Code)
 	s.userRepository.AssertExpectations(t)
 }
 
