@@ -256,8 +256,6 @@ func (c User) GetUsersList(repository domain.UserRepository) users.GetAllUsersHa
 
 func (c User) DeleteUserByID(repo domain.UserRepository) users.DeleteUserHandlerFunc {
 	return func(p users.DeleteUserParams, access interface{}) middleware.Responder {
-		// #todo: add test
-
 		isAdmin, err := authentication.IsAdmin(access)
 		if err != nil {
 			c.logger.Error("error while getting authorization", zap.Error(err))
