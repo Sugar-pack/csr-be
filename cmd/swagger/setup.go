@@ -77,7 +77,7 @@ func SetupAPI(entClient *ent.Client, lg *zap.Logger, conf *config.AppConfig) (*r
 	server.Host = conf.Server.Host
 	server.Port = conf.Server.Port
 	server.SetHandler(
-		cors.Default().Handler(
+		cors.AllowAll().Handler(
 			middlewares.Tx(entClient)(api.Serve(nil)),
 		),
 	)
