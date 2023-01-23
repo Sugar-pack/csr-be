@@ -7,11 +7,12 @@ import (
 	"testing"
 	"time"
 
-	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/swagger/client/subcategories"
 	"github.com/go-openapi/runtime"
 	"github.com/go-openapi/strfmt"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/swagger/client/subcategories"
 
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/ent/order"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/swagger/client"
@@ -453,6 +454,11 @@ func setParameters(ctx context.Context, client *client.Be, auth runtime.ClientAu
 	techIss := false
 	title := "клетка midwest icrate 1"
 
+	var subCatInt64 int64
+	if subCat.Payload.Data.ID != nil {
+		subCatInt64 = *subCat.Payload.Data.ID
+	}
+
 	return &models.Equipment{
 		TermsOfUse:       termsOfUse,
 		CompensationCost: &cost,
@@ -460,7 +466,7 @@ func setParameters(ctx context.Context, client *client.Be, auth runtime.ClientAu
 		Description:      &description,
 		InventoryNumber:  &inventoryNumber,
 		Category:         category.Payload.Data.ID,
-		Subcategory:      subCat.Payload.Data.ID,
+		Subcategory:      subCatInt64,
 		Location:         &location,
 		MaximumAmount:    &amount,
 		MaximumDays:      &mdays,

@@ -5,6 +5,7 @@ import (
 	"errors"
 
 	"entgo.io/ent/dialect/sql"
+
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/ent"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/ent/category"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/ent/equipment"
@@ -107,8 +108,8 @@ func (r *equipmentRepository) CreateEquipment(ctx context.Context, NewEquipment 
 		SetCategory(&ent.Category{ID: int(*NewEquipment.Category)}).
 		SetCurrentStatus(status).
 		SetCategoryID(int(*NewEquipment.Category)).
-		SetSubcategoryID(int(*NewEquipment.Subcategory)).
-		SetSubcategory(&ent.Subcategory{ID: int(*NewEquipment.Subcategory)}).
+		SetSubcategoryID(int(NewEquipment.Subcategory)).
+		SetSubcategory(&ent.Subcategory{ID: int(NewEquipment.Subcategory)}).
 		SetCurrentStatusID(int(*NewEquipment.Status)).
 		AddPetKindIDs(petKinds...).
 		SetTitle(*NewEquipment.Title).
@@ -275,8 +276,8 @@ func (r *equipmentRepository) UpdateEquipmentByID(ctx context.Context, id int, e
 	if *eq.MaximumDays != 0 {
 		edit.SetMaximumDays(*eq.MaximumDays)
 	}
-	if *eq.Subcategory != 0 {
-		edit.SetSubcategory(&ent.Subcategory{ID: int(*eq.Subcategory)})
+	if eq.Subcategory != 0 {
+		edit.SetSubcategory(&ent.Subcategory{ID: int(eq.Subcategory)})
 	}
 	if *eq.PetSize != 0 {
 		edit.SetPetSizeID(int(*eq.PetSize))
