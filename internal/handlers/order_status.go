@@ -185,7 +185,7 @@ func (h *OrderStatus) AddNewStatusToOrder(orderStatusRepo domain.OrderStatusRepo
 				WithPayload(&models.Error{Data: &models.ErrorData{Message: "You don't have rights to add new status"}})
 		}
 
-		haveRight, err := rightForStatusCreation(access, currentOrderStatus.Edges.OrderStatusName.Status, *newOrderStatus)
+		haveRight, role, err := rightForStatusCreation(access, currentOrderStatus.Edges.OrderStatusName.Status, *newOrderStatus)
 		if err != nil {
 			h.logger.Error("error while getting authorization", zap.Error(err))
 			return orders.NewAddNewOrderStatusDefault(http.StatusInternalServerError).
@@ -251,10 +251,23 @@ func (h *OrderStatus) AddNewStatusToOrder(orderStatusRepo domain.OrderStatusRepo
 
 			if currentOrderStatus.Edges.OrderStatusName.Status == domain.OrderStatusInProgress ||
 				currentOrderStatus.Edges.OrderStatusName.Status == domain.OrderStatusOverdue {
-				addOneDayToCurrentEndDate := strfmt.DateTime(
-					time.Time(orderEquipmentStatuses[0].EndDate).AddDate(0, 0, 1),
-				)
-				model.EndDate = &addOneDayToCurrentEndDate
+				if len(orderEquipmentStatuses) != 0 {
+					addOneDayToCurrentEndDate := strfmt.DateTime(
+						time.Time(orderEquipmentStatuses[0].EndDate).AddDate(0, 0, 1),
+					)
+					model.EndDate = &addOneDayToCurrentEndDate
+				}
+			}
+
+			if currentOrderStatus.Edges.OrderStatusName.Status == domain.OrderStatusApproved ||
+				currentOrderStatus.Edges.OrderStatusName.Status == domain.OrderStatusPrepared &&
+					role == authentication.ManagerSlug {
+				if len(orderEquipmentStatuses) != 0 {
+					addOneDayToCurrentEndDate := strfmt.DateTime(
+						time.Time(orderEquipmentStatuses[0].EndDate).AddDate(0, 0, 1),
+					)
+					model.EndDate = &addOneDayToCurrentEndDate
+				}
 			}
 
 			err = UpdateEqStatuses(ctx, equipmentStatusRepo, orderEquipmentStatuses, model)
@@ -472,43 +485,66 @@ func orderStatusAccessRights(access interface{}) (bool, error) {
 	return isAdmin || isManager || isOperator, nil
 }
 
-func rightForStatusCreation(access interface{}, currentStatus, newStatus string) (bool, error) {
-
+func rightForStatusCreation(access interface{}, currentStatus, newStatus string) (bool, string, error) {
 	isAdmin, err := authentication.IsAdmin(access)
 	if err != nil {
-		return false, err
+		return false, "", err
 	}
 	isManager, err := authentication.IsManager(access)
 	if err != nil {
-		return false, err
+		return false, "", err
 	}
 	isOperator, err := authentication.IsOperator(access)
 	if err != nil {
-		return false, err
+		return false, "", err
 	}
+
 	switch currentStatus {
 	case domain.OrderStatusInReview:
 		if newStatus == domain.OrderStatusApproved || newStatus == domain.OrderStatusRejected {
-			return isManager, nil
+			return isManager, authentication.ManagerSlug, nil
 		}
-		return false, nil
+		return false, "", nil
+
 	case domain.OrderStatusApproved:
 		if newStatus == domain.OrderStatusPrepared {
-			return isOperator, nil
+			return isOperator, authentication.OperatorSlug, nil
 		}
-		return false, nil
+
+		if newStatus == domain.OrderStatusClosed {
+			return isManager, authentication.ManagerSlug, nil
+		}
+		return false, "", nil
+
 	case domain.OrderStatusPrepared:
-		if newStatus == domain.OrderStatusClosed || newStatus == domain.OrderStatusInProgress {
-			return isOperator, nil
+		if newStatus == domain.OrderStatusInProgress {
+			return isOperator, authentication.OperatorSlug, nil
 		}
-		return false, nil
+
+		if newStatus == domain.OrderStatusClosed {
+			if isManager {
+				return true, authentication.ManagerSlug, nil
+			}
+			if isOperator {
+				return true, authentication.OperatorSlug, nil
+			}
+		}
+		return false, "", nil
+
 	case domain.OrderStatusInProgress, domain.OrderStatusOverdue:
 		if newStatus == domain.OrderStatusClosed {
-			return isOperator, nil
+			if isManager {
+				return true, authentication.ManagerSlug, nil
+			}
+
+			if isOperator {
+				return true, authentication.OperatorSlug, nil
+			}
 		}
-		return false, nil
+		return false, "", nil
+
 	default:
-		return isAdmin || isManager || isOperator, nil
+		return isAdmin || isManager || isOperator, "", nil
 	}
 }
 
