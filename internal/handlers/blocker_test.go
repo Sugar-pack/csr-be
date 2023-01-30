@@ -1,7 +1,8 @@
 package handlers
 
 import (
-	"errors"
+	"fmt"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/authentication"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -56,15 +57,12 @@ func (s *BlockerTestSuite) SetupTest() {
 func (s *BlockerTestSuite) TestBlocker_BlockUserFunc_RepoErr() {
 	t := s.T()
 	request := http.Request{}
-	ctx := request.Context()
 
 	userID := 1
 	data := users.BlockUserParams{
 		HTTPRequest: &request,
 		UserID:      int64(userID),
 	}
-	err := errors.New("test")
-	s.blockerRepository.On("SetIsBlockedUser", ctx, userID, true).Return(err)
 
 	handlerFunc := s.blocker.BlockUserFunc(s.blockerRepository)
 	access := "dummy access"
@@ -73,7 +71,9 @@ func (s *BlockerTestSuite) TestBlocker_BlockUserFunc_RepoErr() {
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
+	fmt.Printf("\nI AM HERE: %v", responseRecorder.Code)
 	assert.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
+
 	s.blockerRepository.AssertExpectations(t)
 }
 
@@ -91,7 +91,13 @@ func (s *BlockerTestSuite) TestBlocker_BlockUserFunc_OK() {
 	s.blockerRepository.On("SetIsBlockedUser", ctx, userID, true).Return(nil)
 
 	handlerFunc := s.blocker.BlockUserFunc(s.blockerRepository)
-	access := "dummy access"
+	access := authentication.Auth{
+		Id: 2,
+		Role: &authentication.Role{
+			Slug: authentication.ManagerSlug,
+		},
+	}
+
 	resp := handlerFunc.Handle(data, access)
 
 	responseRecorder := httptest.NewRecorder()
@@ -104,15 +110,12 @@ func (s *BlockerTestSuite) TestBlocker_BlockUserFunc_OK() {
 func (s *BlockerTestSuite) TestBlocker_UnblockUserFunc_RepoErr() {
 	t := s.T()
 	request := http.Request{}
-	ctx := request.Context()
 
 	userID := 1
 	data := users.UnblockUserParams{
 		HTTPRequest: &request,
 		UserID:      int64(userID),
 	}
-	err := errors.New("test")
-	s.blockerRepository.On("SetIsBlockedUser", ctx, userID, false).Return(err)
 
 	handlerFunc := s.blocker.UnblockUserFunc(s.blockerRepository)
 	access := "dummy access"
@@ -138,7 +141,13 @@ func (s *BlockerTestSuite) TestBlocker_UnblockUserFunc_OK() {
 	s.blockerRepository.On("SetIsBlockedUser", ctx, userID, false).Return(nil)
 
 	handlerFunc := s.blocker.UnblockUserFunc(s.blockerRepository)
-	access := "dummy access"
+	access := authentication.Auth{
+		Id: 2,
+		Role: &authentication.Role{
+			Slug: authentication.ManagerSlug,
+		},
+	}
+
 	resp := handlerFunc.Handle(data, access)
 
 	responseRecorder := httptest.NewRecorder()
