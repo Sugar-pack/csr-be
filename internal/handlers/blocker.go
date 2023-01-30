@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/authentication"
 	"net/http"
 
 	"github.com/go-openapi/runtime/middleware"
@@ -32,9 +33,21 @@ func NewBlocker(logger *zap.Logger) *Blocker {
 
 func (b Blocker) BlockUserFunc(repository domain.BlockerRepository) users.BlockUserHandlerFunc {
 	return func(u users.BlockUserParams, access interface{}) middleware.Responder {
+		isManager, err := authentication.IsManager(access)
+		if err != nil {
+			b.logger.Error("error while getting authorization", zap.Error(err))
+			return users.NewDeleteUserDefault(http.StatusInternalServerError).
+				WithPayload(&models.Error{Data: &models.ErrorData{Message: "Can't get authorization"}})
+		}
+		if !isManager {
+			b.logger.Error("user is not manager", zap.Any("access", access))
+			return users.NewDeleteUserDefault(http.StatusForbidden).
+				WithPayload(&models.Error{Data: &models.ErrorData{Message: "You don't have rights"}})
+		}
+
 		userId := int(u.UserID)
 		context := u.HTTPRequest.Context()
-		err := repository.SetIsBlockedUser(context, userId, true)
+		err = repository.SetIsBlockedUser(context, userId, true)
 		if err != nil {
 			b.logger.Error("block user failed", zap.Error(err))
 			return users.NewBlockUserDefault(http.StatusInternalServerError).WithPayload(&models.Error{
@@ -49,10 +62,22 @@ func (b Blocker) BlockUserFunc(repository domain.BlockerRepository) users.BlockU
 
 func (b Blocker) UnblockUserFunc(repository domain.BlockerRepository) users.UnblockUserHandlerFunc {
 	return func(u users.UnblockUserParams, access interface{}) middleware.Responder {
+		isManager, err := authentication.IsManager(access)
+		if err != nil {
+			b.logger.Error("error while getting authorization", zap.Error(err))
+			return users.NewDeleteUserDefault(http.StatusInternalServerError).
+				WithPayload(&models.Error{Data: &models.ErrorData{Message: "Can't get authorization"}})
+		}
+		if !isManager {
+			b.logger.Error("user is not manager", zap.Any("access", access))
+			return users.NewDeleteUserDefault(http.StatusForbidden).
+				WithPayload(&models.Error{Data: &models.ErrorData{Message: "You don't have rights"}})
+		}
+
 		userId := int(u.UserID)
 		context := u.HTTPRequest.Context()
 
-		err := repository.SetIsBlockedUser(context, userId, false)
+		err = repository.SetIsBlockedUser(context, userId, false)
 		if err != nil {
 			b.logger.Error("unblock user failed", zap.Error(err))
 			return users.NewUnblockUserDefault(http.StatusInternalServerError).WithPayload(&models.Error{
