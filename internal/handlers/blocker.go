@@ -36,12 +36,12 @@ func (b Blocker) BlockUserFunc(repository domain.BlockerRepository) users.BlockU
 		isManager, err := authentication.IsManager(access)
 		if err != nil {
 			b.logger.Error("error while getting authorization", zap.Error(err))
-			return users.NewDeleteUserDefault(http.StatusInternalServerError).
+			return users.NewBlockUserDefault(http.StatusInternalServerError).
 				WithPayload(&models.Error{Data: &models.ErrorData{Message: "Can't get authorization"}})
 		}
 		if !isManager {
 			b.logger.Error("user is not manager", zap.Any("access", access))
-			return users.NewDeleteUserDefault(http.StatusForbidden).
+			return users.NewBlockUserDefault(http.StatusForbidden).
 				WithPayload(&models.Error{Data: &models.ErrorData{Message: "You don't have rights"}})
 		}
 
@@ -65,12 +65,12 @@ func (b Blocker) UnblockUserFunc(repository domain.BlockerRepository) users.Unbl
 		isManager, err := authentication.IsManager(access)
 		if err != nil {
 			b.logger.Error("error while getting authorization", zap.Error(err))
-			return users.NewDeleteUserDefault(http.StatusInternalServerError).
+			return users.NewUnblockUserDefault(http.StatusInternalServerError).
 				WithPayload(&models.Error{Data: &models.ErrorData{Message: "Can't get authorization"}})
 		}
 		if !isManager {
 			b.logger.Error("user is not manager", zap.Any("access", access))
-			return users.NewDeleteUserDefault(http.StatusForbidden).
+			return users.NewUnblockUserDefault(http.StatusForbidden).
 				WithPayload(&models.Error{Data: &models.ErrorData{Message: "You don't have rights"}})
 		}
 

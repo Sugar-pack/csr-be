@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"fmt"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/authentication"
 	"net/http"
 	"net/http/httptest"
@@ -71,7 +70,6 @@ func (s *BlockerTestSuite) TestBlocker_BlockUserFunc_RepoErr() {
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	fmt.Printf("\nI AM HERE: %v", responseRecorder.Code)
 	assert.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
 
 	s.blockerRepository.AssertExpectations(t)
