@@ -8,6 +8,7 @@ on:
 jobs:
   test:
     runs-on: ubuntu-22.04
+    container: ubuntu
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -22,8 +23,12 @@ jobs:
             ~/.cache/go-build
             ~/go/pkg/mod
           key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+      - name: Run service
+        uses: isbang/compose-action@v1.4.1
+        with:
+          compose_file: int-test-infra/docker-compose.int-test.yml
       - name: Test
         run: |
           make setup
           make generate
-          make int-test
+          make int-test-without-infra
