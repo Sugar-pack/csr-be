@@ -2,6 +2,7 @@ package equipment
 
 import (
 	"context"
+	"encoding/json"
 	"os"
 	"testing"
 
@@ -403,17 +404,29 @@ func TestIntegration_DeleteEquipment(t *testing.T) {
 		res, err := client.Equipment.GetAllEquipment(equipment.NewGetAllEquipmentParamsWithContext(ctx), auth)
 		require.NoError(t, err)
 		assert.NotZero(t, len(res.Payload.Items))
+		require.NoError(t, err)
+		var deletedID []int64
+		var payloads []string
 
 		params := equipment.NewDeleteEquipmentParamsWithContext(ctx)
 		for _, item := range res.Payload.Items {
 			params.WithEquipmentID(*item.ID)
-			_, err = client.Equipment.DeleteEquipment(params, auth)
-			require.NoError(t, err)
+			deletedID = append(deletedID, params.EquipmentID)
+			payload, errDelete := client.Equipment.DeleteEquipment(params, auth)
+			require.NoError(t, errDelete)
+			payloads = append(payloads, payload.GetPayload())
 		}
 
 		res, err = client.Equipment.GetAllEquipment(equipment.NewGetAllEquipmentParamsWithContext(ctx), auth)
 		require.NoError(t, err)
-		assert.Zero(t, len(res.Payload.Items))
+		var raw2 []byte
+		raw2, err = json.Marshal(res)
+		require.NoError(t, err)
+		assert.Zero(t, len(res.Payload.Items),
+			"All equipment should be deleted",
+			"\n deleted id: ", deletedID,
+			"\n payloads: ", payloads,
+			"\n get all response after deletions: ", string(raw2))
 	})
 
 	t.Run("Delete Equipment failed: zero equipments, delete failed", func(t *testing.T) {

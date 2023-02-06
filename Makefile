@@ -61,7 +61,7 @@ int-test:
 	$(MAKE) int-infra-down
 
 int-test-without-infra:
-	go test -v -timeout 10m ./... -run Integration
+	go test -v -p 1 -timeout 10m ./... -run Integration
 
 int-infra-up:
 	docker-compose -f ./int-test-infra/docker-compose.int-test.yml up -d --wait
