@@ -28,7 +28,7 @@ jobs:
           make generate
       - name: Build image
         run: |
-          docker build -t csr:int-test -f ./int-test-infra/Dockerfile.int-test .
+          make build-int-image
       - name: Run service
         uses: isbang/compose-action@v1.4.1
         with:

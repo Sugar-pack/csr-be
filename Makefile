@@ -63,6 +63,9 @@ int-test:
 int-test-without-infra:
 	go test -v -p 1 -timeout 10m ./... -run Integration
 
+build-int-image:
+	docker build -t csr:int-test -f ./int-test-infra/Dockerfile.int-test .
+
 int-infra-up:
 	docker-compose -f ./int-test-infra/docker-compose.int-test.yml up -d --wait
 int-infra-down:
