@@ -16,7 +16,7 @@ jobs:
         with:
           go-version-file: "${{ github.workspace }}/go.mod"
       - name: Cache go modules
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: |
             ~/.cache/go-build
@@ -24,4 +24,6 @@ jobs:
           key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
       - name: Test
         run: |
+          make setup
+          make generate
           make int-test
