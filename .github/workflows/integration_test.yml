@@ -22,8 +22,17 @@ jobs:
             ~/.cache/go-build
             ~/go/pkg/mod
           key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
-      - name: Test
+      - name: Prepare
         run: |
           make setup
           make generate
-          make int-test
+      - name: Build image
+        run: |
+          docker build -t csr:int-test -f ./int-test-infra/Dockerfile.int-test .
+      - name: Run service
+        uses: isbang/compose-action@v1.4.1
+        with:
+          compose-file: "./int-test-infra/docker-compose.int-test.yml"
+      - name: Test
+        run: |
+          make int-test-without-infra
