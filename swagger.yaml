@@ -61,6 +61,34 @@ paths:
           description: Unexpected error.
           schema:
             $ref: "#/definitions/Error"
+  /v1/logout:
+    post:
+      description: 'Logout user'
+      tags:
+        - Users
+      operationId: Logout
+      consumes:
+        - "application/json"
+      parameters:
+        - name: 'Refresh token'
+          in: 'body'
+          required: true
+          description: 'Refresh payload'
+          schema:
+            $ref: '#/definitions/RefreshToken'
+      responses:
+        200:
+          description: Successful logout
+          schema:
+            type: string
+        404:
+          description: Refresh token not found.
+          schema:
+            $ref: "#/definitions/Error"
+        default:
+          description: Unexpected error.
+          schema:
+            $ref: "#/definitions/Error"
   /v1/refresh:
     post:
       description: 'Returns new access token for an authorized User'
@@ -81,7 +109,7 @@ paths:
         200:
           description: Successful refresh.
           schema:
-            $ref: '#/definitions/AccessToken'
+            $ref: '#/definitions/TokenPair'
         404:
           description: Refresh token not found.
           schema:
