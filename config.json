@@ -22,5 +22,12 @@
   "orderStatusOverdueTimeCheckDuration": "4h",
   "server": {
     "port": 8080
-  }
+  },
+  "accessBindings": [
+    {
+      "role": "user",
+      "method" : "GET",
+      "path": "/pet_kind"
+    }
+  ]
 }

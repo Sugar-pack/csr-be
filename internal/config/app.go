@@ -15,6 +15,7 @@ type AppConfig struct {
 	OrderStatusOverdueTimeCheckDuration time.Duration `validate:"required"`
 	Server                              Server
 	DB                                  DB
+	AccessBindings                      []RoleEndpointBinding
 }
 
 type DB struct {
@@ -62,6 +63,12 @@ type Password struct {
 type Server struct {
 	Host string `validate:"required"`
 	Port int    `validate:"required,gte=1024"`
+}
+
+type RoleEndpointBinding struct {
+	Role   string
+	Method string
+	Path   string
 }
 
 func GetAppConfig(additionalDirectories ...string) (*AppConfig, error) {

@@ -22,7 +22,7 @@ generate/mocks: clean/mocks
 	mockery --all --case snake --dir ./pkg/domain --output ./internal/generated/mocks
 
 clean/swagger:
-	rm -rf ./internal/generated/swagger
+	cd ./internal/generated/swagger && rm -rfv '!("gethandlers.go")'
 
 generate/swagger: clean/swagger
 	swagger generate server -f ./swagger.yaml -s ./internal/generated/swagger/restapi -m ./internal/generated/swagger/models --exclude-main

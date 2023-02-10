@@ -1,10 +1,13 @@
 package main
 
 import (
+	"fmt"
+
 	"github.com/go-openapi/loads"
 	"github.com/rs/cors"
 	"go.uber.org/zap"
 
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/authentication"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/config"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/email"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/ent"
@@ -73,16 +76,44 @@ func SetupAPI(entClient *ent.Client, lg *zap.Logger, conf *config.AppConfig) (*r
 	server := restapi.NewServer(api)
 	listeners := []string{"http"}
 
+	server.ConfigureAPI()
 	server.EnabledListeners = listeners
 	server.Host = conf.Server.Host
 	server.Port = conf.Server.Port
+
+	accessManager, err := AccessManager(api, conf.AccessBindings)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to create access manager: %w", err)
+	}
 	server.SetHandler(
 		cors.AllowAll().Handler(
-			middlewares.Tx(entClient)(api.Serve(nil)),
+			middlewares.Tx(entClient)(api.Serve(accessManager.Middleware())),
 		),
 	)
 
 	return server,
 		overdue.NewOverdueCheckup(orderStatusRepo, orderFilterRepo, equipmentStatusRepo, lg),
 		nil
+}
+
+func AccessManager(api *operations.BeAPI, bindings []config.RoleEndpointBinding) (*middlewares.AccessManager, error) {
+	roles := []string{
+		authentication.AdminSlug,
+		authentication.UserSlug,
+		authentication.OperatorSlug,
+		authentication.ManagerSlug,
+	}
+	fullAccessRoles := []string{
+		authentication.AdminSlug,
+	}
+
+	manager := middlewares.NewAccessManager(roles, fullAccessRoles, api.GetExistingEndpoints())
+
+	for _, binding := range bindings {
+		_, err := manager.AddNewAccess(binding.Role, binding.Method, binding.Path)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return manager, nil
 }
