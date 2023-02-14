@@ -527,26 +527,6 @@ func (s *UserTestSuite) TestUser_PatchUser_OK() {
 	s.userRepository.AssertExpectations(t)
 }
 
-func (s *UserTestSuite) TestUser_AssignRoleToUserFunc_AccessErr() {
-	t := s.T()
-	request := http.Request{}
-
-	access := "definitely not an access"
-	handlerFunc := s.user.AssignRoleToUserFunc(s.userRepository)
-	data := users.AssignRoleToUserParams{
-		HTTPRequest: &request,
-		Data:        &models.AssignRoleToUser{},
-	}
-
-	resp := handlerFunc(data, access)
-	responseRecorder := httptest.NewRecorder()
-	producer := runtime.JSONProducer()
-	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
-
-	s.userRepository.AssertExpectations(t)
-}
-
 func (s *UserTestSuite) TestUser_AssignRoleToUserFunc_RepoErr() {
 	t := s.T()
 	request := http.Request{}

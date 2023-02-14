@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"flag"
-	"log"
 	"net/http"
 	"os"
 	"testing"
@@ -23,32 +22,14 @@ import (
 var (
 	testCategoryName        = gofakeit.Name()
 	migrationCategoryNumber = 9
-	testLogin               string
-	testPassword            string
 	auth                    runtime.ClientAuthInfoWriterFunc
 )
 
 func TestMain(m *testing.M) {
 	flag.Parse()
 	if !testing.Short() {
-		ctx := context.Background()
-		beClient := utils.SetupClient()
-
-		var err error
-		testLogin, testPassword, err = utils.GenerateLoginAndPassword()
-		if err != nil {
-			log.Fatalf("GenerateLoginAndPassword: %v", err)
-		}
-		_, err = utils.CreateUser(ctx, beClient, testLogin, testPassword)
-		if err != nil {
-			log.Fatalf("CreateUser: %v", err)
-		}
-		loginUser, err := utils.LoginUser(ctx, beClient, testLogin, testPassword)
-		if err != nil {
-			log.Fatalf("LoginUser: %v", err)
-		}
-
-		auth = utils.AuthInfoFunc(loginUser.GetPayload().AccessToken)
+		data := utils.AdminUserLogin(&testing.T{}) // TODO: refactor tests
+		auth = utils.AuthInfoFunc(data.GetPayload().AccessToken)
 
 		os.Exit(m.Run())
 	}
@@ -106,7 +87,7 @@ func TestIntegration_CreateCategory(t *testing.T) {
 		_, gotErr := client.Categories.CreateNewCategory(categories.NewCreateNewCategoryParamsWithContext(ctx).WithNewCategory(modelCategory), utils.AuthInfoFunc(&token))
 		require.Error(t, gotErr)
 
-		wantErr := categories.NewCreateNewCategoryDefault(http.StatusInternalServerError)
+		wantErr := categories.NewCreateNewCategoryDefault(http.StatusUnauthorized)
 		wantErr.Payload = &models.Error{Data: nil}
 		assert.Equal(t, wantErr, gotErr)
 	})
@@ -193,7 +174,7 @@ func TestIntegration_GetCategoryByID(t *testing.T) {
 		_, gotErr := client.Categories.GetCategoryByID(categories.NewGetCategoryByIDParamsWithContext(ctx).WithCategoryID(1), utils.AuthInfoFunc(&token))
 		require.Error(t, gotErr)
 
-		wantErr := categories.NewGetCategoryByIDDefault(http.StatusInternalServerError)
+		wantErr := categories.NewGetCategoryByIDDefault(http.StatusUnauthorized)
 		wantErr.Payload = &models.Error{Data: nil}
 		assert.Equal(t, wantErr, gotErr)
 	})
@@ -297,7 +278,7 @@ func TestIntegration_EditCategory(t *testing.T) {
 			WithCategoryID(*newCategory.Payload.Data.ID).WithUpdateCategory(updateCategory), utils.AuthInfoFunc(&token))
 		require.Error(t, gotErr)
 
-		wantErr := categories.NewUpdateCategoryDefault(http.StatusInternalServerError)
+		wantErr := categories.NewUpdateCategoryDefault(http.StatusUnauthorized)
 		wantErr.Payload = &models.Error{Data: nil}
 		assert.Equal(t, wantErr, gotErr)
 	})
@@ -340,7 +321,7 @@ func TestIntegration_DeleteCategory(t *testing.T) {
 		_, gotErr := client.Categories.DeleteCategory(categories.NewDeleteCategoryParamsWithContext(ctx).WithCategoryID(1), utils.AuthInfoFunc(&token))
 		require.Error(t, gotErr)
 
-		wantErr := categories.NewDeleteCategoryDefault(http.StatusInternalServerError)
+		wantErr := categories.NewDeleteCategoryDefault(http.StatusUnauthorized)
 		wantErr.Payload = &models.Error{Data: nil}
 		assert.Equal(t, wantErr, gotErr)
 	})

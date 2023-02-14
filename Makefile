@@ -57,7 +57,7 @@ coverage_total:
 int-test:
 	DOCKER_BUILDKIT=1  docker build -f ./int-test-infra/Dockerfile.int-test --network host --no-cache -t csr:int-test --target run .
 	$(MAKE) int-infra-up
-	go test -v -timeout 10m ./... -run Integration
+	$(MAKE) int-test-without-infra
 	$(MAKE) int-infra-down
 
 int-test-without-infra:

@@ -54,8 +54,8 @@ func TestIntegration_RegisterUser(t *testing.T) {
 	})
 
 	t.Run("login is already used", func(t *testing.T) {
-		_, err := c.Users.PostUser(params)
-		require.Error(t, err)
+		r, err := c.Users.PostUser(params)
+		require.Error(t, err, r)
 
 		errExp := users.NewPostUserDefault(417)
 		errExp.Payload = &models.Error{

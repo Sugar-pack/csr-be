@@ -5,9 +5,11 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"testing"
 	"time"
 
 	httptransport "github.com/go-openapi/runtime/client"
+	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 
 	"github.com/brianvoe/gofakeit/v6"
@@ -102,6 +104,48 @@ func GetUser(ctx context.Context, client *client.Be, authInfo runtime.ClientAuth
 		return nil, err
 	}
 	return currentUser, nil
+}
+
+func AdminLoginPassword(t *testing.T) (string, string, int64) {
+	t.Helper()
+	l, p, err := GenerateLoginAndPassword()
+	require.NoError(t, err)
+
+	ctx := context.Background()
+	client := SetupClient()
+
+	user, err := CreateUser(ctx, client, l, p)
+	require.NoError(t, err)
+
+	// login and get token
+	loginUser, err := LoginUser(ctx, client, l, p)
+	require.NoError(t, err)
+	auth := AuthInfoFunc(loginUser.GetPayload().AccessToken)
+
+	role := int64(1) //TODO: use const
+	params := &users.AssignRoleToUserParams{
+		UserID: *user.ID,
+		Data: &models.AssignRoleToUser{
+			RoleID: &role,
+		},
+	}
+	params.SetContext(ctx)
+	params.SetHTTPClient(http.DefaultClient)
+
+	_, err = client.Users.AssignRoleToUser(params, auth)
+	require.NoError(t, err)
+	return l, p, *user.ID
+}
+
+func AdminUserLogin(t *testing.T) *users.LoginOK {
+	t.Helper()
+	ctx := context.Background()
+	client := SetupClient()
+	l, p, _ := AdminLoginPassword(t)
+	// login and get token with admin role
+	loginUser, err := LoginUser(ctx, client, l, p)
+	require.NoError(t, err)
+	return loginUser
 }
 
 func SetupClient() *client.Be {

@@ -20,16 +20,8 @@ func TestIntegration_EditPetSize(t *testing.T) {
 	ctx := context.Background()
 	client := utils.SetupClient()
 
-	l, p, err := utils.GenerateLoginAndPassword()
-	require.NoError(t, err)
-
-	_, err = utils.CreateUser(ctx, client, l, p)
-	require.NoError(t, err)
-
-	loginUser, err := utils.LoginUser(ctx, client, l, p)
-	require.NoError(t, err)
-
-	token := loginUser.GetPayload().AccessToken
+	auth := utils.AdminUserLogin(t)
+	token := auth.GetPayload().AccessToken
 
 	petSizeID, err := getSizeIDByName(ctx, client, token, name)
 	require.NoError(t, err)

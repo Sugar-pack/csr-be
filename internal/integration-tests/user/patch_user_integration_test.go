@@ -2,6 +2,7 @@ package user
 
 import (
 	"context"
+	"net/http"
 	"testing"
 	"time"
 
@@ -23,16 +24,9 @@ func TestIntegration_PatchUpdate(t *testing.T) {
 	ctx := context.Background()
 	client := utils.SetupClient()
 
-	l, p, err := utils.GenerateLoginAndPassword()
-	require.NoError(t, err)
-
-	_, err = utils.CreateUser(ctx, client, l, p)
-	require.NoError(t, err)
-
-	loginUser, err := utils.LoginUser(ctx, client, l, p)
-	require.NoError(t, err)
-
+	loginUser := utils.AdminUserLogin(t)
 	token := loginUser.GetPayload().AccessToken
+
 	t.Run("patch update successfully passed", func(t *testing.T) {
 		var date = time.Date(2009, time.November, 10, 00, 0, 0, 0, time.UTC)
 		params := users.NewPatchUserParamsWithContext(ctx)
@@ -80,10 +74,10 @@ func TestIntegration_PatchUpdate(t *testing.T) {
 		params.UserPatch = &models.PatchUserRequest{
 			Name: name,
 		}
-		_, err = client.Users.PatchUser(params, utils.AuthInfoFunc(nil))
+		_, err := client.Users.PatchUser(params, utils.AuthInfoFunc(nil))
 		assert.Error(t, err)
 
-		errExp := users.NewPatchUserDefault(401)
+		errExp := users.NewPatchUserDefault(http.StatusUnauthorized)
 		errExp.Payload = &models.Error{
 			Data: nil,
 		}
@@ -97,10 +91,10 @@ func TestIntegration_PatchUpdate(t *testing.T) {
 			Name: name,
 		}
 		dummyToken := utils.TokenNotExist
-		_, err = client.Users.PatchUser(params, utils.AuthInfoFunc(&dummyToken))
+		_, err := client.Users.PatchUser(params, utils.AuthInfoFunc(&dummyToken))
 		assert.Error(t, err)
 
-		errExp := users.NewPatchUserDefault(500)
+		errExp := users.NewPatchUserDefault(http.StatusUnauthorized)
 		errExp.Payload = &models.Error{
 			Data: nil,
 		}
@@ -110,7 +104,7 @@ func TestIntegration_PatchUpdate(t *testing.T) {
 	t.Run("patch failed: validation required", func(t *testing.T) {
 		params := users.NewPatchUserParamsWithContext(ctx)
 		params.UserPatch = nil
-		_, err = client.Users.PatchUser(params, utils.AuthInfoFunc(token))
+		_, err := client.Users.PatchUser(params, utils.AuthInfoFunc(token))
 		assert.Error(t, err)
 
 		errExp := users.NewPatchUserDefault(422)

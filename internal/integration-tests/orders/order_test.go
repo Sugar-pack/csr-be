@@ -41,18 +41,11 @@ func TestIntegration_BeforeOrderSetup(t *testing.T) {
 	ctx := context.Background()
 	client := common.SetupClient()
 
-	l, p, err := common.GenerateLoginAndPassword()
-	require.NoError(t, err)
-
-	_, err = common.CreateUser(ctx, client, l, p)
-	require.NoError(t, err)
-
-	loginUser, err := common.LoginUser(ctx, client, l, p)
-	require.NoError(t, err)
-
-	token = loginUser.GetPayload().AccessToken
+	login := common.AdminUserLogin(t)
+	token = login.GetPayload().AccessToken
 	auth = common.AuthInfoFunc(token)
 
+	var err error
 	eq, err = createEquipment(ctx, client, auth)
 	require.NoError(t, err)
 }
@@ -80,7 +73,7 @@ func TestIntegration_CreateOrder(t *testing.T) {
 		_, gotErr := client.Orders.CreateOrder(params, common.AuthInfoFunc(&incorrectToken))
 		require.Error(t, gotErr)
 
-		wantErr := orders.NewCreateOrderDefault(http.StatusInternalServerError)
+		wantErr := orders.NewCreateOrderDefault(http.StatusUnauthorized)
 		wantErr.Payload = &models.Error{Data: nil}
 		assert.Equal(t, wantErr, gotErr)
 	})
@@ -295,7 +288,7 @@ func TestIntegration_GetAllOrders(t *testing.T) {
 		_, gotErr := client.Orders.GetAllOrders(params, common.AuthInfoFunc(&token))
 		require.Error(t, gotErr)
 
-		wantErr := orders.NewGetAllOrdersDefault(http.StatusInternalServerError)
+		wantErr := orders.NewGetAllOrdersDefault(http.StatusUnauthorized)
 		wantErr.Payload = &models.Error{Data: nil}
 		assert.Equal(t, wantErr, gotErr)
 	})

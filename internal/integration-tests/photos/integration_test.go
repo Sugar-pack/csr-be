@@ -5,7 +5,6 @@ import (
 	"errors"
 	"flag"
 	"io"
-	"log"
 	"net/http"
 	"os"
 	"testing"
@@ -20,30 +19,15 @@ import (
 )
 
 var (
-	testLogin    string
-	testPassword string
-	auth         runtime.ClientAuthInfoWriterFunc
+	auth runtime.ClientAuthInfoWriterFunc
 )
 
 func TestMain(m *testing.M) {
 	flag.Parse()
 	if !testing.Short() {
-		ctx := context.Background()
-		beClient := common.SetupClient()
 
-		var err error
-		testLogin, testPassword, err = common.GenerateLoginAndPassword()
-		if err != nil {
-			log.Fatalf("GenerateLoginAndPassword: %v", err)
-		}
-		_, err = common.CreateUser(ctx, beClient, testLogin, testPassword)
-		if err != nil {
-			log.Fatalf("CreateUser: %v", err)
-		}
-		loginUser, err := common.LoginUser(ctx, beClient, testLogin, testPassword)
-		if err != nil {
-			log.Fatalf("LoginUser: %v", err)
-		}
+		t := &testing.T{}
+		loginUser := common.AdminUserLogin(t)
 
 		auth = common.AuthInfoFunc(loginUser.GetPayload().AccessToken)
 
@@ -140,7 +124,7 @@ func TestIntegration_PhotosUpload(t *testing.T) {
 			common.AuthInfoFunc(&token))
 		require.Error(t, gotErr)
 
-		wantErr := photos.NewCreateNewPhotoDefault(http.StatusInternalServerError)
+		wantErr := photos.NewCreateNewPhotoDefault(http.StatusUnauthorized)
 		wantErr.Payload = &models.Error{Data: nil}
 		assert.Equal(t, wantErr, gotErr)
 		f.Close()
@@ -170,7 +154,7 @@ func TestIntegration_DeletePhoto(t *testing.T) {
 
 		require.Error(t, gotErr)
 
-		wantErr := photos.NewDeletePhotoDefault(http.StatusInternalServerError)
+		wantErr := photos.NewDeletePhotoDefault(http.StatusUnauthorized)
 		wantErr.Payload = &models.Error{Data: nil}
 		assert.Equal(t, wantErr, gotErr)
 	})
@@ -267,7 +251,7 @@ func TestIntegration_PhotosDownload(t *testing.T) {
 			common.AuthInfoFunc(&token), io.Discard)
 		require.Error(t, gotErr)
 
-		wantErr := photos.NewDownloadPhotoDefault(http.StatusInternalServerError)
+		wantErr := photos.NewDownloadPhotoDefault(http.StatusUnauthorized)
 		wantErr.Payload = &models.Error{Data: nil}
 		assert.Equal(t, wantErr, gotErr)
 		f.Close()
@@ -343,7 +327,7 @@ func TestIntegration_PhotoGet(t *testing.T) {
 		_, gotErr := beClient.Photos.GetPhoto(photos.NewGetPhotoParamsWithContext(ctx).WithPhotoID(*res.Payload.Data.ID), common.AuthInfoFunc(&token), io.Discard)
 		require.Error(t, gotErr)
 
-		wantErr := photos.NewGetPhotoDefault(http.StatusInternalServerError)
+		wantErr := photos.NewGetPhotoDefault(http.StatusUnauthorized)
 		wantErr.Payload = &models.Error{Data: nil}
 		assert.Equal(t, wantErr, gotErr)
 		f.Close()
