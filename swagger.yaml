@@ -91,7 +91,7 @@ paths:
             $ref: "#/definitions/Error"
   /v1/refresh:
     post:
-      description: 'Returns new access token for an authorized User'
+      description: 'Returns new token pair for an authorized User'
       tags:
         - Users
       operationId: Refresh
