@@ -15,19 +15,25 @@ import (
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/utils"
 )
 
-type AccessManager struct {
+type AccessManager interface {
+	AddNewAccess(role, method, path string) (bool, error)
+	HasAccess(role, method, path string) bool
+	Middleware() func(next http.Handler) http.Handler
+}
+
+type BlackListAccessManager struct {
 	endpoints       existingEndpoints
 	acceptableRoles []string
 	fullAccessRoles []string
-	accessMap       map[string]map[string][]Path
+	accessMap       map[string]map[string][]path
 }
 
 type existingEndpoints map[string][]string
 
 // NewAccessManager creates new access manager with admin access to all endpoints
-func NewAccessManager(roles, fullAccessRoles []string, endpoints existingEndpoints) *AccessManager {
-	accessMap := make(map[string]map[string][]Path)
-	return &AccessManager{
+func NewAccessManager(roles, fullAccessRoles []string, endpoints existingEndpoints) AccessManager {
+	accessMap := make(map[string]map[string][]path)
+	return &BlackListAccessManager{
 		endpoints:       endpoints,
 		acceptableRoles: roles,
 		fullAccessRoles: fullAccessRoles,
@@ -35,29 +41,38 @@ func NewAccessManager(roles, fullAccessRoles []string, endpoints existingEndpoin
 	}
 }
 
-type Path struct {
-	PathAsString string
-	PathAsRegexp *regexp.Regexp
+type path struct {
+	asString string
+	asRegexp *regexp.Regexp
 }
 
-func (p *Path) IsMatch(st string) bool {
-	if p.PathAsString != "" {
-		return p.PathAsString == st
+func (p *path) IsMatch(st string) bool {
+	endpointPath := normalizePath(st)
+	if p.asString != "" {
+		return p.asString == endpointPath
 	}
-	return p.PathAsRegexp.MatchString(st)
+	return p.asRegexp.MatchString(endpointPath)
 }
 
-func NewPath(path string) Path {
-	if strings.Contains(path, "{") {
-		first := strings.Index(path, "{")
-		second := strings.Index(path, "}")
-		path = path[:first] + "(.*)" + path[second+1:]
-		return Path{
-			PathAsRegexp: regexp.MustCompile(path),
+func normalizePath(endpointPath string) string {
+	if !strings.HasPrefix(endpointPath, "/") {
+		endpointPath = "/" + endpointPath
+	}
+	endpointPath = strings.TrimSuffix(endpointPath, "/")
+	return endpointPath
+}
+
+func newPath(endpointPath string) path {
+	if strings.Contains(endpointPath, "{") {
+		first := strings.Index(endpointPath, "{")
+		second := strings.Index(endpointPath, "}")
+		endpointPath = endpointPath[:first] + "(.*)" + endpointPath[second+1:]
+		return path{
+			asRegexp: regexp.MustCompile(endpointPath),
 		}
 	} else {
-		return Path{
-			PathAsString: path,
+		return path{
+			asString: endpointPath,
 		}
 	}
 }
@@ -67,47 +82,47 @@ func endpointConversion(path string) string {
 }
 
 // AddNewAccess adds new access to the access manager. Returns true if access was added, false if access was not added
-func (a *AccessManager) AddNewAccess(role, method, path string) (bool, error) {
+func (a *BlackListAccessManager) AddNewAccess(role, endpointMethod, endpointPath string) (bool, error) {
 	if !utils.IsValueInList(role, a.acceptableRoles) {
 		return false, errors.New(fmt.Sprintf("role %s is not in the list of acceptable roles", role))
 	}
 	if utils.IsValueInList(role, a.fullAccessRoles) {
 		return false, nil
 	}
-	paths, ok := a.endpoints[method]
+	paths, ok := a.endpoints[endpointMethod]
 	if ok {
-		if !utils.IsValueInList(path, paths) {
-			return false, errors.New(fmt.Sprintf("path %s is not in the list of existing endpoints", path))
+		if !utils.IsValueInList(endpointPath, paths) {
+			return false, errors.New(fmt.Sprintf("path %s is not in the list of existing endpoints", endpointPath))
 		}
 
 		endpointsByRole, ok := a.accessMap[role]
 		if !ok {
-			endpointsByRole = make(map[string][]Path)
+			endpointsByRole = make(map[string][]path)
 			a.accessMap[role] = endpointsByRole
 		}
-		pathToUpdate, ok := endpointsByRole[method]
+		pathToUpdate, ok := endpointsByRole[endpointMethod]
 		if !ok {
-			pathToUpdate = []Path{
-				NewPath(endpointConversion(path)),
+			pathToUpdate = []path{
+				newPath(endpointConversion(endpointPath)),
 			}
-			endpointsByRole[method] = pathToUpdate
+			endpointsByRole[endpointMethod] = pathToUpdate
 			a.accessMap[role] = endpointsByRole
 			return true, nil
 		}
-		if !utils.IsValueInList(NewPath(path), pathToUpdate) {
-			pathToUpdate = append(pathToUpdate, NewPath(endpointConversion(path)))
-			endpointsByRole[method] = pathToUpdate
+		if !utils.IsValueInList(newPath(endpointPath), pathToUpdate) {
+			pathToUpdate = append(pathToUpdate, newPath(endpointConversion(endpointPath)))
+			endpointsByRole[endpointMethod] = pathToUpdate
 			a.accessMap[role] = endpointsByRole
 			return true, nil
 		}
 		return false, nil
 
 	}
-	return false, errors.New(fmt.Sprintf("method %s is not in the list of existing endpoints", method))
+	return false, errors.New(fmt.Sprintf("method %s is not in the list of existing endpoints", endpointMethod))
 }
 
 // HasAccess checks if role has access to the endpoint
-func (a *AccessManager) HasAccess(role, method, path string) bool {
+func (a *BlackListAccessManager) HasAccess(role, method, path string) bool {
 	if utils.IsValueInList(role, a.fullAccessRoles) {
 		return true
 	}
@@ -122,7 +137,7 @@ func (a *AccessManager) HasAccess(role, method, path string) bool {
 	return false
 }
 
-func (a *AccessManager) Middleware() func(next http.Handler) http.Handler {
+func (a *BlackListAccessManager) Middleware() func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			tokenString := r.Header.Get("Authorization")

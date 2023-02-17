@@ -28,6 +28,11 @@
       "role": "user",
       "method" : "GET",
       "path": "/pet_kind"
+    },
+    {
+      "role": "user",
+        "method" : "GET",
+      "path": "/equipment/categories/{categoryId}"
     }
   ]
 }

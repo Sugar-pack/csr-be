@@ -96,7 +96,7 @@ func SetupAPI(entClient *ent.Client, lg *zap.Logger, conf *config.AppConfig) (*r
 		nil
 }
 
-func AccessManager(api *operations.BeAPI, bindings []config.RoleEndpointBinding) (*middlewares.AccessManager, error) {
+func AccessManager(api *operations.BeAPI, bindings []config.RoleEndpointBinding) (middlewares.AccessManager, error) {
 	roles := []string{
 		authentication.AdminSlug,
 		authentication.UserSlug,
