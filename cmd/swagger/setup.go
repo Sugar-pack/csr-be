@@ -72,6 +72,12 @@ func SetupAPI(entClient *ent.Client, lg *zap.Logger, conf *config.AppConfig) (*r
 	handlers.SetPetKindHandler(lg, api)
 	handlers.SetHealthHandler(lg, api)
 
+	api.Init()
+	accessManager, err := AccessManager(api, conf.AccessBindings)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to create access manager: %w", err)
+	}
+	api.APIAuthorizer = accessManager
 	// run server
 	server := restapi.NewServer(api)
 	listeners := []string{"http"}
@@ -80,14 +86,9 @@ func SetupAPI(entClient *ent.Client, lg *zap.Logger, conf *config.AppConfig) (*r
 	server.EnabledListeners = listeners
 	server.Host = conf.Server.Host
 	server.Port = conf.Server.Port
-
-	accessManager, err := AccessManager(api, conf.AccessBindings)
-	if err != nil {
-		return nil, nil, fmt.Errorf("failed to create access manager: %w", err)
-	}
 	server.SetHandler(
 		cors.AllowAll().Handler(
-			middlewares.Tx(entClient)(api.Serve(accessManager.Middleware())),
+			middlewares.Tx(entClient)(api.Serve(nil)),
 		),
 	)
 

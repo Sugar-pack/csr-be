@@ -1,27 +1,27 @@
 package middlewares
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
 	"regexp"
 	"strings"
 
-	"github.com/golang-jwt/jwt"
+	openApiErrors "github.com/go-openapi/errors"
 
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/authentication"
-	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/logger"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/utils"
 )
+
+const apiPrefix = "/api"
 
 type AccessManager interface {
 	AddNewAccess(role, method, path string) (bool, error)
 	HasAccess(role, method, path string) bool
-	Middleware() func(next http.Handler) http.Handler
+	Authorize(r *http.Request, i interface{}) error
 }
 
-type BlackListAccessManager struct {
+type blackListAccessManager struct {
 	endpoints       existingEndpoints
 	acceptableRoles []string
 	fullAccessRoles []string
@@ -33,7 +33,7 @@ type existingEndpoints map[string][]string
 // NewAccessManager creates new access manager with admin access to all endpoints
 func NewAccessManager(roles, fullAccessRoles []string, endpoints existingEndpoints) AccessManager {
 	accessMap := make(map[string]map[string][]path)
-	return &BlackListAccessManager{
+	return &blackListAccessManager{
 		endpoints:       endpoints,
 		acceptableRoles: roles,
 		fullAccessRoles: fullAccessRoles,
@@ -46,7 +46,7 @@ type path struct {
 	asRegexp *regexp.Regexp
 }
 
-func (p *path) IsMatch(st string) bool {
+func (p *path) isMatch(st string) bool {
 	endpointPath := normalizePath(st)
 	if p.asString != "" {
 		return p.asString == endpointPath
@@ -78,11 +78,11 @@ func newPath(endpointPath string) path {
 }
 
 func endpointConversion(path string) string {
-	return fmt.Sprintf("/api%s", path) //TODO: remove hardcode
+	return apiPrefix + path
 }
 
 // AddNewAccess adds new access to the access manager. Returns true if access was added, false if access was not added
-func (a *BlackListAccessManager) AddNewAccess(role, endpointMethod, endpointPath string) (bool, error) {
+func (a *blackListAccessManager) AddNewAccess(role, endpointMethod, endpointPath string) (bool, error) {
 	if !utils.IsValueInList(role, a.acceptableRoles) {
 		return false, errors.New(fmt.Sprintf("role %s is not in the list of acceptable roles", role))
 	}
@@ -95,13 +95,13 @@ func (a *BlackListAccessManager) AddNewAccess(role, endpointMethod, endpointPath
 			return false, errors.New(fmt.Sprintf("path %s is not in the list of existing endpoints", endpointPath))
 		}
 
-		endpointsByRole, ok := a.accessMap[role]
-		if !ok {
+		endpointsByRole, ok2 := a.accessMap[role]
+		if !ok2 {
 			endpointsByRole = make(map[string][]path)
 			a.accessMap[role] = endpointsByRole
 		}
-		pathToUpdate, ok := endpointsByRole[endpointMethod]
-		if !ok {
+		pathToUpdate, ok2 := endpointsByRole[endpointMethod]
+		if !ok2 {
 			pathToUpdate = []path{
 				newPath(endpointConversion(endpointPath)),
 			}
@@ -122,14 +122,14 @@ func (a *BlackListAccessManager) AddNewAccess(role, endpointMethod, endpointPath
 }
 
 // HasAccess checks if role has access to the endpoint
-func (a *BlackListAccessManager) HasAccess(role, method, path string) bool {
+func (a *blackListAccessManager) HasAccess(role, method, path string) bool {
 	if utils.IsValueInList(role, a.fullAccessRoles) {
 		return true
 	}
 	paths, ok := a.accessMap[role][method]
 	if ok {
 		for _, p := range paths {
-			if p.IsMatch(path) {
+			if p.isMatch(path) {
 				return true
 			}
 		}
@@ -137,59 +137,10 @@ func (a *BlackListAccessManager) HasAccess(role, method, path string) bool {
 	return false
 }
 
-func (a *BlackListAccessManager) Middleware() func(next http.Handler) http.Handler {
-	return func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			tokenString := r.Header.Get("Authorization")
-			log, err := logger.Get()
-			if err != nil {
-				w.Write([]byte("error getting logger"))
-				w.WriteHeader(http.StatusInternalServerError)
-				return
-			}
-			log.Info(fmt.Sprintf("token %s", tokenString))
-			if tokenString == "" {
-				log.Info("token is not provided")
-				next.ServeHTTP(w, r) // token is not required for some endpoints
-				return
-			}
-			role, err := GetRoleFromToken(tokenString)
-			if err != nil {
-				log.Error(fmt.Sprintf("error getting role from token: %s. token %s", err.Error(), tokenString))
-				w.WriteHeader(http.StatusUnauthorized)
-				return
-			}
-			if !a.HasAccess(role, r.Method, r.URL.Path) {
-				log.Error(fmt.Sprintf("role %s has no access to %s %s", role, r.Method, r.URL.Path))
-				w.WriteHeader(http.StatusForbidden)
-				return
-			}
-			next.ServeHTTP(w, r)
-		})
+func (a *blackListAccessManager) Authorize(r *http.Request, auth interface{}) error {
+	role := auth.(authentication.Auth).Role.Slug
+	if !a.HasAccess(role, r.Method, r.URL.Path) {
+		return openApiErrors.New(http.StatusUnauthorized, "this user has no access to this endpoint")
 	}
-}
-
-func GetRoleFromToken(token string) (string, error) { //TODO: optimize
-	claims := jwt.MapClaims{}
-	jwt.ParseWithClaims(token, claims, func(token *jwt.Token) (interface{}, error) {
-		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, fmt.Errorf("error decoding token")
-		}
-		return nil, nil
-	}) // ignoring error because it is already checked in the bearer_auth middleware
-	roleFromHeader, ok := claims["role"]
-	if !ok {
-		return "", errors.New("role is not found in the token")
-	}
-	roleRaw, err := json.Marshal(roleFromHeader)
-	if err != nil {
-		return "", err
-	}
-	role := &authentication.Role{}
-	err = json.Unmarshal(roleRaw, role)
-	if err != nil {
-		return "", err
-	}
-
-	return role.Slug, nil
+	return nil
 }

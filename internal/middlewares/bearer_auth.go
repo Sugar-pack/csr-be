@@ -1,7 +1,7 @@
 package middlewares
 
 import (
-	"fmt"
+	"net/http"
 
 	"github.com/go-openapi/errors"
 	"github.com/golang-jwt/jwt"
@@ -15,12 +15,12 @@ func BearerAuthenticateFunc(key interface{}, _ *zap.Logger) func(string) (interf
 		claims := jwt.MapClaims{}
 		token, err := jwt.ParseWithClaims(bearerToken, claims, func(token *jwt.Token) (interface{}, error) {
 			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-				return nil, fmt.Errorf("error decoding token")
+				return nil, errors.New(http.StatusUnauthorized, "error decoding token")
 			}
 			return []byte(key.(string)), nil
 		})
 		if err != nil {
-			return nil, err
+			return nil, errors.New(http.StatusUnauthorized, "Failed to parse token")
 		}
 		if token.Valid {
 			login := claims["login"].(string)
@@ -45,6 +45,6 @@ func BearerAuthenticateFunc(key interface{}, _ *zap.Logger) func(string) (interf
 				Role:  rolePointer,
 			}, nil
 		}
-		return nil, errors.New(0, "Invalid token")
+		return nil, errors.New(http.StatusUnauthorized, "Invalid token")
 	}
 }
