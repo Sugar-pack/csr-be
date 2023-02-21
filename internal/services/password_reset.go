@@ -84,7 +84,7 @@ func (p *passwordReset) VerifyTokenAndSendPassword(ctx context.Context, tokenToV
 	}
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
-		p.logger.Error("Error while hashing password", zap.String("password", password), zap.Error(err))
+		p.logger.Error("Error while hashing password", zap.Error(err))
 		return err
 	}
 	err = p.ChangePasswordByLogin(ctx, login, string(hashedPassword))
