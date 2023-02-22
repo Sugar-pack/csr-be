@@ -9,6 +9,7 @@ import (
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/ent/equipmentstatus"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/ent/equipmentstatusname"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/ent/order"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/ent/user"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/swagger/models"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/middlewares"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/pkg/domain"
@@ -77,6 +78,42 @@ func (r *equipmentStatusRepository) GetEquipmentsStatusesByOrder(ctx context.Con
 		QueryOrder().Where(order.IDEQ(orderID)).QueryEquipmentStatus().
 		WithEquipmentStatusName().
 		All(ctx)
+}
+
+func (r *equipmentStatusRepository) GetEquipmentStatusByID(
+	ctx context.Context, equipmentStatusID int) (*ent.EquipmentStatus, error) {
+	tx, err := middlewares.TxFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return tx.EquipmentStatus.Query().Where(equipmentstatus.ID(equipmentStatusID)).
+		WithEquipmentStatusName().WithEquipments().
+		Only(ctx)
+}
+
+func (r *equipmentStatusRepository) GetOrderAndUserByEquipmentStatusID(
+	ctx context.Context,
+	equipmentStatusID int) (*ent.Order, *ent.User, error) {
+	tx, err := middlewares.TxFromContext(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	orderResult, err := tx.Order.Query().
+		Where(order.HasEquipmentStatusWith(equipmentstatus.IDEQ(equipmentStatusID))).
+		Only(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	userResult, err := tx.User.Query().Where(user.HasOrderWith(order.IDEQ(equipmentStatusID))).
+		Only(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return orderResult, userResult, nil
 }
 
 func (r *equipmentStatusRepository) HasStatusByPeriod(ctx context.Context, status string, eqID int,

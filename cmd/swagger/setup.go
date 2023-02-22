@@ -65,6 +65,7 @@ func SetupAPI(entClient *ent.Client, lg *zap.Logger, conf *config.AppConfig) (*r
 	handlers.SetRegistrationHandler(lg, api, regConfirmService)
 	handlers.SetRoleHandler(lg, api)
 	handlers.SetEquipmentStatusNameHandler(lg, api)
+	handlers.SetEquipmentStatusHandler(lg, api)
 	handlers.SetUserHandler(lg, api, tokenManager, regConfirmService)
 	handlers.SetPetKindHandler(lg, api)
 	handlers.SetHealthHandler(lg, api)
