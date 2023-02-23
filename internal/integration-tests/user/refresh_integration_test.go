@@ -3,6 +3,7 @@ package user
 import (
 	"context"
 	"testing"
+	"time"
 
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/swagger/client/users"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/swagger/models"
@@ -38,6 +39,8 @@ func TestIntegration_Refresh(t *testing.T) {
 		params := users.NewRefreshParamsWithContext(ctx)
 		params.SetRefreshToken(refreshToken)
 
+		time.Sleep(1 * time.Second) // it's needed to avoid the same time of token creation
+
 		refresh, err := client.Users.Refresh(params)
 		require.NoError(t, err)
 
@@ -45,6 +48,8 @@ func TestIntegration_Refresh(t *testing.T) {
 		assert.NotNil(t, newAccessToken)
 		newRefreshToken = refresh.GetPayload().RefreshToken
 		assert.NotNil(t, newRefreshToken)
+		assert.NotEqual(t, *loginUser.GetPayload().RefreshToken, *newRefreshToken)
+		assert.NotEqual(t, *loginUser.GetPayload().AccessToken, *newAccessToken)
 	})
 
 	t.Run("access token also valid, passed", func(t *testing.T) {
