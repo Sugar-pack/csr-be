@@ -2,7 +2,7 @@ package repositories
 
 import (
 	"context"
-
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/ent"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/ent/token"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/middlewares"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/pkg/domain"
@@ -32,9 +32,12 @@ func (t *tokenRepository) DeleteTokensByRefreshToken(ctx context.Context, refres
 	if err != nil {
 		return err
 	}
-	_, err = tx.Token.Delete().Where(token.RefreshTokenEQ(refreshToken)).Exec(ctx)
+	q, err := tx.Token.Delete().Where(token.RefreshTokenEQ(refreshToken)).Exec(ctx)
 	if err != nil {
 		return err
+	}
+	if q == 0 {
+		return &ent.NotFoundError{}
 	}
 	return nil
 }
