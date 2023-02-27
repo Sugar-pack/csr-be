@@ -1,0 +1,19 @@
+version: "3"
+services:
+  postgres:
+    image: "postgres:14-alpine"
+    container_name: db-local
+    environment:
+      - POSTGRES_USER=csr
+      - POSTGRES_DB=csr
+      - POSTGRES_HOST_AUTH_METHOD=trust
+    command: -p 5432
+    ports:
+      - "5432:5432"
+    networks:
+      - default
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres -p 5432" ]
+      interval: 2s
+      timeout: 1s
+      retries: 5
