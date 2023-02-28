@@ -1093,6 +1093,171 @@ func (s *UserTestSuite) TestUser_DeleteUserFunc_OK() {
 	s.userRepository.AssertExpectations(t)
 }
 
+func (s *UserTestSuite) TestUser_ChangePasswordFunc_GetUserErr() {
+	t := s.T()
+	request := http.Request{}
+	ctx := request.Context()
+	handlerFunc := s.user.ChangePassword(s.userRepository)
+
+	id := 1
+	user := validUser(t, id)
+	password := "password"
+	passwordHash, err := utils.PasswordHash(password)
+	if err != nil {
+		t.Fatal(err)
+	}
+	user.Password = passwordHash
+	newPassword := "newPassword"
+
+	data := users.ChangePasswordParams{
+		HTTPRequest: &request,
+		PasswordPatch: &models.PatchPasswordRequest{
+			OldPassword: password,
+			NewPassword: newPassword,
+		},
+	}
+	auth := authentication.Auth{
+		Id: id,
+		Role: &authentication.Role{
+			Slug: authentication.AdminSlug,
+		},
+	}
+
+	err = errors.New("failed to get user")
+	s.userRepository.On("GetUserByID", ctx, user.ID).Return(nil, err)
+
+	resp := handlerFunc(data, auth)
+	responseRecorder := httptest.NewRecorder()
+	producer := runtime.JSONProducer()
+	resp.WriteResponse(responseRecorder, producer)
+	assert.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
+	s.userRepository.AssertExpectations(t)
+}
+
+func (s *UserTestSuite) TestUser_ChangePasswordFunc_ComparePasswordErr() {
+	t := s.T()
+	request := http.Request{}
+	ctx := request.Context()
+	handlerFunc := s.user.ChangePassword(s.userRepository)
+
+	id := 1
+	user := validUser(t, id)
+	password := "password"
+	passwordHash, err := utils.PasswordHash(password)
+	if err != nil {
+		t.Fatal(err)
+	}
+	user.Password = passwordHash
+	newPassword := "newPassword"
+	nonValidPassword := "nonValidPassword"
+
+	data := users.ChangePasswordParams{
+		HTTPRequest: &request,
+		PasswordPatch: &models.PatchPasswordRequest{
+			OldPassword: nonValidPassword,
+			NewPassword: newPassword,
+		},
+	}
+	auth := authentication.Auth{
+		Id: id,
+		Role: &authentication.Role{
+			Slug: authentication.AdminSlug,
+		},
+	}
+
+	s.userRepository.On("GetUserByID", ctx, user.ID).Return(user, nil)
+
+	resp := handlerFunc(data, auth)
+	responseRecorder := httptest.NewRecorder()
+	producer := runtime.JSONProducer()
+	resp.WriteResponse(responseRecorder, producer)
+	assert.Equal(t, http.StatusForbidden, responseRecorder.Code)
+	s.userRepository.AssertExpectations(t)
+}
+
+func (s *UserTestSuite) TestUser_ChangePasswordFunc_ChangePasswordError() {
+	t := s.T()
+	request := http.Request{}
+	ctx := request.Context()
+	handlerFunc := s.user.ChangePassword(s.userRepository)
+
+	id := 1
+	user := validUser(t, id)
+	password := "password"
+	passwordHash, err := utils.PasswordHash(password)
+	if err != nil {
+		t.Fatal(err)
+	}
+	user.Password = passwordHash
+	newPassword := "newPassword"
+
+	data := users.ChangePasswordParams{
+		HTTPRequest: &request,
+		PasswordPatch: &models.PatchPasswordRequest{
+			OldPassword: password,
+			NewPassword: newPassword,
+		},
+	}
+	auth := authentication.Auth{
+		Id: id,
+		Role: &authentication.Role{
+			Slug: authentication.AdminSlug,
+		},
+	}
+
+	err = errors.New("failed to change password")
+	s.userRepository.On("GetUserByID", ctx, user.ID).Return(user, nil)
+	s.userRepository.On("ChangePasswordByLogin", ctx, user.Login, newPassword).Return(err)
+
+	resp := handlerFunc(data, auth)
+	responseRecorder := httptest.NewRecorder()
+	producer := runtime.JSONProducer()
+	resp.WriteResponse(responseRecorder, producer)
+	assert.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
+	s.userRepository.AssertExpectations(t)
+}
+
+func (s *UserTestSuite) TestUser_ChangePasswordFunc_OK() {
+	t := s.T()
+	request := http.Request{}
+	ctx := request.Context()
+	handlerFunc := s.user.ChangePassword(s.userRepository)
+
+	id := 1
+	user := validUser(t, id)
+	password := "password"
+	passwordHash, err := utils.PasswordHash(password)
+	if err != nil {
+		t.Fatal(err)
+	}
+	user.Password = passwordHash
+	newPassword := "newPassword"
+
+	data := users.ChangePasswordParams{
+		HTTPRequest: &request,
+		PasswordPatch: &models.PatchPasswordRequest{
+			OldPassword: password,
+			NewPassword: newPassword,
+		},
+	}
+	auth := authentication.Auth{
+		Id: id,
+		Role: &authentication.Role{
+			Slug: authentication.AdminSlug,
+		},
+	}
+
+	s.userRepository.On("GetUserByID", ctx, user.ID).Return(user, nil)
+	s.userRepository.On("ChangePasswordByLogin", ctx, user.Login, newPassword).Return(nil)
+
+	resp := handlerFunc(data, auth)
+	responseRecorder := httptest.NewRecorder()
+	producer := runtime.JSONProducer()
+	resp.WriteResponse(responseRecorder, producer)
+	assert.Equal(t, http.StatusNoContent, responseRecorder.Code)
+	s.userRepository.AssertExpectations(t)
+}
+
 func validUser(t *testing.T, id int) *ent.User {
 	t.Helper()
 	return &ent.User{

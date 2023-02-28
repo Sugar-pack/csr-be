@@ -7,6 +7,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
+	"golang.org/x/crypto/bcrypt"
 
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/ent"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/ent/enttest"
@@ -284,6 +285,31 @@ func (s *UserSuite) TestUserRepository_UserList_Offset() {
 	}
 	assert.NoError(t, tx.Commit())
 	assert.Equal(t, len(s.users)-offset, len(users))
+}
+
+func (s *UserSuite) TestUserRepository_ChangePasswordByLogin() {
+	t := s.T()
+	repository := NewUserRepository()
+	ctx := s.ctx
+	login := s.users[1].Login
+	assert.NotEmpty(t, login)
+	newPassword := "password1"
+	tx, err := s.client.Tx(ctx)
+	assert.NoError(t, err)
+	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
+	err = repository.ChangePasswordByLogin(ctx, login, newPassword)
+	assert.NoError(t, err)
+	assert.NoError(t, tx.Commit())
+
+	tx, err = s.client.Tx(ctx)
+	assert.NoError(t, err)
+	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
+	user, err := repository.UserByLogin(ctx, login)
+	assert.NoError(t, err)
+	assert.NoError(t, tx.Commit())
+
+	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(newPassword))
+	assert.NoError(t, err)
 }
 
 func mapContainsUser(t *testing.T, eq *ent.User, m map[int]*ent.User) bool {
