@@ -116,6 +116,19 @@ func (r *equipmentStatusRepository) GetOrderAndUserByEquipmentStatusID(
 	return orderResult, userResult, nil
 }
 
+func (r *equipmentStatusRepository) GetUnavailableEquipmentStatusByEquipmentID(
+	ctx context.Context, equipmentID int) (*ent.EquipmentStatus, error) {
+	tx, err := middlewares.TxFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return tx.EquipmentStatus.Query().
+		Where(equipmentstatus.HasEquipmentsWith(equipment.IDEQ(equipmentID))).
+		Where(equipmentstatus.HasEquipmentStatusNameWith(equipmentstatusname.IDEQ(4))).
+		Only(ctx)
+}
+
 func (r *equipmentStatusRepository) HasStatusByPeriod(ctx context.Context, status string, eqID int,
 	startDate, endDate time.Time) (bool, error) {
 	tx, err := middlewares.TxFromContext(ctx)
