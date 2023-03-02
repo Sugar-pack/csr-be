@@ -15,5 +15,6 @@ type RegistrationConfirmService interface {
 
 type TokenManager interface {
 	GenerateTokens(ctx context.Context, login, password string) (string, string, bool, error)
-	RefreshToken(ctx context.Context, token string) (string, bool, error)
+	RefreshToken(ctx context.Context, token string) (string, string, bool, error)
+	DeleteTokenPair(ctx context.Context, token string) error
 }

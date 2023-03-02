@@ -14,13 +14,17 @@ Go 1.19.2 is the current version.
     ```shell
     make generate
     ```
-3. Run the service: 
+3. Run database
+    ```shell
+    make db
+    ```
+4. Run the service: 
     ```shell
     make run
     ```
    The server is here - http://127.0.0.1:8080/api
    Swagger docs are here - http://127.0.0.1:8080/api/docs
-8. Service cURL request example:
+5. Service cURL request example:
    ```shell
    curl -XPOST http://127.0.0.1:8080/api/v1/users/ -vvv
    *   Trying 127.0.0.1:8080...

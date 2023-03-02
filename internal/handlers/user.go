@@ -34,6 +34,7 @@ func SetUserHandler(logger *zap.Logger, api *operations.BeAPI,
 	api.UsersGetAllUsersHandler = userHandler.GetUsersList(userRepo)
 	api.UsersAssignRoleToUserHandler = userHandler.AssignRoleToUserFunc(userRepo)
 	api.UsersDeleteUserHandler = userHandler.DeleteUserByID(userRepo)
+	api.UsersLogoutHandler = userHandler.LogoutUserFunc(tokenManager)
 }
 
 type User struct {
@@ -63,6 +64,21 @@ func (c User) LoginUserFunc(service domain.TokenManager) users.LoginHandlerFunc 
 			AccessToken:  &accessToken,
 			RefreshToken: &refreshToken,
 		})
+	}
+}
+
+func (c User) LogoutUserFunc(tokenManager domain.TokenManager) users.LogoutHandlerFunc {
+	return func(p users.LogoutParams) middleware.Responder {
+		ctx := p.HTTPRequest.Context()
+		refreshToken := *p.RefreshToken.RefreshToken
+		err := tokenManager.DeleteTokenPair(ctx, refreshToken)
+		if err != nil && ent.IsNotFound(err) {
+			return users.NewLogoutNotFound()
+		}
+		if err != nil {
+			return users.NewLogoutDefault(http.StatusInternalServerError)
+		}
+		return users.NewLogoutOK().WithPayload("Successfully logged out")
 	}
 }
 
@@ -99,7 +115,7 @@ func (c User) Refresh(manager domain.TokenManager) users.RefreshHandlerFunc {
 	return func(p users.RefreshParams) middleware.Responder {
 		ctx := p.HTTPRequest.Context()
 		refreshToken := *p.RefreshToken.RefreshToken
-		newToken, isValid, err := manager.RefreshToken(ctx, refreshToken)
+		newAccess, NewRefresh, isValid, err := manager.RefreshToken(ctx, refreshToken)
 		if isValid {
 			c.logger.Info("token invalid", zap.String("token", refreshToken))
 			return users.NewRefreshDefault(http.StatusBadRequest).
@@ -110,7 +126,10 @@ func (c User) Refresh(manager domain.TokenManager) users.RefreshHandlerFunc {
 			return users.NewRefreshDefault(http.StatusInternalServerError).
 				WithPayload(buildStringPayload("Error while refreshing token"))
 		}
-		return users.NewRefreshOK().WithPayload(&models.AccessToken{AccessToken: &newToken})
+		return users.NewRefreshOK().WithPayload(&models.TokenPair{
+			AccessToken:  &newAccess,
+			RefreshToken: &NewRefresh,
+		})
 	}
 }
 
@@ -124,7 +143,7 @@ func (c User) GetUserFunc(repository domain.UserRepository) users.GetCurrentUser
 				Message: "get user id error",
 			}})
 		}
-		user, err := repository.GetUserByID(ctx, userId)
+		userByID, err := repository.GetUserByID(ctx, userId)
 		if err != nil {
 			c.logger.Error("get user by id error", zap.Error(err))
 			return users.NewGetCurrentUserDefault(http.StatusInternalServerError).WithPayload(&models.Error{Data: &models.ErrorData{
@@ -132,7 +151,7 @@ func (c User) GetUserFunc(repository domain.UserRepository) users.GetCurrentUser
 			}})
 		}
 
-		result, err := mapUserInfo(user)
+		result, err := mapUserInfo(userByID)
 		if err != nil {
 			c.logger.Error("map user error", zap.Error(err))
 			return users.NewGetCurrentUserDefault(http.StatusInternalServerError).

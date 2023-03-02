@@ -71,6 +71,9 @@ int-infra-up:
 int-infra-down:
 	docker-compose -f ./int-test-infra/docker-compose.int-test.yml down
 
+db:
+	docker-compose -f ./docker-compose.yml up -d postgres
+
 
 deploy_ssh:
 	ssh -o "StrictHostKeyChecking=no" -i ~/.ssh/ssh_deploy -p"${deploy_ssh_port}" "${deploy_ssh_user}@${deploy_ssh_host}" 'mkdir -p /var/www/csr/${env}/'

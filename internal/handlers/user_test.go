@@ -288,7 +288,7 @@ func (s *UserTestSuite) TestUser_Refresh_InvalidToken_InvalidToken() {
 			RefreshToken: &token,
 		},
 	}
-	s.service.On("RefreshToken", ctx, token).Return("", true, nil)
+	s.service.On("RefreshToken", ctx, token).Return("", "", true, nil)
 
 	resp := handlerFunc(data)
 	responseRecorder := httptest.NewRecorder()
@@ -312,7 +312,7 @@ func (s *UserTestSuite) TestUser_Refresh_InvalidToken_ServiceErr() {
 		},
 	}
 	err := errors.New("test error")
-	s.service.On("RefreshToken", ctx, token).Return("", false, err)
+	s.service.On("RefreshToken", ctx, token).Return("", "", false, err)
 
 	resp := handlerFunc(data)
 	responseRecorder := httptest.NewRecorder()
@@ -336,7 +336,7 @@ func (s *UserTestSuite) TestUser_Refresh_InvalidToken_OK() {
 		},
 	}
 	newToken := "new token"
-	s.service.On("RefreshToken", ctx, token).Return(newToken, false, nil)
+	s.service.On("RefreshToken", ctx, token).Return(newToken, newToken, false, nil)
 
 	resp := handlerFunc(data)
 	responseRecorder := httptest.NewRecorder()

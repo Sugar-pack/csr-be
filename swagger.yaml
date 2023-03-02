@@ -61,9 +61,37 @@ paths:
           description: Unexpected error.
           schema:
             $ref: "#/definitions/Error"
+  /v1/logout:
+    post:
+      description: 'Logout user'
+      tags:
+        - Users
+      operationId: Logout
+      consumes:
+        - "application/json"
+      parameters:
+        - name: 'Refresh token'
+          in: 'body'
+          required: true
+          description: 'Refresh payload'
+          schema:
+            $ref: '#/definitions/RefreshToken'
+      responses:
+        200:
+          description: Successful logout
+          schema:
+            type: string
+        404:
+          description: Refresh token not found.
+          schema:
+            $ref: "#/definitions/Error"
+        default:
+          description: Unexpected error.
+          schema:
+            $ref: "#/definitions/Error"
   /v1/refresh:
     post:
-      description: 'Returns new access token for an authorized User'
+      description: 'Returns new token pair for an authorized User'
       tags:
         - Users
       operationId: Refresh
@@ -81,7 +109,7 @@ paths:
         200:
           description: Successful refresh.
           schema:
-            $ref: '#/definitions/AccessToken'
+            $ref: '#/definitions/TokenPair'
         404:
           description: Refresh token not found.
           schema:
@@ -324,7 +352,105 @@ paths:
           schema:
             $ref: "#/definitions/Error"
 
-
+  /equipmentstatus/repaired/{equipmentstatusId}:
+    parameters:
+      - name: equipmentstatusId
+        in: path
+        required: true
+        description: equipment status id
+        type: integer
+    delete:
+      summary: Change equipment status on available by id.
+      security:
+        - Bearer: [ ]
+      tags:
+        - EquipmentStatus
+      operationId: UpdateEquipmentStatusOnAvailable
+      parameters:
+        - name: name
+          in: body
+          description: "Change equipment status on available"
+          required: true
+          schema:
+            $ref: "#/definitions/EquipmentStatusRemoveFromRepairRequest"
+      responses:
+        200:
+          description: Equipment status updated on available
+          schema:
+            $ref: "#/definitions/EquipmentStatusRepairResponse"
+        default:
+          description: Unexpected error.
+          schema:
+            $ref: "#/definitions/Error"
+    put:
+      summary: Change equipment status on unavailable with start/end dates by id.
+      security:
+        - Bearer: [ ]
+      tags:
+        - EquipmentStatus
+      operationId: UpdateEquipmentStatusOnUnavailable
+      parameters:
+        - name: name
+          in: body
+          description: "Update equipment status on unavailable"
+          required: true
+          schema:
+            $ref: "#/definitions/EquipmentStatusInRepairRequest"
+      responses:
+        200:
+          description: Equipment status updated on unavailable
+          schema:
+            $ref: "#/definitions/EquipmentStatusRepairResponse"
+        default:
+          description: Unexpected error.
+          schema:
+            $ref: "#/definitions/Error"
+    get:
+      summary: Check that equipment status has orders on provided dates.
+      security:
+        - Bearer: [ ]
+      tags:
+        - EquipmentStatus
+      operationId: CheckEquipmentStatus
+      parameters:
+        - name: name
+          in: body
+          description: "Check equipment status"
+          required: true
+          schema:
+            $ref: "#/definitions/EquipmentStatusInRepairRequest"
+      responses:
+        200:
+          description: Equipment checked
+          schema:
+            $ref: "#/definitions/EquipmentStatusRepairConfirmationResponse"
+        default:
+          description: Unexpected error.
+          schema:
+            $ref: "#/definitions/Error"
+    patch:
+      summary: Change repaired equipment status dates by id.
+      security:
+        - Bearer: [ ]
+      tags:
+        - EquipmentStatus
+      operationId: UpdateRepairedEquipmentStatusDates
+      parameters:
+        - name: name
+          in: body
+          description: "Update repaired equipment status start/end dates"
+          required: true
+          schema:
+            $ref: "#/definitions/EquipmentStatusEditDatesRequest"
+      responses:
+        200:
+          description: Repaired equipment status dates updated
+          schema:
+            $ref: "#/definitions/EquipmentStatusRepairResponse"
+        default:
+          description: Unexpected error.
+          schema:
+            $ref: "#/definitions/Error"
   /equipment/status_names:
     post:
       summary: Creating a new equipment status.
@@ -2017,6 +2143,84 @@ definitions:
     properties:
       name:
         type: string
+  #EquipmentStatusEditDatesRequest
+  EquipmentStatusEditDatesRequest:
+    type: object
+    properties:
+      start_date:
+        type: string
+        format: date-time
+      end_date:
+        type: string
+        format: date-time
+  #EquipmentStatusInRepairRequest
+  EquipmentStatusInRepairRequest:
+    type: object
+    required:
+      - status_name
+      - start_date
+      - end_date
+    properties:
+      status_name:
+        type: string
+      start_date:
+        type: string
+        format: date-time
+      end_date:
+        type: string
+        format: date-time
+  #EquipmentStatusRemoveFromRepairRequest
+  EquipmentStatusRemoveFromRepairRequest:
+    type: object
+    required:
+      - status_name
+    properties:
+      status_name:
+        type: string
+  #EquipmentStatusRepairResponse
+  EquipmentStatusRepairResponse:
+    type: object
+    required:
+      - data
+    properties:
+      data:
+        $ref: "#/definitions/EquipmentStatus"
+  #EquipmentStatusRepairConfirmationResponse
+  EquipmentStatusRepairConfirmationResponse:
+    type: object
+    required:
+      - data
+    properties:
+      data:
+        $ref: "#/definitions/EquipmentStatusRepairConfirmation"
+  #EquipmentStatusRepairConfirmation
+  EquipmentStatusRepairConfirmation:
+    type: object
+    required:
+      - equipment_status_id
+      - equipment_id
+      - status_name
+      - start_date
+      - end_date
+      - user_email
+      - order_id
+    properties:
+      equipment_status_id:
+        type: integer
+      equipment_id:
+        type: integer
+      status_name:
+        type: string
+      start_date:
+        type: string
+        format: date-time
+      end_date:
+        type: string
+        format: date-time
+      user_email:
+        type: string
+      order_id:
+        type: integer
   #EquipmentStatus
   EquipmentStatus:
     type: object
