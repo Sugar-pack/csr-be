@@ -6,6 +6,8 @@ import (
 
 	"github.com/go-playground/validator"
 	"github.com/spf13/viper"
+
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/middlewares"
 )
 
 type AppConfig struct {
@@ -66,9 +68,8 @@ type Server struct {
 }
 
 type RoleEndpointBinding struct {
-	Role   string
-	Method string
-	Path   string
+	Role             middlewares.Role
+	AllowedEndpoints middlewares.ExistingEndpoints
 }
 
 func GetAppConfig(additionalDirectories ...string) (*AppConfig, error) {

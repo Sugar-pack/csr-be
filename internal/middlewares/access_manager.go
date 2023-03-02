@@ -3,6 +3,7 @@ package middlewares
 import (
 	"errors"
 	"fmt"
+	"log"
 	"net/http"
 	"regexp"
 	"strings"
@@ -16,29 +17,65 @@ import (
 const apiPrefix = "/api"
 
 type AccessManager interface {
-	AddNewAccess(role, method, path string) (bool, error)
-	HasAccess(role, method, path string) bool
+	AddNewAccess(role Role, method, path string) (bool, error)
+	HasAccess(role Role, method, path string) bool
 	Authorize(r *http.Request, i interface{}) error
 }
 
 type blackListAccessManager struct {
-	endpoints       existingEndpoints
-	acceptableRoles []string
-	fullAccessRoles []string
-	accessMap       map[string]map[string][]path
+	endpoints       ExistingEndpoints
+	acceptableRoles []Role
+	fullAccessRoles []Role
+	accessMap       map[Role]map[string][]path
 }
 
-type existingEndpoints map[string][]string
+type ExistingEndpoints map[string][]string
 
-// NewAccessManager creates new access manager with admin access to all endpoints
-func NewAccessManager(roles, fullAccessRoles []string, endpoints existingEndpoints) AccessManager {
-	accessMap := make(map[string]map[string][]path)
+type Role struct {
+	Slug                    string
+	IsEmailConfirmed        bool
+	IsPersonalDataConfirmed bool
+}
+
+// NewAccessManager creates new access manager with admin access to all endpoints.
+// All roles can be declared with slug only.
+func NewAccessManager(roles, fullAccessRoles []Role, endpoints ExistingEndpoints) AccessManager {
+	accessMap := make(map[Role]map[string][]path)
+	fullAccessRoleVariations := allRoleVariation(fullAccessRoles)
+	roleVariations := allRoleVariation(roles)
 	return &blackListAccessManager{
 		endpoints:       endpoints,
-		acceptableRoles: roles,
-		fullAccessRoles: fullAccessRoles,
+		acceptableRoles: roleVariations,
+		fullAccessRoles: fullAccessRoleVariations,
 		accessMap:       accessMap,
 	}
+}
+
+func allRoleVariation(roles []Role) []Role {
+	allRoleVariations := make([]Role, 4*len(roles)) // 4 - number of possible role variations.
+	for _, role := range roles {
+		allRoleVariations = append(allRoleVariations, Role{
+			Slug:                    role.Slug,
+			IsEmailConfirmed:        role.IsEmailConfirmed,
+			IsPersonalDataConfirmed: role.IsPersonalDataConfirmed,
+		})
+		allRoleVariations = append(allRoleVariations, Role{
+			Slug:                    role.Slug,
+			IsEmailConfirmed:        role.IsEmailConfirmed,
+			IsPersonalDataConfirmed: !role.IsPersonalDataConfirmed,
+		})
+		allRoleVariations = append(allRoleVariations, Role{
+			Slug:                    role.Slug,
+			IsEmailConfirmed:        !role.IsEmailConfirmed,
+			IsPersonalDataConfirmed: role.IsPersonalDataConfirmed,
+		})
+		allRoleVariations = append(allRoleVariations, Role{
+			Slug:                    role.Slug,
+			IsEmailConfirmed:        !role.IsEmailConfirmed,
+			IsPersonalDataConfirmed: !role.IsPersonalDataConfirmed,
+		})
+	}
+	return allRoleVariations
 }
 
 type path struct {
@@ -82,9 +119,9 @@ func endpointConversion(path string) string {
 }
 
 // AddNewAccess adds new access to the access manager. Returns true if access was added, false if access was not added
-func (a *blackListAccessManager) AddNewAccess(role, endpointMethod, endpointPath string) (bool, error) {
+func (a *blackListAccessManager) AddNewAccess(role Role, endpointMethod, endpointPath string) (bool, error) {
 	if !utils.IsValueInList(role, a.acceptableRoles) {
-		return false, errors.New(fmt.Sprintf("role %s is not in the list of acceptable roles", role))
+		return false, errors.New(fmt.Sprintf("role %v is not in the list of acceptable roles", role))
 	}
 	if utils.IsValueInList(role, a.fullAccessRoles) {
 		return false, nil
@@ -122,7 +159,7 @@ func (a *blackListAccessManager) AddNewAccess(role, endpointMethod, endpointPath
 }
 
 // HasAccess checks if role has access to the endpoint
-func (a *blackListAccessManager) HasAccess(role, method, path string) bool {
+func (a *blackListAccessManager) HasAccess(role Role, method, path string) bool {
 	if utils.IsValueInList(role, a.fullAccessRoles) {
 		return true
 	}
@@ -138,9 +175,15 @@ func (a *blackListAccessManager) HasAccess(role, method, path string) bool {
 }
 
 func (a *blackListAccessManager) Authorize(r *http.Request, auth interface{}) error {
-	role := auth.(authentication.Auth).Role.Slug
+	userInfo := auth.(authentication.Auth)
+	role := Role{
+		Slug:                    userInfo.Role.Slug,
+		IsEmailConfirmed:        userInfo.IsEmailConfirmed,
+		IsPersonalDataConfirmed: userInfo.IsPersonalDataConfirmed,
+	}
 	if !a.HasAccess(role, r.Method, r.URL.Path) {
-		return openApiErrors.New(http.StatusUnauthorized, "this user has no access to this endpoint")
+		log.Println("this user has no access to this endpoint")
+		return openApiErrors.New(http.StatusForbidden, "this user has no access to this endpoint")
 	}
 	return nil
 }

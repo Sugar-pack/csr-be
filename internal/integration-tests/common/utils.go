@@ -36,6 +36,7 @@ const (
 	LoginNotExist    = "some dummy login"
 	PasswordNotExist = "some dummy password"
 	TokenNotExist    = "some dummy token"
+	AdminID          = 1
 )
 
 func GenerateLoginAndPassword() (string, string, error) {
@@ -122,7 +123,7 @@ func AdminLoginPassword(t *testing.T) (string, string, int64) {
 	require.NoError(t, err)
 	auth := AuthInfoFunc(loginUser.GetPayload().AccessToken)
 
-	role := int64(1) //TODO: use const
+	role := int64(AdminID)
 	params := &users.AssignRoleToUserParams{
 		UserID: *user.ID,
 		Data: &models.AssignRoleToUser{
@@ -132,8 +133,8 @@ func AdminLoginPassword(t *testing.T) (string, string, int64) {
 	params.SetContext(ctx)
 	params.SetHTTPClient(http.DefaultClient)
 
-	_, err = client.Users.AssignRoleToUser(params, auth)
-	require.NoError(t, err)
+	r, err := client.Users.AssignRoleToUser(params, auth)
+	require.NoError(t, err, r)
 	return l, p, *user.ID
 }
 

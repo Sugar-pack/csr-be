@@ -131,22 +131,37 @@ func (s *tokenManager) GenerateTokens(ctx context.Context, login, password strin
 	return accessToken, refreshToken, false, nil
 }
 
+const (
+	IdClaim            = "id"
+	LoginClaim         = "login"
+	RoleClaim          = "role"
+	SlugClaim          = "slug"
+	EmailVerifiedClaim = "emailVerified"
+	DataVerifiedClaim  = "dataVerified"
+	GroupClaim         = "group"
+)
+
 func generateJWT(user *ent.User, jwtSecretKey string) (string, error) {
 	token := jwt.New(jwt.SigningMethodHS256)
 	claims := token.Claims.(jwt.MapClaims)
 
-	claims["id"] = user.ID
-	claims["login"] = user.Login
-	claims["role"] = nil
-	claims["group"] = nil
+	claims[IdClaim] = user.ID
+	claims[LoginClaim] = user.Login
+	claims[RoleClaim] = nil
+	claims[GroupClaim] = nil
 	role := user.Edges.Role
 	if role == nil {
 		return "", errors.New("role is nil")
 	}
-	claims["role"] = map[string]interface{}{
-		"id":   role.ID,
-		"slug": role.Slug,
+	claims[RoleClaim] = map[string]interface{}{
+		IdClaim:   role.ID,
+		SlugClaim: role.Slug,
 	}
+	claims[EmailVerifiedClaim] = false
+	if user.Edges.RegistrationConfirm != nil && len(user.Edges.RegistrationConfirm) > 0 {
+		claims[EmailVerifiedClaim] = true
+	}
+	claims[DataVerifiedClaim] = user.IsConfirmed //TODO: is it right field?
 
 	groups := user.Edges.Groups
 	if groups == nil {
@@ -157,7 +172,6 @@ func generateJWT(user *ent.User, jwtSecretKey string) (string, error) {
 		groupsIDs[i] = group.ID
 	}
 	claims["group"] = map[string]interface{}{
-
 		"ids": groupsIDs,
 	}
 

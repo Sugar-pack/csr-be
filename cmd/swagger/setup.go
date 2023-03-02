@@ -99,22 +99,42 @@ func SetupAPI(entClient *ent.Client, lg *zap.Logger, conf *config.AppConfig) (*r
 }
 
 func AccessManager(api *operations.BeAPI, bindings []config.RoleEndpointBinding) (middlewares.AccessManager, error) {
-	roles := []string{
-		authentication.AdminSlug,
-		authentication.UserSlug,
-		authentication.OperatorSlug,
-		authentication.ManagerSlug,
+	roles := []middlewares.Role{
+		{
+			Slug: authentication.AdminSlug,
+		},
+		{
+			Slug: authentication.UserSlug,
+		},
+		{
+			Slug: authentication.OperatorSlug,
+		},
+		{
+			Slug: authentication.ManagerSlug,
+		},
 	}
-	fullAccessRoles := []string{
-		authentication.AdminSlug,
+	fullAccessRoles := []middlewares.Role{
+		{
+			Slug: authentication.AdminSlug,
+		},
+		{
+			Slug: authentication.ManagerSlug,
+		},
+		{
+			Slug: authentication.OperatorSlug,
+		},
 	}
 
 	manager := middlewares.NewAccessManager(roles, fullAccessRoles, api.GetExistingEndpoints())
 
 	for _, binding := range bindings {
-		_, err := manager.AddNewAccess(binding.Role, binding.Method, binding.Path)
-		if err != nil {
-			return nil, err
+		for verb, paths := range binding.AllowedEndpoints {
+			for _, path := range paths {
+				_, err := manager.AddNewAccess(binding.Role, verb, path)
+				if err != nil {
+					return nil, err
+				}
+			}
 		}
 	}
 	return manager, nil

@@ -24,9 +24,20 @@ const (
 func Test_blackListAccessManager(t *testing.T) {
 	var manager AccessManager
 	t.Run("NewAccessManager", func(t *testing.T) {
-		roles := []string{userRole, adminRole}
-		fullAccessRoles := []string{adminRole}
-		endpoints := existingEndpoints{
+		roles := []Role{
+			{
+				Slug: userRole,
+			},
+			{
+				Slug: adminRole,
+			},
+		}
+		fullAccessRoles := []Role{
+			{
+				Slug: adminRole,
+			},
+		}
+		endpoints := ExistingEndpoints{
 			http.MethodGet: {
 				simpleValidPath,
 				validPathWithParam,
@@ -38,7 +49,7 @@ func Test_blackListAccessManager(t *testing.T) {
 
 	t.Run("AddNewAccess", func(t *testing.T) {
 		type accessRule struct {
-			role   string
+			role   Role
 			method string
 			path   string
 			isErr  bool
@@ -46,50 +57,50 @@ func Test_blackListAccessManager(t *testing.T) {
 		}
 		newAccessRules := []accessRule{
 			{
-				role:   userRole,
+				role:   Role{Slug: userRole},
 				method: http.MethodGet,
 				path:   simpleValidPath,
 				isOk:   true,
 			},
 			{
-				role:   userRole,
+				role:   Role{Slug: userRole},
 				method: http.MethodGet,
 				path:   simpleValidPath + "/",
 				isErr:  true,
 			},
 			{
-				role:   userRole,
+				role:   Role{Slug: userRole},
 				method: http.MethodGet,
 				path:   simpleInvalidPath,
 				isErr:  true,
 			},
 			{
-				role:   userRole,
+				role:   Role{Slug: userRole},
 				method: http.MethodGet,
 				path:   validPathWithParam,
 				isOk:   true,
 			},
 			{
-				role:   userRole,
+				role:   Role{Slug: userRole},
 				method: http.MethodPut,
 				path:   validPathWithParam,
 				isErr:  true,
 			},
 			{
-				role:   adminRole,
+				role:   Role{Slug: adminRole},
 				method: http.MethodGet,
 				path:   validPathWithParams,
 				isOk:   false,
 				isErr:  false,
 			},
 			{
-				role:   userRole,
+				role:   Role{Slug: userRole},
 				method: http.MethodGet,
 				path:   simpleInvalidPath,
 				isErr:  true,
 			},
 			{
-				role:   "unknown",
+				role:   Role{Slug: "unknown"},
 				method: http.MethodGet,
 				path:   validPathWithParams,
 				isErr:  true,
@@ -102,47 +113,48 @@ func Test_blackListAccessManager(t *testing.T) {
 			} else {
 				assert.NoError(t, err)
 			}
-			assert.Equalf(t, rule.isOk, ok, "AddNewAccess(%s, %s, %s)", rule.role, rule.method, rule.path)
+			assert.Equalf(t, rule.isOk, ok, "AddNewAccess(%v, %s, %s)", rule.role, rule.method, rule.path)
 		}
 	})
 
 	type requestData struct {
-		role, method, path string
-		hasAccess          bool
+		role         Role
+		method, path string
+		hasAccess    bool
 	}
 	requestsData := []requestData{
 		{
-			role:      userRole,
+			role:      Role{Slug: userRole},
 			method:    http.MethodGet,
 			path:      endpointConversion(simpleValidPath),
 			hasAccess: true,
 		},
 		{
-			role:      adminRole,
+			role:      Role{Slug: adminRole},
 			method:    http.MethodGet,
 			path:      endpointConversion(simpleValidPath),
 			hasAccess: true,
 		},
 		{
-			role:      userRole,
+			role:      Role{Slug: userRole},
 			method:    http.MethodGet,
 			path:      endpointConversion(validPathWithParamExample),
 			hasAccess: true,
 		},
 		{
-			role:      userRole,
+			role:      Role{Slug: userRole},
 			method:    http.MethodGet,
 			path:      strings.TrimPrefix(endpointConversion(validPathWithParamExample), "/"),
 			hasAccess: true,
 		},
 		{
-			role:      userRole,
+			role:      Role{Slug: userRole},
 			method:    http.MethodGet,
 			path:      strings.TrimPrefix(endpointConversion(validPathWithParamExample), "/") + "/",
 			hasAccess: true,
 		},
 		{
-			role:      userRole,
+			role:      Role{Slug: userRole},
 			method:    http.MethodPut,
 			path:      endpointConversion(validPathWithParamExample),
 			hasAccess: false,
@@ -166,7 +178,7 @@ func Test_blackListAccessManager(t *testing.T) {
 			}
 			auth := authentication.Auth{
 				Role: &authentication.Role{
-					Slug: data.role,
+					Slug: data.role.Slug,
 				},
 			}
 			err := manager.Authorize(request, auth)
