@@ -7,6 +7,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/go-openapi/loads"
+	"github.com/go-openapi/strfmt"
+	"github.com/stretchr/testify/require"
+
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/ent"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/ent/enttest"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/mocks"
@@ -14,11 +18,8 @@ import (
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/swagger/restapi"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/swagger/restapi/operations"
 	eqPeriods "git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/swagger/restapi/operations/equipment"
-	"github.com/go-openapi/loads"
-	"github.com/go-openapi/strfmt"
 
 	"github.com/go-openapi/runtime"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/zap"
 )
@@ -35,7 +36,7 @@ func TestSetEquipmentPeriodsHandler(t *testing.T) {
 
 	api := operations.NewBeAPI(swaggerSpec)
 	SetEquipmentPeriodsHandler(logger, api)
-	assert.NotEmpty(t, api.EquipmentGetUnavailabilityPeriodsByEquipmentIDHandler)
+	require.NotEmpty(t, api.EquipmentGetUnavailabilityPeriodsByEquipmentIDHandler)
 }
 
 type EquipmentPeriodsTestSuite struct {
@@ -87,7 +88,7 @@ func (s *EquipmentPeriodsTestSuite) Test_Get_EquipmentUnavailableDatesFunc_OK() 
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
 
-	assert.Equal(t, http.StatusOK, responseRecorder.Code)
+	require.Equal(t, http.StatusOK, responseRecorder.Code)
 	s.equipmentStatusRepository.AssertExpectations(t)
 
 	actualResponse := &models.EquipmentUnavailabilityPeriodsResponse{}
@@ -96,12 +97,12 @@ func (s *EquipmentPeriodsTestSuite) Test_Get_EquipmentUnavailableDatesFunc_OK() 
 		t.Errorf("unable to unmarshal response body: %v", err)
 	}
 
-	assert.Equal(
+	require.Equal(
 		t, (*strfmt.DateTime)(&startDate),
 		actualResponse.Data.StartDate,
 	)
 
-	assert.Equal(
+	require.Equal(
 		t, (*strfmt.DateTime)(&endDate),
 		actualResponse.Data.EndDate,
 	)

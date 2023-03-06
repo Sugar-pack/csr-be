@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/ent"
@@ -42,13 +42,13 @@ func (s *photoRepositorySuite) TestPhotoRepository_CreatePhoto_EmptyID() {
 
 	ctx := s.ctx
 	tx, err := s.client.Tx(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
 	createdPhoto, err := s.repository.CreatePhoto(ctx, newPhoto)
-	assert.Error(t, err)
-	assert.NoError(t, tx.Rollback())
-	assert.Errorf(t, err, "id must not be empty")
-	assert.Nil(t, createdPhoto)
+	require.Error(t, err)
+	require.NoError(t, tx.Rollback())
+	require.Errorf(t, err, "id must not be empty")
+	require.Nil(t, createdPhoto)
 
 	_, err = s.client.Photo.Delete().Exec(s.ctx)
 	if err != nil {
@@ -66,13 +66,13 @@ func (s *photoRepositorySuite) TestPhotoRepository_CreatePhoto_EmptyFileName() {
 
 	ctx := s.ctx
 	tx, err := s.client.Tx(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
 	createdPhoto, err := s.repository.CreatePhoto(ctx, newPhoto)
-	assert.NoError(t, err)
-	assert.NoError(t, tx.Commit())
-	assert.Equal(t, id, createdPhoto.ID)
-	assert.Equal(t, fileName, createdPhoto.FileName)
+	require.NoError(t, err)
+	require.NoError(t, tx.Commit())
+	require.Equal(t, id, createdPhoto.ID)
+	require.Equal(t, fileName, createdPhoto.FileName)
 
 	_, err = s.client.Photo.Delete().Exec(s.ctx)
 	if err != nil {
@@ -91,13 +91,13 @@ func (s *photoRepositorySuite) TestPhotoRepository_CreatePhoto_OK() {
 
 	ctx := s.ctx
 	tx, err := s.client.Tx(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
 	createdPhoto, err := s.repository.CreatePhoto(ctx, newPhoto)
-	assert.NoError(t, err)
-	assert.NoError(t, tx.Commit())
-	assert.Equal(t, id, createdPhoto.ID)
-	assert.Equal(t, fileName, createdPhoto.FileName)
+	require.NoError(t, err)
+	require.NoError(t, tx.Commit())
+	require.Equal(t, id, createdPhoto.ID)
+	require.Equal(t, fileName, createdPhoto.FileName)
 
 	_, err = s.client.Photo.Delete().Exec(s.ctx)
 	if err != nil {
@@ -111,13 +111,13 @@ func (s *photoRepositorySuite) TestPhotoRepository_PhotoByID_NotFound() {
 
 	ctx := s.ctx
 	tx, err := s.client.Tx(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
 	photo, err := s.repository.PhotoByID(ctx, id)
-	assert.Error(t, err)
-	assert.NoError(t, tx.Rollback())
-	assert.Errorf(t, err, "not found")
-	assert.Nil(t, photo)
+	require.Error(t, err)
+	require.NoError(t, tx.Rollback())
+	require.Errorf(t, err, "not found")
+	require.Nil(t, photo)
 
 	_, err = s.client.Photo.Delete().Exec(s.ctx)
 	if err != nil {
@@ -138,13 +138,13 @@ func (s *photoRepositorySuite) TestPhotoRepository_PhotoByID_OK() {
 
 	ctx := s.ctx
 	tx, err := s.client.Tx(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
 	photo, err := s.repository.PhotoByID(ctx, createdPhoto.ID)
-	assert.NoError(t, err)
-	assert.NoError(t, tx.Commit())
-	assert.Equal(t, id, photo.ID)
-	assert.Equal(t, fileName, photo.FileName)
+	require.NoError(t, err)
+	require.NoError(t, tx.Commit())
+	require.Equal(t, id, photo.ID)
+	require.Equal(t, fileName, photo.FileName)
 
 	_, err = s.client.Photo.Delete().Exec(s.ctx)
 	if err != nil {
@@ -158,11 +158,11 @@ func (s *photoRepositorySuite) TestPhotoRepository_DeletePhotoByID_NotExistsOK()
 
 	ctx := s.ctx
 	tx, err := s.client.Tx(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
 	err = s.repository.DeletePhotoByID(ctx, id)
-	assert.NoError(t, err)
-	assert.NoError(t, tx.Commit())
+	require.NoError(t, err)
+	require.NoError(t, tx.Commit())
 
 	_, err = s.client.Photo.Delete().Exec(s.ctx)
 	if err != nil {
@@ -183,11 +183,11 @@ func (s *photoRepositorySuite) TestPhotoRepository_DeletePhotoByID_OK() {
 
 	ctx := s.ctx
 	tx, err := s.client.Tx(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
 	err = s.repository.DeletePhotoByID(ctx, createdPhoto.ID)
-	assert.NoError(t, err)
-	assert.NoError(t, tx.Commit())
+	require.NoError(t, err)
+	require.NoError(t, tx.Commit())
 
 	_, err = s.client.Photo.Delete().Exec(s.ctx)
 	if err != nil {

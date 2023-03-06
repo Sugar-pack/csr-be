@@ -7,6 +7,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/require"
+
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/authentication"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/ent"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/swagger/models"
@@ -21,7 +23,6 @@ import (
 	"github.com/go-openapi/loads"
 	"github.com/go-openapi/runtime"
 	"github.com/go-openapi/strfmt"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/zap"
 )
@@ -38,10 +39,10 @@ func TestSetEquipmentStatusHandler(t *testing.T) {
 	}
 	api := operations.NewBeAPI(swaggerSpec)
 	SetEquipmentStatusHandler(logger, api)
-	assert.NotEmpty(t, api.EquipmentStatusCheckEquipmentStatusHandler)
-	assert.NotEmpty(t, api.EquipmentStatusUpdateEquipmentStatusOnAvailableHandler)
-	assert.NotEmpty(t, api.EquipmentStatusUpdateEquipmentStatusOnUnavailableHandler)
-	assert.NotEmpty(t, api.EquipmentStatusUpdateRepairedEquipmentStatusDatesHandler)
+	require.NotEmpty(t, api.EquipmentStatusCheckEquipmentStatusHandler)
+	require.NotEmpty(t, api.EquipmentStatusUpdateEquipmentStatusOnAvailableHandler)
+	require.NotEmpty(t, api.EquipmentStatusUpdateEquipmentStatusOnUnavailableHandler)
+	require.NotEmpty(t, api.EquipmentStatusUpdateRepairedEquipmentStatusDatesHandler)
 }
 
 type EquipmentStatusTestSuite struct {
@@ -153,7 +154,7 @@ func (s *EquipmentStatusTestSuite) Test_Put_EquipmentStatusInRepairFunc_OK() {
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
 
-	assert.Equal(t, http.StatusOK, responseRecorder.Code)
+	require.Equal(t, http.StatusOK, responseRecorder.Code)
 
 	s.equipmentStatusRepository.AssertExpectations(t)
 	s.orderStatusRepository.AssertExpectations(t)
@@ -164,24 +165,24 @@ func (s *EquipmentStatusTestSuite) Test_Put_EquipmentStatusInRepairFunc_OK() {
 		t.Errorf("unable to unmarshal response body: %v", err)
 	}
 
-	assert.Equal(t, eqStatusModel.ID, actualEquipmentStatusResponse.Data.ID)
-	assert.Equal(
+	require.Equal(t, eqStatusModel.ID, actualEquipmentStatusResponse.Data.ID)
+	require.Equal(
 		t, int64(eqStatusResponseModel.Edges.Equipments.ID),
 		*actualEquipmentStatusResponse.Data.EquipmentID,
 	)
-	assert.Equal(
+	require.Equal(
 		t, (*strfmt.DateTime)(&endDate),
 		actualEquipmentStatusResponse.Data.EndDate,
 	)
-	assert.Equal(
+	require.Equal(
 		t, (*strfmt.DateTime)(&startDate),
 		actualEquipmentStatusResponse.Data.StartDate,
 	)
-	assert.Equal(
+	require.Equal(
 		t, (strfmt.DateTime)(timeNow),
 		actualEquipmentStatusResponse.Data.CreatedAt,
 	)
-	assert.Equal(
+	require.Equal(
 		t, eqStatusResponseModel.Edges.EquipmentStatusName.Name,
 		*actualEquipmentStatusResponse.Data.StatusName,
 	)
@@ -196,7 +197,7 @@ func (s *EquipmentStatusTestSuite) Test_Put_EquipmentStatusInRepairFunc_OK() {
 	responseRecorder = httptest.NewRecorder()
 	producer = runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusForbidden, responseRecorder.Code)
+	require.Equal(t, http.StatusForbidden, responseRecorder.Code)
 }
 
 func (s *EquipmentStatusTestSuite) Test_Get_EquipmentStatusCheckDates_OK() {
@@ -277,7 +278,7 @@ func (s *EquipmentStatusTestSuite) Test_Get_EquipmentStatusCheckDates_OK() {
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusOK, responseRecorder.Code)
+	require.Equal(t, http.StatusOK, responseRecorder.Code)
 	s.equipmentStatusRepository.AssertExpectations(t)
 
 	actualEquipmentStatusResponse := &models.EquipmentStatusRepairConfirmationResponse{}
@@ -286,28 +287,28 @@ func (s *EquipmentStatusTestSuite) Test_Get_EquipmentStatusCheckDates_OK() {
 		t.Errorf("unable to unmarshal response body: %v", err)
 	}
 
-	assert.Equal(t, data.EquipmentstatusID, *actualEquipmentStatusResponse.Data.EquipmentStatusID)
-	assert.Equal(
+	require.Equal(t, data.EquipmentstatusID, *actualEquipmentStatusResponse.Data.EquipmentStatusID)
+	require.Equal(
 		t, int64(eqStatusResponseModel.Edges.Equipments.ID),
 		*actualEquipmentStatusResponse.Data.EquipmentID,
 	)
-	assert.Equal(
+	require.Equal(
 		t, data.Name.EndDate,
 		actualEquipmentStatusResponse.Data.EndDate,
 	)
-	assert.Equal(
+	require.Equal(
 		t, data.Name.StartDate,
 		actualEquipmentStatusResponse.Data.StartDate,
 	)
-	assert.Equal(
+	require.Equal(
 		t, eqStatusResponseModel.Edges.EquipmentStatusName.Name,
 		*actualEquipmentStatusResponse.Data.StatusName,
 	)
-	assert.Equal(
+	require.Equal(
 		t, int64(orderResult.ID),
 		*actualEquipmentStatusResponse.Data.OrderID,
 	)
-	assert.Equal(
+	require.Equal(
 		t, userResult.Email,
 		*actualEquipmentStatusResponse.Data.UserEmail,
 	)
@@ -321,7 +322,7 @@ func (s *EquipmentStatusTestSuite) Test_Get_EquipmentStatusCheckDates_OK() {
 	responseRecorder = httptest.NewRecorder()
 	producer = runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusOK, responseRecorder.Code)
+	require.Equal(t, http.StatusOK, responseRecorder.Code)
 	s.equipmentStatusRepository.AssertExpectations(t)
 
 	actualEquipmentStatusResponse = &models.EquipmentStatusRepairConfirmationResponse{}
@@ -330,7 +331,7 @@ func (s *EquipmentStatusTestSuite) Test_Get_EquipmentStatusCheckDates_OK() {
 		t.Errorf("unable to unmarshal response body: %v", err)
 	}
 
-	assert.Empty(t, actualEquipmentStatusResponse.Data)
+	require.Empty(t, actualEquipmentStatusResponse.Data)
 
 	// subtract many dates from start and end dates
 	newStartDate = startDate.AddDate(0, 0, -20)
@@ -342,7 +343,7 @@ func (s *EquipmentStatusTestSuite) Test_Get_EquipmentStatusCheckDates_OK() {
 	responseRecorder = httptest.NewRecorder()
 	producer = runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusOK, responseRecorder.Code)
+	require.Equal(t, http.StatusOK, responseRecorder.Code)
 	s.equipmentStatusRepository.AssertExpectations(t)
 
 	actualEquipmentStatusResponse = &models.EquipmentStatusRepairConfirmationResponse{}
@@ -350,7 +351,7 @@ func (s *EquipmentStatusTestSuite) Test_Get_EquipmentStatusCheckDates_OK() {
 	if err != nil {
 		t.Errorf("unable to unmarshal response body: %v", err)
 	}
-	assert.Empty(t, actualEquipmentStatusResponse.Data)
+	require.Empty(t, actualEquipmentStatusResponse.Data)
 
 	// add one date to end date, the start date does not change
 	newEndDate = endDate.AddDate(0, 0, 1)
@@ -362,7 +363,7 @@ func (s *EquipmentStatusTestSuite) Test_Get_EquipmentStatusCheckDates_OK() {
 	responseRecorder = httptest.NewRecorder()
 	producer = runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusOK, responseRecorder.Code)
+	require.Equal(t, http.StatusOK, responseRecorder.Code)
 	s.equipmentStatusRepository.AssertExpectations(t)
 
 	actualEquipmentStatusResponse = &models.EquipmentStatusRepairConfirmationResponse{}
@@ -370,7 +371,7 @@ func (s *EquipmentStatusTestSuite) Test_Get_EquipmentStatusCheckDates_OK() {
 	if err != nil {
 		t.Errorf("unable to unmarshal response body: %v", err)
 	}
-	assert.NotEmpty(t, actualEquipmentStatusResponse.Data)
+	require.NotEmpty(t, actualEquipmentStatusResponse.Data)
 
 	// subtract one date from start date, the end date does not change
 	newStartDate = startDate.AddDate(0, 0, -1)
@@ -382,7 +383,7 @@ func (s *EquipmentStatusTestSuite) Test_Get_EquipmentStatusCheckDates_OK() {
 	responseRecorder = httptest.NewRecorder()
 	producer = runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusOK, responseRecorder.Code)
+	require.Equal(t, http.StatusOK, responseRecorder.Code)
 	s.equipmentStatusRepository.AssertExpectations(t)
 
 	actualEquipmentStatusResponse = &models.EquipmentStatusRepairConfirmationResponse{}
@@ -390,7 +391,7 @@ func (s *EquipmentStatusTestSuite) Test_Get_EquipmentStatusCheckDates_OK() {
 	if err != nil {
 		t.Errorf("unable to unmarshal response body: %v", err)
 	}
-	assert.NotEmpty(t, actualEquipmentStatusResponse)
+	require.NotEmpty(t, actualEquipmentStatusResponse)
 
 	// add one date to start and end dates
 	newStartDate = startDate.AddDate(0, 0, 1)
@@ -402,7 +403,7 @@ func (s *EquipmentStatusTestSuite) Test_Get_EquipmentStatusCheckDates_OK() {
 	responseRecorder = httptest.NewRecorder()
 	producer = runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusOK, responseRecorder.Code)
+	require.Equal(t, http.StatusOK, responseRecorder.Code)
 	s.equipmentStatusRepository.AssertExpectations(t)
 
 	actualEquipmentStatusResponse = &models.EquipmentStatusRepairConfirmationResponse{}
@@ -410,7 +411,7 @@ func (s *EquipmentStatusTestSuite) Test_Get_EquipmentStatusCheckDates_OK() {
 	if err != nil {
 		t.Errorf("unable to unmarshal response body: %v", err)
 	}
-	assert.NotEmpty(t, actualEquipmentStatusResponse)
+	require.NotEmpty(t, actualEquipmentStatusResponse)
 
 	// subtract one date to start and end dates
 	newStartDate = startDate.AddDate(0, 0, -1)
@@ -422,7 +423,7 @@ func (s *EquipmentStatusTestSuite) Test_Get_EquipmentStatusCheckDates_OK() {
 	responseRecorder = httptest.NewRecorder()
 	producer = runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusOK, responseRecorder.Code)
+	require.Equal(t, http.StatusOK, responseRecorder.Code)
 	s.equipmentStatusRepository.AssertExpectations(t)
 
 	actualEquipmentStatusResponse = &models.EquipmentStatusRepairConfirmationResponse{}
@@ -430,7 +431,7 @@ func (s *EquipmentStatusTestSuite) Test_Get_EquipmentStatusCheckDates_OK() {
 	if err != nil {
 		t.Errorf("unable to unmarshal response body: %v", err)
 	}
-	assert.NotEmpty(t, actualEquipmentStatusResponse)
+	require.NotEmpty(t, actualEquipmentStatusResponse)
 
 	// authentication successfully works only for manager, for operator should return 403 error
 	access = authentication.Auth{
@@ -442,7 +443,7 @@ func (s *EquipmentStatusTestSuite) Test_Get_EquipmentStatusCheckDates_OK() {
 	responseRecorder = httptest.NewRecorder()
 	producer = runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusForbidden, responseRecorder.Code)
+	require.Equal(t, http.StatusForbidden, responseRecorder.Code)
 }
 
 func (s *EquipmentStatusTestSuite) Test_Delete_EquipmentStatusFromRepairFunc_OK() {
@@ -506,7 +507,7 @@ func (s *EquipmentStatusTestSuite) Test_Delete_EquipmentStatusFromRepairFunc_OK(
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
 
-	assert.Equal(t, http.StatusOK, responseRecorder.Code)
+	require.Equal(t, http.StatusOK, responseRecorder.Code)
 
 	s.equipmentStatusRepository.AssertExpectations(t)
 	s.orderStatusRepository.AssertExpectations(t)
@@ -517,24 +518,24 @@ func (s *EquipmentStatusTestSuite) Test_Delete_EquipmentStatusFromRepairFunc_OK(
 		t.Errorf("unable to unmarshal response body: %v", err)
 	}
 
-	assert.Equal(t, eqStatusModel.ID, actualEquipmentStatusResponse.Data.ID)
-	assert.Equal(
+	require.Equal(t, eqStatusModel.ID, actualEquipmentStatusResponse.Data.ID)
+	require.Equal(
 		t, int64(eqStatusResponseModel.Edges.Equipments.ID),
 		*actualEquipmentStatusResponse.Data.EquipmentID,
 	)
-	assert.Equal(
+	require.Equal(
 		t, (*strfmt.DateTime)(&addOneDayToCurrentEndDate),
 		actualEquipmentStatusResponse.Data.EndDate,
 	)
-	assert.Equal(
+	require.Equal(
 		t, (*strfmt.DateTime)(&timeNow),
 		actualEquipmentStatusResponse.Data.StartDate,
 	)
-	assert.Equal(
+	require.Equal(
 		t, (strfmt.DateTime)(timeNow),
 		actualEquipmentStatusResponse.Data.CreatedAt,
 	)
-	assert.Equal(
+	require.Equal(
 		t, eqStatusResponseModel.Edges.EquipmentStatusName.Name,
 		*actualEquipmentStatusResponse.Data.StatusName,
 	)
@@ -549,7 +550,7 @@ func (s *EquipmentStatusTestSuite) Test_Delete_EquipmentStatusFromRepairFunc_OK(
 	responseRecorder = httptest.NewRecorder()
 	producer = runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusForbidden, responseRecorder.Code)
+	require.Equal(t, http.StatusForbidden, responseRecorder.Code)
 }
 
 func (s *EquipmentStatusTestSuite) Test_Patch_EquipmentStatusEditDatesFunc_OK() {
@@ -614,7 +615,7 @@ func (s *EquipmentStatusTestSuite) Test_Patch_EquipmentStatusEditDatesFunc_OK() 
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
 
-	assert.Equal(t, http.StatusOK, responseRecorder.Code)
+	require.Equal(t, http.StatusOK, responseRecorder.Code)
 
 	s.equipmentStatusRepository.AssertExpectations(t)
 	s.orderStatusRepository.AssertExpectations(t)
@@ -625,20 +626,20 @@ func (s *EquipmentStatusTestSuite) Test_Patch_EquipmentStatusEditDatesFunc_OK() 
 		t.Errorf("unable to unmarshal response body: %v", err)
 	}
 
-	assert.Equal(t, eqStatusModel.ID, actualEquipmentStatusResponse.Data.ID)
-	assert.Equal(
+	require.Equal(t, eqStatusModel.ID, actualEquipmentStatusResponse.Data.ID)
+	require.Equal(
 		t, int64(updatedEqStatus.Edges.Equipments.ID),
 		*actualEquipmentStatusResponse.Data.EquipmentID,
 	)
-	assert.Equal(
+	require.Equal(
 		t, (*strfmt.DateTime)(&updatedEqStatus.EndDate),
 		actualEquipmentStatusResponse.Data.EndDate,
 	)
-	assert.Equal(
+	require.Equal(
 		t, (*strfmt.DateTime)(&updatedEqStatus.StartDate),
 		actualEquipmentStatusResponse.Data.StartDate,
 	)
-	assert.Equal(
+	require.Equal(
 		t, updatedEqStatus.Edges.EquipmentStatusName.Name,
 		*actualEquipmentStatusResponse.Data.StatusName,
 	)
@@ -653,5 +654,5 @@ func (s *EquipmentStatusTestSuite) Test_Patch_EquipmentStatusEditDatesFunc_OK() 
 	responseRecorder = httptest.NewRecorder()
 	producer = runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusForbidden, responseRecorder.Code)
+	require.Equal(t, http.StatusForbidden, responseRecorder.Code)
 }

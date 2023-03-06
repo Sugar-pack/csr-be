@@ -13,7 +13,7 @@ import (
 	"github.com/go-openapi/runtime"
 	"github.com/go-openapi/strfmt"
 	_ "github.com/mattn/go-sqlite3"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/zap"
 
@@ -42,9 +42,9 @@ func TestSetOrderHandler(t *testing.T) {
 	}
 	api := operations.NewBeAPI(swaggerSpec)
 	SetOrderHandler(logger, api)
-	assert.NotEmpty(t, api.OrdersGetAllOrdersHandler)
-	assert.NotEmpty(t, api.OrdersCreateOrderHandler)
-	assert.NotEmpty(t, api.OrdersUpdateOrderHandler)
+	require.NotEmpty(t, api.OrdersGetAllOrdersHandler)
+	require.NotEmpty(t, api.OrdersCreateOrderHandler)
+	require.NotEmpty(t, api.OrdersUpdateOrderHandler)
 }
 
 func orderWithNoEdges() *ent.Order {
@@ -117,7 +117,7 @@ func (s *orderTestSuite) TestOrder_ListOrder_AccessErr() {
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
+	require.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
 	s.orderRepository.AssertExpectations(t)
 }
 
@@ -138,7 +138,7 @@ func (s *orderTestSuite) TestOrder_ListOrder_RepoErr() {
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
+	require.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
 	s.orderRepository.AssertExpectations(t)
 }
 
@@ -166,7 +166,7 @@ func (s *orderTestSuite) TestOrder_ListOrder_MapErr() {
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
+	require.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
 	s.orderRepository.AssertExpectations(t)
 }
 
@@ -186,15 +186,15 @@ func (s *orderTestSuite) TestOrder_ListOrder_NotFound() {
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusOK, responseRecorder.Code)
+	require.Equal(t, http.StatusOK, responseRecorder.Code)
 
 	var response models.OrderList
 	err := json.Unmarshal(responseRecorder.Body.Bytes(), &response)
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.Equal(t, 0, int(*response.Total))
-	assert.Equal(t, 0, len(response.Items))
+	require.Equal(t, 0, int(*response.Total))
+	require.Equal(t, 0, len(response.Items))
 	s.orderRepository.AssertExpectations(t)
 }
 
@@ -223,17 +223,17 @@ func (s *orderTestSuite) TestOrder_ListOrder_EmptyParams() {
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusOK, responseRecorder.Code)
+	require.Equal(t, http.StatusOK, responseRecorder.Code)
 
 	var response models.OrderList
 	err := json.Unmarshal(responseRecorder.Body.Bytes(), &response)
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.Equal(t, len(orderList), int(*response.Total))
-	assert.GreaterOrEqual(t, limit, len(response.Items))
+	require.Equal(t, len(orderList), int(*response.Total))
+	require.GreaterOrEqual(t, limit, len(response.Items))
 	for _, item := range response.Items {
-		assert.True(t, containsOrder(t, orderList, item))
+		require.True(t, containsOrder(t, orderList, item))
 	}
 	s.orderRepository.AssertExpectations(t)
 }
@@ -270,17 +270,17 @@ func (s *orderTestSuite) TestOrder_ListOrder_LimitGreaterThanTotal() {
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusOK, responseRecorder.Code)
+	require.Equal(t, http.StatusOK, responseRecorder.Code)
 
 	var response models.OrderList
 	err := json.Unmarshal(responseRecorder.Body.Bytes(), &response)
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.Equal(t, len(orderList), int(*response.Total))
-	assert.GreaterOrEqual(t, int(limit), len(response.Items))
+	require.Equal(t, len(orderList), int(*response.Total))
+	require.GreaterOrEqual(t, int(limit), len(response.Items))
 	for _, item := range response.Items {
-		assert.True(t, containsOrder(t, orderList, item))
+		require.True(t, containsOrder(t, orderList, item))
 	}
 
 	s.orderRepository.AssertExpectations(t)
@@ -320,17 +320,17 @@ func (s *orderTestSuite) TestOrder_ListOrder_LimitLessThanTotal() {
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusOK, responseRecorder.Code)
+	require.Equal(t, http.StatusOK, responseRecorder.Code)
 
 	var response models.OrderList
 	err := json.Unmarshal(responseRecorder.Body.Bytes(), &response)
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.Equal(t, len(orderList), int(*response.Total))
-	assert.GreaterOrEqual(t, int(limit), len(response.Items))
+	require.Equal(t, len(orderList), int(*response.Total))
+	require.GreaterOrEqual(t, int(limit), len(response.Items))
 	for _, item := range response.Items {
-		assert.True(t, containsOrder(t, orderList, item))
+		require.True(t, containsOrder(t, orderList, item))
 	}
 
 	s.orderRepository.AssertExpectations(t)
@@ -370,17 +370,17 @@ func (s *orderTestSuite) TestOrder_ListOrder_SecondPage() {
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusOK, responseRecorder.Code)
+	require.Equal(t, http.StatusOK, responseRecorder.Code)
 
 	var response models.OrderList
 	err := json.Unmarshal(responseRecorder.Body.Bytes(), &response)
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.Equal(t, len(orderList), int(*response.Total))
-	assert.Equal(t, len(orderList)-int(offset), len(response.Items))
+	require.Equal(t, len(orderList), int(*response.Total))
+	require.Equal(t, len(orderList)-int(offset), len(response.Items))
 	for _, item := range response.Items {
-		assert.True(t, containsOrder(t, orderList, item))
+		require.True(t, containsOrder(t, orderList, item))
 	}
 
 	s.orderRepository.AssertExpectations(t)
@@ -420,17 +420,17 @@ func (s *orderTestSuite) TestOrder_ListOrder_SeveralPages() {
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusOK, responseRecorder.Code)
+	require.Equal(t, http.StatusOK, responseRecorder.Code)
 
 	var firstPage models.OrderList
 	err := json.Unmarshal(responseRecorder.Body.Bytes(), &firstPage)
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.Equal(t, len(orderList), int(*firstPage.Total))
-	assert.Equal(t, int(limit), len(firstPage.Items))
+	require.Equal(t, len(orderList), int(*firstPage.Total))
+	require.Equal(t, int(limit), len(firstPage.Items))
 	for _, item := range firstPage.Items {
-		assert.True(t, containsOrder(t, orderList, item))
+		require.True(t, containsOrder(t, orderList, item))
 	}
 
 	offset = limit
@@ -450,20 +450,20 @@ func (s *orderTestSuite) TestOrder_ListOrder_SeveralPages() {
 	responseRecorder = httptest.NewRecorder()
 	producer = runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusOK, responseRecorder.Code)
+	require.Equal(t, http.StatusOK, responseRecorder.Code)
 
 	var secondPage models.OrderList
 	err = json.Unmarshal(responseRecorder.Body.Bytes(), &secondPage)
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.Equal(t, len(orderList), int(*secondPage.Total))
-	assert.Equal(t, len(orderList)-int(offset), len(secondPage.Items))
+	require.Equal(t, len(orderList), int(*secondPage.Total))
+	require.Equal(t, len(orderList)-int(offset), len(secondPage.Items))
 	for _, item := range secondPage.Items {
-		assert.True(t, containsOrder(t, orderList, item))
+		require.True(t, containsOrder(t, orderList, item))
 	}
 
-	assert.False(t, ordersDuplicated(t, firstPage.Items, secondPage.Items))
+	require.False(t, ordersDuplicated(t, firstPage.Items, secondPage.Items))
 	s.orderRepository.AssertExpectations(t)
 }
 
@@ -481,7 +481,7 @@ func (s *orderTestSuite) TestOrder_CreateOrder_AccessErr() {
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
+	require.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
 	s.orderRepository.AssertExpectations(t)
 }
 
@@ -517,7 +517,7 @@ func (s *orderTestSuite) TestOrder_CreateOrder_RepoErr() {
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
+	require.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
 	s.orderRepository.AssertExpectations(t)
 }
 
@@ -567,7 +567,7 @@ func (s *orderTestSuite) TestOrder_CreateOrder_MapErr() {
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
+	require.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
 	s.orderRepository.AssertExpectations(t)
 }
 
@@ -604,13 +604,13 @@ func (s *orderTestSuite) TestOrder_CreateOrder_NoAvailableEquipments() {
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
+	require.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
 	responseOrder := models.Order{}
 	err := json.Unmarshal(responseRecorder.Body.Bytes(), &responseOrder)
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.Empty(t, responseOrder)
+	require.Empty(t, responseOrder)
 
 	s.orderRepository.AssertExpectations(t)
 }
@@ -661,13 +661,13 @@ func (s *orderTestSuite) TestOrder_CreateOrder_OK() {
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusCreated, responseRecorder.Code)
+	require.Equal(t, http.StatusCreated, responseRecorder.Code)
 	responseOrder := models.Order{}
 	err := json.Unmarshal(responseRecorder.Body.Bytes(), &responseOrder)
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.Equal(t, orderToReturn.ID, int(*responseOrder.ID))
+	require.Equal(t, orderToReturn.ID, int(*responseOrder.ID))
 
 	s.orderRepository.AssertExpectations(t)
 }
@@ -686,7 +686,7 @@ func (s *orderTestSuite) TestOrder_UpdateOrder_AccessErr() {
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
+	require.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
 	s.orderRepository.AssertExpectations(t)
 }
 
@@ -722,7 +722,7 @@ func (s *orderTestSuite) TestOrder_UpdateOrder_RepoErr() {
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
+	require.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
 	s.orderRepository.AssertExpectations(t)
 }
 
@@ -758,7 +758,7 @@ func (s *orderTestSuite) TestOrder_UpdateOrder_MapErr() {
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
+	require.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
 	s.orderRepository.AssertExpectations(t)
 }
 
@@ -794,14 +794,14 @@ func (s *orderTestSuite) TestOrder_UpdateOrder_OK() {
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusOK, responseRecorder.Code)
+	require.Equal(t, http.StatusOK, responseRecorder.Code)
 
 	responseOrder := models.Order{}
 	err := json.Unmarshal(responseRecorder.Body.Bytes(), &responseOrder)
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.Equal(t, orderToReturn.ID, int(*responseOrder.ID))
+	require.Equal(t, orderToReturn.ID, int(*responseOrder.ID))
 
 	s.orderRepository.AssertExpectations(t)
 }

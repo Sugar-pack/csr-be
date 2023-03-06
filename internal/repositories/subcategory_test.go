@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/ent"
@@ -103,12 +103,12 @@ func (s *subcategoryRepositorySuite) TestSubcategoryRepository_CreateSubcategory
 	}
 	ctx := s.ctx
 	tx, err := s.client.Tx(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
 	createdSubcategory, err := s.repository.CreateSubcategory(ctx, int(categoryID), newSubcategory)
-	assert.Error(t, err)
-	assert.Nil(t, createdSubcategory)
-	assert.NoError(t, tx.Rollback())
+	require.Error(t, err)
+	require.Nil(t, createdSubcategory)
+	require.NoError(t, tx.Rollback())
 }
 
 func (s *subcategoryRepositorySuite) TestSubcategoryRepository_CreateSubcategory_OK() {
@@ -125,40 +125,40 @@ func (s *subcategoryRepositorySuite) TestSubcategoryRepository_CreateSubcategory
 	}
 	ctx := s.ctx
 	tx, err := s.client.Tx(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
 	createdSubcategory, err := s.repository.CreateSubcategory(ctx, int(categoryID), newSubcategory)
-	assert.NoError(t, err)
-	assert.Equal(t, name, createdSubcategory.Name)
-	assert.Equal(t, maxReservationTime, createdSubcategory.MaxReservationTime)
-	assert.Equal(t, maxReservationUnits, createdSubcategory.MaxReservationUnits)
-	assert.NoError(t, tx.Rollback())
+	require.NoError(t, err)
+	require.Equal(t, name, createdSubcategory.Name)
+	require.Equal(t, maxReservationTime, createdSubcategory.MaxReservationTime)
+	require.Equal(t, maxReservationUnits, createdSubcategory.MaxReservationUnits)
+	require.NoError(t, tx.Rollback())
 }
 
 func (s *subcategoryRepositorySuite) TestSubcategoryRepository_ListSubcategories_CategoryNotExists() {
 	t := s.T()
 	ctx := s.ctx
 	tx, err := s.client.Tx(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
 	categories, err := s.repository.ListSubcategories(ctx, s.category.ID+10)
-	assert.NoError(t, err)
-	assert.NoError(t, tx.Commit())
-	assert.Equal(t, 0, len(categories))
+	require.NoError(t, err)
+	require.NoError(t, tx.Commit())
+	require.Equal(t, 0, len(categories))
 }
 
 func (s *subcategoryRepositorySuite) TestSubcategoryRepository_ListSubcategories_OK() {
 	t := s.T()
 	ctx := s.ctx
 	tx, err := s.client.Tx(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
 	categories, err := s.repository.ListSubcategories(ctx, s.category.ID)
-	assert.NoError(t, err)
-	assert.NoError(t, tx.Commit())
-	assert.Equal(t, len(s.subcategories), len(categories))
+	require.NoError(t, err)
+	require.NoError(t, tx.Commit())
+	require.Equal(t, len(s.subcategories), len(categories))
 	for _, value := range categories {
-		assert.True(t, containsSubcategory(t, value, s.subcategories))
+		require.True(t, containsSubcategory(t, value, s.subcategories))
 	}
 }
 
@@ -166,26 +166,26 @@ func (s *subcategoryRepositorySuite) TestSubcategoryRepository_SubcategoryByID()
 	t := s.T()
 	ctx := s.ctx
 	tx, err := s.client.Tx(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
 	subcat, err := s.repository.SubcategoryByID(ctx, s.subcategories[0].ID)
-	assert.NoError(t, err)
-	assert.NoError(t, tx.Commit())
-	assert.Equal(t, s.subcategories[0].Name, subcat.Name)
-	assert.Equal(t, s.subcategories[0].MaxReservationTime, subcat.MaxReservationTime)
-	assert.Equal(t, s.subcategories[0].MaxReservationUnits, subcat.MaxReservationUnits)
-	assert.Equal(t, s.subcategories[0].Edges.Category.ID, subcat.Edges.Category.ID)
+	require.NoError(t, err)
+	require.NoError(t, tx.Commit())
+	require.Equal(t, s.subcategories[0].Name, subcat.Name)
+	require.Equal(t, s.subcategories[0].MaxReservationTime, subcat.MaxReservationTime)
+	require.Equal(t, s.subcategories[0].MaxReservationUnits, subcat.MaxReservationUnits)
+	require.Equal(t, s.subcategories[0].Edges.Category.ID, subcat.Edges.Category.ID)
 }
 
 func (s *subcategoryRepositorySuite) TestSubcategoryRepository_DeleteSubcategoryByID() {
 	t := s.T()
 	ctx := s.ctx
 	tx, err := s.client.Tx(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
 	err = s.repository.DeleteSubcategoryByID(ctx, s.subcategories[0].ID)
-	assert.NoError(t, err)
-	assert.NoError(t, tx.Rollback())
+	require.NoError(t, err)
+	require.NoError(t, tx.Rollback())
 }
 
 func (s *subcategoryRepositorySuite) TestSubcategoryRepository_UpdateSubcategory() {
@@ -196,14 +196,14 @@ func (s *subcategoryRepositorySuite) TestSubcategoryRepository_UpdateSubcategory
 	}
 	ctx := s.ctx
 	tx, err := s.client.Tx(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
 	subcat, err := s.repository.UpdateSubcategory(ctx, s.subcategories[0].ID, update)
-	assert.NoError(t, err)
-	assert.NoError(t, tx.Rollback())
-	assert.Equal(t, name, subcat.Name)
-	assert.Equal(t, s.subcategories[0].MaxReservationTime, subcat.MaxReservationTime)
-	assert.Equal(t, s.subcategories[0].MaxReservationUnits, subcat.MaxReservationUnits)
+	require.NoError(t, err)
+	require.NoError(t, tx.Rollback())
+	require.Equal(t, name, subcat.Name)
+	require.Equal(t, s.subcategories[0].MaxReservationTime, subcat.MaxReservationTime)
+	require.Equal(t, s.subcategories[0].MaxReservationUnits, subcat.MaxReservationUnits)
 }
 
 func containsSubcategory(t *testing.T, eq *ent.Subcategory, list []*ent.Subcategory) bool {

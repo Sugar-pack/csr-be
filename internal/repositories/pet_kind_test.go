@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/ent"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/ent/enttest"
@@ -27,18 +27,18 @@ func TestPetKindRepository_Create(t *testing.T) {
 
 	repo := NewPetKindRepository()
 	tx, err := client.Tx(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
 	petKind, err := repo.Create(ctx, models.PetKind{Name: &name})
-	assert.NoError(t, err)
-	assert.NoError(t, tx.Commit())
+	require.NoError(t, err)
+	require.NoError(t, tx.Commit())
 
 	selectedPetKind, err := client.PetKind.Get(ctx, 1)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
-	assert.Equal(t, petKind.ID, selectedPetKind.ID)
-	assert.Equal(t, petKind.Name, selectedPetKind.Name)
+	require.Equal(t, petKind.ID, selectedPetKind.ID)
+	require.Equal(t, petKind.Name, selectedPetKind.Name)
 }
 
 func TestPetKindRepository_GetAll(t *testing.T) {
@@ -53,15 +53,15 @@ func TestPetKindRepository_GetAll(t *testing.T) {
 
 	repo := NewPetKindRepository()
 	tx, err := client.Tx(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
 	rows, err := repo.GetAll(ctx)
-	assert.NoError(t, err)
-	assert.NoError(t, tx.Commit())
+	require.NoError(t, err)
+	require.NoError(t, tx.Commit())
 
-	assert.Equal(t, 1, rows[0].ID)
-	assert.Equal(t, name, rows[0].Name)
+	require.Equal(t, 1, rows[0].ID)
+	require.Equal(t, name, rows[0].Name)
 }
 
 func TestPetKindRepository_Get(t *testing.T) {
@@ -76,15 +76,15 @@ func TestPetKindRepository_Get(t *testing.T) {
 
 	repo := NewPetKindRepository()
 	tx, err := client.Tx(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
 	row, err := repo.GetByID(ctx, 1)
-	assert.NoError(t, err)
-	assert.NoError(t, tx.Commit())
+	require.NoError(t, err)
+	require.NoError(t, tx.Commit())
 
-	assert.Equal(t, 1, row.ID)
-	assert.Equal(t, name, row.Name)
+	require.Equal(t, 1, row.ID)
+	require.Equal(t, name, row.Name)
 }
 
 func TestPetKindRepository_Delete(t *testing.T) {
@@ -99,16 +99,16 @@ func TestPetKindRepository_Delete(t *testing.T) {
 
 	repo := NewPetKindRepository()
 	tx, err := client.Tx(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
 	err = repo.Delete(ctx, 1)
-	assert.NoError(t, err)
-	assert.NoError(t, tx.Commit())
+	require.NoError(t, err)
+	require.NoError(t, tx.Commit())
 
 	selected, err := client.PetKind.Get(ctx, 1)
-	assert.ErrorContains(t, err, "ent: pet_kind not found")
-	assert.Nil(t, selected)
+	require.ErrorContains(t, err, "ent: pet_kind not found")
+	require.Nil(t, selected)
 }
 
 func TestPetKindRepository_Update(t *testing.T) {
@@ -124,16 +124,16 @@ func TestPetKindRepository_Update(t *testing.T) {
 
 	repo := NewPetKindRepository()
 	tx, err := client.Tx(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
 	_, err = repo.Update(ctx, 1, &models.PetKind{Name: &name2})
-	assert.NoError(t, err)
-	assert.NoError(t, tx.Commit())
+	require.NoError(t, err)
+	require.NoError(t, tx.Commit())
 
 	selected, err := client.PetKind.Get(ctx, 1)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
-	assert.Equal(t, 1, selected.ID)
-	assert.Equal(t, name2, selected.Name)
+	require.Equal(t, 1, selected.ID)
+	require.Equal(t, name2, selected.Name)
 }

@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	_ "github.com/mattn/go-sqlite3"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/ent/enttest"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/middlewares"
@@ -23,13 +23,13 @@ func TestOrderStatusNameRepository_ListOfStatuses(t *testing.T) {
 
 	repo := NewOrderStatusNameRepository()
 	tx, err := client.Tx(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
 	statuses, err := repo.ListOfOrderStatusNames(ctx)
-	assert.NoError(t, err)
-	assert.NoError(t, tx.Commit())
-	assert.Equal(t, 1, statuses[0].ID)
-	assert.Equal(t, statusName, statuses[0].Status)
+	require.NoError(t, err)
+	require.NoError(t, tx.Commit())
+	require.Equal(t, 1, statuses[0].ID)
+	require.Equal(t, statusName, statuses[0].Status)
 	_, err = client.OrderStatusName.Delete().Exec(ctx)
 	if err != nil {
 		t.Fatal(err)
