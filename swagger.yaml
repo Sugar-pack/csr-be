@@ -180,6 +180,38 @@ paths:
           description: Unexpected error
           schema:
             $ref: "#/definitions/Error"
+  /v1/users/me/password:
+    patch:
+      summary: Change the current user password.
+      security:
+        - Bearer: [ ]
+      tags:
+        - Users
+      operationId: changePassword
+      consumes:
+        - application/json
+      parameters:
+        - name: passwordPatch
+          in: body
+          description: The patch to apply to the user password.
+          required: true
+          schema:
+            $ref: "#/definitions/PatchPasswordRequest"
+      responses:
+        204:
+          description: Success
+        401:
+          description: Unauthorized
+          schema:
+            $ref: "#/definitions/Error"
+        403:
+          description: Wrong old password
+          schema:
+            $ref: "#/definitions/Error"
+        default:
+          description: Unexpected error
+          schema:
+            $ref: "#/definitions/Error"
   /management/users/{userId}:
     parameters:
       - name: userId
@@ -1881,6 +1913,13 @@ definitions:
         type: string
       vk:
         type: string
+  PatchPasswordRequest:
+    type: object
+    properties:
+        old_password:
+            type: string
+        new_password:
+            type: string
       # User
   LoginInfo:
     type: object
