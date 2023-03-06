@@ -2600,7 +2600,6 @@ definitions:
       - inventoryNumber
       - supplier
       - receiptDate
-      - maximumAmount
       - maximumDays
       - location
       - description
@@ -2651,9 +2650,6 @@ definitions:
       receiptDate:
         type: string
         example: "2018"
-      maximumAmount:
-        type: integer
-        example: 3
       maximumDays:
         type: integer
         example: 30
@@ -2719,9 +2715,6 @@ definitions:
       receiptDate:
         type: string
         example: "2018"
-      maximumAmount:
-        type: integer
-        example: 3
       maximumDays:
         type: integer
         example: 30
@@ -2753,7 +2746,6 @@ definitions:
       - inventoryNumber
       - supplier
       - receiptDate
-      - maximumAmount
       - maximumDays
       - location
       - description
@@ -2802,9 +2794,6 @@ definitions:
       receiptDate:
         type: string
         example: "2018"
-      maximumAmount:
-        type: integer
-        example: 3
       maximumDays:
         type: integer
         example: 30

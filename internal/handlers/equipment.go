@@ -260,7 +260,6 @@ func mapEquipmentResponse(eq *ent.Equipment) (*models.EquipmentResponse, error) 
 		InventoryNumber:  &eq.InventoryNumber,
 		Category:         &categoryID,
 		Subcategory:      subcategoryID,
-		MaximumAmount:    &eq.MaximumAmount,
 		MaximumDays:      &eq.MaximumDays,
 		Name:             &eq.Name,
 		ReceiptDate:      &eq.ReceiptDate,
