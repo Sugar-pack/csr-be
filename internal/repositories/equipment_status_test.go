@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/go-openapi/strfmt"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/ent"
@@ -134,12 +134,12 @@ func (s *equipmentStatusTestSuite) TestEquipmentStatusRepository_Create_OrderNot
 	}
 	ctx := s.ctx
 	tx, err := s.client.Tx(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
 	eqStatus, err := s.repository.Create(ctx, data)
-	assert.Error(t, err)
-	assert.Nil(t, eqStatus)
-	assert.NoError(t, tx.Rollback())
+	require.Error(t, err)
+	require.Nil(t, eqStatus)
+	require.NoError(t, tx.Rollback())
 }
 
 func (s *equipmentStatusTestSuite) TestEquipmentStatusRepository_Create_StatusNameNotExists() {
@@ -160,12 +160,12 @@ func (s *equipmentStatusTestSuite) TestEquipmentStatusRepository_Create_StatusNa
 	}
 	ctx := s.ctx
 	tx, err := s.client.Tx(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
 	eqStatus, err := s.repository.Create(ctx, data)
-	assert.Error(t, err)
-	assert.Nil(t, eqStatus)
-	assert.NoError(t, tx.Rollback())
+	require.Error(t, err)
+	require.Nil(t, eqStatus)
+	require.NoError(t, tx.Rollback())
 }
 
 func (s *equipmentStatusTestSuite) TestEquipmentStatusRepository_Create_EquipmentNotExists() {
@@ -186,12 +186,12 @@ func (s *equipmentStatusTestSuite) TestEquipmentStatusRepository_Create_Equipmen
 	}
 	ctx := s.ctx
 	tx, err := s.client.Tx(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
 	eqStatus, err := s.repository.Create(ctx, data)
-	assert.Error(t, err)
-	assert.Nil(t, eqStatus)
-	assert.NoError(t, tx.Rollback())
+	require.Error(t, err)
+	require.Nil(t, eqStatus)
+	require.NoError(t, tx.Rollback())
 }
 
 func (s *equipmentStatusTestSuite) TestEquipmentStatusRepository_Create_LongerThanMaxReservationTime() {
@@ -212,12 +212,12 @@ func (s *equipmentStatusTestSuite) TestEquipmentStatusRepository_Create_LongerTh
 	}
 	ctx := s.ctx
 	tx, err := s.client.Tx(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
 	eqStatus, err := s.repository.Create(ctx, data)
-	assert.Error(t, err)
-	assert.Nil(t, eqStatus)
-	assert.NoError(t, tx.Rollback())
+	require.Error(t, err)
+	require.Nil(t, eqStatus)
+	require.NoError(t, tx.Rollback())
 }
 
 func (s *equipmentStatusTestSuite) TestEquipmentStatusRepository_Create_OK() {
@@ -238,19 +238,19 @@ func (s *equipmentStatusTestSuite) TestEquipmentStatusRepository_Create_OK() {
 	}
 	ctx := s.ctx
 	tx, err := s.client.Tx(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
 	eqStatus, err := s.repository.Create(ctx, data)
-	assert.NoError(t, err)
-	assert.NotNil(t, eqStatus)
-	assert.NoError(t, tx.Rollback())
+	require.NoError(t, err)
+	require.NotNil(t, eqStatus)
+	require.NoError(t, tx.Rollback())
 }
 
 func (s *equipmentStatusTestSuite) TestEquipmentStatusRepository_Update_StatusNameNotExists() {
 	t := s.T()
 	ctx := s.ctx
 	tx, err := s.client.Tx(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
 	eqStatusID := int64(s.eqStatus.ID)
 	statusName := "test status"
@@ -258,9 +258,9 @@ func (s *equipmentStatusTestSuite) TestEquipmentStatusRepository_Update_StatusNa
 		ID:         &eqStatusID,
 		StatusName: &statusName,
 	})
-	assert.Error(t, err)
-	assert.Nil(t, eqStatus)
-	assert.NoError(t, tx.Rollback())
+	require.Error(t, err)
+	require.Nil(t, eqStatus)
+	require.NoError(t, tx.Rollback())
 
 }
 
@@ -268,7 +268,7 @@ func (s *equipmentStatusTestSuite) TestEquipmentStatusRepository_Update_UpdStatu
 	t := s.T()
 	ctx := s.ctx
 	tx, err := s.client.Tx(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
 	eqStatusID := int64(s.eqStatus.ID)
 	statusName := s.statusNameMap[2]
@@ -276,9 +276,9 @@ func (s *equipmentStatusTestSuite) TestEquipmentStatusRepository_Update_UpdStatu
 		ID:         &eqStatusID,
 		StatusName: &statusName,
 	})
-	assert.NoError(t, err)
-	assert.NotNil(t, eqStatus)
-	assert.NoError(t, tx.Rollback())
+	require.NoError(t, err)
+	require.NotNil(t, eqStatus)
+	require.NoError(t, tx.Rollback())
 
 }
 
@@ -286,61 +286,61 @@ func (s *equipmentStatusTestSuite) TestEquipmentStatusRepository_IsAvailableByPe
 	t := s.T()
 	ctx := s.ctx
 	tx, err := s.client.Tx(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
 
 	start := s.order.RentEnd.AddDate(0, 0, -2)
 	end := start.AddDate(0, 0, 10)
 
 	isAvailable, err := s.repository.HasStatusByPeriod(ctx, domain.EquipmentStatusAvailable, s.equipment.ID, start, end)
-	assert.NoError(t, err)
-	assert.False(t, isAvailable)
-	assert.NoError(t, tx.Rollback())
+	require.NoError(t, err)
+	require.False(t, isAvailable)
+	require.NoError(t, tx.Rollback())
 }
 
 func (s *equipmentStatusTestSuite) TestEquipmentStatusRepository_IsAvailableByPeriod_IntersectsWithAnotherStatusBeginning() {
 	t := s.T()
 	ctx := s.ctx
 	tx, err := s.client.Tx(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
 	start := time.Now()
 	end := s.order.RentStart.AddDate(0, 0, 2)
 
 	isAvailable, err := s.repository.HasStatusByPeriod(ctx, domain.EquipmentStatusAvailable, s.equipment.ID, start, end)
-	assert.NoError(t, err)
-	assert.False(t, isAvailable)
-	assert.NoError(t, tx.Rollback())
+	require.NoError(t, err)
+	require.False(t, isAvailable)
+	require.NoError(t, tx.Rollback())
 }
 
 func (s *equipmentStatusTestSuite) TestEquipmentStatusRepository_IsAvailableByPeriod_IntersectsExistingStatus() {
 	t := s.T()
 	ctx := s.ctx
 	tx, err := s.client.Tx(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
 	start := s.order.RentStart.AddDate(0, 0, -1)
 	end := s.order.RentEnd.AddDate(0, 0, 1)
 
 	isAvailable, err := s.repository.HasStatusByPeriod(ctx, domain.EquipmentStatusAvailable, s.equipment.ID, start, end)
-	assert.NoError(t, err)
-	assert.False(t, isAvailable)
-	assert.NoError(t, tx.Rollback())
+	require.NoError(t, err)
+	require.False(t, isAvailable)
+	require.NoError(t, tx.Rollback())
 }
 
 func (s *equipmentStatusTestSuite) TestEquipmentStatusRepository_IsAvailableByPeriod_OK() {
 	t := s.T()
 	ctx := s.ctx
 	tx, err := s.client.Tx(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
 	start := time.Now()
 	end := start.AddDate(0, 0, 5)
 
 	isAvailable, err := s.repository.HasStatusByPeriod(ctx, domain.EquipmentStatusAvailable, s.equipment.ID, start, end)
-	assert.NoError(t, err)
-	assert.True(t, isAvailable)
-	assert.NoError(t, tx.Rollback())
+	require.NoError(t, err)
+	require.True(t, isAvailable)
+	require.NoError(t, tx.Rollback())
 }
 
 func (s *equipmentStatusTestSuite) TestEquipmentStatusRepository_GetEquipmentsStatusesByOrder_OrderNotExists() {
@@ -348,12 +348,12 @@ func (s *equipmentStatusTestSuite) TestEquipmentStatusRepository_GetEquipmentsSt
 	orderID := s.order.ID + 10
 	ctx := s.ctx
 	tx, err := s.client.Tx(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
 	eqStatus, err := s.repository.GetEquipmentsStatusesByOrder(ctx, orderID)
-	assert.NoError(t, err)
-	assert.Empty(t, eqStatus)
-	assert.NoError(t, tx.Rollback())
+	require.NoError(t, err)
+	require.Empty(t, eqStatus)
+	require.NoError(t, tx.Rollback())
 }
 
 func (s *equipmentStatusTestSuite) TestEquipmentStatusRepository_GetEquipmentsStatusesByOrder_OK() {
@@ -361,11 +361,11 @@ func (s *equipmentStatusTestSuite) TestEquipmentStatusRepository_GetEquipmentsSt
 	orderID := s.order.ID
 	ctx := s.ctx
 	tx, err := s.client.Tx(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
 	eqStatus, err := s.repository.GetEquipmentsStatusesByOrder(ctx, orderID)
-	assert.NoError(t, err)
-	assert.NotEmpty(t, eqStatus)
-	assert.Greater(t, len(eqStatus), 0)
-	assert.NoError(t, tx.Rollback())
+	require.NoError(t, err)
+	require.NotEmpty(t, eqStatus)
+	require.Greater(t, len(eqStatus), 0)
+	require.NoError(t, tx.Rollback())
 }

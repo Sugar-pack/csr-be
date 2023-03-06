@@ -10,7 +10,7 @@ import (
 	"github.com/go-openapi/loads"
 	"github.com/go-openapi/runtime"
 	_ "github.com/mattn/go-sqlite3"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/zap"
 
@@ -35,10 +35,10 @@ func TestSetEquipmentStatusNameHandler(t *testing.T) {
 	}
 	api := operations.NewBeAPI(swaggerSpec)
 	SetEquipmentStatusNameHandler(logger, api)
-	assert.NotEmpty(t, api.EquipmentStatusNamePostEquipmentStatusNameHandler)
-	assert.NotEmpty(t, api.EquipmentStatusNameGetEquipmentStatusNameHandler)
-	assert.NotEmpty(t, api.EquipmentStatusNameGetEquipmentStatusNameHandler)
-	assert.NotEmpty(t, api.EquipmentStatusNameDeleteEquipmentStatusNameHandler)
+	require.NotEmpty(t, api.EquipmentStatusNamePostEquipmentStatusNameHandler)
+	require.NotEmpty(t, api.EquipmentStatusNameGetEquipmentStatusNameHandler)
+	require.NotEmpty(t, api.EquipmentStatusNameGetEquipmentStatusNameHandler)
+	require.NotEmpty(t, api.EquipmentStatusNameDeleteEquipmentStatusNameHandler)
 }
 
 type EquipmentStatusNameTestSuite struct {
@@ -89,7 +89,7 @@ func (s *EquipmentStatusNameTestSuite) TestStatus_PostStatus_RepoErr() {
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
+	require.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
 	s.repository.AssertExpectations(t)
 }
 
@@ -117,14 +117,14 @@ func (s *EquipmentStatusNameTestSuite) TestStatus_PostStatus_OK() {
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusCreated, responseRecorder.Code)
+	require.Equal(t, http.StatusCreated, responseRecorder.Code)
 
 	responseStatus := models.SuccessEquipmentStatusNameOperationResponse{}
 	err := json.Unmarshal(responseRecorder.Body.Bytes(), &responseStatus)
 	if err != nil {
 		t.Errorf("Error unmarshalling response: %v", err)
 	}
-	assert.Equal(t, statusToReturn.ID, int(responseStatus.Data.ID))
+	require.Equal(t, statusToReturn.ID, int(responseStatus.Data.ID))
 
 	s.repository.AssertExpectations(t)
 }
@@ -147,7 +147,7 @@ func (s *EquipmentStatusNameTestSuite) TestStatus_ListEquipmentStatusNames_RepoE
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
+	require.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
 	s.repository.AssertExpectations(t)
 }
 
@@ -173,15 +173,15 @@ func (s *EquipmentStatusNameTestSuite) TestStatus_ListEquipmentStatusNames_OK() 
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusOK, responseRecorder.Code)
+	require.Equal(t, http.StatusOK, responseRecorder.Code)
 
 	var responseStatus []models.EquipmentStatusName
 	err := json.Unmarshal(responseRecorder.Body.Bytes(), &responseStatus)
 	if err != nil {
 		t.Errorf("Error unmarshalling response: %v", err)
 	}
-	assert.Equal(t, len(statusesToReturn), len(responseStatus))
-	assert.Equal(t, statusToReturn.ID, int(responseStatus[0].ID))
+	require.Equal(t, len(statusesToReturn), len(responseStatus))
+	require.Equal(t, statusToReturn.ID, int(responseStatus[0].ID))
 
 	s.repository.AssertExpectations(t)
 }
@@ -206,7 +206,7 @@ func (s *EquipmentStatusNameTestSuite) TestStatus_GetEquipmentStatusName_RepoErr
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
+	require.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
 	s.repository.AssertExpectations(t)
 }
 
@@ -232,14 +232,14 @@ func (s *EquipmentStatusNameTestSuite) TestStatus_GetEquipmentStatusName_OK() {
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusOK, responseRecorder.Code)
+	require.Equal(t, http.StatusOK, responseRecorder.Code)
 
 	responseStatus := models.SuccessEquipmentStatusNameOperationResponse{}
 	err := json.Unmarshal(responseRecorder.Body.Bytes(), &responseStatus)
 	if err != nil {
 		t.Errorf("Error unmarshalling response: %v", err)
 	}
-	assert.Equal(t, statusToReturn.ID, int(responseStatus.Data.ID))
+	require.Equal(t, statusToReturn.ID, int(responseStatus.Data.ID))
 
 	s.repository.AssertExpectations(t)
 }
@@ -264,7 +264,7 @@ func (s *EquipmentStatusNameTestSuite) TestStatus_DeleteEquipmentStatusName_Repo
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
+	require.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
 	s.repository.AssertExpectations(t)
 }
 
@@ -290,14 +290,14 @@ func (s *EquipmentStatusNameTestSuite) TestStatus_DeleteEquipmentStatusName_OK()
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusOK, responseRecorder.Code)
+	require.Equal(t, http.StatusOK, responseRecorder.Code)
 
 	responseStatus := models.SuccessEquipmentStatusNameOperationResponse{}
 	err := json.Unmarshal(responseRecorder.Body.Bytes(), &responseStatus)
 	if err != nil {
 		t.Errorf("Error unmarshalling response: %v", err)
 	}
-	assert.Equal(t, statusToReturn.ID, int(responseStatus.Data.ID))
+	require.Equal(t, statusToReturn.ID, int(responseStatus.Data.ID))
 
 	s.repository.AssertExpectations(t)
 }

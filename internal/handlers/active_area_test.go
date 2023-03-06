@@ -11,7 +11,7 @@ import (
 	"github.com/go-openapi/loads"
 	"github.com/go-openapi/runtime"
 	_ "github.com/mattn/go-sqlite3"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zaptest"
@@ -39,7 +39,7 @@ func TestSetActiveAreaHandler(t *testing.T) {
 	}
 	api := operations.NewBeAPI(swaggerSpec)
 	SetActiveAreaHandler(logger, api)
-	assert.NotEmpty(t, api.ActiveAreasGetAllActiveAreasHandler)
+	require.NotEmpty(t, api.ActiveAreasGetAllActiveAreasHandler)
 }
 
 type ActiveAreaTestSuite struct {
@@ -100,7 +100,7 @@ func (s *ActiveAreaTestSuite) TestActiveArea_GetActiveAreasFunc_RepoErr() {
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
+	require.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
 	s.repository.AssertExpectations(t)
 }
 
@@ -131,15 +131,15 @@ func (s *ActiveAreaTestSuite) TestActiveArea_GetActiveAreasFunc_LimitGreaterThan
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusOK, responseRecorder.Code)
+	require.Equal(t, http.StatusOK, responseRecorder.Code)
 
 	var responseAreas models.ListOfActiveAreas
 	err := json.Unmarshal(responseRecorder.Body.Bytes(), &responseAreas)
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.Equal(t, len(s.areas), len(responseAreas.Items))
-	assert.Equal(t, len(s.areas), int(*responseAreas.Total))
+	require.Equal(t, len(s.areas), len(responseAreas.Items))
+	require.Equal(t, len(s.areas), int(*responseAreas.Total))
 	s.repository.AssertExpectations(t)
 }
 
@@ -170,16 +170,16 @@ func (s *ActiveAreaTestSuite) TestActiveArea_GetActiveAreasFunc_LimitLessThanTot
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusOK, responseRecorder.Code)
+	require.Equal(t, http.StatusOK, responseRecorder.Code)
 
 	var responseAreas models.ListOfActiveAreas
 	err := json.Unmarshal(responseRecorder.Body.Bytes(), &responseAreas)
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.Greater(t, len(s.areas), len(responseAreas.Items))
-	assert.Equal(t, len(s.areas), int(*responseAreas.Total))
-	assert.Equal(t, int(limit), len(responseAreas.Items))
+	require.Greater(t, len(s.areas), len(responseAreas.Items))
+	require.Equal(t, len(s.areas), int(*responseAreas.Total))
+	require.Equal(t, int(limit), len(responseAreas.Items))
 	s.repository.AssertExpectations(t)
 }
 
@@ -210,16 +210,16 @@ func (s *ActiveAreaTestSuite) TestActiveArea_GetActiveAreasFunc_SecondPage() {
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusOK, responseRecorder.Code)
+	require.Equal(t, http.StatusOK, responseRecorder.Code)
 
 	var responseAreas models.ListOfActiveAreas
 	err := json.Unmarshal(responseRecorder.Body.Bytes(), &responseAreas)
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.Greater(t, len(s.areas), len(responseAreas.Items))
-	assert.Equal(t, len(s.areas), int(*responseAreas.Total))
-	assert.GreaterOrEqual(t, int(limit), len(responseAreas.Items))
+	require.Greater(t, len(s.areas), len(responseAreas.Items))
+	require.Equal(t, len(s.areas), int(*responseAreas.Total))
+	require.GreaterOrEqual(t, int(limit), len(responseAreas.Items))
 	s.repository.AssertExpectations(t)
 }
 
@@ -245,15 +245,15 @@ func (s *ActiveAreaTestSuite) TestActiveArea_GetActiveAreasFunc_EmptyPaginationP
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusOK, responseRecorder.Code)
+	require.Equal(t, http.StatusOK, responseRecorder.Code)
 
 	var responseAreas models.ListOfActiveAreas
 	err := json.Unmarshal(responseRecorder.Body.Bytes(), &responseAreas)
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.Equal(t, len(s.areas), len(responseAreas.Items))
-	assert.Equal(t, len(s.areas), int(*responseAreas.Total))
+	require.Equal(t, len(s.areas), len(responseAreas.Items))
+	require.Equal(t, len(s.areas), int(*responseAreas.Total))
 	s.repository.AssertExpectations(t)
 }
 
@@ -284,16 +284,16 @@ func (s *ActiveAreaTestSuite) TestActiveArea_GetActiveAreasFunc_SeveralPages() {
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusOK, responseRecorder.Code)
+	require.Equal(t, http.StatusOK, responseRecorder.Code)
 
 	var responseAreasFirstPage models.ListOfActiveAreas
 	err := json.Unmarshal(responseRecorder.Body.Bytes(), &responseAreasFirstPage)
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.Greater(t, len(s.areas), len(responseAreasFirstPage.Items))
-	assert.Equal(t, len(s.areas), int(*responseAreasFirstPage.Total))
-	assert.GreaterOrEqual(t, int(limit), len(responseAreasFirstPage.Items))
+	require.Greater(t, len(s.areas), len(responseAreasFirstPage.Items))
+	require.Equal(t, len(s.areas), int(*responseAreasFirstPage.Total))
+	require.GreaterOrEqual(t, int(limit), len(responseAreasFirstPage.Items))
 
 	offset = limit
 	s.repository.On("TotalActiveAreas", ctx).Return(5, nil)
@@ -304,19 +304,19 @@ func (s *ActiveAreaTestSuite) TestActiveArea_GetActiveAreasFunc_SeveralPages() {
 	responseRecorder = httptest.NewRecorder()
 	producer = runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusOK, responseRecorder.Code)
+	require.Equal(t, http.StatusOK, responseRecorder.Code)
 
 	var responseAreasSecondPage models.ListOfActiveAreas
 	err = json.Unmarshal(responseRecorder.Body.Bytes(), &responseAreasSecondPage)
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.Greater(t, len(s.areas), len(responseAreasSecondPage.Items))
-	assert.Equal(t, len(s.areas), int(*responseAreasSecondPage.Total))
-	assert.GreaterOrEqual(t, int(limit), len(responseAreasFirstPage.Items))
+	require.Greater(t, len(s.areas), len(responseAreasSecondPage.Items))
+	require.Equal(t, len(s.areas), int(*responseAreasSecondPage.Total))
+	require.GreaterOrEqual(t, int(limit), len(responseAreasFirstPage.Items))
 
-	assert.Equal(t, len(s.areas), len(responseAreasFirstPage.Items)+len(responseAreasSecondPage.Items))
-	assert.False(t, areasDuplicated(t, responseAreasFirstPage.Items, responseAreasSecondPage.Items))
+	require.Equal(t, len(s.areas), len(responseAreasFirstPage.Items)+len(responseAreasSecondPage.Items))
+	require.False(t, areasDuplicated(t, responseAreasFirstPage.Items, responseAreasSecondPage.Items))
 	s.repository.AssertExpectations(t)
 }
 

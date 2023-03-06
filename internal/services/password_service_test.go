@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/zap"
 
@@ -49,8 +49,8 @@ func (s *PasswordResetTestSuite) TestPasswordReset_SendResetPasswordLink_UserByL
 	err := errors.New("error")
 	s.userRepository.On("UserByLogin", ctx, login).Return(nil, err)
 	errReturn := s.passwordService.SendResetPasswordLink(ctx, login)
-	assert.Error(t, errReturn)
-	assert.Equal(t, err, errReturn)
+	require.Error(t, errReturn)
+	require.Equal(t, err, errReturn)
 	s.userRepository.AssertExpectations(t)
 }
 
@@ -64,8 +64,8 @@ func (s *PasswordResetTestSuite) TestPasswordReset_SendResetPasswordLink_CreateT
 	s.passwordRepo.On("CreateToken", ctx, mock.AnythingOfType("string"),
 		mock.AnythingOfType("time.Time"), user.ID).Return(err)
 	errReturn := s.passwordService.SendResetPasswordLink(ctx, login)
-	assert.Error(t, errReturn)
-	assert.Equal(t, err, errReturn)
+	require.Error(t, errReturn)
+	require.Equal(t, err, errReturn)
 	s.userRepository.AssertExpectations(t)
 	s.passwordRepo.AssertExpectations(t)
 }
@@ -85,8 +85,8 @@ func (s *PasswordResetTestSuite) TestPasswordReset_SendResetPasswordLink_SendLin
 		mock.AnythingOfType("string")).Return(err)
 
 	errReturn := s.passwordService.SendResetPasswordLink(ctx, login)
-	assert.Error(t, errReturn)
-	assert.Equal(t, err, errReturn)
+	require.Error(t, errReturn)
+	require.Equal(t, err, errReturn)
 	s.userRepository.AssertExpectations(t)
 	s.passwordRepo.AssertExpectations(t)
 	s.emailClient.AssertExpectations(t)
@@ -108,7 +108,7 @@ func (s *PasswordResetTestSuite) TestPasswordReset_SendResetPasswordLink_OK() {
 	s.emailClient.On("IsSendRequired").Return(false)
 
 	errReturn := s.passwordService.SendResetPasswordLink(ctx, login)
-	assert.NoError(t, errReturn)
+	require.NoError(t, errReturn)
 	s.userRepository.AssertExpectations(t)
 	s.passwordRepo.AssertExpectations(t)
 	s.emailClient.AssertExpectations(t)
@@ -121,8 +121,8 @@ func (s *PasswordResetTestSuite) TestPasswordReset_VerifyTokenAndSendPassword_Ge
 	err := errors.New("error")
 	s.passwordRepo.On("GetToken", ctx, token).Return(nil, err)
 	errReturn := s.passwordService.VerifyTokenAndSendPassword(ctx, token)
-	assert.Error(t, errReturn)
-	assert.Equal(t, err, errReturn)
+	require.Error(t, errReturn)
+	require.Equal(t, err, errReturn)
 	s.passwordRepo.AssertExpectations(t)
 }
 
@@ -140,7 +140,7 @@ func (s *PasswordResetTestSuite) TestPasswordReset_VerifyTokenAndSendPassword_To
 	s.passwordRepo.On("GetToken", ctx, token).Return(returnToken, nil)
 	s.passwordRepo.On("DeleteToken", ctx, token).Return(nil)
 	errReturn := s.passwordService.VerifyTokenAndSendPassword(ctx, token)
-	assert.Error(t, errReturn)
+	require.Error(t, errReturn)
 	s.passwordRepo.AssertExpectations(t)
 }
 
@@ -159,7 +159,7 @@ func (s *PasswordResetTestSuite) TestPasswordReset_VerifyTokenAndSendPassword_De
 	s.passwordRepo.On("GetToken", ctx, token).Return(returnToken, nil)
 	s.passwordRepo.On("DeleteToken", ctx, token).Return(err)
 	errReturn := s.passwordService.VerifyTokenAndSendPassword(ctx, token)
-	assert.Error(t, errReturn)
+	require.Error(t, errReturn)
 	s.passwordRepo.AssertExpectations(t)
 }
 
@@ -180,8 +180,8 @@ func (s *PasswordResetTestSuite) TestPasswordReset_VerifyTokenAndSendPassword_Pa
 	s.passwordGenerator.On("NewPassword").Return(newPassword, err)
 
 	errReturn := s.passwordService.VerifyTokenAndSendPassword(ctx, token)
-	assert.Error(t, errReturn)
-	assert.Equal(t, err, errReturn)
+	require.Error(t, errReturn)
+	require.Equal(t, err, errReturn)
 	s.passwordRepo.AssertExpectations(t)
 	s.userRepository.AssertExpectations(t)
 	s.emailClient.AssertExpectations(t)
@@ -207,8 +207,8 @@ func (s *PasswordResetTestSuite) TestPasswordReset_VerifyTokenAndSendPassword_Ch
 	s.passwordGenerator.On("NewPassword").Return(newPassword, nil)
 
 	errReturn := s.passwordService.VerifyTokenAndSendPassword(ctx, token)
-	assert.Error(t, errReturn)
-	assert.Equal(t, err, errReturn)
+	require.Error(t, errReturn)
+	require.Equal(t, err, errReturn)
 	s.passwordRepo.AssertExpectations(t)
 	s.userRepository.AssertExpectations(t)
 	s.emailClient.AssertExpectations(t)
@@ -235,8 +235,8 @@ func (s *PasswordResetTestSuite) TestPasswordReset_VerifyTokenAndSendPassword_Se
 	s.emailClient.On("SendNewPassword", returnToken.Edges.Users.Email,
 		returnToken.Edges.Users.Login, newPassword).Return(err)
 	errReturn := s.passwordService.VerifyTokenAndSendPassword(ctx, token)
-	assert.Error(t, errReturn)
-	assert.Equal(t, err, errReturn)
+	require.Error(t, errReturn)
+	require.Equal(t, err, errReturn)
 	s.passwordRepo.AssertExpectations(t)
 	s.userRepository.AssertExpectations(t)
 	s.emailClient.AssertExpectations(t)
@@ -264,7 +264,7 @@ func (s *PasswordResetTestSuite) TestPasswordReset_VerifyTokenAndSendPassword_De
 	s.passwordRepo.On("DeleteToken", ctx, token).Return(errors.New("error"))
 	s.emailClient.On("IsSendRequired").Return(false)
 	errReturn := s.passwordService.VerifyTokenAndSendPassword(ctx, token)
-	assert.NoError(t, errReturn)
+	require.NoError(t, errReturn)
 	s.passwordRepo.AssertExpectations(t)
 	s.userRepository.AssertExpectations(t)
 	s.emailClient.AssertExpectations(t)
@@ -292,7 +292,7 @@ func (s *PasswordResetTestSuite) TestPasswordReset_VerifyTokenAndSendPassword_OK
 	s.passwordRepo.On("DeleteToken", ctx, token).Return(nil)
 	s.emailClient.On("IsSendRequired").Return(false)
 	errReturn := s.passwordService.VerifyTokenAndSendPassword(ctx, token)
-	assert.NoError(t, errReturn)
+	require.NoError(t, errReturn)
 	s.passwordRepo.AssertExpectations(t)
 	s.userRepository.AssertExpectations(t)
 	s.emailClient.AssertExpectations(t)

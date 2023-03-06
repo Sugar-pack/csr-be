@@ -10,7 +10,7 @@ import (
 
 	"github.com/go-openapi/loads"
 	"github.com/go-openapi/runtime"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/zap"
 
@@ -35,11 +35,11 @@ func TestSetSubcategoryHandler(t *testing.T) {
 	}
 	api := operations.NewBeAPI(swaggerSpec)
 	SetSubcategoryHandler(logger, api)
-	assert.NotEmpty(t, api.SubcategoriesCreateNewSubcategoryHandler)
-	assert.NotEmpty(t, api.SubcategoriesGetSubcategoryByIDHandler)
-	assert.NotEmpty(t, api.SubcategoriesDeleteSubcategoryHandler)
-	assert.NotEmpty(t, api.SubcategoriesListSubcategoriesByCategoryIDHandler)
-	assert.NotEmpty(t, api.SubcategoriesUpdateSubcategoryHandler)
+	require.NotEmpty(t, api.SubcategoriesCreateNewSubcategoryHandler)
+	require.NotEmpty(t, api.SubcategoriesGetSubcategoryByIDHandler)
+	require.NotEmpty(t, api.SubcategoriesDeleteSubcategoryHandler)
+	require.NotEmpty(t, api.SubcategoriesListSubcategoriesByCategoryIDHandler)
+	require.NotEmpty(t, api.SubcategoriesUpdateSubcategoryHandler)
 }
 
 type SubcategoryTestSuite struct {
@@ -89,7 +89,7 @@ func (s *SubcategoryTestSuite) TestSubcategory_CreateSubcategory_RepoErr() {
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
+	require.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
 	s.repository.AssertExpectations(t)
 }
 
@@ -123,17 +123,17 @@ func (s *SubcategoryTestSuite) TestSubcategory_CreateSubcategory_OK() {
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusCreated, responseRecorder.Code)
+	require.Equal(t, http.StatusCreated, responseRecorder.Code)
 
 	returnedSubcategory := models.SubcategoryResponse{}
 	err := json.Unmarshal(responseRecorder.Body.Bytes(), &returnedSubcategory)
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.Equal(t, subcategoryToReturn.ID, int(*returnedSubcategory.Data.ID))
-	assert.Equal(t, subcategoryToReturn.Name, *returnedSubcategory.Data.Name)
-	assert.Equal(t, subcategoryToReturn.MaxReservationTime, *returnedSubcategory.Data.MaxReservationTime)
-	assert.Equal(t, subcategoryToReturn.MaxReservationUnits, *returnedSubcategory.Data.MaxReservationUnits)
+	require.Equal(t, subcategoryToReturn.ID, int(*returnedSubcategory.Data.ID))
+	require.Equal(t, subcategoryToReturn.Name, *returnedSubcategory.Data.Name)
+	require.Equal(t, subcategoryToReturn.MaxReservationTime, *returnedSubcategory.Data.MaxReservationTime)
+	require.Equal(t, subcategoryToReturn.MaxReservationUnits, *returnedSubcategory.Data.MaxReservationUnits)
 
 	s.repository.AssertExpectations(t)
 }
@@ -160,7 +160,7 @@ func (s *SubcategoryTestSuite) TestSubcategory_GetAllSubcategories_RepoErr() {
 	returnedSubcategory := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(returnedSubcategory, producer)
-	assert.Equal(t, http.StatusInternalServerError, returnedSubcategory.Code)
+	require.Equal(t, http.StatusInternalServerError, returnedSubcategory.Code)
 
 	s.repository.AssertExpectations(t)
 }
@@ -186,14 +186,14 @@ func (s *SubcategoryTestSuite) TestSubcategory_GetAllSubcategories_NotFound() {
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusOK, responseRecorder.Code)
+	require.Equal(t, http.StatusOK, responseRecorder.Code)
 
 	returnedSubcategory := models.ListOfSubcategories{}
 	err := json.Unmarshal(responseRecorder.Body.Bytes(), &returnedSubcategory)
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.Empty(t, returnedSubcategory)
+	require.Empty(t, returnedSubcategory)
 
 	s.repository.AssertExpectations(t)
 }
@@ -224,14 +224,14 @@ func (s *SubcategoryTestSuite) TestSubcategory_GetAllSubcategories_OK() {
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusOK, responseRecorder.Code)
+	require.Equal(t, http.StatusOK, responseRecorder.Code)
 
 	returnedSubcategory := models.ListOfSubcategories{}
 	err := json.Unmarshal(responseRecorder.Body.Bytes(), &returnedSubcategory)
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.Equal(t, len(subcategoriesToReturn), len(returnedSubcategory))
+	require.Equal(t, len(subcategoriesToReturn), len(returnedSubcategory))
 
 	s.repository.AssertExpectations(t)
 }
@@ -257,7 +257,7 @@ func (s *SubcategoryTestSuite) TestSubcategory_GetSubcategoryByID_RepoErr() {
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
+	require.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
 
 	s.repository.AssertExpectations(t)
 }
@@ -283,18 +283,18 @@ func (s *SubcategoryTestSuite) TestSubcategory_GetSubcategoryByID_OK() {
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusOK, responseRecorder.Code)
+	require.Equal(t, http.StatusOK, responseRecorder.Code)
 
 	returnedSubcategory := models.SubcategoryResponse{}
 	err := json.Unmarshal(responseRecorder.Body.Bytes(), &returnedSubcategory)
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.Equal(t, subcatToReturn.ID, int(*returnedSubcategory.Data.ID))
-	assert.Equal(t, subcatToReturn.Name, *returnedSubcategory.Data.Name)
-	assert.Equal(t, subcatToReturn.MaxReservationTime, *returnedSubcategory.Data.MaxReservationTime)
-	assert.Equal(t, subcatToReturn.MaxReservationUnits, *returnedSubcategory.Data.MaxReservationUnits)
-	assert.Equal(t, subcatToReturn.Edges.Category.ID, int(*returnedSubcategory.Data.Category))
+	require.Equal(t, subcatToReturn.ID, int(*returnedSubcategory.Data.ID))
+	require.Equal(t, subcatToReturn.Name, *returnedSubcategory.Data.Name)
+	require.Equal(t, subcatToReturn.MaxReservationTime, *returnedSubcategory.Data.MaxReservationTime)
+	require.Equal(t, subcatToReturn.MaxReservationUnits, *returnedSubcategory.Data.MaxReservationUnits)
+	require.Equal(t, subcatToReturn.Edges.Category.ID, int(*returnedSubcategory.Data.Category))
 	s.repository.AssertExpectations(t)
 }
 
@@ -318,7 +318,7 @@ func (s *SubcategoryTestSuite) TestSubcategory_DeleteSubcategory_RepoErr() {
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
+	require.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
 
 	s.repository.AssertExpectations(t)
 }
@@ -342,7 +342,7 @@ func (s *SubcategoryTestSuite) TestSubcategory_DeleteSubcategory_OK() {
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusOK, responseRecorder.Code)
+	require.Equal(t, http.StatusOK, responseRecorder.Code)
 
 	s.repository.AssertExpectations(t)
 }
@@ -373,7 +373,7 @@ func (s *SubcategoryTestSuite) TestSubcategory_UpdateSubcategory_RepoErr() {
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
+	require.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
 
 	s.repository.AssertExpectations(t)
 }
@@ -405,17 +405,17 @@ func (s *SubcategoryTestSuite) TestSubcategory_UpdateSubcategory_OK() {
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusOK, responseRecorder.Code)
+	require.Equal(t, http.StatusOK, responseRecorder.Code)
 
 	returnedSubcategory := models.SubcategoryResponse{}
 	err := json.Unmarshal(responseRecorder.Body.Bytes(), &returnedSubcategory)
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.Equal(t, updatedSubcategory.ID, int(*returnedSubcategory.Data.ID))
-	assert.Equal(t, updatedSubcategory.MaxReservationUnits, *returnedSubcategory.Data.MaxReservationUnits)
-	assert.Equal(t, updatedSubcategory.MaxReservationTime, *returnedSubcategory.Data.MaxReservationTime)
-	assert.Equal(t, updatedSubcategory.Edges.Category.ID, int(*returnedSubcategory.Data.Category))
+	require.Equal(t, updatedSubcategory.ID, int(*returnedSubcategory.Data.ID))
+	require.Equal(t, updatedSubcategory.MaxReservationUnits, *returnedSubcategory.Data.MaxReservationUnits)
+	require.Equal(t, updatedSubcategory.MaxReservationTime, *returnedSubcategory.Data.MaxReservationTime)
+	require.Equal(t, updatedSubcategory.Edges.Category.ID, int(*returnedSubcategory.Data.Category))
 
 	s.repository.AssertExpectations(t)
 }

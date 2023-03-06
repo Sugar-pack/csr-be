@@ -3,7 +3,7 @@ package middlewares
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/authentication"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/logger"
@@ -21,11 +21,11 @@ func TestBearerAuthenticateFunc(t *testing.T) {
 	f := BearerAuthenticateFunc("123", l)
 
 	i, err := f(testJWT)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	auth := i.(authentication.Auth)
-	assert.Equal(t, 1, auth.Id)
-	assert.Equal(t, "login", auth.Login)
-	assert.Equal(t, 2, auth.Role.Id)
-	assert.Equal(t, "administrator", auth.Role.Slug)
+	require.Equal(t, 1, auth.Id)
+	require.Equal(t, "login", auth.Login)
+	require.Equal(t, 2, auth.Role.Id)
+	require.Equal(t, "administrator", auth.Role.Slug)
 }

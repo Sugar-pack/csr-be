@@ -5,7 +5,6 @@ import (
 	"math"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 
@@ -157,12 +156,12 @@ func (s *EquipmentSuite) TestEquipmentRepository_AllEquipmentsEmptyOrderBy() {
 	orderColumn := equipment.FieldID
 	ctx := s.ctx
 	tx, err := s.client.Tx(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
 	equipments, err := s.repository.AllEquipments(ctx, limit, offset, orderBy, orderColumn)
-	assert.Error(t, err)
-	assert.NoError(t, tx.Rollback())
-	assert.Nil(t, equipments)
+	require.Error(t, err)
+	require.NoError(t, tx.Rollback())
+	require.Nil(t, equipments)
 }
 
 func (s *EquipmentSuite) TestEquipmentRepository_AllEquipmentsWrongOrderColumn() {
@@ -173,13 +172,13 @@ func (s *EquipmentSuite) TestEquipmentRepository_AllEquipmentsWrongOrderColumn()
 	orderColumn := ""
 	ctx := s.ctx
 	tx, err := s.client.Tx(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
 	equipments, err := s.repository.EquipmentsByFilter(ctx, models.EquipmentFilter{},
 		limit, offset, orderBy, orderColumn)
-	assert.Error(t, err)
-	assert.NoError(t, tx.Rollback())
-	assert.Nil(t, equipments)
+	require.Error(t, err)
+	require.NoError(t, tx.Rollback())
+	require.Nil(t, equipments)
 }
 
 func (s *EquipmentSuite) TestEquipmentRepository_AllEquipmentsOrderColumnNotExists() {
@@ -190,12 +189,12 @@ func (s *EquipmentSuite) TestEquipmentRepository_AllEquipmentsOrderColumnNotExis
 	orderColumn := "price"
 	ctx := s.ctx
 	tx, err := s.client.Tx(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
 	equipments, err := s.repository.AllEquipments(ctx, limit, offset, orderBy, orderColumn)
-	assert.Error(t, err)
-	assert.NoError(t, tx.Rollback())
-	assert.Nil(t, equipments)
+	require.Error(t, err)
+	require.NoError(t, tx.Rollback())
+	require.Nil(t, equipments)
 }
 
 func (s *EquipmentSuite) TestEquipmentRepository_AllEquipmentsOrderByIDDesc() {
@@ -206,18 +205,18 @@ func (s *EquipmentSuite) TestEquipmentRepository_AllEquipmentsOrderByIDDesc() {
 	orderColumn := equipment.FieldID
 	ctx := s.ctx
 	tx, err := s.client.Tx(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
 	equipments, err := s.repository.AllEquipments(ctx, limit, offset, orderBy, orderColumn)
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.NoError(t, tx.Commit())
-	assert.Equal(t, len(s.equipments), len(equipments))
+	require.NoError(t, tx.Commit())
+	require.Equal(t, len(s.equipments), len(equipments))
 	prevEquipmentID := math.MaxInt
 	for _, value := range equipments {
-		assert.True(t, mapContainsEquipment(value, s.equipments))
-		assert.Less(t, value.ID, prevEquipmentID)
+		require.True(t, mapContainsEquipment(value, s.equipments))
+		require.Less(t, value.ID, prevEquipmentID)
 		prevEquipmentID = value.ID
 	}
 }
@@ -230,18 +229,18 @@ func (s *EquipmentSuite) TestEquipmentRepository_AllEquipmentsOrderByNameDesc() 
 	orderColumn := equipment.FieldName
 	ctx := s.ctx
 	tx, err := s.client.Tx(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
 	equipments, err := s.repository.AllEquipments(ctx, limit, offset, orderBy, orderColumn)
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.NoError(t, tx.Commit())
-	assert.Equal(t, len(s.equipments), len(equipments))
+	require.NoError(t, tx.Commit())
+	require.Equal(t, len(s.equipments), len(equipments))
 	prevEquipmentName := "zzzzzzzzzzzzzzzzzzzzzzzzzzz"
 	for _, value := range equipments {
-		assert.True(t, mapContainsEquipment(value, s.equipments))
-		assert.Less(t, value.Name, prevEquipmentName)
+		require.True(t, mapContainsEquipment(value, s.equipments))
+		require.Less(t, value.Name, prevEquipmentName)
 		prevEquipmentName = value.Name
 	}
 }
@@ -254,18 +253,18 @@ func (s *EquipmentSuite) TestEquipmentRepository_AllEquipmentsOrderByTitleDesc()
 	orderColumn := equipment.FieldTitle
 	ctx := s.ctx
 	tx, err := s.client.Tx(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
 	equipments, err := s.repository.AllEquipments(ctx, limit, offset, orderBy, orderColumn)
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.NoError(t, tx.Commit())
-	assert.Equal(t, len(s.equipments), len(equipments))
+	require.NoError(t, tx.Commit())
+	require.Equal(t, len(s.equipments), len(equipments))
 	prevEquipmentTitle := "zzzzzzzzzzzzzzzzzzzzzzzzzzz"
 	for _, value := range equipments {
-		assert.True(t, mapContainsEquipment(value, s.equipments))
-		assert.Less(t, value.Title, prevEquipmentTitle)
+		require.True(t, mapContainsEquipment(value, s.equipments))
+		require.Less(t, value.Title, prevEquipmentTitle)
 		prevEquipmentTitle = value.Title
 	}
 }
@@ -278,18 +277,18 @@ func (s *EquipmentSuite) TestEquipmentRepository_AllEquipmentsOrderByIDAsc() {
 	orderColumn := equipment.FieldID
 	ctx := s.ctx
 	tx, err := s.client.Tx(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
 	equipments, err := s.repository.AllEquipments(ctx, limit, offset, orderBy, orderColumn)
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.NoError(t, tx.Commit())
-	assert.Equal(t, len(s.equipments), len(equipments))
+	require.NoError(t, tx.Commit())
+	require.Equal(t, len(s.equipments), len(equipments))
 	prevEquipmentID := 0
 	for _, value := range equipments {
-		assert.True(t, mapContainsEquipment(value, s.equipments))
-		assert.Greater(t, value.ID, prevEquipmentID)
+		require.True(t, mapContainsEquipment(value, s.equipments))
+		require.Greater(t, value.ID, prevEquipmentID)
 		prevEquipmentID = value.ID
 	}
 }
@@ -302,18 +301,18 @@ func (s *EquipmentSuite) TestEquipmentRepository_AllEquipmentsOrderByNameAsc() {
 	orderColumn := equipment.FieldName
 	ctx := s.ctx
 	tx, err := s.client.Tx(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
 	equipments, err := s.repository.AllEquipments(ctx, limit, offset, orderBy, orderColumn)
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.NoError(t, tx.Commit())
-	assert.Equal(t, len(s.equipments), len(equipments))
+	require.NoError(t, tx.Commit())
+	require.Equal(t, len(s.equipments), len(equipments))
 	prevEquipmentName := ""
 	for _, value := range equipments {
-		assert.True(t, mapContainsEquipment(value, s.equipments))
-		assert.Greater(t, value.Name, prevEquipmentName)
+		require.True(t, mapContainsEquipment(value, s.equipments))
+		require.Greater(t, value.Name, prevEquipmentName)
 		prevEquipmentName = value.Name
 	}
 }
@@ -326,18 +325,18 @@ func (s *EquipmentSuite) TestEquipmentRepository_AllEquipmentsOrderByTitleAsc() 
 	orderColumn := equipment.FieldTitle
 	ctx := s.ctx
 	tx, err := s.client.Tx(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
 	equipments, err := s.repository.AllEquipments(ctx, limit, offset, orderBy, orderColumn)
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.NoError(t, tx.Commit())
-	assert.Equal(t, len(s.equipments), len(equipments))
+	require.NoError(t, tx.Commit())
+	require.Equal(t, len(s.equipments), len(equipments))
 	prevEquipmentTitle := ""
 	for _, value := range equipments {
-		assert.True(t, mapContainsEquipment(value, s.equipments))
-		assert.Greater(t, value.Title, prevEquipmentTitle)
+		require.True(t, mapContainsEquipment(value, s.equipments))
+		require.Greater(t, value.Title, prevEquipmentTitle)
 		prevEquipmentTitle = value.Title
 	}
 }
@@ -350,17 +349,17 @@ func (s *EquipmentSuite) TestEquipmentRepository_AllEquipmentsLimit() {
 	orderColumn := equipment.FieldTitle
 	ctx := s.ctx
 	tx, err := s.client.Tx(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
 	equipments, err := s.repository.AllEquipments(ctx, limit, offset, orderBy, orderColumn)
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.NoError(t, tx.Commit())
-	assert.Equal(t, 3, len(equipments))
+	require.NoError(t, tx.Commit())
+	require.Equal(t, 3, len(equipments))
 	for i, value := range equipments {
-		assert.True(t, mapContainsEquipment(value, s.equipments))
-		assert.Equal(t, s.equipments[i+1].Name, value.Name)
+		require.True(t, mapContainsEquipment(value, s.equipments))
+		require.Equal(t, s.equipments[i+1].Name, value.Name)
 	}
 }
 
@@ -372,17 +371,17 @@ func (s *EquipmentSuite) TestEquipmentRepository_AllEquipmentsOffset() {
 	orderColumn := equipment.FieldTitle
 	ctx := s.ctx
 	tx, err := s.client.Tx(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
 	equipments, err := s.repository.AllEquipments(ctx, limit, offset, orderBy, orderColumn)
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.NoError(t, tx.Commit())
-	assert.Equal(t, 2, len(equipments))
+	require.NoError(t, tx.Commit())
+	require.Equal(t, 2, len(equipments))
 	for i, value := range equipments {
-		assert.True(t, mapContainsEquipment(value, s.equipments))
-		assert.Equal(t, s.equipments[i+1+offset].Name, value.Name)
+		require.True(t, mapContainsEquipment(value, s.equipments))
+		require.Equal(t, s.equipments[i+1+offset].Name, value.Name)
 	}
 }
 
@@ -390,14 +389,14 @@ func (s *EquipmentSuite) TestEquipmentRepository_AllEquipmentsTotal() {
 	t := s.T()
 	ctx := s.ctx
 	tx, err := s.client.Tx(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
 	totalEquipment, err := s.repository.AllEquipmentsTotal(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.NoError(t, tx.Commit())
-	assert.Equal(t, len(s.equipments), totalEquipment)
+	require.NoError(t, tx.Commit())
+	require.Equal(t, len(s.equipments), totalEquipment)
 }
 
 func (s *EquipmentSuite) TestEquipmentRepository_FindEquipmentsOrderByTitleDesc() {
@@ -409,19 +408,19 @@ func (s *EquipmentSuite) TestEquipmentRepository_FindEquipmentsOrderByTitleDesc(
 	filter := models.EquipmentFilter{NameSubstring: "test"}
 	ctx := s.ctx
 	tx, err := s.client.Tx(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
 	equipments, err := s.repository.EquipmentsByFilter(ctx, filter, limit, offset, orderBy, orderColumn)
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.NoError(t, tx.Commit())
-	assert.Equal(t, 3, len(equipments))
+	require.NoError(t, tx.Commit())
+	require.Equal(t, 3, len(equipments))
 	prevEquipmentTitle := "zzzzzzzzzzzzzzzzzzzzzz"
 	for _, value := range equipments {
-		assert.True(t, mapContainsEquipment(value, s.equipments))
-		assert.Contains(t, value.Name, filter.NameSubstring)
-		assert.Less(t, value.Title, prevEquipmentTitle)
+		require.True(t, mapContainsEquipment(value, s.equipments))
+		require.Contains(t, value.Name, filter.NameSubstring)
+		require.Less(t, value.Title, prevEquipmentTitle)
 		prevEquipmentTitle = value.Title
 	}
 }
@@ -450,17 +449,17 @@ func (s *EquipmentSuite) TestEquipmentRepository_FindEquipmentsOrderByTitleDesc(
 //	equipments, err := s.repository.EquipmentsByFilter(ctx, filter, limit, offset, orderBy, orderColumn)
 //	require.NoError(t, err)
 //	require.NoError(t, tx.Commit())
-//	assert.Equal(t, 1, len(equipments))
+//	require.Equal(t, 1, len(equipments))
 //
 //	for _, value := range equipments {
-//		assert.True(t, strings.EqualFold(value.Name, filter.Name))
-//		assert.True(t, strings.EqualFold(value.Title, filter.Title))
-//		assert.True(t, strings.EqualFold(value.Description, filter.Description))
-//		assert.True(t, strings.EqualFold(value.TermsOfUse, filter.TermsOfUse))
-//		assert.True(t, strings.EqualFold(value.TechIssue, filter.TechnicalIssues))
-//		assert.True(t, strings.EqualFold(value.Supplier, filter.Supplier))
-//		assert.True(t, strings.EqualFold(value.ReceiptDate, filter.ReceiptDate))
-//		assert.True(t, strings.EqualFold(value.Condition, filter.Condition))
+//		require.True(t, strings.EqualFold(value.Name, filter.Name))
+//		require.True(t, strings.EqualFold(value.Title, filter.Title))
+//		require.True(t, strings.EqualFold(value.Description, filter.Description))
+//		require.True(t, strings.EqualFold(value.TermsOfUse, filter.TermsOfUse))
+//		require.True(t, strings.EqualFold(value.TechIssue, filter.TechnicalIssues))
+//		require.True(t, strings.EqualFold(value.Supplier, filter.Supplier))
+//		require.True(t, strings.EqualFold(value.ReceiptDate, filter.ReceiptDate))
+//		require.True(t, strings.EqualFold(value.Condition, filter.Condition))
 //	}
 //}
 
@@ -473,19 +472,19 @@ func (s *EquipmentSuite) TestEquipmentRepository_FindEquipmentsLimit() {
 	filter := models.EquipmentFilter{NameSubstring: "test"}
 	ctx := s.ctx
 	tx, err := s.client.Tx(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
 	equipments, err := s.repository.EquipmentsByFilter(ctx, filter, limit, offset, orderBy, orderColumn)
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.NoError(t, tx.Commit())
-	assert.Equal(t, 2, len(equipments))
+	require.NoError(t, tx.Commit())
+	require.Equal(t, 2, len(equipments))
 	prevEquipmentTitle := ""
 	for _, value := range equipments {
-		assert.True(t, mapContainsEquipment(value, s.equipments))
-		assert.Contains(t, value.Name, filter.NameSubstring)
-		assert.Greater(t, value.Title, prevEquipmentTitle)
+		require.True(t, mapContainsEquipment(value, s.equipments))
+		require.Contains(t, value.Name, filter.NameSubstring)
+		require.Greater(t, value.Title, prevEquipmentTitle)
 		prevEquipmentTitle = value.Title
 	}
 }
@@ -500,17 +499,17 @@ func (s *EquipmentSuite) TestEquipmentRepository_FindEquipmentsOffset() {
 	filter := models.EquipmentFilter{NameSubstring: "tEsT"}
 	ctx := s.ctx
 	tx, err := s.client.Tx(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
 	equipments, err := s.repository.EquipmentsByFilter(ctx, filter, limit, offset, orderBy, orderColumn)
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.NoError(t, tx.Commit())
-	assert.Equal(t, 1, len(equipments))
+	require.NoError(t, tx.Commit())
+	require.Equal(t, 1, len(equipments))
 	for _, value := range equipments {
-		assert.True(t, mapContainsEquipment(value, s.equipments))
-		assert.Contains(t, value.Name, name)
+		require.True(t, mapContainsEquipment(value, s.equipments))
+		require.Contains(t, value.Name, name)
 	}
 }
 
@@ -519,14 +518,14 @@ func (s *EquipmentSuite) TestEquipmentRepository_FindEquipmentsTotal() {
 	filter := models.EquipmentFilter{NameSubstring: "test"}
 	ctx := s.ctx
 	tx, err := s.client.Tx(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
 	totalEquipment, err := s.repository.EquipmentsByFilterTotal(ctx, filter)
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.NoError(t, tx.Commit())
-	assert.Equal(t, 3, totalEquipment)
+	require.NoError(t, tx.Commit())
+	require.Equal(t, 3, totalEquipment)
 }
 
 func mapContainsEquipment(eq *ent.Equipment, m map[int]*ent.Equipment) bool {

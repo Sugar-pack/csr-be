@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/zap"
 
@@ -47,8 +47,8 @@ func (s *RegistrationConfirmTestSuite) TestPasswordReset_SendConfirmationLink_Us
 	err := errors.New("error while getting user by login")
 	s.userRepository.On("UserByLogin", ctx, login).Return(nil, err)
 	errReturn := s.regConfirmService.SendConfirmationLink(ctx, login)
-	assert.Error(t, errReturn)
-	assert.Equal(t, err, errReturn)
+	require.Error(t, errReturn)
+	require.Equal(t, err, errReturn)
 	s.userRepository.AssertExpectations(t)
 }
 
@@ -62,8 +62,8 @@ func (s *RegistrationConfirmTestSuite) TestPasswordReset_SendConfirmationLink_Cr
 	s.regConfirmRepo.On("CreateToken", ctx, mock.AnythingOfType("string"),
 		mock.AnythingOfType("time.Time"), user.ID).Return(err)
 	errReturn := s.regConfirmService.SendConfirmationLink(ctx, login)
-	assert.Error(t, errReturn)
-	assert.Equal(t, err, errReturn)
+	require.Error(t, errReturn)
+	require.Equal(t, err, errReturn)
 	s.userRepository.AssertExpectations(t)
 	s.regConfirmRepo.AssertExpectations(t)
 }
@@ -80,8 +80,8 @@ func (s *RegistrationConfirmTestSuite) TestPasswordReset_SendConfirmationLink_Se
 	s.emailClient.On("SendRegistrationConfirmLink", user.Email, user.Login,
 		mock.AnythingOfType("string")).Return(err)
 	errReturn := s.regConfirmService.SendConfirmationLink(ctx, login)
-	assert.Error(t, errReturn)
-	assert.Equal(t, err, errReturn)
+	require.Error(t, errReturn)
+	require.Equal(t, err, errReturn)
 	s.userRepository.AssertExpectations(t)
 	s.regConfirmRepo.AssertExpectations(t)
 	s.emailClient.AssertExpectations(t)
@@ -99,7 +99,7 @@ func (s *RegistrationConfirmTestSuite) TestPasswordReset_SendConfirmationLink_OK
 		mock.AnythingOfType("string")).Return(nil)
 	s.emailClient.On("IsSendRequired").Return(false)
 	errReturn := s.regConfirmService.SendConfirmationLink(ctx, login)
-	assert.NoError(t, errReturn)
+	require.NoError(t, errReturn)
 	s.userRepository.AssertExpectations(t)
 	s.regConfirmRepo.AssertExpectations(t)
 	s.emailClient.AssertExpectations(t)
@@ -112,8 +112,8 @@ func (s *RegistrationConfirmTestSuite) TestPasswordReset_VerifyConfirmationToken
 	err := errors.New("error")
 	s.regConfirmRepo.On("GetToken", ctx, token).Return(nil, err)
 	errReturn := s.regConfirmService.VerifyConfirmationToken(ctx, token)
-	assert.Error(t, errReturn)
-	assert.Equal(t, err, errReturn)
+	require.Error(t, errReturn)
+	require.Equal(t, err, errReturn)
 	s.regConfirmRepo.AssertExpectations(t)
 }
 
@@ -131,7 +131,7 @@ func (s *RegistrationConfirmTestSuite) TestPasswordReset_VerifyConfirmationToken
 	s.regConfirmRepo.On("GetToken", ctx, token).Return(returnToken, nil)
 	s.regConfirmRepo.On("DeleteToken", ctx, token).Return(nil)
 	errReturn := s.regConfirmService.VerifyConfirmationToken(ctx, token)
-	assert.Error(t, errReturn)
+	require.Error(t, errReturn)
 	s.regConfirmRepo.AssertExpectations(t)
 }
 
@@ -150,7 +150,7 @@ func (s *RegistrationConfirmTestSuite) TestPasswordReset_VerifyConfirmationToken
 	s.regConfirmRepo.On("GetToken", ctx, token).Return(returnToken, nil)
 	s.regConfirmRepo.On("DeleteToken", ctx, token).Return(err)
 	errReturn := s.regConfirmService.VerifyConfirmationToken(ctx, token)
-	assert.Error(t, errReturn)
+	require.Error(t, errReturn)
 	s.regConfirmRepo.AssertExpectations(t)
 }
 
@@ -169,8 +169,8 @@ func (s *RegistrationConfirmTestSuite) TestPasswordReset_VerifyConfirmationToken
 	s.regConfirmRepo.On("GetToken", ctx, token).Return(returnToken, nil)
 	s.userRepository.On("ConfirmRegistration", ctx, returnToken.Edges.Users.Login).Return(err)
 	errReturn := s.regConfirmService.VerifyConfirmationToken(ctx, token)
-	assert.Error(t, errReturn)
-	assert.Equal(t, err, errReturn)
+	require.Error(t, errReturn)
+	require.Equal(t, err, errReturn)
 	s.regConfirmRepo.AssertExpectations(t)
 	s.userRepository.AssertExpectations(t)
 	s.emailClient.AssertExpectations(t)
@@ -191,7 +191,7 @@ func (s *RegistrationConfirmTestSuite) TestPasswordReset_VerifyConfirmationToken
 	s.userRepository.On("ConfirmRegistration", ctx, returnToken.Edges.Users.Login).Return(nil)
 	s.regConfirmRepo.On("DeleteToken", ctx, token).Return(errors.New("error"))
 	errReturn := s.regConfirmService.VerifyConfirmationToken(ctx, token)
-	assert.NoError(t, errReturn)
+	require.NoError(t, errReturn)
 	s.regConfirmRepo.AssertExpectations(t)
 	s.userRepository.AssertExpectations(t)
 	s.emailClient.AssertExpectations(t)
@@ -212,7 +212,7 @@ func (s *RegistrationConfirmTestSuite) TestPasswordReset_VerifyConfirmationToken
 	s.userRepository.On("ConfirmRegistration", ctx, returnToken.Edges.Users.Login).Return(nil)
 	s.regConfirmRepo.On("DeleteToken", ctx, token).Return(nil)
 	errReturn := s.regConfirmService.VerifyConfirmationToken(ctx, token)
-	assert.NoError(t, errReturn)
+	require.NoError(t, errReturn)
 	s.regConfirmRepo.AssertExpectations(t)
 	s.userRepository.AssertExpectations(t)
 	s.emailClient.AssertExpectations(t)

@@ -12,7 +12,7 @@ import (
 	"entgo.io/ent/entc/integration/ent/user"
 	"github.com/go-openapi/loads"
 	"github.com/go-openapi/runtime"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/zap"
 
@@ -42,15 +42,15 @@ func TestSetUserHandler(t *testing.T) {
 	registrationConfirm := &mocks.RegistrationConfirmService{}
 	SetUserHandler(logger, api, tokenManager, registrationConfirm)
 
-	assert.NotEmpty(t, api.UsersLoginHandler)
-	assert.NotEmpty(t, api.UsersRefreshHandler)
-	assert.NotEmpty(t, api.UsersPostUserHandler)
-	assert.NotEmpty(t, api.UsersGetCurrentUserHandler)
-	assert.NotEmpty(t, api.UsersPatchUserHandler)
-	assert.NotEmpty(t, api.UsersGetUserHandler)
-	assert.NotEmpty(t, api.UsersGetAllUsersHandler)
-	assert.NotEmpty(t, api.UsersAssignRoleToUserHandler)
-	assert.NotEmpty(t, api.UsersDeleteUserHandler)
+	require.NotEmpty(t, api.UsersLoginHandler)
+	require.NotEmpty(t, api.UsersRefreshHandler)
+	require.NotEmpty(t, api.UsersPostUserHandler)
+	require.NotEmpty(t, api.UsersGetCurrentUserHandler)
+	require.NotEmpty(t, api.UsersPatchUserHandler)
+	require.NotEmpty(t, api.UsersGetUserHandler)
+	require.NotEmpty(t, api.UsersGetAllUsersHandler)
+	require.NotEmpty(t, api.UsersAssignRoleToUserHandler)
+	require.NotEmpty(t, api.UsersDeleteUserHandler)
 }
 
 type UserTestSuite struct {
@@ -96,7 +96,7 @@ func (s *UserTestSuite) TestUser_LoginUserFunc_InternalErr() {
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
+	require.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
 	s.service.AssertExpectations(t)
 }
 
@@ -122,7 +122,7 @@ func (s *UserTestSuite) TestUser_LoginUserFunc_UnauthorizedErr() {
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusUnauthorized, responseRecorder.Code)
+	require.Equal(t, http.StatusUnauthorized, responseRecorder.Code)
 	s.service.AssertExpectations(t)
 }
 
@@ -149,15 +149,15 @@ func (s *UserTestSuite) TestUser_LoginUserFunc_OK() {
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusOK, responseRecorder.Code)
+	require.Equal(t, http.StatusOK, responseRecorder.Code)
 
 	var tokenPair models.TokenPair
 	err := json.Unmarshal(responseRecorder.Body.Bytes(), &tokenPair)
 	if err != nil {
 		t.Errorf("unable to unmarshal response: %v", err)
 	}
-	assert.Equal(t, accessToken, *tokenPair.AccessToken)
-	assert.Equal(t, refreshToken, *tokenPair.RefreshToken)
+	require.Equal(t, accessToken, *tokenPair.AccessToken)
+	require.Equal(t, refreshToken, *tokenPair.RefreshToken)
 
 	s.service.AssertExpectations(t)
 }
@@ -184,7 +184,7 @@ func (s *UserTestSuite) TestUser_PostUserFunc_LoginExistErr() {
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusExpectationFailed, responseRecorder.Code)
+	require.Equal(t, http.StatusExpectationFailed, responseRecorder.Code)
 	s.userRepository.AssertExpectations(t)
 }
 
@@ -210,7 +210,7 @@ func (s *UserTestSuite) TestUser_PostUserFunc_RepoErr() {
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
+	require.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
 	s.userRepository.AssertExpectations(t)
 }
 
@@ -241,7 +241,7 @@ func (s *UserTestSuite) TestUser_PostUserFunc_RegConfirmErr() {
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusCreated, responseRecorder.Code)
+	require.Equal(t, http.StatusCreated, responseRecorder.Code)
 	s.userRepository.AssertExpectations(t)
 }
 
@@ -271,7 +271,7 @@ func (s *UserTestSuite) TestUser_PostUserFunc_OK() {
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusCreated, responseRecorder.Code)
+	require.Equal(t, http.StatusCreated, responseRecorder.Code)
 	s.userRepository.AssertExpectations(t)
 }
 
@@ -294,7 +294,7 @@ func (s *UserTestSuite) TestUser_Refresh_InvalidToken_InvalidToken() {
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusBadRequest, responseRecorder.Code)
+	require.Equal(t, http.StatusBadRequest, responseRecorder.Code)
 	s.service.AssertExpectations(t)
 }
 
@@ -318,7 +318,7 @@ func (s *UserTestSuite) TestUser_Refresh_InvalidToken_ServiceErr() {
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
+	require.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
 	s.service.AssertExpectations(t)
 }
 
@@ -342,13 +342,13 @@ func (s *UserTestSuite) TestUser_Refresh_InvalidToken_OK() {
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusOK, responseRecorder.Code)
+	require.Equal(t, http.StatusOK, responseRecorder.Code)
 	responseToken := &models.AccessToken{}
 	err := json.Unmarshal(responseRecorder.Body.Bytes(), responseToken)
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.Equal(t, newToken, *responseToken.AccessToken)
+	require.Equal(t, newToken, *responseToken.AccessToken)
 
 	s.service.AssertExpectations(t)
 }
@@ -366,7 +366,7 @@ func (s *UserTestSuite) TestUser_GetUserFunc_AccessErr() {
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusUnauthorized, responseRecorder.Code)
+	require.Equal(t, http.StatusUnauthorized, responseRecorder.Code)
 
 	s.userRepository.AssertExpectations(t)
 }
@@ -390,7 +390,7 @@ func (s *UserTestSuite) TestUser_GetUserFunc_RepoErr() {
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
+	require.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
 
 	s.userRepository.AssertExpectations(t)
 }
@@ -414,7 +414,7 @@ func (s *UserTestSuite) TestUser_GetUserFunc_MapErr() {
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
+	require.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
 
 	s.userRepository.AssertExpectations(t)
 }
@@ -443,7 +443,7 @@ func (s *UserTestSuite) TestUser_GetUserFunc_OK() {
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusOK, responseRecorder.Code)
+	require.Equal(t, http.StatusOK, responseRecorder.Code)
 
 	s.userRepository.AssertExpectations(t)
 }
@@ -467,7 +467,7 @@ func (s *UserTestSuite) TestUser_PatchUser_AccessErr() {
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusUnauthorized, responseRecorder.Code)
+	require.Equal(t, http.StatusUnauthorized, responseRecorder.Code)
 
 	s.userRepository.AssertExpectations(t)
 }
@@ -495,7 +495,7 @@ func (s *UserTestSuite) TestUser_PatchUser_RepoErr() {
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
+	require.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
 
 	s.userRepository.AssertExpectations(t)
 }
@@ -522,7 +522,7 @@ func (s *UserTestSuite) TestUser_PatchUser_OK() {
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusNoContent, responseRecorder.Code)
+	require.Equal(t, http.StatusNoContent, responseRecorder.Code)
 
 	s.userRepository.AssertExpectations(t)
 }
@@ -542,7 +542,7 @@ func (s *UserTestSuite) TestUser_AssignRoleToUserFunc_AccessErr() {
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
+	require.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
 
 	s.userRepository.AssertExpectations(t)
 }
@@ -575,7 +575,7 @@ func (s *UserTestSuite) TestUser_AssignRoleToUserFunc_RepoErr() {
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
+	require.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
 
 	s.userRepository.AssertExpectations(t)
 }
@@ -607,7 +607,7 @@ func (s *UserTestSuite) TestUser_AssignRoleToUserFunc_OK() {
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusOK, responseRecorder.Code)
+	require.Equal(t, http.StatusOK, responseRecorder.Code)
 
 	s.userRepository.AssertExpectations(t)
 }
@@ -629,7 +629,7 @@ func (s *UserTestSuite) TestUser_GetUsersList_RepositoryErr() {
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
+	require.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
 
 	s.userRepository.AssertExpectations(t)
 }
@@ -661,7 +661,7 @@ func (s *UserTestSuite) TestUser_GetUsersList_MapErr() {
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
+	require.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
 
 	s.userRepository.AssertExpectations(t)
 }
@@ -682,15 +682,15 @@ func (s *UserTestSuite) TestUser_GetUsersList_NotFound() {
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusOK, responseRecorder.Code)
+	require.Equal(t, http.StatusOK, responseRecorder.Code)
 
 	responseUsers := &models.GetListUsers{}
 	err := json.Unmarshal(responseRecorder.Body.Bytes(), responseUsers)
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.Equal(t, 0, int(*responseUsers.Total))
-	assert.Equal(t, 0, len(responseUsers.Items))
+	require.Equal(t, 0, int(*responseUsers.Total))
+	require.Equal(t, 0, len(responseUsers.Items))
 	s.userRepository.AssertExpectations(t)
 }
 
@@ -719,15 +719,15 @@ func (s *UserTestSuite) TestUser_GetUsersList_EmptyParams() {
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusOK, responseRecorder.Code)
+	require.Equal(t, http.StatusOK, responseRecorder.Code)
 
 	responseUsers := &models.GetListUsers{}
 	err := json.Unmarshal(responseRecorder.Body.Bytes(), responseUsers)
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.Equal(t, len(usersToReturn), int(*responseUsers.Total))
-	assert.Equal(t, len(usersToReturn), len(responseUsers.Items))
+	require.Equal(t, len(usersToReturn), int(*responseUsers.Total))
+	require.Equal(t, len(usersToReturn), len(responseUsers.Items))
 
 	s.userRepository.AssertExpectations(t)
 }
@@ -763,16 +763,16 @@ func (s *UserTestSuite) TestUser_GetUsersList_LimitGreaterThanTotal() {
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusOK, responseRecorder.Code)
+	require.Equal(t, http.StatusOK, responseRecorder.Code)
 
 	responseUsers := &models.GetListUsers{}
 	err := json.Unmarshal(responseRecorder.Body.Bytes(), responseUsers)
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.Equal(t, len(usersToReturn), int(*responseUsers.Total))
-	assert.Equal(t, len(usersToReturn), len(responseUsers.Items))
-	assert.GreaterOrEqual(t, int(limit), len(responseUsers.Items))
+	require.Equal(t, len(usersToReturn), int(*responseUsers.Total))
+	require.Equal(t, len(usersToReturn), len(responseUsers.Items))
+	require.GreaterOrEqual(t, int(limit), len(responseUsers.Items))
 
 	s.userRepository.AssertExpectations(t)
 }
@@ -811,16 +811,16 @@ func (s *UserTestSuite) TestUser_GetUsersList_LimitLessThanTotal() {
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusOK, responseRecorder.Code)
+	require.Equal(t, http.StatusOK, responseRecorder.Code)
 
 	responseUsers := &models.GetListUsers{}
 	err := json.Unmarshal(responseRecorder.Body.Bytes(), responseUsers)
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.Equal(t, len(usersToReturn), int(*responseUsers.Total))
-	assert.Greater(t, len(usersToReturn), len(responseUsers.Items))
-	assert.GreaterOrEqual(t, int(limit), len(responseUsers.Items))
+	require.Equal(t, len(usersToReturn), int(*responseUsers.Total))
+	require.Greater(t, len(usersToReturn), len(responseUsers.Items))
+	require.GreaterOrEqual(t, int(limit), len(responseUsers.Items))
 
 	s.userRepository.AssertExpectations(t)
 }
@@ -859,17 +859,17 @@ func (s *UserTestSuite) TestUser_GetUsersList_SecondPage() {
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusOK, responseRecorder.Code)
+	require.Equal(t, http.StatusOK, responseRecorder.Code)
 
 	responseUsers := &models.GetListUsers{}
 	err := json.Unmarshal(responseRecorder.Body.Bytes(), responseUsers)
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.Equal(t, len(usersToReturn), int(*responseUsers.Total))
-	assert.Greater(t, len(usersToReturn), len(responseUsers.Items))
-	assert.GreaterOrEqual(t, int(limit), len(responseUsers.Items))
-	assert.Equal(t, len(usersToReturn)-int(offset), len(responseUsers.Items))
+	require.Equal(t, len(usersToReturn), int(*responseUsers.Total))
+	require.Greater(t, len(usersToReturn), len(responseUsers.Items))
+	require.GreaterOrEqual(t, int(limit), len(responseUsers.Items))
+	require.Equal(t, len(usersToReturn)-int(offset), len(responseUsers.Items))
 
 	s.userRepository.AssertExpectations(t)
 }
@@ -908,15 +908,15 @@ func (s *UserTestSuite) TestUser_GetUsersList_SeveralPages() {
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusOK, responseRecorder.Code)
+	require.Equal(t, http.StatusOK, responseRecorder.Code)
 
 	firstPage := &models.GetListUsers{}
 	err := json.Unmarshal(responseRecorder.Body.Bytes(), firstPage)
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.Equal(t, len(usersToReturn), int(*firstPage.Total))
-	assert.Equal(t, int(limit), len(firstPage.Items))
+	require.Equal(t, len(usersToReturn), int(*firstPage.Total))
+	require.Equal(t, int(limit), len(firstPage.Items))
 
 	offset = limit
 	data = users.GetAllUsersParams{
@@ -934,19 +934,19 @@ func (s *UserTestSuite) TestUser_GetUsersList_SeveralPages() {
 	responseRecorder = httptest.NewRecorder()
 	producer = runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusOK, responseRecorder.Code)
+	require.Equal(t, http.StatusOK, responseRecorder.Code)
 
 	secondPage := &models.GetListUsers{}
 	err = json.Unmarshal(responseRecorder.Body.Bytes(), secondPage)
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.Equal(t, len(usersToReturn), int(*secondPage.Total))
-	assert.Greater(t, len(usersToReturn), len(secondPage.Items))
-	assert.GreaterOrEqual(t, int(limit), len(secondPage.Items))
-	assert.Equal(t, len(usersToReturn)-int(offset), len(secondPage.Items))
+	require.Equal(t, len(usersToReturn), int(*secondPage.Total))
+	require.Greater(t, len(usersToReturn), len(secondPage.Items))
+	require.GreaterOrEqual(t, int(limit), len(secondPage.Items))
+	require.Equal(t, len(usersToReturn)-int(offset), len(secondPage.Items))
 
-	assert.False(t, usersDuplicated(t, firstPage.Items, secondPage.Items))
+	require.False(t, usersDuplicated(t, firstPage.Items, secondPage.Items))
 	s.userRepository.AssertExpectations(t)
 }
 
@@ -969,7 +969,7 @@ func (s *UserTestSuite) TestUser_GetUserById_RepoErr() {
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
+	require.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
 
 	s.userRepository.AssertExpectations(t)
 }
@@ -995,7 +995,7 @@ func (s *UserTestSuite) TestUser_GetUserById_MapErr() {
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
+	require.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
 
 	s.userRepository.AssertExpectations(t)
 }
@@ -1025,14 +1025,14 @@ func (s *UserTestSuite) TestUser_GetUserById_OK() {
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusOK, responseRecorder.Code)
+	require.Equal(t, http.StatusOK, responseRecorder.Code)
 
 	responseUsers := &models.UserInfo{}
 	err := json.Unmarshal(responseRecorder.Body.Bytes(), responseUsers)
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.Equal(t, user.ID, int(*responseUsers.ID))
+	require.Equal(t, user.ID, int(*responseUsers.ID))
 
 	s.userRepository.AssertExpectations(t)
 }
@@ -1052,7 +1052,7 @@ func (s *UserTestSuite) TestUser_DeleteUserFunc_Err() {
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
+	require.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
 	s.userRepository.AssertExpectations(t)
 }
 
@@ -1089,7 +1089,7 @@ func (s *UserTestSuite) TestUser_DeleteUserFunc_OK() {
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusOK, responseRecorder.Code)
+	require.Equal(t, http.StatusOK, responseRecorder.Code)
 	s.userRepository.AssertExpectations(t)
 }
 
@@ -1130,7 +1130,7 @@ func (s *UserTestSuite) TestUser_ChangePasswordFunc_GetUserErr() {
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
+	require.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
 	s.userRepository.AssertExpectations(t)
 }
 
@@ -1171,7 +1171,7 @@ func (s *UserTestSuite) TestUser_ChangePasswordFunc_ComparePasswordErr() {
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusForbidden, responseRecorder.Code)
+	require.Equal(t, http.StatusForbidden, responseRecorder.Code)
 	s.userRepository.AssertExpectations(t)
 }
 
@@ -1213,7 +1213,7 @@ func (s *UserTestSuite) TestUser_ChangePasswordFunc_ChangePasswordError() {
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
+	require.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
 	s.userRepository.AssertExpectations(t)
 }
 
@@ -1254,7 +1254,7 @@ func (s *UserTestSuite) TestUser_ChangePasswordFunc_OK() {
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusNoContent, responseRecorder.Code)
+	require.Equal(t, http.StatusNoContent, responseRecorder.Code)
 	s.userRepository.AssertExpectations(t)
 }
 

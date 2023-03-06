@@ -10,7 +10,6 @@ import (
 
 	"github.com/go-openapi/strfmt"
 	_ "github.com/mattn/go-sqlite3"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
@@ -97,8 +96,8 @@ func (s *CheckupTestSuite) TestCheckup_Success_PartialUpdate() {
 
 	require.Equal(t, 1, observedLogs.Len())
 	firstLog := observedLogs.All()[0]
-	assert.Equal(t, "Updated Statuses to Overdue", firstLog.Message)
-	assert.Equal(t, firstLog.Context[0], zap.Ints("order id", updated))
+	require.Equal(t, "Updated Statuses to Overdue", firstLog.Message)
+	require.Equal(t, firstLog.Context[0], zap.Ints("order id", updated))
 	s.orderFilterRepo.AssertExpectations(t)
 	s.orderStatusRepo.AssertExpectations(t)
 	s.eqStatusRepo.AssertExpectations(t)
@@ -119,7 +118,7 @@ func (s *CheckupTestSuite) TestCheckup_EmptyListOfOrders() {
 
 	require.Equal(t, 1, observedLogs.Len())
 	firstLog := observedLogs.All()[0]
-	assert.Equal(t, "Order list with in progress status is empty", firstLog.Message)
+	require.Equal(t, "Order list with in progress status is empty", firstLog.Message)
 	s.orderFilterRepo.AssertExpectations(t)
 	s.orderStatusRepo.AssertExpectations(t)
 	s.eqStatusRepo.AssertExpectations(t)
@@ -141,7 +140,7 @@ func (s *CheckupTestSuite) TestCheckup_OrderFilter_RepoErr() {
 
 	require.Equal(t, 1, observedLogs.Len())
 	firstLog := observedLogs.All()[0]
-	assert.Equal(t, "Error while ordering by status", firstLog.Message)
+	require.Equal(t, "Error while ordering by status", firstLog.Message)
 	s.orderFilterRepo.AssertExpectations(t)
 	s.orderStatusRepo.AssertExpectations(t)
 	s.eqStatusRepo.AssertExpectations(t)
@@ -225,7 +224,7 @@ func (s *CheckupTestSuite) TestCheckup_OrderStatus_RepoErr() {
 
 	require.Equal(t, 1, observedLogs.Len())
 	firstLog := observedLogs.All()[0]
-	assert.Equal(t, "Error while updating status to overdue", firstLog.Message)
+	require.Equal(t, "Error while updating status to overdue", firstLog.Message)
 	s.orderFilterRepo.AssertExpectations(t)
 	s.orderStatusRepo.AssertExpectations(t)
 	s.eqStatusRepo.AssertExpectations(t)
@@ -282,7 +281,7 @@ func (s *CheckupTestSuite) TestCheckup_EquipmentsStatuses_RepoErr() {
 
 	require.Equal(t, 1, observedLogs.Len())
 	firstLog := observedLogs.All()[0]
-	assert.Equal(t, "Error while updating status to overdue", firstLog.Message)
+	require.Equal(t, "Error while updating status to overdue", firstLog.Message)
 	s.orderFilterRepo.AssertExpectations(t)
 	s.orderStatusRepo.AssertExpectations(t)
 	s.eqStatusRepo.AssertExpectations(t)
@@ -338,7 +337,7 @@ func (s *CheckupTestSuite) TestCheckup_EquipmentsStatuses_UpdateRepoErr() {
 
 	require.Equal(t, 1, observedLogs.Len())
 	firstLog := observedLogs.All()[0]
-	assert.Equal(t, "Error while updating status to overdue", firstLog.Message)
+	require.Equal(t, "Error while updating status to overdue", firstLog.Message)
 	s.orderFilterRepo.AssertExpectations(t)
 	s.orderStatusRepo.AssertExpectations(t)
 	s.eqStatusRepo.AssertExpectations(t)
@@ -369,7 +368,7 @@ func (s *CheckupTestSuite) TestPeriodicalCheckup_EmptyListOfOrders() {
 
 	require.GreaterOrEqual(t, observedLogs.Len(), 1)
 	firstLog := observedLogs.All()[0]
-	assert.Equal(t, "Order list with in progress status is empty", firstLog.Message)
+	require.Equal(t, "Order list with in progress status is empty", firstLog.Message)
 	s.orderFilterRepo.AssertExpectations(t)
 	s.orderStatusRepo.AssertExpectations(t)
 	s.eqStatusRepo.AssertExpectations(t)

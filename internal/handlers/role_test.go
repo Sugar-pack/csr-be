@@ -9,7 +9,7 @@ import (
 
 	"github.com/go-openapi/loads"
 	"github.com/go-openapi/runtime"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/zap"
 
@@ -34,7 +34,7 @@ func TestSetRoleHandler(t *testing.T) {
 	}
 	api := operations.NewBeAPI(swaggerSpec)
 	SetRoleHandler(logger, api)
-	assert.NotEmpty(t, api.RolesGetRolesHandler)
+	require.NotEmpty(t, api.RolesGetRolesHandler)
 }
 
 type RoleTestSuite struct {
@@ -72,7 +72,7 @@ func (s *RoleTestSuite) TestRole_GetRoles_RepoErr() {
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
+	require.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
 	s.repository.AssertExpectations(t)
 }
 
@@ -98,14 +98,14 @@ func (s *RoleTestSuite) TestRole_GetRoles_OK() {
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusOK, responseRecorder.Code)
+	require.Equal(t, http.StatusOK, responseRecorder.Code)
 
 	var responseRoles []models.Role
 	err := json.Unmarshal(responseRecorder.Body.Bytes(), &responseRoles)
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.Equal(t, len(rolesToReturn), len(responseRoles))
-	assert.Equal(t, roleToReturn.ID, int(*responseRoles[0].ID))
+	require.Equal(t, len(rolesToReturn), len(responseRoles))
+	require.Equal(t, roleToReturn.ID, int(*responseRoles[0].ID))
 	s.repository.AssertExpectations(t)
 }

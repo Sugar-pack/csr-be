@@ -5,7 +5,7 @@ import (
 	"math"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"golang.org/x/crypto/bcrypt"
 
@@ -96,14 +96,14 @@ func (s *UserSuite) TestUserRepository_UsersListTotal() {
 	repository := NewUserRepository()
 	ctx := s.ctx
 	tx, err := s.client.Tx(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
 	totalUsers, err := repository.UsersListTotal(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.NoError(t, tx.Commit())
-	assert.Equal(t, len(s.users), totalUsers)
+	require.NoError(t, tx.Commit())
+	require.Equal(t, len(s.users), totalUsers)
 }
 
 func (s *UserSuite) TestUserRepository_UserList_EmptyOrderBy() {
@@ -115,12 +115,12 @@ func (s *UserSuite) TestUserRepository_UserList_EmptyOrderBy() {
 	repository := NewUserRepository()
 	ctx := s.ctx
 	tx, err := s.client.Tx(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
 	users, err := repository.UserList(ctx, limit, offset, orderBy, orderColumn)
-	assert.Error(t, err)
-	assert.NoError(t, tx.Rollback())
-	assert.Nil(t, users)
+	require.Error(t, err)
+	require.NoError(t, tx.Rollback())
+	require.Nil(t, users)
 }
 
 func (s *UserSuite) TestUserRepository_UserList_EmptyOrderColumn() {
@@ -132,12 +132,12 @@ func (s *UserSuite) TestUserRepository_UserList_EmptyOrderColumn() {
 	repository := NewUserRepository()
 	ctx := s.ctx
 	tx, err := s.client.Tx(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
 	users, err := repository.UserList(ctx, limit, offset, orderBy, orderColumn)
-	assert.Error(t, err)
-	assert.NoError(t, tx.Rollback())
-	assert.Nil(t, users)
+	require.Error(t, err)
+	require.NoError(t, tx.Rollback())
+	require.Nil(t, users)
 }
 
 func (s *UserSuite) TestUserRepository_UserList_WrongOrderColumn() {
@@ -149,12 +149,12 @@ func (s *UserSuite) TestUserRepository_UserList_WrongOrderColumn() {
 	repository := NewUserRepository()
 	ctx := s.ctx
 	tx, err := s.client.Tx(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
 	users, err := repository.UserList(ctx, limit, offset, orderBy, orderColumn)
-	assert.Error(t, err)
-	assert.NoError(t, tx.Rollback())
-	assert.Nil(t, users)
+	require.Error(t, err)
+	require.NoError(t, tx.Rollback())
+	require.Nil(t, users)
 }
 
 func (s *UserSuite) TestUserRepository_UserList_OrderByIDDesc() {
@@ -166,16 +166,16 @@ func (s *UserSuite) TestUserRepository_UserList_OrderByIDDesc() {
 	repository := NewUserRepository()
 	ctx := s.ctx
 	tx, err := s.client.Tx(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
 	users, err := repository.UserList(ctx, limit, offset, orderBy, orderColumn)
-	assert.NoError(t, err)
-	assert.NoError(t, tx.Commit())
-	assert.Equal(t, len(s.users), len(users))
+	require.NoError(t, err)
+	require.NoError(t, tx.Commit())
+	require.Equal(t, len(s.users), len(users))
 	prevUserID := math.MaxInt
 	for _, value := range users {
-		assert.True(t, mapContainsUser(t, value, s.users))
-		assert.LessOrEqual(t, value.ID, prevUserID)
+		require.True(t, mapContainsUser(t, value, s.users))
+		require.LessOrEqual(t, value.ID, prevUserID)
 		prevUserID = value.ID
 	}
 }
@@ -189,16 +189,16 @@ func (s *UserSuite) TestUserRepository_UserList_OrderByNameDesc() {
 	repository := NewUserRepository()
 	ctx := s.ctx
 	tx, err := s.client.Tx(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
 	users, err := repository.UserList(ctx, limit, offset, orderBy, orderColumn)
-	assert.NoError(t, err)
-	assert.NoError(t, tx.Commit())
-	assert.Equal(t, len(s.users), len(users))
+	require.NoError(t, err)
+	require.NoError(t, tx.Commit())
+	require.Equal(t, len(s.users), len(users))
 	prevUserName := "zzzzzzzzzzzzzzzzzzzzz"
 	for _, value := range users {
-		assert.True(t, mapContainsUser(t, value, s.users))
-		assert.LessOrEqual(t, value.Name, prevUserName)
+		require.True(t, mapContainsUser(t, value, s.users))
+		require.LessOrEqual(t, value.Name, prevUserName)
 		prevUserName = value.Name
 	}
 }
@@ -212,16 +212,16 @@ func (s *UserSuite) TestUserRepository_UserList_OrderByIDAsc() {
 	repository := NewUserRepository()
 	ctx := s.ctx
 	tx, err := s.client.Tx(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
 	users, err := repository.UserList(ctx, limit, offset, orderBy, orderColumn)
-	assert.NoError(t, err)
-	assert.NoError(t, tx.Commit())
-	assert.Equal(t, len(s.users), len(users))
+	require.NoError(t, err)
+	require.NoError(t, tx.Commit())
+	require.Equal(t, len(s.users), len(users))
 	prevUserID := 0
 	for _, value := range users {
-		assert.True(t, mapContainsUser(t, value, s.users))
-		assert.GreaterOrEqual(t, value.ID, prevUserID)
+		require.True(t, mapContainsUser(t, value, s.users))
+		require.GreaterOrEqual(t, value.ID, prevUserID)
 		prevUserID = value.ID
 	}
 }
@@ -235,16 +235,16 @@ func (s *UserSuite) TestUserRepository_UserList_OrderByNameAsc() {
 	repository := NewUserRepository()
 	ctx := s.ctx
 	tx, err := s.client.Tx(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
 	users, err := repository.UserList(ctx, limit, offset, orderBy, orderColumn)
-	assert.NoError(t, err)
-	assert.NoError(t, tx.Commit())
-	assert.Equal(t, len(s.users), len(users))
+	require.NoError(t, err)
+	require.NoError(t, tx.Commit())
+	require.Equal(t, len(s.users), len(users))
 	prevUserName := ""
 	for _, value := range users {
-		assert.True(t, mapContainsUser(t, value, s.users))
-		assert.GreaterOrEqual(t, value.Name, prevUserName)
+		require.True(t, mapContainsUser(t, value, s.users))
+		require.GreaterOrEqual(t, value.Name, prevUserName)
 		prevUserName = value.Name
 	}
 }
@@ -258,14 +258,14 @@ func (s *UserSuite) TestUserRepository_UserList_Limit() {
 	repository := NewUserRepository()
 	ctx := s.ctx
 	tx, err := s.client.Tx(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
 	users, err := repository.UserList(ctx, limit, offset, orderBy, orderColumn)
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.NoError(t, tx.Commit())
-	assert.Equal(t, limit, len(users))
+	require.NoError(t, tx.Commit())
+	require.Equal(t, limit, len(users))
 }
 
 func (s *UserSuite) TestUserRepository_UserList_Offset() {
@@ -277,14 +277,14 @@ func (s *UserSuite) TestUserRepository_UserList_Offset() {
 	repository := NewUserRepository()
 	ctx := s.ctx
 	tx, err := s.client.Tx(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
 	users, err := repository.UserList(ctx, limit, offset, orderBy, orderColumn)
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.NoError(t, tx.Commit())
-	assert.Equal(t, len(s.users)-offset, len(users))
+	require.NoError(t, tx.Commit())
+	require.Equal(t, len(s.users)-offset, len(users))
 }
 
 func (s *UserSuite) TestUserRepository_ChangePasswordByLogin() {
@@ -292,24 +292,24 @@ func (s *UserSuite) TestUserRepository_ChangePasswordByLogin() {
 	repository := NewUserRepository()
 	ctx := s.ctx
 	login := s.users[1].Login
-	assert.NotEmpty(t, login)
+	require.NotEmpty(t, login)
 	newPassword := "password1"
 	tx, err := s.client.Tx(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
 	err = repository.ChangePasswordByLogin(ctx, login, newPassword)
-	assert.NoError(t, err)
-	assert.NoError(t, tx.Commit())
+	require.NoError(t, err)
+	require.NoError(t, tx.Commit())
 
 	tx, err = s.client.Tx(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
 	user, err := repository.UserByLogin(ctx, login)
-	assert.NoError(t, err)
-	assert.NoError(t, tx.Commit())
+	require.NoError(t, err)
+	require.NoError(t, tx.Commit())
 
 	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(newPassword))
-	assert.NoError(t, err)
+	require.NoError(t, err)
 }
 
 func mapContainsUser(t *testing.T, eq *ent.User, m map[int]*ent.User) bool {

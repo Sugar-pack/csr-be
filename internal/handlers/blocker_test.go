@@ -1,15 +1,17 @@
 package handlers
 
 import (
-	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/authentication"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/authentication"
+
 	"github.com/go-openapi/loads"
 	"github.com/go-openapi/runtime"
 	_ "github.com/mattn/go-sqlite3"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/zap"
 
@@ -32,8 +34,8 @@ func TestSetBlockerHandler(t *testing.T) {
 	}
 	api := operations.NewBeAPI(swaggerSpec)
 	SetBlockerHandler(logger, api)
-	assert.NotEmpty(t, api.UsersBlockUserHandler)
-	assert.NotEmpty(t, api.UsersUnblockUserHandler)
+	require.NotEmpty(t, api.UsersBlockUserHandler)
+	require.NotEmpty(t, api.UsersUnblockUserHandler)
 }
 
 type BlockerTestSuite struct {
@@ -70,7 +72,7 @@ func (s *BlockerTestSuite) TestBlocker_BlockUserFunc_RepoErr() {
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
+	require.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
 
 	s.blockerRepository.AssertExpectations(t)
 }
@@ -101,7 +103,7 @@ func (s *BlockerTestSuite) TestBlocker_BlockUserFunc_OK() {
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusOK, responseRecorder.Code)
+	require.Equal(t, http.StatusOK, responseRecorder.Code)
 	s.blockerRepository.AssertExpectations(t)
 }
 
@@ -122,7 +124,7 @@ func (s *BlockerTestSuite) TestBlocker_UnblockUserFunc_RepoErr() {
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
+	require.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
 	s.blockerRepository.AssertExpectations(t)
 }
 
@@ -151,6 +153,6 @@ func (s *BlockerTestSuite) TestBlocker_UnblockUserFunc_OK() {
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusOK, responseRecorder.Code)
+	require.Equal(t, http.StatusOK, responseRecorder.Code)
 	s.blockerRepository.AssertExpectations(t)
 }

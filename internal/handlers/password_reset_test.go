@@ -9,7 +9,7 @@ import (
 	"github.com/go-openapi/loads"
 	"github.com/go-openapi/runtime"
 	_ "github.com/mattn/go-sqlite3"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/zap"
 
@@ -37,8 +37,8 @@ func TestSetPasswordResetHandler(t *testing.T) {
 
 	SetPasswordResetHandler(logger, api, passwordService)
 
-	assert.NotNil(t, api.PasswordResetGetPasswordResetLinkHandler)
-	assert.NotNil(t, api.PasswordResetSendLinkByLoginHandler)
+	require.NotNil(t, api.PasswordResetGetPasswordResetLinkHandler)
+	require.NotNil(t, api.PasswordResetSendLinkByLoginHandler)
 }
 
 type PasswordResetHandlerTestSuite struct {
@@ -75,7 +75,7 @@ func (s *PasswordResetHandlerTestSuite) TestPasswordResetHandler_GetPasswordRese
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusOK, responseRecorder.Code)
+	require.Equal(t, http.StatusOK, responseRecorder.Code)
 	s.passwordService.AssertExpectations(t)
 }
 
@@ -94,7 +94,7 @@ func (s *PasswordResetHandlerTestSuite) TestPasswordResetHandler_GetPasswordRese
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusOK, responseRecorder.Code)
+	require.Equal(t, http.StatusOK, responseRecorder.Code)
 	s.passwordService.AssertExpectations(t)
 }
 
@@ -111,7 +111,7 @@ func (s *PasswordResetHandlerTestSuite) TestPasswordResetHandler_SendLinkByLogin
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusBadRequest, responseRecorder.Code)
+	require.Equal(t, http.StatusBadRequest, responseRecorder.Code)
 	s.passwordService.AssertExpectations(t)
 }
 
@@ -131,7 +131,7 @@ func (s *PasswordResetHandlerTestSuite) TestPasswordResetHandler_GSendLinkByLogi
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusOK, responseRecorder.Code)
+	require.Equal(t, http.StatusOK, responseRecorder.Code)
 	s.passwordService.AssertExpectations(t)
 }
 
@@ -150,6 +150,6 @@ func (s *PasswordResetHandlerTestSuite) TestPasswordResetHandler_GSendLinkByLogi
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusOK, responseRecorder.Code)
+	require.Equal(t, http.StatusOK, responseRecorder.Code)
 	s.passwordService.AssertExpectations(t)
 }

@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/go-openapi/strfmt"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/ent"
@@ -175,7 +175,7 @@ func (s *OrderSuite) TestOrderRepository_Create_EmptyEquipments() {
 	t := s.T()
 	ctx := s.ctx
 	tx, err := s.client.Tx(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
 
 	description := "test"
@@ -187,15 +187,15 @@ func (s *OrderSuite) TestOrderRepository_Create_EmptyEquipments() {
 		RentStart:   &startDate,
 	}
 	createdOrder, err := s.orderRepository.Create(ctx, data, s.user.ID, []int{})
-	assert.Error(t, err)
-	assert.Nil(t, createdOrder)
+	require.Error(t, err)
+	require.Nil(t, createdOrder)
 }
 
 func (s *OrderSuite) TestOrderRepository_Create_OK() {
 	t := s.T()
 	ctx := s.ctx
 	tx, err := s.client.Tx(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
 
 	description := "test"
@@ -210,17 +210,17 @@ func (s *OrderSuite) TestOrderRepository_Create_OK() {
 		RentStart:   &startDate,
 	}
 	createdOrder, err := s.orderRepository.Create(ctx, data, s.user.ID, []int{s.equipments[0].ID})
-	assert.NoError(t, err)
-	assert.NoError(t, tx.Commit())
-	assert.NotEmpty(t, createdOrder)
-	assert.Equal(t, description, createdOrder.Description)
-	assert.NotEmpty(t, createdOrder.Edges.Equipments)
-	assert.Equal(t, int(equipmentID), createdOrder.Edges.Equipments[0].ID)
-	assert.NotEmpty(t, createdOrder.Edges.Users)
-	assert.Equal(t, s.user.ID, createdOrder.Edges.Users.ID)
-	assert.NotEmpty(t, createdOrder.Edges.OrderStatus)
-	assert.Equal(t, domain.OrderStatusInReview, createdOrder.Edges.OrderStatus[0].Edges.OrderStatusName.Status)
-	assert.Equal(t, true, createdOrder.IsFirst)
+	require.NoError(t, err)
+	require.NoError(t, tx.Commit())
+	require.NotEmpty(t, createdOrder)
+	require.Equal(t, description, createdOrder.Description)
+	require.NotEmpty(t, createdOrder.Edges.Equipments)
+	require.Equal(t, int(equipmentID), createdOrder.Edges.Equipments[0].ID)
+	require.NotEmpty(t, createdOrder.Edges.Users)
+	require.Equal(t, s.user.ID, createdOrder.Edges.Users.ID)
+	require.NotEmpty(t, createdOrder.Edges.OrderStatus)
+	require.Equal(t, domain.OrderStatusInReview, createdOrder.Edges.OrderStatus[0].Edges.OrderStatusName.Status)
+	require.Equal(t, true, createdOrder.IsFirst)
 }
 
 // isFirst field should be false, if one of orders has approved status
@@ -228,7 +228,7 @@ func (s *OrderSuite) TestOrderRepository_Create_isFirstCreatedOrderIsFalseIfOneO
 	t := s.T()
 	ctx := s.ctx
 	tx, err := s.client.Tx(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
 
 	description := "test"
@@ -245,7 +245,7 @@ func (s *OrderSuite) TestOrderRepository_Create_isFirstCreatedOrderIsFalseIfOneO
 	err = s.client.OrderStatusName.Create().
 		SetStatus(domain.OrderStatusApproved).
 		Exec(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	orderId := int64(s.orders[0].ID)
 	testComment := "testComment"
 	model := models.NewOrderStatus{
@@ -255,22 +255,22 @@ func (s *OrderSuite) TestOrderRepository_Create_isFirstCreatedOrderIsFalseIfOneO
 		Comment:   &testComment,
 	}
 	err = s.orderStatusRepository.UpdateStatus(ctx, s.user.ID, model)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	createdOrder, err := s.orderRepository.Create(ctx, data, s.user.ID, []int{s.equipments[0].ID})
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
-	assert.NotEmpty(t, createdOrder)
-	assert.Equal(t, description, createdOrder.Description)
-	assert.NotEmpty(t, createdOrder.Edges.Equipments)
-	assert.Equal(t, int(equipmentID), createdOrder.Edges.Equipments[0].ID)
-	assert.NotEmpty(t, createdOrder.Edges.Users)
-	assert.Equal(t, s.user.ID, createdOrder.Edges.Users.ID)
-	assert.NotEmpty(t, createdOrder.Edges.OrderStatus)
-	assert.Equal(t, domain.OrderStatusInReview, createdOrder.Edges.OrderStatus[0].Edges.OrderStatusName.Status)
-	assert.Equal(t, false, createdOrder.IsFirst)
+	require.NotEmpty(t, createdOrder)
+	require.Equal(t, description, createdOrder.Description)
+	require.NotEmpty(t, createdOrder.Edges.Equipments)
+	require.Equal(t, int(equipmentID), createdOrder.Edges.Equipments[0].ID)
+	require.NotEmpty(t, createdOrder.Edges.Users)
+	require.Equal(t, s.user.ID, createdOrder.Edges.Users.ID)
+	require.NotEmpty(t, createdOrder.Edges.OrderStatus)
+	require.Equal(t, domain.OrderStatusInReview, createdOrder.Edges.OrderStatus[0].Edges.OrderStatusName.Status)
+	require.Equal(t, false, createdOrder.IsFirst)
 
-	assert.NoError(t, tx.Commit())
+	require.NoError(t, tx.Commit())
 }
 
 // isFirst field should be true, if one of orders has rejected status
@@ -278,7 +278,7 @@ func (s *OrderSuite) TestOrderRepository_Create_isFirstCreatedOrderIsTrueIfOneOf
 	t := s.T()
 	ctx := s.ctx
 	tx, err := s.client.Tx(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
 
 	description := "test"
@@ -295,7 +295,7 @@ func (s *OrderSuite) TestOrderRepository_Create_isFirstCreatedOrderIsTrueIfOneOf
 	err = s.client.OrderStatusName.Create().
 		SetStatus(domain.OrderStatusRejected).
 		Exec(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	orderId := int64(s.orders[0].ID)
 	testComment := "testComment"
 	model := models.NewOrderStatus{
@@ -305,22 +305,22 @@ func (s *OrderSuite) TestOrderRepository_Create_isFirstCreatedOrderIsTrueIfOneOf
 		Comment:   &testComment,
 	}
 	err = s.orderStatusRepository.UpdateStatus(ctx, s.user.ID, model)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	createdOrder, err := s.orderRepository.Create(ctx, data, s.user.ID, []int{s.equipments[0].ID})
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
-	assert.NotEmpty(t, createdOrder)
-	assert.Equal(t, description, createdOrder.Description)
-	assert.NotEmpty(t, createdOrder.Edges.Equipments)
-	assert.Equal(t, int(equipmentID), createdOrder.Edges.Equipments[0].ID)
-	assert.NotEmpty(t, createdOrder.Edges.Users)
-	assert.Equal(t, s.user.ID, createdOrder.Edges.Users.ID)
-	assert.NotEmpty(t, createdOrder.Edges.OrderStatus)
-	assert.Equal(t, domain.OrderStatusInReview, createdOrder.Edges.OrderStatus[0].Edges.OrderStatusName.Status)
-	assert.Equal(t, true, createdOrder.IsFirst)
+	require.NotEmpty(t, createdOrder)
+	require.Equal(t, description, createdOrder.Description)
+	require.NotEmpty(t, createdOrder.Edges.Equipments)
+	require.Equal(t, int(equipmentID), createdOrder.Edges.Equipments[0].ID)
+	require.NotEmpty(t, createdOrder.Edges.Users)
+	require.Equal(t, s.user.ID, createdOrder.Edges.Users.ID)
+	require.NotEmpty(t, createdOrder.Edges.OrderStatus)
+	require.Equal(t, domain.OrderStatusInReview, createdOrder.Edges.OrderStatus[0].Edges.OrderStatusName.Status)
+	require.Equal(t, true, createdOrder.IsFirst)
 
-	assert.NoError(t, tx.Commit())
+	require.NoError(t, tx.Commit())
 }
 
 // isFirst field should be true for all new created orders
@@ -328,7 +328,7 @@ func (s *OrderSuite) TestOrderRepository_Create_isFirstFieldIsTrueForSeveralNewC
 	t := s.T()
 	ctx := s.ctx
 	tx, err := s.client.Tx(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
 
 	description := "test"
@@ -343,32 +343,32 @@ func (s *OrderSuite) TestOrderRepository_Create_isFirstFieldIsTrueForSeveralNewC
 	}
 
 	createdFirstOrder, err := s.orderRepository.Create(ctx, data, s.user.ID, []int{s.equipments[0].ID})
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
-	assert.NotEmpty(t, createdFirstOrder)
-	assert.Equal(t, description, createdFirstOrder.Description)
-	assert.NotEmpty(t, createdFirstOrder.Edges.Equipments)
-	assert.Equal(t, int(equipmentID), createdFirstOrder.Edges.Equipments[0].ID)
-	assert.NotEmpty(t, createdFirstOrder.Edges.Users)
-	assert.Equal(t, s.user.ID, createdFirstOrder.Edges.Users.ID)
-	assert.NotEmpty(t, createdFirstOrder.Edges.OrderStatus)
-	assert.Equal(t, domain.OrderStatusInReview, createdFirstOrder.Edges.OrderStatus[0].Edges.OrderStatusName.Status)
-	assert.Equal(t, true, createdFirstOrder.IsFirst)
+	require.NotEmpty(t, createdFirstOrder)
+	require.Equal(t, description, createdFirstOrder.Description)
+	require.NotEmpty(t, createdFirstOrder.Edges.Equipments)
+	require.Equal(t, int(equipmentID), createdFirstOrder.Edges.Equipments[0].ID)
+	require.NotEmpty(t, createdFirstOrder.Edges.Users)
+	require.Equal(t, s.user.ID, createdFirstOrder.Edges.Users.ID)
+	require.NotEmpty(t, createdFirstOrder.Edges.OrderStatus)
+	require.Equal(t, domain.OrderStatusInReview, createdFirstOrder.Edges.OrderStatus[0].Edges.OrderStatusName.Status)
+	require.Equal(t, true, createdFirstOrder.IsFirst)
 
 	createdSecondOrder, err := s.orderRepository.Create(ctx, data, s.user.ID, []int{s.equipments[0].ID})
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
-	assert.NotEmpty(t, createdSecondOrder)
-	assert.Equal(t, description, createdSecondOrder.Description)
-	assert.NotEmpty(t, createdSecondOrder.Edges.Equipments)
-	assert.Equal(t, int(equipmentID), createdSecondOrder.Edges.Equipments[0].ID)
-	assert.NotEmpty(t, createdSecondOrder.Edges.Users)
-	assert.Equal(t, s.user.ID, createdSecondOrder.Edges.Users.ID)
-	assert.NotEmpty(t, createdSecondOrder.Edges.OrderStatus)
-	assert.Equal(t, domain.OrderStatusInReview, createdSecondOrder.Edges.OrderStatus[0].Edges.OrderStatusName.Status)
-	assert.Equal(t, true, createdSecondOrder.IsFirst)
+	require.NotEmpty(t, createdSecondOrder)
+	require.Equal(t, description, createdSecondOrder.Description)
+	require.NotEmpty(t, createdSecondOrder.Edges.Equipments)
+	require.Equal(t, int(equipmentID), createdSecondOrder.Edges.Equipments[0].ID)
+	require.NotEmpty(t, createdSecondOrder.Edges.Users)
+	require.Equal(t, s.user.ID, createdSecondOrder.Edges.Users.ID)
+	require.NotEmpty(t, createdSecondOrder.Edges.OrderStatus)
+	require.Equal(t, domain.OrderStatusInReview, createdSecondOrder.Edges.OrderStatus[0].Edges.OrderStatusName.Status)
+	require.Equal(t, true, createdSecondOrder.IsFirst)
 
-	assert.NoError(t, tx.Commit())
+	require.NoError(t, tx.Commit())
 }
 
 // isFirst field should be false for all previous created orders if one of them was approved
@@ -376,7 +376,7 @@ func (s *OrderSuite) TestOrderRepository_Create_isFirstFieldForPreviousCreatedOr
 	t := s.T()
 	ctx := s.ctx
 	tx, err := s.client.Tx(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
 
 	description := "test"
@@ -402,45 +402,45 @@ func (s *OrderSuite) TestOrderRepository_Create_isFirstFieldForPreviousCreatedOr
 	err = s.client.OrderStatusName.Create().
 		SetStatus(domain.OrderStatusApproved).
 		Exec(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	createdFirstOrder, err := s.orderRepository.Create(ctx, data, s.user.ID, []int{s.equipments[0].ID})
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
-	assert.NotEmpty(t, createdFirstOrder)
-	assert.Equal(t, description, createdFirstOrder.Description)
-	assert.NotEmpty(t, createdFirstOrder.Edges.Equipments)
-	assert.Equal(t, int(equipmentID), createdFirstOrder.Edges.Equipments[0].ID)
-	assert.NotEmpty(t, createdFirstOrder.Edges.Users)
-	assert.Equal(t, s.user.ID, createdFirstOrder.Edges.Users.ID)
-	assert.NotEmpty(t, createdFirstOrder.Edges.OrderStatus)
-	assert.Equal(t, domain.OrderStatusInReview, createdFirstOrder.Edges.OrderStatus[0].Edges.OrderStatusName.Status)
-	assert.Equal(t, true, createdFirstOrder.IsFirst)
+	require.NotEmpty(t, createdFirstOrder)
+	require.Equal(t, description, createdFirstOrder.Description)
+	require.NotEmpty(t, createdFirstOrder.Edges.Equipments)
+	require.Equal(t, int(equipmentID), createdFirstOrder.Edges.Equipments[0].ID)
+	require.NotEmpty(t, createdFirstOrder.Edges.Users)
+	require.Equal(t, s.user.ID, createdFirstOrder.Edges.Users.ID)
+	require.NotEmpty(t, createdFirstOrder.Edges.OrderStatus)
+	require.Equal(t, domain.OrderStatusInReview, createdFirstOrder.Edges.OrderStatus[0].Edges.OrderStatusName.Status)
+	require.Equal(t, true, createdFirstOrder.IsFirst)
 
 	createdSecondOrder, err := s.orderRepository.Create(ctx, data, s.user.ID, []int{s.equipments[0].ID})
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
-	assert.NotEmpty(t, createdSecondOrder)
-	assert.Equal(t, description, createdSecondOrder.Description)
-	assert.NotEmpty(t, createdSecondOrder.Edges.Equipments)
-	assert.Equal(t, int(equipmentID), createdSecondOrder.Edges.Equipments[0].ID)
-	assert.NotEmpty(t, createdSecondOrder.Edges.Users)
-	assert.Equal(t, s.user.ID, createdSecondOrder.Edges.Users.ID)
-	assert.NotEmpty(t, createdSecondOrder.Edges.OrderStatus)
-	assert.Equal(t, domain.OrderStatusInReview, createdSecondOrder.Edges.OrderStatus[0].Edges.OrderStatusName.Status)
-	assert.Equal(t, true, createdSecondOrder.IsFirst)
+	require.NotEmpty(t, createdSecondOrder)
+	require.Equal(t, description, createdSecondOrder.Description)
+	require.NotEmpty(t, createdSecondOrder.Edges.Equipments)
+	require.Equal(t, int(equipmentID), createdSecondOrder.Edges.Equipments[0].ID)
+	require.NotEmpty(t, createdSecondOrder.Edges.Users)
+	require.Equal(t, s.user.ID, createdSecondOrder.Edges.Users.ID)
+	require.NotEmpty(t, createdSecondOrder.Edges.OrderStatus)
+	require.Equal(t, domain.OrderStatusInReview, createdSecondOrder.Edges.OrderStatus[0].Edges.OrderStatusName.Status)
+	require.Equal(t, true, createdSecondOrder.IsFirst)
 
 	err = s.orderStatusRepository.UpdateStatus(ctx, s.user.ID, model)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	orderList, err := s.orderRepository.List(ctx, s.user.ID, math.MaxInt, 0, utils.AscOrder, order.FieldID)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	for _, order := range orderList {
-		assert.Equal(t, false, order.IsFirst)
+		require.Equal(t, false, order.IsFirst)
 	}
 
-	assert.NoError(t, tx.Commit())
+	require.NoError(t, tx.Commit())
 
 }
 
@@ -448,14 +448,14 @@ func (s *OrderSuite) TestOrderRepository_OrdersTotal() {
 	t := s.T()
 	ctx := s.ctx
 	tx, err := s.client.Tx(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
 	totalOrders, err := s.orderRepository.OrdersTotal(ctx, s.user.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.NoError(t, tx.Commit())
-	assert.Equal(t, len(s.orders), totalOrders)
+	require.NoError(t, tx.Commit())
+	require.Equal(t, len(s.orders), totalOrders)
 }
 
 func (s *OrderSuite) TestOrderRepository_List_EmptyOrderBy() {
@@ -466,12 +466,12 @@ func (s *OrderSuite) TestOrderRepository_List_EmptyOrderBy() {
 	orderColumn := order.FieldID
 	ctx := s.ctx
 	tx, err := s.client.Tx(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
 	orders, err := s.orderRepository.List(ctx, s.user.ID, limit, offset, orderBy, orderColumn)
-	assert.Error(t, err)
-	assert.NoError(t, tx.Rollback())
-	assert.Nil(t, orders)
+	require.Error(t, err)
+	require.NoError(t, tx.Rollback())
+	require.Nil(t, orders)
 }
 
 func (s *OrderSuite) TestOrderRepository_List_WrongOrderColumn() {
@@ -482,12 +482,12 @@ func (s *OrderSuite) TestOrderRepository_List_WrongOrderColumn() {
 	orderColumn := order.FieldDescription
 	ctx := s.ctx
 	tx, err := s.client.Tx(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
 	orders, err := s.orderRepository.List(ctx, s.user.ID, limit, offset, orderBy, orderColumn)
-	assert.Error(t, err)
-	assert.NoError(t, tx.Rollback())
-	assert.Nil(t, orders)
+	require.Error(t, err)
+	require.NoError(t, tx.Rollback())
+	require.Nil(t, orders)
 }
 
 func (s *OrderSuite) TestOrderRepository_List_OrderByIDDesc() {
@@ -498,18 +498,18 @@ func (s *OrderSuite) TestOrderRepository_List_OrderByIDDesc() {
 	orderColumn := order.FieldID
 	ctx := s.ctx
 	tx, err := s.client.Tx(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
 	orders, err := s.orderRepository.List(ctx, s.user.ID, limit, offset, orderBy, orderColumn)
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.NoError(t, tx.Commit())
-	assert.Equal(t, len(s.orders), len(orders))
+	require.NoError(t, tx.Commit())
+	require.Equal(t, len(s.orders), len(orders))
 	prevOrderID := math.MaxInt
 	for _, value := range orders {
-		assert.True(t, containsOrder(t, value, s.orders))
-		assert.Less(t, value.ID, prevOrderID)
+		require.True(t, containsOrder(t, value, s.orders))
+		require.Less(t, value.ID, prevOrderID)
 		prevOrderID = value.ID
 	}
 }
@@ -522,18 +522,18 @@ func (s *OrderSuite) TestOrderRepository_List_OrderByRentStartDesc() {
 	orderColumn := order.FieldRentStart
 	ctx := s.ctx
 	tx, err := s.client.Tx(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
 	orders, err := s.orderRepository.List(ctx, s.user.ID, limit, offset, orderBy, orderColumn)
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.NoError(t, tx.Commit())
-	assert.Equal(t, len(s.orders), len(orders))
+	require.NoError(t, tx.Commit())
+	require.Equal(t, len(s.orders), len(orders))
 	prevOrderRentStart := time.Unix(1<<63-62135596801, 999999999)
 	for _, value := range orders {
-		assert.True(t, containsOrder(t, value, s.orders))
-		assert.True(t, value.RentStart.Before(prevOrderRentStart) || value.RentStart.Equal(prevOrderRentStart))
+		require.True(t, containsOrder(t, value, s.orders))
+		require.True(t, value.RentStart.Before(prevOrderRentStart) || value.RentStart.Equal(prevOrderRentStart))
 		prevOrderRentStart = value.RentStart
 	}
 }
@@ -546,18 +546,18 @@ func (s *OrderSuite) TestOrderRepository_List_OrderByIDAsc() {
 	orderColumn := order.FieldID
 	ctx := s.ctx
 	tx, err := s.client.Tx(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
 	orders, err := s.orderRepository.List(ctx, s.user.ID, limit, offset, orderBy, orderColumn)
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.NoError(t, tx.Commit())
-	assert.Equal(t, len(s.orders), len(orders))
+	require.NoError(t, tx.Commit())
+	require.Equal(t, len(s.orders), len(orders))
 	prevOrderID := 0
 	for _, value := range orders {
-		assert.True(t, containsOrder(t, value, s.orders))
-		assert.Greater(t, value.ID, prevOrderID)
+		require.True(t, containsOrder(t, value, s.orders))
+		require.Greater(t, value.ID, prevOrderID)
 		prevOrderID = value.ID
 	}
 }
@@ -570,18 +570,18 @@ func (s *OrderSuite) TestOrderRepository_List_OrderByRentStartAsc() {
 	orderColumn := order.FieldRentStart
 	ctx := s.ctx
 	tx, err := s.client.Tx(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
 	orders, err := s.orderRepository.List(ctx, s.user.ID, limit, offset, orderBy, orderColumn)
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.NoError(t, tx.Commit())
-	assert.Equal(t, len(s.orders), len(orders))
+	require.NoError(t, tx.Commit())
+	require.Equal(t, len(s.orders), len(orders))
 	prevOrderRentStart := time.Unix(0, 0)
 	for _, value := range orders {
-		assert.True(t, containsOrder(t, value, s.orders))
-		assert.True(t, value.RentStart.After(prevOrderRentStart) || value.RentStart.Equal(prevOrderRentStart))
+		require.True(t, containsOrder(t, value, s.orders))
+		require.True(t, value.RentStart.After(prevOrderRentStart) || value.RentStart.Equal(prevOrderRentStart))
 		prevOrderRentStart = value.RentStart
 	}
 }
@@ -594,15 +594,15 @@ func (s *OrderSuite) TestOrderRepository_List_Limit() {
 	orderColumn := order.FieldID
 	ctx := s.ctx
 	tx, err := s.client.Tx(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
 	orders, err := s.orderRepository.List(ctx, s.user.ID, limit, offset, orderBy, orderColumn)
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.NoError(t, tx.Commit())
-	assert.Equal(t, limit, len(orders))
-	assert.Greater(t, len(s.orders), len(orders))
+	require.NoError(t, tx.Commit())
+	require.Equal(t, limit, len(orders))
+	require.Greater(t, len(s.orders), len(orders))
 }
 
 func (s *OrderSuite) TestOrderRepository_List_Offset() {
@@ -613,15 +613,15 @@ func (s *OrderSuite) TestOrderRepository_List_Offset() {
 	orderColumn := order.FieldID
 	ctx := s.ctx
 	tx, err := s.client.Tx(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
 	orders, err := s.orderRepository.List(ctx, s.user.ID, limit, offset, orderBy, orderColumn)
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.NoError(t, tx.Commit())
-	assert.Equal(t, len(s.orders)-offset, len(orders))
-	assert.Greater(t, len(s.orders), len(orders))
+	require.NoError(t, tx.Commit())
+	require.Equal(t, len(s.orders)-offset, len(orders))
+	require.Greater(t, len(s.orders), len(orders))
 }
 
 func containsOrder(t *testing.T, order *ent.Order, orders []*ent.Order) bool {
