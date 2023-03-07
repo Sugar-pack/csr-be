@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	_ "github.com/mattn/go-sqlite3"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/ent"
@@ -72,12 +72,12 @@ func (s *ActiveAreasSuite) TestActiveAreaRepository_AllActiveAreasEmptyOrderBy()
 	orderColumn := activearea.FieldName
 	ctx := s.ctx
 	tx, err := s.client.Tx(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
 	activeAreas, err := s.repository.AllActiveAreas(ctx, limit, offset, orderBy, orderColumn)
-	assert.Error(t, err)
-	assert.NoError(t, tx.Rollback())
-	assert.Nil(t, activeAreas)
+	require.Error(t, err)
+	require.NoError(t, tx.Rollback())
+	require.Nil(t, activeAreas)
 }
 
 func (s *ActiveAreasSuite) TestActiveAreaRepository_AllActiveAreasEmptyOrderColumn() {
@@ -88,12 +88,12 @@ func (s *ActiveAreasSuite) TestActiveAreaRepository_AllActiveAreasEmptyOrderColu
 	orderColumn := ""
 	ctx := s.ctx
 	tx, err := s.client.Tx(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
 	activeAreas, err := s.repository.AllActiveAreas(ctx, limit, offset, orderBy, orderColumn)
-	assert.Error(t, err)
-	assert.NoError(t, tx.Rollback())
-	assert.Nil(t, activeAreas)
+	require.Error(t, err)
+	require.NoError(t, tx.Rollback())
+	require.Nil(t, activeAreas)
 }
 
 func (s *ActiveAreasSuite) TestActiveAreaRepository_AllActiveAreasOrderByNameDesc() {
@@ -104,18 +104,18 @@ func (s *ActiveAreasSuite) TestActiveAreaRepository_AllActiveAreasOrderByNameDes
 	orderColumn := activearea.FieldName
 	ctx := s.ctx
 	tx, err := s.client.Tx(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
 	activeAreas, err := s.repository.AllActiveAreas(ctx, limit, offset, orderBy, orderColumn)
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.NoError(t, tx.Commit())
-	assert.Equal(t, len(s.activeAreas), len(activeAreas))
+	require.NoError(t, tx.Commit())
+	require.Equal(t, len(s.activeAreas), len(activeAreas))
 	prevAreaName := "zzzzzzzzzzzzzzzzzzzzzzzzz"
 	for _, value := range activeAreas {
-		assert.True(t, mapContainsArea(t, value.Name, s.activeAreas))
-		assert.GreaterOrEqual(t, prevAreaName, value.Name)
+		require.True(t, mapContainsArea(t, value.Name, s.activeAreas))
+		require.GreaterOrEqual(t, prevAreaName, value.Name)
 		prevAreaName = value.Name
 	}
 }
@@ -128,18 +128,18 @@ func (s *ActiveAreasSuite) TestActiveAreaRepository_AllActiveAreasOrderByIDDesc(
 	orderColumn := activearea.FieldID
 	ctx := s.ctx
 	tx, err := s.client.Tx(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
 	activeAreas, err := s.repository.AllActiveAreas(ctx, limit, offset, orderBy, orderColumn)
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.NoError(t, tx.Commit())
-	assert.Equal(t, len(s.activeAreas), len(activeAreas))
+	require.NoError(t, tx.Commit())
+	require.Equal(t, len(s.activeAreas), len(activeAreas))
 	prevAreaID := math.MaxInt
 	for _, value := range activeAreas {
-		assert.True(t, mapContainsArea(t, value.Name, s.activeAreas))
-		assert.Less(t, value.ID, prevAreaID)
+		require.True(t, mapContainsArea(t, value.Name, s.activeAreas))
+		require.Less(t, value.ID, prevAreaID)
 		prevAreaID = value.ID
 	}
 }
@@ -152,18 +152,18 @@ func (s *ActiveAreasSuite) TestActiveAreaRepository_AllActiveAreasOrderByNameAsc
 	orderColumn := activearea.FieldName
 	ctx := s.ctx
 	tx, err := s.client.Tx(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
 	activeAreas, err := s.repository.AllActiveAreas(ctx, limit, offset, orderBy, orderColumn)
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.NoError(t, tx.Commit())
-	assert.Equal(t, len(s.activeAreas), len(activeAreas))
+	require.NoError(t, tx.Commit())
+	require.Equal(t, len(s.activeAreas), len(activeAreas))
 	prevAreaName := ""
 	for _, value := range activeAreas {
-		assert.True(t, mapContainsArea(t, value.Name, s.activeAreas))
-		assert.LessOrEqual(t, prevAreaName, value.Name)
+		require.True(t, mapContainsArea(t, value.Name, s.activeAreas))
+		require.LessOrEqual(t, prevAreaName, value.Name)
 		prevAreaName = value.Name
 	}
 }
@@ -176,18 +176,18 @@ func (s *ActiveAreasSuite) TestActiveAreaRepository_AllActiveAreasOrderByIDAsc()
 	orderColumn := activearea.FieldID
 	ctx := s.ctx
 	tx, err := s.client.Tx(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
 	activeAreas, err := s.repository.AllActiveAreas(ctx, limit, offset, orderBy, orderColumn)
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.NoError(t, tx.Commit())
-	assert.Equal(t, len(s.activeAreas), len(activeAreas))
+	require.NoError(t, tx.Commit())
+	require.Equal(t, len(s.activeAreas), len(activeAreas))
 	prevAreaID := 0
 	for _, value := range activeAreas {
-		assert.True(t, mapContainsArea(t, value.Name, s.activeAreas))
-		assert.Greater(t, value.ID, prevAreaID)
+		require.True(t, mapContainsArea(t, value.Name, s.activeAreas))
+		require.Greater(t, value.ID, prevAreaID)
 		prevAreaID = value.ID
 	}
 }
@@ -200,14 +200,14 @@ func (s *ActiveAreasSuite) TestActiveAreaRepository_LimitActiveAreas() {
 	orderColumn := activearea.FieldName
 	ctx := s.ctx
 	tx, err := s.client.Tx(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
 	activeAreas, err := s.repository.AllActiveAreas(ctx, limit, offset, orderBy, orderColumn)
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.NoError(t, tx.Commit())
-	assert.GreaterOrEqual(t, limit, len(activeAreas))
+	require.NoError(t, tx.Commit())
+	require.GreaterOrEqual(t, limit, len(activeAreas))
 }
 
 func (s *ActiveAreasSuite) TestActiveAreaRepository_OffsetActiveAreas() {
@@ -218,28 +218,28 @@ func (s *ActiveAreasSuite) TestActiveAreaRepository_OffsetActiveAreas() {
 	orderColumn := activearea.FieldName
 	ctx := s.ctx
 	tx, err := s.client.Tx(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
 	activeAreas, err := s.repository.AllActiveAreas(ctx, limit, offset, orderBy, orderColumn)
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.NoError(t, tx.Commit())
-	assert.Equal(t, len(s.activeAreas)-offset, len(activeAreas))
+	require.NoError(t, tx.Commit())
+	require.Equal(t, len(s.activeAreas)-offset, len(activeAreas))
 }
 
 func (s *ActiveAreasSuite) TestActiveAreaRepository_TotalActiveAreas() {
 	t := s.T()
 	ctx := s.ctx
 	tx, err := s.client.Tx(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
 	totalAreas, err := s.repository.TotalActiveAreas(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.NoError(t, tx.Commit())
-	assert.Equal(t, len(s.activeAreas), totalAreas)
+	require.NoError(t, tx.Commit())
+	require.Equal(t, len(s.activeAreas), totalAreas)
 }
 
 func mapContainsArea(t *testing.T, value string, m map[int]string) bool {

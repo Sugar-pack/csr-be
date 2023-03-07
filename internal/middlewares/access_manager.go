@@ -126,6 +126,7 @@ func (a *blackListAccessManager) AddNewAccess(role Role, endpointMethod, endpoin
 	if utils.IsValueInList(role, a.fullAccessRoles) {
 		return false, nil
 	}
+	endpointMethod = strings.ToUpper(endpointMethod)
 	paths, ok := a.endpoints[endpointMethod]
 	if ok {
 		if !utils.IsValueInList(endpointPath, paths) {
@@ -155,7 +156,7 @@ func (a *blackListAccessManager) AddNewAccess(role Role, endpointMethod, endpoin
 		return false, nil
 
 	}
-	return false, errors.New(fmt.Sprintf("method %s is not in the list of existing endpoints", endpointMethod))
+	return false, errors.New(fmt.Sprintf("method %s is not in the list of supported endpoints", endpointMethod))
 }
 
 // HasAccess checks if role has access to the endpoint

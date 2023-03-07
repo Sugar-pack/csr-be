@@ -180,6 +180,38 @@ paths:
           description: Unexpected error
           schema:
             $ref: "#/definitions/Error"
+  /v1/users/me/password:
+    patch:
+      summary: Change the current user password.
+      security:
+        - Bearer: [ ]
+      tags:
+        - Users
+      operationId: changePassword
+      consumes:
+        - application/json
+      parameters:
+        - name: passwordPatch
+          in: body
+          description: The patch to apply to the user password.
+          required: true
+          schema:
+            $ref: "#/definitions/PatchPasswordRequest"
+      responses:
+        204:
+          description: Success
+        401:
+          description: Unauthorized
+          schema:
+            $ref: "#/definitions/Error"
+        403:
+          description: Wrong old password
+          schema:
+            $ref: "#/definitions/Error"
+        default:
+          description: Unexpected error
+          schema:
+            $ref: "#/definitions/Error"
   /management/users/{userId}:
     parameters:
       - name: userId
@@ -603,6 +635,37 @@ paths:
           description: Success
           schema:
             $ref: "#/definitions/CreateNewCategoryResponse"
+        default:
+          description: Unexpected error.
+          schema:
+            $ref: "#/definitions/Error"
+  /equipment/unavailability_periods/{equipmentId}:
+    parameters:
+      - name: equipmentId
+        in: path
+        required: true
+        description: equipment id
+        type: integer
+    get:
+      summary: Get information about the unavailability periods of equipment by id.
+      security:
+        - Bearer: [ ]
+      tags:
+        - Equipment
+      operationId: GetUnavailabilityPeriodsByEquipmentID
+      responses:
+        200:
+          description: Success
+          schema:
+            $ref: "#/definitions/EquipmentUnavailabilityPeriodsResponse"
+        default:
+          description: Unexpected error.
+          schema:
+            $ref: "#/definitions/Error"
+        404:
+          schema:
+            type: string
+          description: Not Found
         default:
           description: Unexpected error.
           schema:
@@ -1850,6 +1913,13 @@ definitions:
         type: string
       vk:
         type: string
+  PatchPasswordRequest:
+    type: object
+    properties:
+        old_password:
+            type: string
+        new_password:
+            type: string
       # User
   LoginInfo:
     type: object
@@ -2193,6 +2263,14 @@ definitions:
     properties:
       data:
         $ref: "#/definitions/EquipmentStatusRepairConfirmation"
+  #EquipmentUnavailabilityPeriodsResponse
+  EquipmentUnavailabilityPeriodsResponse:
+    type: object
+    required:
+      - data
+    properties:
+      data:
+        $ref: "#/definitions/EquipmentUnavailabilityPeriods"
   #EquipmentStatusRepairConfirmation
   EquipmentStatusRepairConfirmation:
     type: object
@@ -2221,6 +2299,19 @@ definitions:
         type: string
       order_id:
         type: integer
+  #EquipmentUnavailabilityPeriods
+  EquipmentUnavailabilityPeriods:
+    type: object
+    required:
+      - start_date
+      - end_date
+    properties:
+      start_date:
+        type: string
+        format: date-time
+      end_date:
+        type: string
+        format: date-time
   #EquipmentStatus
   EquipmentStatus:
     type: object
@@ -2509,7 +2600,6 @@ definitions:
       - inventoryNumber
       - supplier
       - receiptDate
-      - maximumAmount
       - maximumDays
       - location
       - description
@@ -2560,9 +2650,6 @@ definitions:
       receiptDate:
         type: string
         example: "2018"
-      maximumAmount:
-        type: integer
-        example: 3
       maximumDays:
         type: integer
         example: 30
@@ -2628,9 +2715,6 @@ definitions:
       receiptDate:
         type: string
         example: "2018"
-      maximumAmount:
-        type: integer
-        example: 3
       maximumDays:
         type: integer
         example: 30
@@ -2662,7 +2746,6 @@ definitions:
       - inventoryNumber
       - supplier
       - receiptDate
-      - maximumAmount
       - maximumDays
       - location
       - description
@@ -2711,9 +2794,6 @@ definitions:
       receiptDate:
         type: string
         example: "2018"
-      maximumAmount:
-        type: integer
-        example: 3
       maximumDays:
         type: integer
         example: 30

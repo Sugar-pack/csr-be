@@ -9,8 +9,6 @@ import (
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/utils"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/pkg/domain"
 
-	"golang.org/x/crypto/bcrypt"
-
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/ent"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/ent/activearea"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/ent/role"
@@ -122,11 +120,16 @@ func (r *userRepository) UserByLogin(ctx context.Context, login string) (*ent.Us
 }
 
 func (r *userRepository) ChangePasswordByLogin(ctx context.Context, login string, password string) error {
+	hash, err := utils.PasswordHash(password)
+	if err != nil {
+		return fmt.Errorf("error while hashing password: %w", err)
+	}
+
 	tx, err := middlewares.TxFromContext(ctx)
 	if err != nil {
 		return err
 	}
-	_, err = tx.User.Update().Where(user.LoginEQ(login)).SetPassword(password).Save(ctx)
+	_, err = tx.User.Update().Where(user.LoginEQ(login)).SetPassword(hash).Save(ctx)
 	if err != nil {
 		return err
 	}
@@ -167,7 +170,7 @@ func DefaultUserRole(ctx context.Context, tx *ent.Tx) (*ent.Role, error) {
 }
 
 func (r *userRepository) CreateUser(ctx context.Context, data *models.UserRegister) (createdUser *ent.User, err error) {
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(*data.Password), bcrypt.DefaultCost)
+	hashedPassword, err := utils.PasswordHash(*data.Password)
 	if err != nil {
 		return nil, fmt.Errorf("create user error, failed to generate password hash: %s", err)
 	}
@@ -214,7 +217,7 @@ func (r *userRepository) CreateUser(ctx context.Context, data *models.UserRegist
 		SetWebsite(data.Website).
 		SetVk(data.Vk).
 		AddActiveAreas(activeAreas...).
-		SetPassword(string(hashedPassword)).
+		SetPassword(hashedPassword).
 		SetRole(defaultRole).
 		Save(ctx)
 	return

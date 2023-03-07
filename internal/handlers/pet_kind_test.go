@@ -10,7 +10,7 @@ import (
 	"github.com/go-openapi/loads"
 	"github.com/go-openapi/runtime"
 	_ "github.com/mattn/go-sqlite3"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/zap"
 
@@ -35,11 +35,11 @@ func TestSetPetKindHandler(t *testing.T) {
 	}
 	api := operations.NewBeAPI(swaggerSpec)
 	SetPetKindHandler(logger, api)
-	assert.NotEmpty(t, api.PetKindGetAllPetKindsHandler)
-	assert.NotEmpty(t, api.PetKindEditPetKindHandler)
-	assert.NotEmpty(t, api.PetKindDeletePetKindHandler)
-	assert.NotEmpty(t, api.PetKindCreateNewPetKindHandler)
-	assert.NotEmpty(t, api.PetKindGetPetKindHandler)
+	require.NotEmpty(t, api.PetKindGetAllPetKindsHandler)
+	require.NotEmpty(t, api.PetKindEditPetKindHandler)
+	require.NotEmpty(t, api.PetKindDeletePetKindHandler)
+	require.NotEmpty(t, api.PetKindCreateNewPetKindHandler)
+	require.NotEmpty(t, api.PetKindGetPetKindHandler)
 }
 
 type PetKindTestSuite struct {
@@ -109,7 +109,7 @@ func (s *PetKindTestSuite) TestPetKind_CreatePetKindFunc_OK() {
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusCreated, responseRecorder.Code)
+	require.Equal(t, http.StatusCreated, responseRecorder.Code)
 	s.petKindRepo.AssertExpectations(t)
 
 	actualPetKind := ent.PetKind{}
@@ -119,7 +119,7 @@ func (s *PetKindTestSuite) TestPetKind_CreatePetKindFunc_OK() {
 		t.Errorf("unable to unmarshal response body: %v", err)
 	}
 	eq := isEqualPetKind(t, petKindToReturn, &actualPetKind)
-	assert.Equal(t, true, eq)
+	require.Equal(t, true, eq)
 }
 
 func (s *PetKindTestSuite) TestPetKind_CreatePetKindFunc_ErrFromRepo() {
@@ -145,7 +145,7 @@ func (s *PetKindTestSuite) TestPetKind_CreatePetKindFunc_ErrFromRepo() {
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
+	require.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
 	s.petKindRepo.AssertExpectations(t)
 }
 
@@ -172,7 +172,7 @@ func (s *PetKindTestSuite) TestPetKind_CreatePetKindFunc_ErrRespNil() {
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
+	require.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
 	s.petKindRepo.AssertExpectations(t)
 }
 
@@ -195,7 +195,7 @@ func (s *PetKindTestSuite) TestPetKind_GetAllPetKindFunc_OK() {
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusOK, responseRecorder.Code)
+	require.Equal(t, http.StatusOK, responseRecorder.Code)
 	s.petKindRepo.AssertExpectations(t)
 
 	actualPetKind := []*ent.PetKind{}
@@ -206,7 +206,7 @@ func (s *PetKindTestSuite) TestPetKind_GetAllPetKindFunc_OK() {
 	}
 	for i := 0; i < 10; i++ {
 		eq := isEqualPetKind(t, petKindToReturn[i], actualPetKind[i])
-		assert.Equal(t, true, eq)
+		require.Equal(t, true, eq)
 	}
 }
 
@@ -227,7 +227,7 @@ func (s *PetKindTestSuite) TestPetKind_GetAllPetKindFunc_ErrFromRepo() {
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
+	require.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
 	s.petKindRepo.AssertExpectations(t)
 }
 
@@ -247,7 +247,7 @@ func (s *PetKindTestSuite) TestPetKind_GetAllPetKindFunc_ErrRespNil() {
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
+	require.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
 	s.petKindRepo.AssertExpectations(t)
 }
 
@@ -270,7 +270,7 @@ func (s *PetKindTestSuite) TestPetKind_DeletePetKindFunc_Err() {
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
+	require.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
 	s.petKindRepo.AssertExpectations(t)
 }
 
@@ -291,7 +291,7 @@ func (s *PetKindTestSuite) TestPetKind_DeletePetKindFunc_OK() {
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusOK, responseRecorder.Code)
+	require.Equal(t, http.StatusOK, responseRecorder.Code)
 	s.petKindRepo.AssertExpectations(t)
 }
 
@@ -313,7 +313,7 @@ func (s *PetKindTestSuite) TestPetKind_GetPetKindByIDFunc_OK() {
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusOK, responseRecorder.Code)
+	require.Equal(t, http.StatusOK, responseRecorder.Code)
 	s.petKindRepo.AssertExpectations(t)
 
 	actualPetKind := ent.PetKind{}
@@ -323,7 +323,7 @@ func (s *PetKindTestSuite) TestPetKind_GetPetKindByIDFunc_OK() {
 		t.Errorf("unable to unmarshal response body: %v", err)
 	}
 	eq := isEqualPetKind(t, petKindToReturn, &actualPetKind)
-	assert.Equal(t, true, eq)
+	require.Equal(t, true, eq)
 }
 
 func (s *PetKindTestSuite) TestPetKind_GetPetKindByIDFunc_ErrFromRepo() {
@@ -345,7 +345,7 @@ func (s *PetKindTestSuite) TestPetKind_GetPetKindByIDFunc_ErrFromRepo() {
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
+	require.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
 	s.petKindRepo.AssertExpectations(t)
 }
 
@@ -366,7 +366,7 @@ func (s *PetKindTestSuite) TestPetKind_GetPetKindByIDFunc_ErrRespNil() {
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
+	require.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
 	s.petKindRepo.AssertExpectations(t)
 }
 
@@ -393,7 +393,7 @@ func (s *PetKindTestSuite) TestPetKind_EditPetKindFunc_OK() {
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusOK, responseRecorder.Code)
+	require.Equal(t, http.StatusOK, responseRecorder.Code)
 	s.petKindRepo.AssertExpectations(t)
 
 	actualPetKind := ent.PetKind{}
@@ -403,7 +403,7 @@ func (s *PetKindTestSuite) TestPetKind_EditPetKindFunc_OK() {
 		t.Errorf("unable to unmarshal response body: %v", err)
 	}
 	eq := isEqualPetKind(t, petKindToReturn, &actualPetKind)
-	assert.Equal(t, true, eq)
+	require.Equal(t, true, eq)
 }
 
 func (s *PetKindTestSuite) TestPetKind_EditPetKindFunc_ErrRespNil() {
@@ -426,7 +426,7 @@ func (s *PetKindTestSuite) TestPetKind_EditPetKindFunc_ErrRespNil() {
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
+	require.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
 	s.petKindRepo.AssertExpectations(t)
 }
 
@@ -451,6 +451,6 @@ func (s *PetKindTestSuite) TestPetKind_EditPetKindFunc_ErrFromRepo() {
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
+	require.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
 	s.petKindRepo.AssertExpectations(t)
 }

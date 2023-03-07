@@ -15,8 +15,8 @@ import (
 	"github.com/go-openapi/loads"
 	"github.com/go-openapi/runtime"
 	_ "github.com/mattn/go-sqlite3"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/zap"
 
@@ -42,10 +42,10 @@ func TestSetPhotoHandler(t *testing.T) {
 	api := operations.NewBeAPI(swaggerSpec)
 
 	SetPhotoHandler(logger, api)
-	assert.NotEmpty(t, api.PhotosCreateNewPhotoHandler)
-	assert.NotEmpty(t, api.PhotosGetPhotoHandler)
-	assert.NotEmpty(t, api.PhotosDeletePhotoHandler)
-	assert.NotEmpty(t, api.PhotosDownloadPhotoHandler)
+	require.NotEmpty(t, api.PhotosCreateNewPhotoHandler)
+	require.NotEmpty(t, api.PhotosGetPhotoHandler)
+	require.NotEmpty(t, api.PhotosDeletePhotoHandler)
+	require.NotEmpty(t, api.PhotosDownloadPhotoHandler)
 }
 
 type PhotoTestSuite struct {
@@ -89,16 +89,16 @@ func (s *PhotoTestSuite) TestPhoto_CreatePhoto_EmptyFile() {
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusBadRequest, responseRecorder.Code)
+	require.Equal(t, http.StatusBadRequest, responseRecorder.Code)
 
 	response := models.Error{}
 	err = json.Unmarshal(responseRecorder.Body.Bytes(), &response)
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.NotEmpty(t, response)
-	assert.NotEmpty(t, response.Data)
-	assert.Equal(t, "File is empty", response.Data.Message)
+	require.NotEmpty(t, response)
+	require.NotEmpty(t, response.Data)
+	require.Equal(t, "File is empty", response.Data.Message)
 
 	s.repository.AssertExpectations(t)
 }
@@ -132,16 +132,16 @@ func (s *PhotoTestSuite) TestPhoto_CreatePhoto_WrongMimeType() {
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusBadRequest, responseRecorder.Code)
+	require.Equal(t, http.StatusBadRequest, responseRecorder.Code)
 
 	response := models.Error{}
 	err = json.Unmarshal(responseRecorder.Body.Bytes(), &response)
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.NotEmpty(t, response)
-	assert.NotEmpty(t, response.Data)
-	assert.Containsf(t, response.Data.Message, "Wrong file format", "returned wrong error")
+	require.NotEmpty(t, response)
+	require.NotEmpty(t, response.Data)
+	require.Containsf(t, response.Data.Message, "Wrong file format", "returned wrong error")
 
 	s.repository.AssertExpectations(t)
 }
@@ -186,15 +186,15 @@ func (s *PhotoTestSuite) TestPhoto_CreatePhoto_OK() {
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusCreated, responseRecorder.Code)
+	require.Equal(t, http.StatusCreated, responseRecorder.Code)
 
 	returnedPhoto := models.CreateNewPhotoResponse{}
 	err = json.Unmarshal(responseRecorder.Body.Bytes(), &returnedPhoto)
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.NotEmpty(t, returnedPhoto.Data.ID)
-	assert.NotEmpty(t, returnedPhoto.Data.FileName)
+	require.NotEmpty(t, returnedPhoto.Data.ID)
+	require.NotEmpty(t, returnedPhoto.Data.FileName)
 
 	s.repository.AssertExpectations(t)
 }
@@ -225,10 +225,10 @@ func (s *PhotoTestSuite) TestPhoto_GetPhoto_OK() {
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusOK, responseRecorder.Code)
-	assert.Equal(t, "image/jpg", responseRecorder.Header().Get("Content-Type"))
+	require.Equal(t, http.StatusOK, responseRecorder.Code)
+	require.Equal(t, "image/jpg", responseRecorder.Header().Get("Content-Type"))
 
-	assert.Equal(t, []byte{1, 1, 1}, responseRecorder.Body.Bytes())
+	require.Equal(t, []byte{1, 1, 1}, responseRecorder.Body.Bytes())
 
 	s.repository.AssertExpectations(t)
 }
@@ -254,17 +254,17 @@ func (s *PhotoTestSuite) TestPhoto_GetPhoto_RepoErr() {
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
-	assert.Equal(t, "application/json", responseRecorder.Header().Get("Content-Type"))
+	require.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
+	require.Equal(t, "application/json", responseRecorder.Header().Get("Content-Type"))
 
 	response := models.Error{}
 	err := json.Unmarshal(responseRecorder.Body.Bytes(), &response)
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.NotEmpty(t, response)
-	assert.NotEmpty(t, response.Data)
-	assert.Equal(t, errorToReturn.Error(), response.Data.Message)
+	require.NotEmpty(t, response)
+	require.NotEmpty(t, response.Data)
+	require.Equal(t, errorToReturn.Error(), response.Data.Message)
 
 	s.repository.AssertExpectations(t)
 }
@@ -296,10 +296,10 @@ func (s *PhotoTestSuite) TestPhoto_DownloadPhoto_OK() {
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusOK, responseRecorder.Code)
-	assert.Equal(t, "application/octet-stream", responseRecorder.Header().Get("Content-Type"))
+	require.Equal(t, http.StatusOK, responseRecorder.Code)
+	require.Equal(t, "application/octet-stream", responseRecorder.Header().Get("Content-Type"))
 
-	assert.Equal(t, bytesToReturn, responseRecorder.Body.Bytes())
+	require.Equal(t, bytesToReturn, responseRecorder.Body.Bytes())
 
 	s.repository.AssertExpectations(t)
 }
@@ -325,16 +325,16 @@ func (s *PhotoTestSuite) TestPhoto_DeletePhoto_NotExists() {
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
+	require.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
 
 	response := models.Error{}
 	err := json.Unmarshal(responseRecorder.Body.Bytes(), &response)
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.NotEmpty(t, response)
-	assert.NotEmpty(t, response.Data)
-	assert.Equal(t, errorToReturn.Error(), response.Data.Message)
+	require.NotEmpty(t, response)
+	require.NotEmpty(t, response.Data)
+	require.Equal(t, errorToReturn.Error(), response.Data.Message)
 
 	s.repository.AssertExpectations(t)
 }
@@ -364,7 +364,7 @@ func (s *PhotoTestSuite) TestPhoto_DeletePhoto_OK() {
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusOK, responseRecorder.Code)
+	require.Equal(t, http.StatusOK, responseRecorder.Code)
 	s.repository.AssertExpectations(t)
 }
 

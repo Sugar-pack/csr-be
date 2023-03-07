@@ -8,7 +8,6 @@ import (
 
 	"github.com/google/uuid"
 	"go.uber.org/zap"
-	"golang.org/x/crypto/bcrypt"
 
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/pkg/domain"
 )
@@ -82,12 +81,7 @@ func (p *passwordReset) VerifyTokenAndSendPassword(ctx context.Context, tokenToV
 		p.logger.Error("Error while generating password", zap.Error(err))
 		return err
 	}
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
-	if err != nil {
-		p.logger.Error("Error while hashing password", zap.Error(err))
-		return err
-	}
-	err = p.ChangePasswordByLogin(ctx, login, string(hashedPassword))
+	err = p.ChangePasswordByLogin(ctx, login, password)
 	if err != nil {
 		p.logger.Error("Error while changing password", zap.String("login", login), zap.Error(err))
 		return err

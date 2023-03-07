@@ -14,7 +14,6 @@ import (
 	"github.com/go-openapi/runtime"
 	"github.com/go-openapi/strfmt"
 	_ "github.com/mattn/go-sqlite3"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/zap"
@@ -44,11 +43,11 @@ func TestSetOrderStatusHandler(t *testing.T) {
 	}
 	api := operations.NewBeAPI(swaggerSpec)
 	SetOrderStatusHandler(logger, api)
-	assert.NotEmpty(t, api.OrdersGetOrdersByStatusHandler)
-	assert.NotEmpty(t, api.OrdersGetOrdersByDateAndStatusHandler)
-	assert.NotEmpty(t, api.OrdersAddNewOrderStatusHandler)
-	assert.NotEmpty(t, api.OrdersGetFullOrderHistoryHandler)
-	assert.NotEmpty(t, api.OrdersGetAllStatusNamesHandler)
+	require.NotEmpty(t, api.OrdersGetOrdersByStatusHandler)
+	require.NotEmpty(t, api.OrdersGetOrdersByDateAndStatusHandler)
+	require.NotEmpty(t, api.OrdersAddNewOrderStatusHandler)
+	require.NotEmpty(t, api.OrdersGetFullOrderHistoryHandler)
+	require.NotEmpty(t, api.OrdersGetAllStatusNamesHandler)
 }
 
 type OrderStatusTestSuite struct {
@@ -150,14 +149,14 @@ func (s *OrderStatusTestSuite) TestOrderStatus_GetAllOrderStatusNames_OK() {
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusOK, responseRecorder.Code)
+	require.Equal(t, http.StatusOK, responseRecorder.Code)
 	expectedStatuses := make([]models.OrderStatusName, count)
 	err := json.Unmarshal(responseRecorder.Body.Bytes(), &expectedStatuses)
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.Equal(t, int64(id), *expectedStatuses[0].ID)
-	assert.Equal(t, statusName, *expectedStatuses[0].Name)
+	require.Equal(t, int64(id), *expectedStatuses[0].ID)
+	require.Equal(t, statusName, *expectedStatuses[0].Name)
 }
 
 func (s *OrderStatusTestSuite) TestOrderStatus_GetAllOrderStatusNames_RepoErr() {
@@ -174,7 +173,7 @@ func (s *OrderStatusTestSuite) TestOrderStatus_GetAllOrderStatusNames_RepoErr() 
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
+	require.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
 }
 
 func (s *OrderStatusTestSuite) TestOrderStatus_GetAllOrderStatusNames_MapError() {
@@ -192,7 +191,7 @@ func (s *OrderStatusTestSuite) TestOrderStatus_GetAllOrderStatusNames_MapError()
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
+	require.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
 }
 
 func (s *OrderStatusTestSuite) TestOrderStatus_OrderStatusesHistory_RepoErr() {
@@ -213,7 +212,7 @@ func (s *OrderStatusTestSuite) TestOrderStatus_OrderStatusesHistory_RepoErr() {
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
+	require.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
 	s.orderStatusRepository.AssertExpectations(t)
 }
 
@@ -235,7 +234,7 @@ func (s *OrderStatusTestSuite) TestOrderStatus_OrderStatusesHistory_CantAccess()
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
+	require.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
 	s.orderStatusRepository.AssertExpectations(t)
 }
 
@@ -266,7 +265,7 @@ func (s *OrderStatusTestSuite) TestOrderStatus_OrderStatusesHistory_CantAccess_H
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusForbidden, responseRecorder.Code)
+	require.Equal(t, http.StatusForbidden, responseRecorder.Code)
 	s.orderStatusRepository.AssertExpectations(t)
 }
 
@@ -298,7 +297,7 @@ func (s *OrderStatusTestSuite) TestOrderStatus_OrderStatusesHistory_EmptyHistory
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusNotFound, responseRecorder.Code)
+	require.Equal(t, http.StatusNotFound, responseRecorder.Code)
 	s.orderStatusRepository.AssertExpectations(t)
 }
 
@@ -333,7 +332,7 @@ func (s *OrderStatusTestSuite) TestOrderStatus_OrderStatusesHistory_MapError() {
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
+	require.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
 	s.orderStatusRepository.AssertExpectations(t)
 }
 
@@ -382,19 +381,19 @@ func (s *OrderStatusTestSuite) TestOrderStatus_OrderStatusesHistory_OK() {
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusOK, responseRecorder.Code)
+	require.Equal(t, http.StatusOK, responseRecorder.Code)
 	response := &models.OrderStatuses{}
 	err := json.Unmarshal(responseRecorder.Body.Bytes(), response)
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.Equal(t, count, len(*response))
-	assert.Equal(t, history[0].ID, int(*(*response)[0].ID))
-	assert.Equal(t, history[0].Comment, *(*response)[0].Comment)
-	assert.Equal(t, strfmt.DateTime(history[0].CurrentDate).String(), (*response)[0].CreatedAt.String())
-	assert.Equal(t, history[0].Edges.OrderStatusName.Status, *(*response)[0].Status)
-	assert.Equal(t, history[0].Edges.Users.Login, *(*response)[0].ChangedBy.Name)
-	assert.Equal(t, history[0].Edges.Users.ID, int(*(*response)[0].ChangedBy.ID))
+	require.Equal(t, count, len(*response))
+	require.Equal(t, history[0].ID, int(*(*response)[0].ID))
+	require.Equal(t, history[0].Comment, *(*response)[0].Comment)
+	require.Equal(t, strfmt.DateTime(history[0].CurrentDate).String(), (*response)[0].CreatedAt.String())
+	require.Equal(t, history[0].Edges.OrderStatusName.Status, *(*response)[0].Status)
+	require.Equal(t, history[0].Edges.Users.Login, *(*response)[0].ChangedBy.Name)
+	require.Equal(t, history[0].Edges.Users.ID, int(*(*response)[0].ChangedBy.ID))
 	s.orderStatusRepository.AssertExpectations(t)
 }
 
@@ -422,7 +421,7 @@ func (s *OrderStatusTestSuite) TestOrderStatus_AddNewStatusToOrder_EmptyData() {
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusBadRequest, responseRecorder.Code)
+	require.Equal(t, http.StatusBadRequest, responseRecorder.Code)
 }
 
 func (s *OrderStatusTestSuite) TestOrderStatus_AddNewStatusToOrder_NoAccess() {
@@ -476,7 +475,7 @@ func (s *OrderStatusTestSuite) TestOrderStatus_AddNewStatusToOrder_NoAccess() {
 		responseRecorder := httptest.NewRecorder()
 		producer := runtime.JSONProducer()
 		resp.WriteResponse(responseRecorder, producer)
-		assert.Equal(t, http.StatusForbidden, responseRecorder.Code)
+		require.Equal(t, http.StatusForbidden, responseRecorder.Code)
 	}
 }
 
@@ -518,7 +517,7 @@ func (s *OrderStatusTestSuite) TestOrderStatus_AddNewStatusToOrder_RepoError() {
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
+	require.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
 	s.orderStatusRepository.AssertExpectations(t)
 }
 
@@ -564,7 +563,7 @@ func (s *OrderStatusTestSuite) TestOrderStatus_AddNewStatusToOrder_InReviewToApp
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusOK, responseRecorder.Code)
+	require.Equal(t, http.StatusOK, responseRecorder.Code)
 	s.orderStatusRepository.AssertExpectations(t)
 }
 
@@ -614,7 +613,7 @@ func (s *OrderStatusTestSuite) TestOrderStatus_AddNewStatusToOrder_InReviewToRej
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusOK, responseRecorder.Code)
+	require.Equal(t, http.StatusOK, responseRecorder.Code)
 	s.orderStatusRepository.AssertExpectations(t)
 }
 
@@ -677,7 +676,7 @@ func (s *OrderStatusTestSuite) TestOrderStatus_AddNewStatusToOrder_OperatorInPro
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusOK, responseRecorder.Code)
+	require.Equal(t, http.StatusOK, responseRecorder.Code)
 	s.orderStatusRepository.AssertExpectations(t)
 }
 
@@ -740,7 +739,7 @@ func (s *OrderStatusTestSuite) TestOrderStatus_AddNewStatusToOrder_OperatorOverd
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusOK, responseRecorder.Code)
+	require.Equal(t, http.StatusOK, responseRecorder.Code)
 	s.orderStatusRepository.AssertExpectations(t)
 }
 
@@ -787,7 +786,7 @@ func (s *OrderStatusTestSuite) TestOrderStatus_AddNewStatusToOrder_OperatorAppro
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusOK, responseRecorder.Code)
+	require.Equal(t, http.StatusOK, responseRecorder.Code)
 	s.orderStatusRepository.AssertExpectations(t)
 }
 
@@ -850,7 +849,7 @@ func (s *OrderStatusTestSuite) TestOrderStatus_AddNewStatusToOrder_ManagerInProg
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusOK, responseRecorder.Code)
+	require.Equal(t, http.StatusOK, responseRecorder.Code)
 	s.orderStatusRepository.AssertExpectations(t)
 }
 
@@ -913,7 +912,7 @@ func (s *OrderStatusTestSuite) TestOrderStatus_AddNewStatusToOrder_ManagerOverdu
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusOK, responseRecorder.Code)
+	require.Equal(t, http.StatusOK, responseRecorder.Code)
 	s.orderStatusRepository.AssertExpectations(t)
 }
 
@@ -976,7 +975,7 @@ func (s *OrderStatusTestSuite) TestOrderStatus_AddNewStatusToOrder_ManagerPrepar
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusOK, responseRecorder.Code)
+	require.Equal(t, http.StatusOK, responseRecorder.Code)
 	s.orderStatusRepository.AssertExpectations(t)
 }
 
@@ -1039,7 +1038,7 @@ func (s *OrderStatusTestSuite) TestOrderStatus_AddNewStatusToOrder_ManagerApprov
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusOK, responseRecorder.Code)
+	require.Equal(t, http.StatusOK, responseRecorder.Code)
 	s.orderStatusRepository.AssertExpectations(t)
 }
 
@@ -1088,10 +1087,10 @@ func (s *OrderStatusTestSuite) TestOrderStatus_AddNewStatusToOrder_ApprovedToPre
 	response := models.Error{}
 	err := json.Unmarshal(responseRecorder.Body.Bytes(), &response)
 	require.NoError(t, err)
-	assert.NotEmpty(t, response)
-	assert.NotEmpty(t, response.Data)
-	assert.Contains(t, response.Data.Message, "equipment IDs don't have correspondent status: [1]")
-	assert.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
+	require.NotEmpty(t, response)
+	require.NotEmpty(t, response.Data)
+	require.Contains(t, response.Data.Message, "equipment IDs don't have correspondent status: [1]")
+	require.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
 	s.orderStatusRepository.AssertExpectations(t)
 }
 
@@ -1158,7 +1157,7 @@ func (s *OrderStatusTestSuite) TestOrderStatus_AddNewStatusToOrder_PreparedToByO
 		responseRecorder := httptest.NewRecorder()
 		producer := runtime.JSONProducer()
 		resp.WriteResponse(responseRecorder, producer)
-		assert.Equal(t, http.StatusOK, responseRecorder.Code)
+		require.Equal(t, http.StatusOK, responseRecorder.Code)
 		s.orderStatusRepository.AssertExpectations(t)
 	}
 }
@@ -1190,10 +1189,10 @@ func (s *OrderStatusTestSuite) TestOrderStatus_AddNewStatusToOrder_AccessErr() {
 	response := models.Error{}
 	err := json.Unmarshal(responseRecorder.Body.Bytes(), &response)
 	require.NoError(t, err)
-	assert.NotEmpty(t, response)
-	assert.NotEmpty(t, response.Data)
-	assert.Contains(t, response.Data.Message, "Can't get authorization")
-	assert.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
+	require.NotEmpty(t, response)
+	require.NotEmpty(t, response.Data)
+	require.Contains(t, response.Data.Message, "Can't get authorization")
+	require.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
 	s.orderStatusRepository.AssertExpectations(t)
 }
 
@@ -1222,7 +1221,7 @@ func (s *OrderStatusTestSuite) TestOrderStatus_GetOrdersByStatus_NoAccess() {
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusForbidden, responseRecorder.Code)
+	require.Equal(t, http.StatusForbidden, responseRecorder.Code)
 }
 
 func (s *OrderStatusTestSuite) TestOrderStatus_GetOrdersByStatus_AccessErr() {
@@ -1243,10 +1242,10 @@ func (s *OrderStatusTestSuite) TestOrderStatus_GetOrdersByStatus_AccessErr() {
 	response := models.Error{}
 	err := json.Unmarshal(responseRecorder.Body.Bytes(), &response)
 	require.NoError(t, err)
-	assert.NotEmpty(t, response)
-	assert.NotEmpty(t, response.Data)
-	assert.Contains(t, response.Data.Message, "Can't get authorization")
-	assert.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
+	require.NotEmpty(t, response)
+	require.NotEmpty(t, response.Data)
+	require.Contains(t, response.Data.Message, "Can't get authorization")
+	require.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
 }
 
 func (s *OrderStatusTestSuite) TestOrderStatus_GetOrdersByStatus_RepoErr() {
@@ -1278,7 +1277,7 @@ func (s *OrderStatusTestSuite) TestOrderStatus_GetOrdersByStatus_RepoErr() {
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
+	require.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
 }
 
 func (s *OrderStatusTestSuite) TestOrderStatus_GetOrdersByStatus_EmptyResult() {
@@ -1310,14 +1309,14 @@ func (s *OrderStatusTestSuite) TestOrderStatus_GetOrdersByStatus_EmptyResult() {
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusOK, responseRecorder.Code)
+	require.Equal(t, http.StatusOK, responseRecorder.Code)
 
 	responseOrders := models.OrderList{}
 	err := json.Unmarshal(responseRecorder.Body.Bytes(), &responseOrders)
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.Equal(t, 0, int(*responseOrders.Total))
+	require.Equal(t, 0, int(*responseOrders.Total))
 	s.orderFilterRepository.AssertExpectations(t)
 }
 
@@ -1358,7 +1357,7 @@ func (s *OrderStatusTestSuite) TestOrderStatus_GetOrdersByStatus_MapErr() {
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
+	require.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
 	s.orderFilterRepository.AssertExpectations(t)
 }
 
@@ -1401,16 +1400,16 @@ func (s *OrderStatusTestSuite) TestOrderStatus_GetOrdersByStatus_EmptyPagination
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusOK, responseRecorder.Code)
+	require.Equal(t, http.StatusOK, responseRecorder.Code)
 	responseOrders := models.OrderList{}
 	err := json.Unmarshal(responseRecorder.Body.Bytes(), &responseOrders)
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.Equal(t, len(ordersToReturn), int(*responseOrders.Total))
-	assert.Equal(t, len(ordersToReturn), len(responseOrders.Items))
+	require.Equal(t, len(ordersToReturn), int(*responseOrders.Total))
+	require.Equal(t, len(ordersToReturn), len(responseOrders.Items))
 	for _, o := range responseOrders.Items {
-		assert.True(t, containsOrder(t, ordersToReturn, o))
+		require.True(t, containsOrder(t, ordersToReturn, o))
 	}
 	s.orderFilterRepository.AssertExpectations(t)
 }
@@ -1467,16 +1466,16 @@ func (s *OrderStatusTestSuite) TestOrderStatus_GetOrdersByStatus_LimitGreaterTha
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusOK, responseRecorder.Code)
+	require.Equal(t, http.StatusOK, responseRecorder.Code)
 	responseOrders := models.OrderList{}
 	err := json.Unmarshal(responseRecorder.Body.Bytes(), &responseOrders)
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.Equal(t, len(ordersByStatus), int(*responseOrders.Total))
-	assert.GreaterOrEqual(t, int(limit), len(responseOrders.Items))
+	require.Equal(t, len(ordersByStatus), int(*responseOrders.Total))
+	require.GreaterOrEqual(t, int(limit), len(responseOrders.Items))
 	for _, o := range responseOrders.Items {
-		assert.True(t, containsOrder(t, ordersByStatus, o))
+		require.True(t, containsOrder(t, ordersByStatus, o))
 	}
 	s.orderFilterRepository.AssertExpectations(t)
 }
@@ -1533,17 +1532,17 @@ func (s *OrderStatusTestSuite) TestOrderStatus_GetOrdersByStatus_LimitLessThanTo
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusOK, responseRecorder.Code)
+	require.Equal(t, http.StatusOK, responseRecorder.Code)
 	responseOrders := models.OrderList{}
 	err := json.Unmarshal(responseRecorder.Body.Bytes(), &responseOrders)
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.Equal(t, len(ordersByStatus), int(*responseOrders.Total))
-	assert.GreaterOrEqual(t, int(limit), len(responseOrders.Items))
-	assert.Greater(t, len(ordersByStatus), len(responseOrders.Items))
+	require.Equal(t, len(ordersByStatus), int(*responseOrders.Total))
+	require.GreaterOrEqual(t, int(limit), len(responseOrders.Items))
+	require.Greater(t, len(ordersByStatus), len(responseOrders.Items))
 	for _, o := range responseOrders.Items {
-		assert.True(t, containsOrder(t, ordersByStatus, o))
+		require.True(t, containsOrder(t, ordersByStatus, o))
 	}
 	s.orderFilterRepository.AssertExpectations(t)
 }
@@ -1600,18 +1599,18 @@ func (s *OrderStatusTestSuite) TestOrderStatus_GetOrdersByStatus_SecondPage() {
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusOK, responseRecorder.Code)
+	require.Equal(t, http.StatusOK, responseRecorder.Code)
 	responseOrders := models.OrderList{}
 	err := json.Unmarshal(responseRecorder.Body.Bytes(), &responseOrders)
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.Equal(t, len(ordersByStatus), int(*responseOrders.Total))
-	assert.GreaterOrEqual(t, int(limit), len(responseOrders.Items))
-	assert.Equal(t, len(ordersByStatus)-int(offset), len(responseOrders.Items))
-	assert.Greater(t, len(ordersByStatus), len(responseOrders.Items))
+	require.Equal(t, len(ordersByStatus), int(*responseOrders.Total))
+	require.GreaterOrEqual(t, int(limit), len(responseOrders.Items))
+	require.Equal(t, len(ordersByStatus)-int(offset), len(responseOrders.Items))
+	require.Greater(t, len(ordersByStatus), len(responseOrders.Items))
 	for _, o := range responseOrders.Items {
-		assert.True(t, containsOrder(t, ordersByStatus, o))
+		require.True(t, containsOrder(t, ordersByStatus, o))
 	}
 	s.orderFilterRepository.AssertExpectations(t)
 }
@@ -1668,16 +1667,16 @@ func (s *OrderStatusTestSuite) TestOrderStatus_GetOrdersByStatus_SeveralPages() 
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusOK, responseRecorder.Code)
+	require.Equal(t, http.StatusOK, responseRecorder.Code)
 	firstPage := models.OrderList{}
 	err := json.Unmarshal(responseRecorder.Body.Bytes(), &firstPage)
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.Equal(t, len(ordersByStatus), int(*firstPage.Total))
-	assert.Equal(t, int(limit), len(firstPage.Items))
+	require.Equal(t, len(ordersByStatus), int(*firstPage.Total))
+	require.Equal(t, int(limit), len(firstPage.Items))
 	for _, o := range firstPage.Items {
-		assert.True(t, containsOrder(t, ordersByStatus, o))
+		require.True(t, containsOrder(t, ordersByStatus, o))
 	}
 
 	offset = limit
@@ -1699,21 +1698,21 @@ func (s *OrderStatusTestSuite) TestOrderStatus_GetOrdersByStatus_SeveralPages() 
 	responseRecorder = httptest.NewRecorder()
 	producer = runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusOK, responseRecorder.Code)
+	require.Equal(t, http.StatusOK, responseRecorder.Code)
 	secondPage := models.OrderList{}
 	err = json.Unmarshal(responseRecorder.Body.Bytes(), &secondPage)
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.Equal(t, len(ordersByStatus), int(*secondPage.Total))
-	assert.GreaterOrEqual(t, int(limit), len(secondPage.Items))
-	assert.Equal(t, len(ordersByStatus)-int(offset), len(secondPage.Items))
-	assert.Greater(t, len(ordersByStatus), len(secondPage.Items))
+	require.Equal(t, len(ordersByStatus), int(*secondPage.Total))
+	require.GreaterOrEqual(t, int(limit), len(secondPage.Items))
+	require.Equal(t, len(ordersByStatus)-int(offset), len(secondPage.Items))
+	require.Greater(t, len(ordersByStatus), len(secondPage.Items))
 	for _, o := range secondPage.Items {
-		assert.True(t, containsOrder(t, ordersByStatus, o))
+		require.True(t, containsOrder(t, ordersByStatus, o))
 	}
 
-	assert.False(t, ordersDuplicated(t, firstPage.Items, secondPage.Items))
+	require.False(t, ordersDuplicated(t, firstPage.Items, secondPage.Items))
 	s.orderFilterRepository.AssertExpectations(t)
 }
 
@@ -1740,7 +1739,7 @@ func (s *OrderStatusTestSuite) TestOrderStatus_GetOrdersByPeriodAndStatus_NoAcce
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusForbidden, responseRecorder.Code)
+	require.Equal(t, http.StatusForbidden, responseRecorder.Code)
 	s.orderFilterRepository.AssertExpectations(t)
 }
 
@@ -1760,10 +1759,10 @@ func (s *OrderStatusTestSuite) TestOrderStatus_GetOrdersByPeriodAndStatus_Access
 	response := models.Error{}
 	err := json.Unmarshal(responseRecorder.Body.Bytes(), &response)
 	require.NoError(t, err)
-	assert.NotEmpty(t, response)
-	assert.NotEmpty(t, response.Data)
-	assert.Contains(t, response.Data.Message, "Can't get authorization")
-	assert.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
+	require.NotEmpty(t, response)
+	require.NotEmpty(t, response.Data)
+	require.Contains(t, response.Data.Message, "Can't get authorization")
+	require.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
 }
 
 func (s *OrderStatusTestSuite) TestOrderStatus_GetOrdersByPeriodAndStatus_RepoErr() {
@@ -1798,7 +1797,7 @@ func (s *OrderStatusTestSuite) TestOrderStatus_GetOrdersByPeriodAndStatus_RepoEr
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
+	require.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
 	s.orderFilterRepository.AssertExpectations(t)
 }
 
@@ -1834,14 +1833,14 @@ func (s *OrderStatusTestSuite) TestOrderStatus_GetOrdersByPeriodAndStatus_EmptyR
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusOK, responseRecorder.Code)
+	require.Equal(t, http.StatusOK, responseRecorder.Code)
 	responseOrders := models.OrderList{}
 	err := json.Unmarshal(responseRecorder.Body.Bytes(), &responseOrders)
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.Equal(t, 0, int(*responseOrders.Total))
-	assert.Equal(t, 0, len(responseOrders.Items))
+	require.Equal(t, 0, int(*responseOrders.Total))
+	require.Equal(t, 0, len(responseOrders.Items))
 	s.orderFilterRepository.AssertExpectations(t)
 }
 
@@ -1886,7 +1885,7 @@ func (s *OrderStatusTestSuite) TestOrderStatus_GetOrdersByPeriodAndStatus_MapErr
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
+	require.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
 	s.orderFilterRepository.AssertExpectations(t)
 }
 
@@ -1933,7 +1932,7 @@ func (s *OrderStatusTestSuite) TestOrderStatus_GetOrdersByPeriodAndStatus_EmptyP
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusOK, responseRecorder.Code)
+	require.Equal(t, http.StatusOK, responseRecorder.Code)
 	s.orderFilterRepository.AssertExpectations(t)
 }
 
@@ -1993,16 +1992,16 @@ func (s *OrderStatusTestSuite) TestOrderStatus_GetOrdersByPeriodAndStatus_LimitG
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusOK, responseRecorder.Code)
+	require.Equal(t, http.StatusOK, responseRecorder.Code)
 	responseOrders := models.OrderList{}
 	err := json.Unmarshal(responseRecorder.Body.Bytes(), &responseOrders)
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.Equal(t, len(ordersByStatus), int(*responseOrders.Total))
-	assert.GreaterOrEqual(t, int(limit), len(responseOrders.Items))
+	require.Equal(t, len(ordersByStatus), int(*responseOrders.Total))
+	require.GreaterOrEqual(t, int(limit), len(responseOrders.Items))
 	for _, o := range responseOrders.Items {
-		assert.True(t, containsOrder(t, ordersByStatus, o))
+		require.True(t, containsOrder(t, ordersByStatus, o))
 	}
 	s.orderFilterRepository.AssertExpectations(t)
 }
@@ -2063,17 +2062,17 @@ func (s *OrderStatusTestSuite) TestOrderStatus_GetOrdersByPeriodAndStatus_LimitL
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusOK, responseRecorder.Code)
+	require.Equal(t, http.StatusOK, responseRecorder.Code)
 	responseOrders := models.OrderList{}
 	err := json.Unmarshal(responseRecorder.Body.Bytes(), &responseOrders)
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.Equal(t, len(ordersByStatus), int(*responseOrders.Total))
-	assert.GreaterOrEqual(t, int(limit), len(responseOrders.Items))
-	assert.Greater(t, len(ordersByStatus), len(responseOrders.Items))
+	require.Equal(t, len(ordersByStatus), int(*responseOrders.Total))
+	require.GreaterOrEqual(t, int(limit), len(responseOrders.Items))
+	require.Greater(t, len(ordersByStatus), len(responseOrders.Items))
 	for _, o := range responseOrders.Items {
-		assert.True(t, containsOrder(t, ordersByStatus, o))
+		require.True(t, containsOrder(t, ordersByStatus, o))
 	}
 	s.orderFilterRepository.AssertExpectations(t)
 }
@@ -2134,18 +2133,18 @@ func (s *OrderStatusTestSuite) TestOrderStatus_GetOrdersByPeriodAndStatus_Second
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusOK, responseRecorder.Code)
+	require.Equal(t, http.StatusOK, responseRecorder.Code)
 	responseOrders := models.OrderList{}
 	err := json.Unmarshal(responseRecorder.Body.Bytes(), &responseOrders)
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.Equal(t, len(ordersByStatus), int(*responseOrders.Total))
-	assert.GreaterOrEqual(t, int(limit), len(responseOrders.Items))
-	assert.Equal(t, len(ordersByStatus)-int(offset), len(responseOrders.Items))
-	assert.Greater(t, len(ordersByStatus), len(responseOrders.Items))
+	require.Equal(t, len(ordersByStatus), int(*responseOrders.Total))
+	require.GreaterOrEqual(t, int(limit), len(responseOrders.Items))
+	require.Equal(t, len(ordersByStatus)-int(offset), len(responseOrders.Items))
+	require.Greater(t, len(ordersByStatus), len(responseOrders.Items))
 	for _, o := range responseOrders.Items {
-		assert.True(t, containsOrder(t, ordersByStatus, o))
+		require.True(t, containsOrder(t, ordersByStatus, o))
 	}
 	s.orderFilterRepository.AssertExpectations(t)
 }
@@ -2206,16 +2205,16 @@ func (s *OrderStatusTestSuite) TestOrderStatus_GetOrdersByPeriodAndStatus_Severa
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusOK, responseRecorder.Code)
+	require.Equal(t, http.StatusOK, responseRecorder.Code)
 	firstPage := models.OrderList{}
 	err := json.Unmarshal(responseRecorder.Body.Bytes(), &firstPage)
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.Equal(t, len(ordersByStatus), int(*firstPage.Total))
-	assert.Equal(t, int(limit), len(firstPage.Items))
+	require.Equal(t, len(ordersByStatus), int(*firstPage.Total))
+	require.Equal(t, int(limit), len(firstPage.Items))
 	for _, o := range firstPage.Items {
-		assert.True(t, containsOrder(t, ordersByStatus, o))
+		require.True(t, containsOrder(t, ordersByStatus, o))
 	}
 
 	offset = limit
@@ -2239,20 +2238,20 @@ func (s *OrderStatusTestSuite) TestOrderStatus_GetOrdersByPeriodAndStatus_Severa
 	responseRecorder = httptest.NewRecorder()
 	producer = runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusOK, responseRecorder.Code)
+	require.Equal(t, http.StatusOK, responseRecorder.Code)
 	secondPage := models.OrderList{}
 	err = json.Unmarshal(responseRecorder.Body.Bytes(), &secondPage)
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.Equal(t, len(ordersByStatus), int(*secondPage.Total))
-	assert.GreaterOrEqual(t, int(limit), len(secondPage.Items))
-	assert.Equal(t, len(ordersByStatus)-int(offset), len(secondPage.Items))
-	assert.Greater(t, len(ordersByStatus), len(secondPage.Items))
+	require.Equal(t, len(ordersByStatus), int(*secondPage.Total))
+	require.GreaterOrEqual(t, int(limit), len(secondPage.Items))
+	require.Equal(t, len(ordersByStatus)-int(offset), len(secondPage.Items))
+	require.Greater(t, len(ordersByStatus), len(secondPage.Items))
 	for _, o := range secondPage.Items {
-		assert.True(t, containsOrder(t, ordersByStatus, o))
+		require.True(t, containsOrder(t, ordersByStatus, o))
 	}
 
-	assert.False(t, ordersDuplicated(t, firstPage.Items, secondPage.Items))
+	require.False(t, ordersDuplicated(t, firstPage.Items, secondPage.Items))
 	s.orderFilterRepository.AssertExpectations(t)
 }

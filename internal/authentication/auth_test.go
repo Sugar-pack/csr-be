@@ -3,7 +3,7 @@ package authentication
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestAuth(t *testing.T) {
@@ -20,22 +20,22 @@ func TestAuth(t *testing.T) {
 	a = auth
 
 	b, err := IsAdmin(a)
-	assert.NoError(t, err)
-	assert.Equal(t, true, b)
+	require.NoError(t, err)
+	require.Equal(t, true, b)
 
 	b, err = IsManager(a)
-	assert.NoError(t, err)
-	assert.Equal(t, false, b)
+	require.NoError(t, err)
+	require.Equal(t, false, b)
 
 	b, err = IsOperator(a)
-	assert.NoError(t, err)
-	assert.Equal(t, false, b)
+	require.NoError(t, err)
+	require.Equal(t, false, b)
 
 	userID, err := GetUserId(a)
-	assert.NoError(t, err)
-	assert.Equal(t, 1, userID)
+	require.NoError(t, err)
+	require.Equal(t, 1, userID)
 
 	selectedAuth, err := GetAuth(a)
-	assert.NoError(t, err)
-	assert.Equal(t, &auth, selectedAuth)
+	require.NoError(t, err)
+	require.Equal(t, &auth, selectedAuth)
 }

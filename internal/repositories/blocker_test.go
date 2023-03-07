@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/ent"
@@ -54,45 +54,45 @@ func (s *blockerTestSuite) TestBlockerRepository_SetIsBlockedUser_SetTrue() {
 	t := s.T()
 	ctx := s.ctx
 	tx, err := s.client.Tx(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
 	err = s.repository.SetIsBlockedUser(ctx, s.user.ID, true)
-	assert.NoError(t, err)
-	assert.NoError(t, tx.Commit())
+	require.NoError(t, err)
+	require.NoError(t, tx.Commit())
 	updatedUser, err := s.client.User.Get(ctx, s.user.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.True(t, updatedUser.IsBlocked)
+	require.True(t, updatedUser.IsBlocked)
 }
 
 func (s *blockerTestSuite) TestBlockerRepository_SetIsBlockedUser_SetFalse() {
 	t := s.T()
 	ctx := s.ctx
 	tx, err := s.client.Tx(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
 	err = s.repository.SetIsBlockedUser(ctx, s.user.ID, false)
-	assert.NoError(t, err)
-	assert.NoError(t, tx.Commit())
+	require.NoError(t, err)
+	require.NoError(t, tx.Commit())
 	updatedUser, err := s.client.User.Get(ctx, s.user.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.False(t, updatedUser.IsBlocked)
+	require.False(t, updatedUser.IsBlocked)
 }
 
 func (s *blockerTestSuite) TestBlockerRepository_SetIsBlockedUser_NoUser() {
 	t := s.T()
 	ctx := s.ctx
 	tx, err := s.client.Tx(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
 	err = s.client.User.DeleteOneID(s.user.ID).Exec(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
 	err = s.repository.SetIsBlockedUser(ctx, s.user.ID, false)
-	assert.Error(t, err)
-	assert.NoError(t, tx.Rollback())
+	require.Error(t, err)
+	require.NoError(t, tx.Rollback())
 }

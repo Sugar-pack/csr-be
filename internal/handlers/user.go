@@ -5,19 +5,19 @@ import (
 	"math"
 	"net/http"
 
-	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/ent/user"
-	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/repositories"
-	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/utils"
-	"git.epam.com/epm-lstr/epm-lstr-lc/be/pkg/domain"
-
 	"github.com/go-openapi/runtime/middleware"
 	"go.uber.org/zap"
+	"golang.org/x/crypto/bcrypt"
 
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/authentication"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/ent"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/ent/user"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/swagger/models"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/swagger/restapi/operations"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/swagger/restapi/operations/users"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/repositories"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/utils"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/pkg/domain"
 )
 
 func SetUserHandler(logger *zap.Logger, api *operations.BeAPI,
@@ -34,6 +34,7 @@ func SetUserHandler(logger *zap.Logger, api *operations.BeAPI,
 	api.UsersGetAllUsersHandler = userHandler.GetUsersList(userRepo)
 	api.UsersAssignRoleToUserHandler = userHandler.AssignRoleToUserFunc(userRepo)
 	api.UsersDeleteUserHandler = userHandler.DeleteUserByID(userRepo)
+	api.UsersChangePasswordHandler = userHandler.ChangePassword(userRepo)
 	api.UsersLogoutHandler = userHandler.LogoutUserFunc(tokenManager)
 }
 
@@ -186,6 +187,10 @@ func (c User) AssignRoleToUserFunc(repository domain.UserRepository) users.Assig
 
 		ctx := p.HTTPRequest.Context()
 		userId := int(p.UserID)
+		if p.Data.RoleID == nil {
+			return users.NewAssignRoleToUserDefault(http.StatusBadRequest).
+				WithPayload(buildStringPayload("role id is required"))
+		}
 		roleId := int(*p.Data.RoleID)
 
 		err := repository.SetUserRole(ctx, userId, roleId)
@@ -301,6 +306,52 @@ func (c User) DeleteUserByID(repo domain.UserRepository) users.DeleteUserHandler
 				})
 		}
 		return users.NewDeleteUserOK().WithPayload("User deleted")
+	}
+}
+
+func (c User) ChangePassword(repo domain.UserRepository) users.ChangePasswordHandlerFunc {
+	return func(p users.ChangePasswordParams, access interface{}) middleware.Responder {
+		ctx := p.HTTPRequest.Context()
+		userID, err := authentication.GetUserId(access)
+		if err != nil {
+			c.logger.Error("error while getting authorization", zap.Error(err))
+			return users.NewChangePasswordUnauthorized().
+				WithPayload(buildStringPayload("Can't get authorization"))
+		}
+		if p.PasswordPatch == nil {
+			c.logger.Error("password patch is nil", zap.Any("access", access))
+			return users.NewChangePasswordDefault(http.StatusBadRequest).
+				WithPayload(buildStringPayload("Password patch is nil"))
+		}
+		//TODO: add validation for password or ask frontend to do it
+		if p.PasswordPatch.OldPassword == p.PasswordPatch.NewPassword {
+			c.logger.Error("old and new passwords are the same", zap.Any("access", access))
+			return users.NewChangePasswordDefault(http.StatusBadRequest).
+				WithPayload(buildStringPayload("Old and new passwords are the same"))
+		}
+		requestedUser, err := repo.GetUserByID(ctx, userID)
+		if err != nil {
+			c.logger.Error("getting user failed", zap.Error(err))
+			return users.NewChangePasswordDefault(http.StatusInternalServerError).
+				WithPayload(buildStringPayload("Can't get user by id"))
+		}
+		if requestedUser.IsBlocked {
+			c.logger.Error("user is blocked", zap.Any("access", access))
+			return users.NewChangePasswordDefault(http.StatusForbidden).
+				WithPayload(&models.Error{Data: &models.ErrorData{Message: "User is blocked"}})
+		}
+		expectedPasswordHash := requestedUser.Password
+		if err = bcrypt.CompareHashAndPassword([]byte(expectedPasswordHash), []byte(p.PasswordPatch.OldPassword)); err != nil {
+			c.logger.Error("wrong password", zap.Error(err))
+			return users.NewChangePasswordDefault(http.StatusForbidden).
+				WithPayload(buildStringPayload("Wrong password"))
+		}
+		if err = repo.ChangePasswordByLogin(ctx, requestedUser.Login, p.PasswordPatch.NewPassword); err != nil {
+			c.logger.Error("error while changing password", zap.Error(err))
+			return users.NewChangePasswordDefault(http.StatusInternalServerError).
+				WithPayload(buildStringPayload("Error while changing password"))
+		}
+		return users.NewChangePasswordNoContent()
 	}
 }
 

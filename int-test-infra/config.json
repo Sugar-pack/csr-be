@@ -67,7 +67,8 @@
           "/equipment/{equipmentId}"
         ],
         "PATCH": [
-          "/v1/users/me"
+          "/v1/users/me",
+          "/v1/users/me/password"
         ],
         "POST": [
           "/v1/management/users/{userId}/role"
@@ -102,7 +103,8 @@
           "/v1/status_names"
         ],
         "PATCH": [
-          "/v1/users/me"
+          "/v1/users/me",
+          "/v1/users/me/password"
         ],
         "POST": [
           "/v1/orders"

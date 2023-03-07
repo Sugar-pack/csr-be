@@ -4,12 +4,12 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestGenerateFileName(t *testing.T) {
 	f, err := GenerateFileName()
-	assert.NoError(t, err)
-	assert.Len(t, f, 32)
-	assert.Equal(t, -1, strings.LastIndex(f, "-"))
+	require.NoError(t, err)
+	require.Len(t, f, 32)
+	require.Equal(t, -1, strings.LastIndex(f, "-"))
 }

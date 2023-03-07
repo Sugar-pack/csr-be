@@ -411,7 +411,6 @@ func setParameters(ctx context.Context, client *client.Be, auth runtime.ClientAu
 	}
 
 	location := int64(71)
-	amount := int64(1)
 	mdays := int64(10)
 	catName := "Том"
 	rDate := "2018"
@@ -461,7 +460,6 @@ func setParameters(ctx context.Context, client *client.Be, auth runtime.ClientAu
 		Category:         category.Payload.Data.ID,
 		Subcategory:      subCatInt64,
 		Location:         &location,
-		MaximumAmount:    &amount,
 		MaximumDays:      &mdays,
 		Name:             &catName,
 		NameSubstring:    "box",

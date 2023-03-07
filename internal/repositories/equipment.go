@@ -64,7 +64,6 @@ func (r *equipmentRepository) EquipmentsByFilter(ctx context.Context, filter mod
 			OptionalStringEquipment(filter.Title, equipment.FieldTitle),
 			OptionalBoolEquipment(filter.TechnicalIssues, equipment.FieldTechIssue),
 			OptionalStringEquipment(filter.Condition, equipment.FieldCondition),
-			OptionalIntEquipment(filter.MaximumAmount, equipment.FieldMaximumAmount),
 			OptionalIntEquipment(filter.MaximumDays, equipment.FieldMaximumDays),
 			equipment.HasPetKindsWith(OptionalIntsPetKind(filter.PetKinds, petkind.FieldID)),
 			equipment.HasPetSizeWith(OptionalIntsPetSize(filter.PetSize, petsize.FieldID)),
@@ -103,7 +102,6 @@ func (r *equipmentRepository) CreateEquipment(ctx context.Context, NewEquipment 
 		SetInventoryNumber(*NewEquipment.InventoryNumber).
 		SetSupplier(*NewEquipment.Supplier).
 		SetReceiptDate(*NewEquipment.ReceiptDate).
-		SetMaximumAmount(*NewEquipment.MaximumAmount).
 		SetMaximumDays(*NewEquipment.MaximumDays).
 		SetCategory(&ent.Category{ID: int(*NewEquipment.Category)}).
 		SetCurrentStatus(status).
@@ -220,7 +218,6 @@ func (r *equipmentRepository) EquipmentsByFilterTotal(ctx context.Context, filte
 			OptionalStringEquipment(filter.Title, equipment.FieldTitle),
 			OptionalBoolEquipment(filter.TechnicalIssues, equipment.FieldTechIssue),
 			OptionalStringEquipment(filter.Condition, equipment.FieldCondition),
-			OptionalIntEquipment(filter.MaximumAmount, equipment.FieldMaximumAmount),
 			OptionalIntEquipment(filter.MaximumDays, equipment.FieldMaximumDays),
 			equipment.HasPetKindsWith(OptionalIntsPetKind(filter.PetKinds, petkind.FieldID)),
 			equipment.HasPetSizeWith(OptionalIntsPetSize(filter.PetSize, petsize.FieldID)),
@@ -269,9 +266,6 @@ func (r *equipmentRepository) UpdateEquipmentByID(ctx context.Context, id int, e
 	}
 	if *eq.Category != 0 {
 		edit.SetCategory(&ent.Category{ID: int(*eq.Category)})
-	}
-	if *eq.MaximumAmount != 0 {
-		edit.SetMaximumAmount(*eq.MaximumAmount)
 	}
 	if *eq.MaximumDays != 0 {
 		edit.SetMaximumDays(*eq.MaximumDays)

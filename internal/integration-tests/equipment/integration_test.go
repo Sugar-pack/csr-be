@@ -54,7 +54,6 @@ func TestIntegration_CreateEquipment(t *testing.T) {
 		assert.Equal(t, model.InventoryNumber, res.Payload.InventoryNumber)
 		assert.Equal(t, model.Category, res.Payload.Category)
 		//assert.Equal(t, location, *res.Payload.Location)
-		assert.Equal(t, model.MaximumAmount, res.Payload.MaximumAmount)
 		assert.Equal(t, model.MaximumDays, res.Payload.MaximumDays)
 		assert.Equal(t, model.Name, res.Payload.Name)
 		assert.Equal(t, model.PetKinds[0], res.Payload.PetKinds[0].ID)
@@ -171,7 +170,6 @@ func TestIntegration_GetEquipment(t *testing.T) {
 		assert.Equal(t, model.Description, res.Payload.Description)
 		assert.Equal(t, model.InventoryNumber, res.Payload.InventoryNumber)
 		assert.Equal(t, model.Category, res.Payload.Category)
-		assert.Equal(t, model.MaximumAmount, res.Payload.MaximumAmount)
 		assert.Equal(t, model.MaximumDays, res.Payload.MaximumDays)
 		assert.Equal(t, model.Name, res.Payload.Name)
 		//assert.Equal(t, model.Location, res.Payload.Location)
@@ -419,7 +417,6 @@ func setParameters(ctx context.Context, client *client.Be, auth runtime.ClientAu
 	}
 
 	location := int64(71)
-	amount := int64(1)
 	mdays := int64(10)
 	catName := "Том"
 	rDate := "2018"
@@ -469,7 +466,6 @@ func setParameters(ctx context.Context, client *client.Be, auth runtime.ClientAu
 		Category:         category.Payload.Data.ID,
 		Subcategory:      subCategoryInt64,
 		Location:         &location,
-		MaximumAmount:    &amount,
 		MaximumDays:      &mdays,
 		Name:             &catName,
 		NameSubstring:    "box",
