@@ -73,6 +73,51 @@ func TestIntegration_CreateEquipment(t *testing.T) {
 		assert.Equal(t, model.Title, res.Payload.Title)
 	})
 
+	t.Run("Create Equipment failed: 422 status code error, description and name fields have a number of characters greater than the limit ",
+		func(t *testing.T) {
+			params := equipment.NewCreateNewEquipmentParamsWithContext(ctx)
+			model, err := setParameters(ctx, client, auth)
+			require.NoError(t, err)
+
+			// name field tests:
+			// max length of name field: 100 characters
+			name, err := utils.GenerateRandomString(101)
+			require.NoError(t, err)
+			model.Name = &name
+			params.NewEquipment = model
+
+			_, err = client.Equipment.CreateNewEquipment(params, auth)
+			require.Error(t, err)
+
+			name, err = utils.GenerateRandomString(99)
+			require.NoError(t, err)
+			model.Name = &name
+			params.NewEquipment = model
+
+			_, err = client.Equipment.CreateNewEquipment(params, auth)
+			require.NoError(t, err)
+
+			// description field tests:
+			// max length of description field: 255 characters
+			model, err = setParameters(ctx, client, auth)
+			require.NoError(t, err)
+			description, err := utils.GenerateRandomString(256)
+			require.NoError(t, err)
+			model.Description = &description
+
+			params.NewEquipment = model
+			_, err = client.Equipment.CreateNewEquipment(params, auth)
+			require.Error(t, err)
+
+			description, err = utils.GenerateRandomString(254)
+			require.NoError(t, err)
+			model.Description = &description
+			params.NewEquipment = model
+
+			_, err = client.Equipment.CreateNewEquipment(params, auth)
+			require.NoError(t, err)
+		})
+
 	t.Run("Create Equipment failed: foreign key constraint error", func(t *testing.T) {
 		params := equipment.NewCreateNewEquipmentParamsWithContext(ctx)
 		model, err := setParameters(ctx, client, auth)

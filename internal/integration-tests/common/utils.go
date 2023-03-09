@@ -4,7 +4,9 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"math/rand"
 	"net/http"
+	"strings"
 	"time"
 
 	httptransport "github.com/go-openapi/runtime/client"
@@ -141,4 +143,18 @@ func NewAPIClient(host string, schemes []string) (*client.Be, error) {
 	// https://github.com/go-swagger/go-swagger/issues/1244
 	be.Consumers["image/jpg"] = runtime.ByteStreamConsumer()
 	return client.New(be, nil), nil
+}
+
+func GenerateRandomString(length int) (string, error) {
+	rand.Seed(time.Now().UnixNano())
+	charset := "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+	var builder strings.Builder
+	for i := 0; i < length; i++ {
+		err := builder.WriteByte(charset[rand.Intn(len(charset))])
+		if err != nil {
+			return "", err
+		}
+	}
+
+	return builder.String(), nil
 }

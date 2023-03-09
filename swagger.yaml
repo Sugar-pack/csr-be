@@ -2611,10 +2611,12 @@ definitions:
       name:
         type: string
         example: "Dog harness 3000"
+        maxLength: 100
       nameSubstring:
         type: string
         example: "box"
         description: "Substring of name for case in-sensitive search"
+        maxLength: 255
       title:
         type: string
         example: "клетка midwest icrate 1"
