@@ -2648,8 +2648,8 @@ definitions:
         type: string
         example: "ИП Григорьев Виталий Васильевич"
       receiptDate:
-        type: string
-        example: "2018"
+        type: integer
+        example: 1678111533
       maximumDays:
         type: integer
         example: 30
@@ -2713,8 +2713,8 @@ definitions:
         type: string
         example: "ИП Григорьев Виталий Васильевич"
       receiptDate:
-        type: string
-        example: "2018"
+        type: integer
+        example: 1678111533
       maximumDays:
         type: integer
         example: 30
@@ -2792,8 +2792,8 @@ definitions:
         type: string
         example: "ИП Григорьев Виталий Васильевич"
       receiptDate:
-        type: string
-        example: "2018"
+        type: integer
+        example: 1678111533
       maximumDays:
         type: integer
         example: 30

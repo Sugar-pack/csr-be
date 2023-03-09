@@ -3,6 +3,7 @@ package repositories
 import (
 	"context"
 	"errors"
+	"time"
 
 	"entgo.io/ent/dialect/sql"
 
@@ -48,6 +49,11 @@ func (r *equipmentRepository) EquipmentsByFilter(ctx context.Context, filter mod
 		return nil, err
 	}
 
+	var filterReceiptDate string
+	if filter.ReceiptDate != 0 {
+		filterReceiptDate = time.Unix(filter.ReceiptDate, 0).Format(utils.TimeFormat)
+	}
+
 	result, err := tx.Equipment.Query().
 		Where(
 			equipment.HasCategoryWith(OptionalIntCategory(filter.Category, category.FieldID)),
@@ -60,7 +66,10 @@ func (r *equipmentRepository) EquipmentsByFilter(ctx context.Context, filter mod
 			OptionalIntEquipment(filter.CompensationCost, equipment.FieldCompensationCost),
 			OptionalIntEquipment(filter.InventoryNumber, equipment.FieldInventoryNumber),
 			OptionalStringEquipment(filter.Supplier, equipment.FieldSupplier),
-			OptionalStringEquipment(filter.ReceiptDate, equipment.FieldReceiptDate),
+			OptionalStringEquipment(
+				filterReceiptDate,
+				equipment.FieldReceiptDate,
+			),
 			OptionalStringEquipment(filter.Title, equipment.FieldTitle),
 			OptionalBoolEquipment(filter.TechnicalIssues, equipment.FieldTechIssue),
 			OptionalStringEquipment(filter.Condition, equipment.FieldCondition),
@@ -92,6 +101,9 @@ func (r *equipmentRepository) CreateEquipment(ctx context.Context, NewEquipment 
 	if err != nil {
 		return nil, err
 	}
+
+	eqReceiptDate := time.Unix(*NewEquipment.ReceiptDate, 0).Format(utils.TimeFormat)
+
 	eq, err := tx.Equipment.Create().
 		SetName(*NewEquipment.Name).
 		SetDescription(*NewEquipment.Description).
@@ -101,7 +113,7 @@ func (r *equipmentRepository) CreateEquipment(ctx context.Context, NewEquipment 
 		SetCondition(NewEquipment.Condition).
 		SetInventoryNumber(*NewEquipment.InventoryNumber).
 		SetSupplier(*NewEquipment.Supplier).
-		SetReceiptDate(*NewEquipment.ReceiptDate).
+		SetReceiptDate(eqReceiptDate).
 		SetMaximumDays(*NewEquipment.MaximumDays).
 		SetCategory(&ent.Category{ID: int(*NewEquipment.Category)}).
 		SetCurrentStatus(status).
@@ -202,6 +214,11 @@ func (r *equipmentRepository) EquipmentsByFilterTotal(ctx context.Context, filte
 		return 0, err
 	}
 
+	var filterReceiptDate string
+	if filter.ReceiptDate != 0 {
+		filterReceiptDate = time.Unix(filter.ReceiptDate, 0).Format(utils.TimeFormat)
+	}
+
 	total, err := tx.Equipment.Query().
 		Where(
 			equipment.HasCategoryWith(OptionalIntCategory(filter.Category, category.FieldID)),
@@ -214,7 +231,10 @@ func (r *equipmentRepository) EquipmentsByFilterTotal(ctx context.Context, filte
 			OptionalIntEquipment(filter.CompensationCost, equipment.FieldCompensationCost),
 			OptionalIntEquipment(filter.InventoryNumber, equipment.FieldInventoryNumber),
 			OptionalStringEquipment(filter.Supplier, equipment.FieldSupplier),
-			OptionalStringEquipment(filter.ReceiptDate, equipment.FieldReceiptDate),
+			OptionalStringEquipment(
+				filterReceiptDate,
+				equipment.FieldReceiptDate,
+			),
 			OptionalStringEquipment(filter.Title, equipment.FieldTitle),
 			OptionalBoolEquipment(filter.TechnicalIssues, equipment.FieldTechIssue),
 			OptionalStringEquipment(filter.Condition, equipment.FieldCondition),
@@ -261,9 +281,13 @@ func (r *equipmentRepository) UpdateEquipmentByID(ctx context.Context, id int, e
 	if *eq.Supplier != "" {
 		edit.SetSupplier(*eq.Supplier)
 	}
-	if *eq.ReceiptDate != "" {
-		edit.SetReceiptDate(*eq.ReceiptDate)
+
+	eqReceiptDate := time.Unix(*eq.ReceiptDate, 0).Format(utils.TimeFormat)
+
+	if *eq.ReceiptDate != 0 {
+		edit.SetReceiptDate(eqReceiptDate)
 	}
+
 	if *eq.Category != 0 {
 		edit.SetCategory(&ent.Category{ID: int(*eq.Category)})
 	}
