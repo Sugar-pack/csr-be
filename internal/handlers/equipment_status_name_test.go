@@ -75,7 +75,7 @@ func (s *EquipmentStatusNameTestSuite) TestStatus_PostStatus_RepoErr() {
 	statusName := "statusName"
 	data := eqStatusName.PostEquipmentStatusNameParams{
 		HTTPRequest: &request,
-		Name: &models.EquipmentStatusName{
+		Name: &models.NewEquipmentStatusName{
 			Name: &statusName,
 		},
 	}
@@ -101,7 +101,7 @@ func (s *EquipmentStatusNameTestSuite) TestStatus_PostStatus_OK() {
 	statusName := "statusName"
 	data := eqStatusName.PostEquipmentStatusNameParams{
 		HTTPRequest: &request,
-		Name: &models.EquipmentStatusName{
+		Name: &models.NewEquipmentStatusName{
 			Name: &statusName,
 		},
 	}

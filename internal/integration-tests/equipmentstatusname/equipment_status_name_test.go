@@ -131,7 +131,7 @@ func TestIntegration_PostStatus(t *testing.T) {
 	t.Run("Post Status successfully", func(t *testing.T) {
 		want := "test status"
 		params := eqStatusName.NewPostEquipmentStatusNameParamsWithContext(ctx)
-		params.Name = &models.EquipmentStatusName{
+		params.Name = &models.NewEquipmentStatusName{
 			Name: &want,
 		}
 		res, err := client.EquipmentStatusName.PostEquipmentStatusName(params, utils.AuthInfoFunc(token))
@@ -144,7 +144,7 @@ func TestIntegration_PostStatus(t *testing.T) {
 	t.Run("Post Status failed: post same status again", func(t *testing.T) {
 		wantSameStatus := "test status"
 		params := eqStatusName.NewPostEquipmentStatusNameParamsWithContext(ctx)
-		params.Name = &models.EquipmentStatusName{
+		params.Name = &models.NewEquipmentStatusName{
 			Name: &wantSameStatus,
 		}
 		_, gotErr := client.EquipmentStatusName.PostEquipmentStatusName(params, utils.AuthInfoFunc(token))
@@ -158,7 +158,7 @@ func TestIntegration_PostStatus(t *testing.T) {
 	t.Run("Post Status failed: invalid auth", func(t *testing.T) {
 		want := "new status"
 		params := eqStatusName.NewPostEquipmentStatusNameParamsWithContext(ctx)
-		params.Name = &models.EquipmentStatusName{
+		params.Name = &models.NewEquipmentStatusName{
 			Name: &want,
 		}
 		dummyToken := utils.TokenNotExist

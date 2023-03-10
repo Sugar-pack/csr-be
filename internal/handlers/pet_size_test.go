@@ -437,6 +437,7 @@ func (s *PetSizeTestSuite) TestPetSize_EditPetSizeFunc_OK() {
 	ctx := request.Context()
 	name := "test pet name"
 	size := "test size"
+	id := 0
 	handlerFunc := s.petSize.UpdatePetSizeByID(s.petSizeRepo)
 	petSizeToUpdate := &models.PetSize{
 		Name: &name,
@@ -449,7 +450,7 @@ func (s *PetSizeTestSuite) TestPetSize_EditPetSizeFunc_OK() {
 
 	petSizeToReturn := ValidPetSize(t)
 
-	s.petSizeRepo.On("Update", ctx, int(petSizeToUpdate.ID), petSizeToUpdate).Return(petSizeToReturn, nil)
+	s.petSizeRepo.On("Update", ctx, id, petSizeToUpdate).Return(petSizeToReturn, nil)
 
 	access := "dummy access"
 	resp := handlerFunc(data, access)
@@ -475,6 +476,7 @@ func (s *PetSizeTestSuite) TestPetSize_EditPetSizeFunc_ErrRespNil() {
 	ctx := request.Context()
 	name := "test pet name"
 	size := "test size"
+	id := 0
 	handlerFunc := s.petSize.UpdatePetSizeByID(s.petSizeRepo)
 	petSizeToUpdate := &models.PetSize{
 		Name: &name,
@@ -484,7 +486,7 @@ func (s *PetSizeTestSuite) TestPetSize_EditPetSizeFunc_ErrRespNil() {
 		HTTPRequest: &request,
 		EditPetSize: petSizeToUpdate,
 	}
-	s.petSizeRepo.On("Update", ctx, int(petSizeToUpdate.ID), petSizeToUpdate).Return(nil, nil)
+	s.petSizeRepo.On("Update", ctx, id, petSizeToUpdate).Return(nil, nil)
 
 	access := "dummy access"
 	resp := handlerFunc(data, access)
@@ -502,6 +504,7 @@ func (s *PetSizeTestSuite) TestPetSize_EditPetSizeFunc_ErrFromRepo() {
 	name := "test pet name"
 	size := "test size"
 	handlerFunc := s.petSize.UpdatePetSizeByID(s.petSizeRepo)
+	id := 0
 	petSizeToUpdate := &models.PetSize{
 		Name: &name,
 		Size: &size,
@@ -511,7 +514,7 @@ func (s *PetSizeTestSuite) TestPetSize_EditPetSizeFunc_ErrFromRepo() {
 		EditPetSize: petSizeToUpdate,
 	}
 	err := errors.New("test")
-	s.petSizeRepo.On("Update", ctx, int(petSizeToUpdate.ID), petSizeToUpdate).Return(nil, err)
+	s.petSizeRepo.On("Update", ctx, id, petSizeToUpdate).Return(nil, err)
 
 	access := "dummy access"
 	resp := handlerFunc(data, access)
