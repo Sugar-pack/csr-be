@@ -4,17 +4,18 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"math/rand"
 	"net/http"
+	"strings"
 	"testing"
 	"time"
 
-	httptransport "github.com/go-openapi/runtime/client"
-	"github.com/stretchr/testify/require"
-	"go.uber.org/zap"
-
 	"github.com/brianvoe/gofakeit/v6"
 	"github.com/go-openapi/runtime"
+	httptransport "github.com/go-openapi/runtime/client"
 	"github.com/go-openapi/strfmt"
+	"github.com/stretchr/testify/require"
+	"go.uber.org/zap"
 
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/config"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/swagger/client"
@@ -186,4 +187,18 @@ func NewAPIClient(host string, schemes []string) (*client.Be, error) {
 	// https://github.com/go-swagger/go-swagger/issues/1244
 	be.Consumers["image/jpg"] = runtime.ByteStreamConsumer()
 	return client.New(be, nil), nil
+}
+
+func GenerateRandomString(length int) (string, error) {
+	rand.Seed(time.Now().UnixNano())
+	charset := "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+	var builder strings.Builder
+	for i := 0; i < length; i++ {
+		err := builder.WriteByte(charset[rand.Intn(len(charset))])
+		if err != nil {
+			return "", err
+		}
+	}
+
+	return builder.String(), nil
 }

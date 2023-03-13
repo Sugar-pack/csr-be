@@ -413,7 +413,7 @@ func setParameters(ctx context.Context, client *client.Be, auth runtime.ClientAu
 	location := int64(71)
 	mdays := int64(10)
 	catName := "Том"
-	rDate := "2018"
+	rDate := int64(1520345133)
 
 	status, err := client.EquipmentStatusName.
 		GetEquipmentStatusName(eqStatusName.NewGetEquipmentStatusNameParamsWithContext(ctx).WithStatusID(1), auth)

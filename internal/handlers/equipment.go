@@ -4,6 +4,7 @@ import (
 	"errors"
 	"math"
 	"net/http"
+	"time"
 
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/ent/order"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/repositories"
@@ -250,6 +251,16 @@ func mapEquipmentResponse(eq *ent.Equipment) (*models.EquipmentResponse, error) 
 		photoID = eq.Edges.Photo.ID
 	}
 
+	var eqReceiptDate int64
+	if eq.ReceiptDate != "" {
+		eqReceiptTime, err := time.Parse(utils.TimeFormat, eq.ReceiptDate)
+		if err != nil {
+			return nil, err
+		}
+
+		eqReceiptDate = eqReceiptTime.Unix()
+	}
+
 	return &models.EquipmentResponse{
 		TermsOfUse:       &eq.TermsOfUse,
 		CompensationCost: &eq.CompensationCost,
@@ -262,7 +273,7 @@ func mapEquipmentResponse(eq *ent.Equipment) (*models.EquipmentResponse, error) 
 		Subcategory:      subcategoryID,
 		MaximumDays:      &eq.MaximumDays,
 		Name:             &eq.Name,
-		ReceiptDate:      &eq.ReceiptDate,
+		ReceiptDate:      &eqReceiptDate,
 		Status:           &statusID,
 		Supplier:         &eq.Supplier,
 		Title:            &eq.Title,
