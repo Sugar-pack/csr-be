@@ -235,8 +235,7 @@ func mapEquipmentResponse(eq *ent.Equipment) (*models.EquipmentResponse, error) 
 
 	petKinds := make([]*models.PetKind, len(eq.Edges.PetKinds))
 	for i, petKindEdge := range eq.Edges.PetKinds {
-		petKindID := int64(petKindEdge.ID)
-		petKind := models.PetKind{ID: petKindID, Name: &petKindEdge.Name}
+		petKind := models.PetKind{Name: &petKindEdge.Name}
 		petKinds[i] = &petKind
 	}
 

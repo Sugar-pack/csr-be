@@ -111,8 +111,9 @@ func (ps PetSize) GetAllPetSizeFunc(repository domain.PetSizeRepository) pet_siz
 		}
 		listOfPetSize := models.ListOfPetSizes{}
 		for _, v := range petSizes {
-			listOfPetSize = append(listOfPetSize, &models.PetSize{
-				ID:          int64(v.ID),
+			id := int64(v.ID)
+			listOfPetSize = append(listOfPetSize, &models.PetSizeResponse{
+				ID:          &id,
 				Name:        &v.Name,
 				Size:        &v.Size,
 				IsUniversal: v.IsUniversal,

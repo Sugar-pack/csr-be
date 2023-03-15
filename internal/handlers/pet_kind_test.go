@@ -376,6 +376,7 @@ func (s *PetKindTestSuite) TestPetKind_EditPetKindFunc_OK() {
 	ctx := request.Context()
 	name := "test pet kind name"
 	handlerFunc := s.petKind.UpdatePetKindByID(s.petKindRepo)
+	id := 0
 	petKindToUpdate := &models.PetKind{
 		Name: &name,
 	}
@@ -386,7 +387,7 @@ func (s *PetKindTestSuite) TestPetKind_EditPetKindFunc_OK() {
 
 	petKindToReturn := ValidPetKind(t)
 
-	s.petKindRepo.On("Update", ctx, int(petKindToUpdate.ID), petKindToUpdate).Return(petKindToReturn, nil)
+	s.petKindRepo.On("Update", ctx, id, petKindToUpdate).Return(petKindToReturn, nil)
 
 	access := "dummy access"
 	resp := handlerFunc(data, access)
@@ -411,6 +412,7 @@ func (s *PetKindTestSuite) TestPetKind_EditPetKindFunc_ErrRespNil() {
 	request := http.Request{}
 	ctx := request.Context()
 	name := "test pet kind name"
+	id := 0
 	handlerFunc := s.petKind.UpdatePetKindByID(s.petKindRepo)
 	petKindToUpdate := &models.PetKind{
 		Name: &name,
@@ -419,7 +421,7 @@ func (s *PetKindTestSuite) TestPetKind_EditPetKindFunc_ErrRespNil() {
 		HTTPRequest: &request,
 		EditPetKind: petKindToUpdate,
 	}
-	s.petKindRepo.On("Update", ctx, int(petKindToUpdate.ID), petKindToUpdate).Return(nil, nil)
+	s.petKindRepo.On("Update", ctx, id, petKindToUpdate).Return(nil, nil)
 
 	access := "dummy access"
 	resp := handlerFunc(data, access)
@@ -435,6 +437,7 @@ func (s *PetKindTestSuite) TestPetKind_EditPetKindFunc_ErrFromRepo() {
 	request := http.Request{}
 	ctx := request.Context()
 	name := "test pet kind name"
+	id := 0
 	handlerFunc := s.petKind.UpdatePetKindByID(s.petKindRepo)
 	petKindToUpdate := &models.PetKind{
 		Name: &name,
@@ -444,7 +447,7 @@ func (s *PetKindTestSuite) TestPetKind_EditPetKindFunc_ErrFromRepo() {
 		EditPetKind: petKindToUpdate,
 	}
 	err := errors.New("test")
-	s.petKindRepo.On("Update", ctx, int(petKindToUpdate.ID), petKindToUpdate).Return(nil, err)
+	s.petKindRepo.On("Update", ctx, id, petKindToUpdate).Return(nil, err)
 
 	access := "dummy access"
 	resp := handlerFunc(data, access)
