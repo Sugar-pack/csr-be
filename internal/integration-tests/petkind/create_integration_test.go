@@ -88,7 +88,7 @@ func TestIntegration_PetKind(t *testing.T) {
 		_, err = client.PetKind.CreateNewPetKind(params, utils.AuthInfoFunc(&dummyToken))
 		require.Error(t, err)
 
-		errExp := pet_kind.NewCreateNewPetKindDefault(http.StatusInternalServerError)
+		errExp := pet_kind.NewCreateNewPetKindDefault(http.StatusUnauthorized)
 		errExp.Payload = &models.Error{
 			Data: nil,
 		}

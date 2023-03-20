@@ -2,6 +2,7 @@ package equipment
 
 import (
 	"context"
+	"net/http"
 	"os"
 	"testing"
 
@@ -147,7 +148,7 @@ func TestIntegration_CreateEquipment(t *testing.T) {
 		_, gotErr := client.Equipment.CreateNewEquipment(params, utils.AuthInfoFunc(&token))
 		require.Error(t, gotErr)
 
-		wantErr := equipment.NewCreateNewEquipmentDefault(500)
+		wantErr := equipment.NewCreateNewEquipmentDefault(http.StatusUnauthorized)
 		wantErr.Payload = &models.Error{Data: nil}
 		assert.Equal(t, wantErr, gotErr)
 	})
@@ -188,7 +189,7 @@ func TestIntegration_GetAllEquipment(t *testing.T) {
 		_, gotErr := client.Equipment.GetAllEquipment(params, utils.AuthInfoFunc(&token))
 		require.Error(t, gotErr)
 
-		wantErr := equipment.NewGetAllEquipmentDefault(500)
+		wantErr := equipment.NewGetAllEquipmentDefault(http.StatusUnauthorized)
 		wantErr.Payload = &models.Error{Data: nil}
 		assert.Equal(t, wantErr, gotErr)
 	})
@@ -270,7 +271,7 @@ func TestIntegration_GetEquipment(t *testing.T) {
 		_, gotErr := client.Equipment.GetEquipment(params, utils.AuthInfoFunc(&token))
 		require.Error(t, gotErr)
 
-		wantErr := equipment.NewGetEquipmentDefault(500)
+		wantErr := equipment.NewGetEquipmentDefault(http.StatusUnauthorized)
 		wantErr.Payload = &models.Error{Data: nil}
 		assert.Equal(t, wantErr, gotErr)
 	})
@@ -338,7 +339,7 @@ func TestIntegration_FindEquipment(t *testing.T) {
 		_, gotErr := client.Equipment.FindEquipment(params, utils.AuthInfoFunc(&token))
 		require.Error(t, gotErr)
 
-		wantErr := equipment.NewFindEquipmentDefault(500)
+		wantErr := equipment.NewFindEquipmentDefault(http.StatusUnauthorized)
 		wantErr.Payload = &models.Error{Data: nil}
 		assert.Equal(t, wantErr, gotErr)
 	})
@@ -415,7 +416,7 @@ func TestIntegration_EditEquipment(t *testing.T) {
 		_, gotErr := client.Equipment.EditEquipment(params, utils.AuthInfoFunc(&token))
 		require.Error(t, gotErr)
 
-		wantErr := equipment.NewEditEquipmentDefault(500)
+		wantErr := equipment.NewEditEquipmentDefault(http.StatusUnauthorized)
 		wantErr.Payload = &models.Error{Data: nil}
 		assert.Equal(t, wantErr, gotErr)
 	})
@@ -478,7 +479,7 @@ func TestIntegration_DeleteEquipment(t *testing.T) {
 		_, gotErr := client.Equipment.DeleteEquipment(params, utils.AuthInfoFunc(&token))
 		require.Error(t, gotErr)
 
-		wantErr := equipment.NewDeleteEquipmentDefault(500)
+		wantErr := equipment.NewDeleteEquipmentDefault(http.StatusUnauthorized)
 		wantErr.Payload = &models.Error{Data: nil}
 		assert.Equal(t, wantErr, gotErr)
 	})

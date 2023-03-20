@@ -2,6 +2,7 @@ package user
 
 import (
 	"context"
+	"net/http"
 	"testing"
 	"time"
 
@@ -58,7 +59,7 @@ func TestIntegration_GetCurrentUser(t *testing.T) {
 
 		_, err = client.Users.GetCurrentUser(params, authInfo)
 
-		errExp := users.NewGetCurrentUserDefault(500)
+		errExp := users.NewGetCurrentUserDefault(http.StatusUnauthorized)
 		errExp.Payload = &models.Error{
 			Data: nil,
 		}
@@ -122,7 +123,7 @@ func TestIntegration_GetAllUsers(t *testing.T) {
 
 		_, err = client.Users.GetAllUsers(params, authInfo)
 
-		errExp := users.NewGetAllUsersDefault(500)
+		errExp := users.NewGetAllUsersDefault(http.StatusUnauthorized)
 		errExp.Payload = &models.Error{
 			Data: nil,
 		}

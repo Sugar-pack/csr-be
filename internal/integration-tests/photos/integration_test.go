@@ -140,7 +140,7 @@ func TestIntegration_PhotosUpload(t *testing.T) {
 			common.AuthInfoFunc(&token))
 		require.Error(t, gotErr)
 
-		wantErr := photos.NewCreateNewPhotoDefault(http.StatusInternalServerError)
+		wantErr := photos.NewCreateNewPhotoDefault(http.StatusUnauthorized)
 		wantErr.Payload = &models.Error{Data: nil}
 		assert.Equal(t, wantErr, gotErr)
 		f.Close()
@@ -170,7 +170,7 @@ func TestIntegration_DeletePhoto(t *testing.T) {
 
 		require.Error(t, gotErr)
 
-		wantErr := photos.NewDeletePhotoDefault(http.StatusInternalServerError)
+		wantErr := photos.NewDeletePhotoDefault(http.StatusUnauthorized)
 		wantErr.Payload = &models.Error{Data: nil}
 		assert.Equal(t, wantErr, gotErr)
 	})
@@ -267,7 +267,7 @@ func TestIntegration_PhotosDownload(t *testing.T) {
 			common.AuthInfoFunc(&token), io.Discard)
 		require.Error(t, gotErr)
 
-		wantErr := photos.NewDownloadPhotoDefault(http.StatusInternalServerError)
+		wantErr := photos.NewDownloadPhotoDefault(http.StatusUnauthorized)
 		wantErr.Payload = &models.Error{Data: nil}
 		assert.Equal(t, wantErr, gotErr)
 		f.Close()
@@ -343,7 +343,7 @@ func TestIntegration_PhotoGet(t *testing.T) {
 		_, gotErr := beClient.Photos.GetPhoto(photos.NewGetPhotoParamsWithContext(ctx).WithPhotoID(*res.Payload.Data.ID), common.AuthInfoFunc(&token), io.Discard)
 		require.Error(t, gotErr)
 
-		wantErr := photos.NewGetPhotoDefault(http.StatusInternalServerError)
+		wantErr := photos.NewGetPhotoDefault(http.StatusUnauthorized)
 		wantErr.Payload = &models.Error{Data: nil}
 		assert.Equal(t, wantErr, gotErr)
 		f.Close()
