@@ -1806,6 +1806,24 @@ paths:
             $ref: "#/definitions/Error"
 
 definitions:
+  SwaggerError: # Do not delete it. It is used for generating error responses.
+    type: object
+    required:
+      - code
+      - message
+    properties:
+        code:
+            type: integer
+            enum:
+              - 401
+              - 403
+            format: int32
+        message:
+            type: string
+            enum:
+              - Token is invalid
+              - User is not authorized
+              - User has no confirmed email
   PetKind:
     type: object
     required:
