@@ -2268,10 +2268,12 @@ definitions:
   EquipmentUnavailabilityPeriodsResponse:
     type: object
     required:
-      - data
+      - items
     properties:
-      data:
-        $ref: "#/definitions/EquipmentUnavailabilityPeriods"
+      items:
+        type: array
+        items:
+          $ref: "#/definitions/EquipmentUnavailabilityPeriods"
   #EquipmentStatusRepairConfirmation
   EquipmentStatusRepairConfirmation:
     type: object
