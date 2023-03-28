@@ -59,7 +59,7 @@ func TestIntegration_GetRoles(t *testing.T) {
 		_, err = client.Roles.GetRoles(params, utils.AuthInfoFunc(&dummyToken))
 		require.Error(t, err)
 
-		errExp := roles.NewGetRolesDefault(http.StatusInternalServerError)
+		errExp := roles.NewGetRolesDefault(http.StatusUnauthorized)
 		errExp.Payload = &models.Error{
 			Data: nil,
 		}

@@ -59,7 +59,7 @@ func TestIntegration_GetActiveAreas(t *testing.T) {
 		_, err = client.ActiveAreas.GetAllActiveAreas(params, utils.AuthInfoFunc(&dummyToken))
 		require.Error(t, err)
 
-		errExp := active_areas.NewGetAllActiveAreasDefault(http.StatusInternalServerError)
+		errExp := active_areas.NewGetAllActiveAreasDefault(http.StatusUnauthorized)
 		errExp.Payload = &models.Error{
 			Data: nil,
 		}

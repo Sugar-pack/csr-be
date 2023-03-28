@@ -2,6 +2,7 @@ package equipmentstatusname
 
 import (
 	"context"
+	"net/http"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -46,7 +47,7 @@ func TestIntegration_GetStatuses(t *testing.T) {
 		_, gotErr := client.EquipmentStatusName.ListEquipmentStatusNames(params, utils.AuthInfoFunc(&dummyToken))
 		require.Error(t, gotErr)
 
-		wantErr := eqStatusName.NewListEquipmentStatusNamesDefault(500)
+		wantErr := eqStatusName.NewListEquipmentStatusNamesDefault(http.StatusUnauthorized)
 		wantErr.Payload = &models.Error{Data: nil}
 		assert.Equal(t, wantErr, gotErr)
 	})
@@ -103,7 +104,7 @@ func TestIntegration_GetStatus(t *testing.T) {
 		_, gotErr := client.EquipmentStatusName.GetEquipmentStatusName(params, utils.AuthInfoFunc(&dummyToken))
 		require.Error(t, gotErr)
 
-		wantErr := eqStatusName.NewGetEquipmentStatusNameDefault(500)
+		wantErr := eqStatusName.NewGetEquipmentStatusNameDefault(http.StatusUnauthorized)
 		wantErr.Payload = &models.Error{Data: nil}
 		assert.Equal(t, wantErr, gotErr)
 	})
@@ -165,7 +166,7 @@ func TestIntegration_PostStatus(t *testing.T) {
 		_, gotErr := client.EquipmentStatusName.PostEquipmentStatusName(params, utils.AuthInfoFunc(&dummyToken))
 		require.Error(t, gotErr)
 
-		wantErr := eqStatusName.NewPostEquipmentStatusNameDefault(500)
+		wantErr := eqStatusName.NewPostEquipmentStatusNameDefault(http.StatusUnauthorized)
 		wantErr.Payload = &models.Error{Data: nil}
 		assert.Equal(t, wantErr, gotErr)
 	})
@@ -232,7 +233,7 @@ func TestIntegration_DeleteStatus(t *testing.T) {
 		_, gotErr := client.EquipmentStatusName.DeleteEquipmentStatusName(params, utils.AuthInfoFunc(&dummyToken))
 		require.Error(t, gotErr)
 
-		wantErr := eqStatusName.NewDeleteEquipmentStatusNameDefault(500)
+		wantErr := eqStatusName.NewDeleteEquipmentStatusNameDefault(http.StatusUnauthorized)
 		wantErr.Payload = &models.Error{Data: nil}
 		assert.Equal(t, wantErr, gotErr)
 	})

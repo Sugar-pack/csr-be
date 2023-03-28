@@ -6,6 +6,7 @@ import (
 	"go.uber.org/zap"
 
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/config"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/docs"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/email"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/ent"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/swagger/restapi"
@@ -25,7 +26,7 @@ func SetupAPI(entClient *ent.Client, lg *zap.Logger, conf *config.AppConfig) (*r
 		return nil, nil, err
 	}
 
-	swaggerSpec, err := loads.Analyzed(restapi.SwaggerJSON, "")
+	swaggerSpec, err := loadSwaggerSpec()
 	if err != nil {
 		return nil, nil, err
 	}
@@ -87,4 +88,24 @@ func SetupAPI(entClient *ent.Client, lg *zap.Logger, conf *config.AppConfig) (*r
 	return server,
 		overdue.NewOverdueCheckup(orderStatusRepo, orderFilterRepo, equipmentStatusRepo, lg),
 		nil
+}
+
+func loadSwaggerSpec() (*loads.Document, error) {
+	swaggerSpec, err := loads.Analyzed(restapi.SwaggerJSON, "")
+	if err != nil {
+		return nil, err
+	}
+	// adding unauthorized error to all endpoints
+	code, unauthorizedErr := docs.UnauthorizedError()
+	docs.AddErrorToSecuredEndpoints(code, unauthorizedErr, swaggerSpec)
+	raw, err := swaggerSpec.Spec().MarshalJSON()
+	if err != nil {
+		return nil, err
+	}
+
+	swaggerSpec, err = loads.Analyzed(raw, "")
+	if err != nil {
+		return nil, err
+	}
+	return swaggerSpec, nil
 }

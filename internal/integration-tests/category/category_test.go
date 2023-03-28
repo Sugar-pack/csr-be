@@ -106,7 +106,7 @@ func TestIntegration_CreateCategory(t *testing.T) {
 		_, gotErr := client.Categories.CreateNewCategory(categories.NewCreateNewCategoryParamsWithContext(ctx).WithNewCategory(modelCategory), utils.AuthInfoFunc(&token))
 		require.Error(t, gotErr)
 
-		wantErr := categories.NewCreateNewCategoryDefault(http.StatusInternalServerError)
+		wantErr := categories.NewCreateNewCategoryDefault(http.StatusUnauthorized)
 		wantErr.Payload = &models.Error{Data: nil}
 		assert.Equal(t, wantErr, gotErr)
 	})
@@ -193,7 +193,7 @@ func TestIntegration_GetCategoryByID(t *testing.T) {
 		_, gotErr := client.Categories.GetCategoryByID(categories.NewGetCategoryByIDParamsWithContext(ctx).WithCategoryID(1), utils.AuthInfoFunc(&token))
 		require.Error(t, gotErr)
 
-		wantErr := categories.NewGetCategoryByIDDefault(http.StatusInternalServerError)
+		wantErr := categories.NewGetCategoryByIDDefault(http.StatusUnauthorized)
 		wantErr.Payload = &models.Error{Data: nil}
 		assert.Equal(t, wantErr, gotErr)
 	})
@@ -297,7 +297,7 @@ func TestIntegration_EditCategory(t *testing.T) {
 			WithCategoryID(*newCategory.Payload.Data.ID).WithUpdateCategory(updateCategory), utils.AuthInfoFunc(&token))
 		require.Error(t, gotErr)
 
-		wantErr := categories.NewUpdateCategoryDefault(http.StatusInternalServerError)
+		wantErr := categories.NewUpdateCategoryDefault(http.StatusUnauthorized)
 		wantErr.Payload = &models.Error{Data: nil}
 		assert.Equal(t, wantErr, gotErr)
 	})
@@ -340,7 +340,7 @@ func TestIntegration_DeleteCategory(t *testing.T) {
 		_, gotErr := client.Categories.DeleteCategory(categories.NewDeleteCategoryParamsWithContext(ctx).WithCategoryID(1), utils.AuthInfoFunc(&token))
 		require.Error(t, gotErr)
 
-		wantErr := categories.NewDeleteCategoryDefault(http.StatusInternalServerError)
+		wantErr := categories.NewDeleteCategoryDefault(http.StatusUnauthorized)
 		wantErr.Payload = &models.Error{Data: nil}
 		assert.Equal(t, wantErr, gotErr)
 	})
