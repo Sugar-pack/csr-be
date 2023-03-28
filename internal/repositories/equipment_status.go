@@ -117,7 +117,7 @@ func (r *equipmentStatusRepository) GetOrderAndUserByEquipmentStatusID(
 }
 
 func (r *equipmentStatusRepository) GetUnavailableEquipmentStatusByEquipmentID(
-	ctx context.Context, equipmentID int) (*ent.EquipmentStatus, error) {
+	ctx context.Context, equipmentID int) ([]*ent.EquipmentStatus, error) {
 	tx, err := middlewares.TxFromContext(ctx)
 	if err != nil {
 		return nil, err
@@ -126,7 +126,8 @@ func (r *equipmentStatusRepository) GetUnavailableEquipmentStatusByEquipmentID(
 	return tx.EquipmentStatus.Query().
 		Where(equipmentstatus.HasEquipmentsWith(equipment.IDEQ(equipmentID))).
 		Where(equipmentstatus.HasEquipmentStatusNameWith(equipmentstatusname.IDEQ(4))).
-		Only(ctx)
+		Where(equipmentstatus.EndDateGTE(time.Now())).
+		All(ctx)
 }
 
 func (r *equipmentStatusRepository) HasStatusByPeriod(ctx context.Context, status string, eqID int,

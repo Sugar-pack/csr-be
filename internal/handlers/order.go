@@ -87,7 +87,6 @@ func mapOrder(o *ent.Order, log *zap.Logger) (*models.Order, error) {
 		if eq.Edges.PetKinds != nil {
 			for _, petKind := range eq.Edges.PetKinds {
 				j := &models.PetKind{
-					ID:   int64(petKind.ID),
 					Name: &petKind.Name,
 				}
 				petKinds = append(petKinds, j)

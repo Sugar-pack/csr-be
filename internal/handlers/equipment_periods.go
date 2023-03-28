@@ -3,7 +3,6 @@ package handlers
 import (
 	"net/http"
 
-	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/ent"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/swagger/models"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/swagger/restapi/operations"
 	eqPeriods "git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/swagger/restapi/operations/equipment"
@@ -43,22 +42,8 @@ func (c EquipmentPeriods) GetEquipmentUnavailableDatesFunc(
 		ctx := s.HTTPRequest.Context()
 		id := int(s.EquipmentID)
 
-		equipmentStatus, err := eqStatusRepository.GetUnavailableEquipmentStatusByEquipmentID(ctx, id)
+		equipmentStatuses, err := eqStatusRepository.GetUnavailableEquipmentStatusByEquipmentID(ctx, id)
 		if err != nil {
-			_, notFoundError := err.(*ent.NotFoundError)
-			if notFoundError {
-				c.logger.Error(
-					"unable to find unavailable equipment status dates by provided equipment id",
-					zap.Error(err),
-				)
-				return eqStatus.NewCheckEquipmentStatusDefault(http.StatusNotFound).
-					WithPayload(
-						buildStringPayload(
-							"can't find unavailable equipment status dates by provided equipment id",
-						),
-					)
-			}
-
 			c.logger.Error(
 				"error during the search for unavailable equipment status dates",
 				zap.Error(err),
@@ -67,12 +52,18 @@ func (c EquipmentPeriods) GetEquipmentUnavailableDatesFunc(
 				WithPayload(buildStringPayload("can't find unavailable equipment status dates"))
 		}
 
+		var result []*models.EquipmentUnavailabilityPeriods
+
+		for _, value := range equipmentStatuses {
+			var unavPeriod models.EquipmentUnavailabilityPeriods
+			unavPeriod.StartDate = (*strfmt.DateTime)(&value.StartDate)
+			unavPeriod.EndDate = (*strfmt.DateTime)(&value.EndDate)
+
+			result = append(result, &unavPeriod)
+		}
+
 		return eqPeriods.NewGetUnavailabilityPeriodsByEquipmentIDOK().WithPayload(
-			&models.EquipmentUnavailabilityPeriodsResponse{
-				Data: &models.EquipmentUnavailabilityPeriods{
-					EndDate:   (*strfmt.DateTime)(&equipmentStatus.EndDate),
-					StartDate: (*strfmt.DateTime)(&equipmentStatus.StartDate),
-				},
-			})
+			&models.EquipmentUnavailabilityPeriodsResponse{Items: result},
+		)
 	}
 }

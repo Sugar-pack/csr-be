@@ -107,7 +107,7 @@ func TestIntegration_PatchUpdate(t *testing.T) {
 		_, err := client.Users.PatchUser(params, utils.AuthInfoFunc(token))
 		assert.Error(t, err)
 
-		errExp := users.NewPatchUserDefault(422)
+		errExp := users.NewPatchUserDefault(http.StatusUnprocessableEntity)
 		errExp.Payload = &models.Error{
 			Data: nil,
 		}

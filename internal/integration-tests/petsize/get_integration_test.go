@@ -96,7 +96,7 @@ func getSizeIDByName(ctx context.Context, client *client.Be, token *string, petS
 
 	for _, petSize := range allPetSize.GetPayload() {
 		if *petSize.Name == petSizeName {
-			petSizeID = &petSize.ID
+			petSizeID = petSize.ID
 		}
 	}
 	return petSizeID, nil

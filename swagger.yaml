@@ -497,7 +497,7 @@ paths:
           description: Status Name for equipment
           required: true
           schema:
-            $ref: "#/definitions/EquipmentStatusName"
+            $ref: "#/definitions/NewEquipmentStatusName"
       responses:
         201:
           description: Status name for equipment has been created
@@ -666,10 +666,6 @@ paths:
           schema:
             type: string
           description: Not Found
-        default:
-          description: Unexpected error.
-          schema:
-            $ref: "#/definitions/Error"
   /equipment/categories/{categoryId}:
     parameters:
       - name: categoryId
@@ -1810,13 +1806,29 @@ paths:
             $ref: "#/definitions/Error"
 
 definitions:
+  SwaggerError: # Do not delete it. It is used for generating error responses.
+    type: object
+    required:
+      - code
+      - message
+    properties:
+        code:
+            type: integer
+            enum:
+              - 401
+              - 403
+            format: int32
+        message:
+            type: string
+            enum:
+              - Token is invalid
+              - User is not authorized
+              - User has no confirmed email
   PetKind:
     type: object
     required:
       - name
     properties:
-      id:
-        type: integer
       name:
         type: string
   Error:
@@ -1864,7 +1876,7 @@ definitions:
             description: Surname of user.
           patronymic:
             type: string
-            description: Patronymyc data.
+            description: Patronymic data.
           passport_series:
             type: string
           passport_number:
@@ -1990,7 +2002,7 @@ definitions:
         description: Surname of user.
       patronymic:
         type: string
-        description: Patronymyc data.
+        description: Patronymic data.
       passport_series:
         type: string
       passport_number:
@@ -2195,6 +2207,13 @@ definitions:
         type: integer
       name:
         type: string
+  NewEquipmentStatusName:
+    type: object
+    required:
+      - name
+    properties:
+      name:
+        type: string
   ListEquipmentStatusNames:
     type: array
     items:
@@ -2267,10 +2286,12 @@ definitions:
   EquipmentUnavailabilityPeriodsResponse:
     type: object
     required:
-      - data
+      - items
     properties:
-      data:
-        $ref: "#/definitions/EquipmentUnavailabilityPeriods"
+      items:
+        type: array
+        items:
+          $ref: "#/definitions/EquipmentUnavailabilityPeriods"
   #EquipmentStatusRepairConfirmation
   EquipmentStatusRepairConfirmation:
     type: object
@@ -2512,14 +2533,11 @@ definitions:
     type: object
     required:
       - name
-      - category
       - max_reservation_time
       - max_reservation_units
     properties:
       name:
         type: string
-      category:
-        type: integer
       max_reservation_time:
         type: integer
       max_reservation_units:
@@ -2531,8 +2549,6 @@ definitions:
       - name
       - size
     properties:
-      id:
-        type: integer
       name:
         type: string
         example: "big"
@@ -2545,7 +2561,7 @@ definitions:
   ListOfPetSizes:
     type: array
     items:
-      $ref: "#/definitions/PetSize"
+      $ref: "#/definitions/PetSizeResponse"
   PetSizeResponse:
     type: object
     required:

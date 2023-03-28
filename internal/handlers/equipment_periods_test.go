@@ -68,15 +68,18 @@ func (s *EquipmentPeriodsTestSuite) Test_Get_EquipmentUnavailableDatesFunc_OK() 
 
 	startDate := time.Date(2023, time.February, 14, 12, 34, 56, 0, time.UTC)
 	endDate := startDate.AddDate(0, 0, 10)
-	eqStatusResponse := ent.EquipmentStatus{
+	eqStatus := ent.EquipmentStatus{
 		StartDate: startDate,
 		EndDate:   endDate,
 	}
 
+	var eqStatusResponse []*ent.EquipmentStatus
+	eqStatusResponse = append(eqStatusResponse, &eqStatus)
+
 	s.equipmentStatusRepository.On(
 		"GetUnavailableEquipmentStatusByEquipmentID",
 		ctx, int(data.EquipmentID),
-	).Return(&eqStatusResponse, nil)
+	).Return(eqStatusResponse, nil)
 
 	handlerFunc := s.handler.GetEquipmentUnavailableDatesFunc(
 		s.equipmentStatusRepository,
@@ -99,11 +102,11 @@ func (s *EquipmentPeriodsTestSuite) Test_Get_EquipmentUnavailableDatesFunc_OK() 
 
 	require.Equal(
 		t, (*strfmt.DateTime)(&startDate),
-		actualResponse.Data.StartDate,
+		actualResponse.Items[0].StartDate,
 	)
 
 	require.Equal(
 		t, (*strfmt.DateTime)(&endDate),
-		actualResponse.Data.EndDate,
+		actualResponse.Items[0].EndDate,
 	)
 }

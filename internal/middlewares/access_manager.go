@@ -3,7 +3,6 @@ package middlewares
 import (
 	"errors"
 	"fmt"
-	"log"
 	"net/http"
 	"regexp"
 	"strings"
@@ -15,6 +14,10 @@ import (
 )
 
 const apiPrefix = "/api"
+
+// do not change this values, it is used in swagger spec
+const forbiddenMessage = "User is not authorized"
+const unconfirmedEmailMessage = "User has no confirmed email"
 
 type AccessManager interface {
 	AddNewAccess(role Role, method, path string) (bool, error)
@@ -183,8 +186,10 @@ func (a *blackListAccessManager) Authorize(r *http.Request, auth interface{}) er
 		IsPersonalDataConfirmed: userInfo.IsPersonalDataConfirmed,
 	}
 	if !a.HasAccess(role, r.Method, r.URL.Path) {
-		log.Println("this user has no access to this endpoint")
-		return openApiErrors.New(http.StatusForbidden, "this user has no access to this endpoint")
+		if role.IsEmailConfirmed == false {
+			return openApiErrors.New(http.StatusForbidden, unconfirmedEmailMessage)
+		}
+		return openApiErrors.New(http.StatusForbidden, forbiddenMessage)
 	}
 	return nil
 }

@@ -2,6 +2,7 @@ package email
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/matcornic/hermes/v2"
 )
@@ -85,11 +86,12 @@ func generateRegistrationConfirmMessage(userName, websiteUrl, token string) herm
 }
 
 func generateHtml(he hermes.Email) (string, error) {
+	year := time.Now().Year()
 	h := hermes.Hermes{
 		Product: hermes.Product{
 			Name:      "Lyonkin Kot",
 			Logo:      "http://lyonkinkot.ru/template/images/logo.png",
-			Copyright: "Copyright © 2022 Lyonkin Kot. All rights reserved.",
+			Copyright: fmt.Sprintf("Copyright © %d Lyonkin Kot. All rights reserved.", year),
 		},
 	}
 

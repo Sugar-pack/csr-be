@@ -96,7 +96,6 @@ func (s *subcategoryRepositorySuite) TestSubcategoryRepository_CreateSubcategory
 	maxReservationUnits := int64(1)
 	categoryID := int64(s.category.ID + 10)
 	newSubcategory := models.NewSubcategory{
-		Category:            &categoryID,
 		MaxReservationTime:  &maxReservationTime,
 		MaxReservationUnits: &maxReservationUnits,
 		Name:                &name,
@@ -118,7 +117,6 @@ func (s *subcategoryRepositorySuite) TestSubcategoryRepository_CreateSubcategory
 	maxReservationUnits := int64(1)
 	categoryID := int64(s.category.ID)
 	newSubcategory := models.NewSubcategory{
-		Category:            &categoryID,
 		MaxReservationTime:  &maxReservationTime,
 		MaxReservationUnits: &maxReservationUnits,
 		Name:                &name,

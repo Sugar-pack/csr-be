@@ -464,7 +464,7 @@ func setParameters(ctx context.Context, client *client.Be, auth runtime.ClientAu
 		Name:             &catName,
 		NameSubstring:    "box",
 		PetKinds:         []int64{*cats.Payload.ID},
-		PetSize:          &petSize.Payload[0].ID,
+		PetSize:          petSize.Payload[0].ID,
 		PhotoID:          photo.Payload.Data.ID,
 		ReceiptDate:      &rDate,
 		Status:           &status.Payload.Data.ID,

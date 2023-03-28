@@ -11,17 +11,22 @@ import (
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/services"
 )
 
+func TokenInvalidError() error {
+	// make sure that the error message is exactly as the one in the #/definitions/SwaggerError object.
+	return errors.New(http.StatusUnauthorized, "Token is invalid")
+}
+
 func BearerAuthenticateFunc(key interface{}, _ *zap.Logger) func(string) (interface{}, error) {
 	return func(bearerToken string) (interface{}, error) {
 		claims := jwt.MapClaims{}
 		token, err := jwt.ParseWithClaims(bearerToken, claims, func(token *jwt.Token) (interface{}, error) {
 			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-				return nil, errors.New(http.StatusUnauthorized, "error decoding token")
+				return nil, TokenInvalidError()
 			}
 			return []byte(key.(string)), nil
 		})
 		if err != nil {
-			return nil, errors.New(http.StatusUnauthorized, "Failed to parse token")
+			return nil, TokenInvalidError()
 		}
 		if token.Valid {
 			login := claims[services.LoginClaim].(string)
@@ -57,6 +62,6 @@ func BearerAuthenticateFunc(key interface{}, _ *zap.Logger) func(string) (interf
 				Role:                    rolePointer,
 			}, nil
 		}
-		return nil, errors.New(http.StatusUnauthorized, "Invalid token")
+		return nil, TokenInvalidError()
 	}
 }
