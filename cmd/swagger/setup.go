@@ -147,12 +147,15 @@ func AccessManager(api *operations.BeAPI, bindings []config.RoleEndpointBinding)
 		},
 	}
 
-	manager := middlewares.NewAccessManager(roles, fullAccessRoles, api.GetExistingEndpoints())
+	manager, err := middlewares.NewAccessManager(roles, fullAccessRoles, api.GetExistingEndpoints())
+	if err != nil {
+		return nil, err
+	}
 
 	for _, binding := range bindings {
 		for verb, paths := range binding.AllowedEndpoints {
 			for _, path := range paths {
-				_, err := manager.AddNewAccess(binding.Role, verb, path)
+				_, err = manager.AddNewAccess(binding.Role, verb, path)
 				if err != nil {
 					return nil, err
 				}
