@@ -36,6 +36,20 @@ type blackListAccessManager struct {
 type ExistingEndpoints map[string][]string
 
 func (e ExistingEndpoints) Validate() error {
+	for method, paths := range e {
+		if method != http.MethodGet &&
+			method != http.MethodPost &&
+			method != http.MethodPut &&
+			method != http.MethodDelete &&
+			method != http.MethodPatch {
+			return fmt.Errorf("method %s is not supported", method)
+		}
+		for _, p := range paths {
+			if !strings.HasPrefix(p, "/") {
+				return fmt.Errorf("path %s is not valid", p)
+			}
+		}
+	}
 	return nil
 }
 
