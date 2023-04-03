@@ -22,6 +22,17 @@ jobs:
           go test $(go list ./... | grep -v generated) -race -coverprofile=coverage.out -short
           make coverage && coverage_total=$(make coverage_total | tail -n1) && echo $coverage_total
           if [ $min_coverage -gt $coverage_total ]; then exit 1; else echo "unit tests OK"; fi
+          
+          failed=0
+          function_min_coverage=1
+          make coverage | tail -n +2 | while read -r line ;
+          do
+            function_coverage=$(echo $line | awk '{ print $3 }' | sed 's/[^0-9\.]*//g')
+            if awk 'BEGIN {exit !('$function_min_coverage' > '$function_coverage')}';
+            then echo "low coverage ($function_coverage/$function_min_coverage) - $line";
+            failed=1; fi;
+          done;
+          test -n "$failed" && echo 'check functions coverage!'
   lint:
     runs-on: ubuntu-latest
     container: registry.gitlab.com/gitlab-org/gitlab-build-images:golangci-lint-alpine
