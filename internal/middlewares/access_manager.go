@@ -129,6 +129,9 @@ func newPath(endpointPath string) (path, error) {
 	if strings.Contains(endpointPath, "{") {
 		first := strings.Index(endpointPath, "{")
 		second := strings.Index(endpointPath, "}")
+		if second < first {
+			return path{}, fmt.Errorf("incorrect path %s", endpointPath)
+		}
 		endpointPath = endpointPath[:first] + "(.*)" + endpointPath[second+1:]
 		reg, err := regexp.Compile(endpointPath)
 		if err != nil {
@@ -137,6 +140,9 @@ func newPath(endpointPath string) (path, error) {
 		return path{
 			asRegexp: reg,
 		}, nil
+	}
+	if strings.Contains(endpointPath, "{") {
+		return path{}, fmt.Errorf("incorrect path %s", endpointPath)
 	}
 
 	return path{
