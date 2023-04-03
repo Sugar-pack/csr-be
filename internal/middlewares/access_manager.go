@@ -203,8 +203,8 @@ func (a *blackListAccessManager) HasAccess(role Role, method, path string) bool 
 	if !ok {
 		return false
 	}
-	for _, p := range allowedPaths {
-		if p.isMatch(path) {
+	for _, allowedPath := range allowedPaths {
+		if allowedPath.isMatch(path) {
 			return true
 		}
 	}
@@ -222,7 +222,7 @@ func (a *blackListAccessManager) Authorize(r *http.Request, auth interface{}) er
 		IsPersonalDataConfirmed: userInfo.IsPersonalDataConfirmed,
 	}
 
-	if role.IsEmailConfirmed == false {
+	if !role.IsEmailConfirmed {
 		return openApiErrors.New(http.StatusForbidden, unconfirmedEmailMessage)
 	}
 
