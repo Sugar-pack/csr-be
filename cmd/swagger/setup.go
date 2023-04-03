@@ -108,6 +108,10 @@ func loadSwaggerSpec() (*loads.Document, error) {
 	// adding unauthorized error to all endpoints
 	code, unauthorizedErr := docs.UnauthorizedError()
 	docs.AddErrorToSecuredEndpoints(code, unauthorizedErr, swaggerSpec)
+
+	code, forbiddenErr := docs.ForbiddenError()
+	docs.AddErrorToSecuredEndpoints(code, forbiddenErr, swaggerSpec)
+
 	raw, err := swaggerSpec.Spec().MarshalJSON()
 	if err != nil {
 		return nil, err

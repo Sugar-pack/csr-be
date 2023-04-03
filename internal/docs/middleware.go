@@ -58,6 +58,17 @@ func UnauthorizedError() (int, spec.Response) {
 	}
 }
 
+func ForbiddenError() (int, spec.Response) {
+	return http.StatusForbidden, spec.Response{
+		// Keep in mind that this response will be used by frontend team.
+		// So, if you change it, you should notify them.
+		ResponseProps: spec.ResponseProps{
+			Description: "Forbidden",
+			Schema:      SwaggerErrorReference(),
+		},
+	}
+}
+
 func SwaggerErrorReference() *spec.Schema {
 	return &spec.Schema{
 		SchemaProps: spec.SchemaProps{
