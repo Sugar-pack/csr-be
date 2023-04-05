@@ -22,17 +22,10 @@ func TestIntegration_PetKind(t *testing.T) {
 	ctx := context.Background()
 	client := utils.SetupClient()
 
-	l, p, err := utils.GenerateLoginAndPassword()
-	require.NoError(t, err)
-
-	_, err = utils.CreateUser(ctx, client, l, p)
-	require.NoError(t, err)
-
-	loginUser, err := utils.LoginUser(ctx, client, l, p)
-	require.NoError(t, err)
+	loginUser := utils.AdminUserLogin(t)
+	token := loginUser.GetPayload().AccessToken
 
 	t.Run("register a new pet kind ok", func(t *testing.T) {
-		token := loginUser.GetPayload().AccessToken
 
 		params := pet_kind.NewCreateNewPetKindParamsWithContext(ctx)
 		params.NewPetKind = &models.PetKind{
@@ -51,14 +44,12 @@ func TestIntegration_PetKind(t *testing.T) {
 	})
 
 	t.Run("register a new pet kind failed: validation error", func(t *testing.T) {
-		token := loginUser.GetPayload().AccessToken
-
 		params := pet_kind.NewCreateNewPetKindParamsWithContext(ctx)
 		params.NewPetKind = &models.PetKind{
 			Name: nil,
 		}
 
-		_, err = client.PetKind.CreateNewPetKind(params, utils.AuthInfoFunc(token))
+		_, err := client.PetKind.CreateNewPetKind(params, utils.AuthInfoFunc(token))
 		require.Error(t, err)
 
 		errExp := pet_kind.NewCreateNewPetKindDefault(http.StatusUnprocessableEntity)
@@ -71,7 +62,7 @@ func TestIntegration_PetKind(t *testing.T) {
 	t.Run("register a new pet kind failed: no authorization", func(t *testing.T) {
 		params := pet_kind.NewCreateNewPetKindParamsWithContext(ctx)
 
-		_, err = client.PetKind.CreateNewPetKind(params, utils.AuthInfoFunc(nil))
+		_, err := client.PetKind.CreateNewPetKind(params, utils.AuthInfoFunc(nil))
 		require.Error(t, err)
 
 		errExp := pet_kind.NewCreateNewPetKindDefault(http.StatusUnauthorized)
@@ -85,7 +76,7 @@ func TestIntegration_PetKind(t *testing.T) {
 		params := pet_kind.NewCreateNewPetKindParamsWithContext(ctx)
 		dummyToken := utils.TokenNotExist
 
-		_, err = client.PetKind.CreateNewPetKind(params, utils.AuthInfoFunc(&dummyToken))
+		_, err := client.PetKind.CreateNewPetKind(params, utils.AuthInfoFunc(&dummyToken))
 		require.Error(t, err)
 
 		errExp := pet_kind.NewCreateNewPetKindDefault(http.StatusUnauthorized)

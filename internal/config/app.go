@@ -6,6 +6,8 @@ import (
 
 	"github.com/go-playground/validator"
 	"github.com/spf13/viper"
+
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/middlewares"
 )
 
 type AppConfig struct {
@@ -15,6 +17,7 @@ type AppConfig struct {
 	OrderStatusOverdueTimeCheckDuration time.Duration `validate:"required"`
 	Server                              Server
 	DB                                  DB
+	AccessBindings                      []RoleEndpointBinding
 }
 
 type DB struct {
@@ -62,6 +65,11 @@ type Password struct {
 type Server struct {
 	Host string `validate:"required"`
 	Port int    `validate:"required,gte=1024"`
+}
+
+type RoleEndpointBinding struct {
+	Role             middlewares.Role
+	AllowedEndpoints middlewares.ExistingEndpoints
 }
 
 func GetAppConfig(additionalDirectories ...string) (*AppConfig, error) {

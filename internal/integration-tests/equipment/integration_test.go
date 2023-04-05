@@ -31,16 +31,8 @@ func TestIntegration_CreateEquipment(t *testing.T) {
 	ctx := context.Background()
 	client := utils.SetupClient()
 
-	l, p, err := utils.GenerateLoginAndPassword()
-	require.NoError(t, err)
-
-	_, err = utils.CreateUser(ctx, client, l, p)
-	require.NoError(t, err)
-
-	loginUser, err := utils.LoginUser(ctx, client, l, p)
-	require.NoError(t, err)
-
-	auth := utils.AuthInfoFunc(loginUser.GetPayload().AccessToken)
+	tokens := utils.AdminUserLogin(t)
+	auth := utils.AuthInfoFunc(tokens.GetPayload().AccessToken)
 
 	t.Run("Create Equipment", func(t *testing.T) {
 		params := equipment.NewCreateNewEquipmentParamsWithContext(ctx)
@@ -162,20 +154,12 @@ func TestIntegration_GetAllEquipment(t *testing.T) {
 	ctx := context.Background()
 	client := utils.SetupClient()
 
-	l, p, err := utils.GenerateLoginAndPassword()
-	require.NoError(t, err)
+	tokens := utils.AdminUserLogin(t)
 
-	_, err = utils.CreateUser(ctx, client, l, p)
-	require.NoError(t, err)
-
-	loginUser, err := utils.LoginUser(ctx, client, l, p)
-	require.NoError(t, err)
-
-	auth := utils.AuthInfoFunc(loginUser.GetPayload().AccessToken)
+	auth := utils.AuthInfoFunc(tokens.GetPayload().AccessToken)
 
 	t.Run("Get All Equipment", func(t *testing.T) {
 		params := equipment.NewGetAllEquipmentParamsWithContext(ctx)
-		require.NoError(t, err)
 
 		res, err := client.Equipment.GetAllEquipment(params, auth)
 		require.NoError(t, err)
@@ -203,16 +187,9 @@ func TestIntegration_GetEquipment(t *testing.T) {
 	ctx := context.Background()
 	client := utils.SetupClient()
 
-	l, p, err := utils.GenerateLoginAndPassword()
-	require.NoError(t, err)
+	tokens := utils.AdminUserLogin(t)
 
-	_, err = utils.CreateUser(ctx, client, l, p)
-	require.NoError(t, err)
-
-	loginUser, err := utils.LoginUser(ctx, client, l, p)
-	require.NoError(t, err)
-
-	auth := utils.AuthInfoFunc(loginUser.GetPayload().AccessToken)
+	auth := utils.AuthInfoFunc(tokens.GetPayload().AccessToken)
 
 	model, err := setParameters(ctx, client, auth)
 	require.NoError(t, err)
@@ -285,16 +262,10 @@ func TestIntegration_FindEquipment(t *testing.T) {
 	ctx := context.Background()
 	client := utils.SetupClient()
 
-	l, p, err := utils.GenerateLoginAndPassword()
-	require.NoError(t, err)
+	tokens := utils.AdminUserLogin(t)
 
-	_, err = utils.CreateUser(ctx, client, l, p)
-	require.NoError(t, err)
+	auth := utils.AuthInfoFunc(tokens.GetPayload().AccessToken)
 
-	loginUser, err := utils.LoginUser(ctx, client, l, p)
-	require.NoError(t, err)
-
-	auth := utils.AuthInfoFunc(loginUser.GetPayload().AccessToken)
 	model, err := setParameters(ctx, client, auth)
 	require.NoError(t, err)
 
@@ -365,16 +336,9 @@ func TestIntegration_EditEquipment(t *testing.T) {
 	ctx := context.Background()
 	client := utils.SetupClient()
 
-	l, p, err := utils.GenerateLoginAndPassword()
-	require.NoError(t, err)
+	tokens := utils.AdminUserLogin(t)
 
-	_, err = utils.CreateUser(ctx, client, l, p)
-	require.NoError(t, err)
-
-	loginUser, err := utils.LoginUser(ctx, client, l, p)
-	require.NoError(t, err)
-
-	auth := utils.AuthInfoFunc(loginUser.GetPayload().AccessToken)
+	auth := utils.AuthInfoFunc(tokens.GetPayload().AccessToken)
 	model, err := setParameters(ctx, client, auth)
 	require.NoError(t, err)
 
@@ -430,16 +394,9 @@ func TestIntegration_DeleteEquipment(t *testing.T) {
 	ctx := context.Background()
 	client := utils.SetupClient()
 
-	l, p, err := utils.GenerateLoginAndPassword()
-	require.NoError(t, err)
+	tokens := utils.AdminUserLogin(t)
 
-	_, err = utils.CreateUser(ctx, client, l, p)
-	require.NoError(t, err)
-
-	loginUser, err := utils.LoginUser(ctx, client, l, p)
-	require.NoError(t, err)
-
-	auth := utils.AuthInfoFunc(loginUser.GetPayload().AccessToken)
+	auth := utils.AuthInfoFunc(tokens.GetPayload().AccessToken)
 
 	t.Run("Delete All Equipment", func(t *testing.T) {
 		res, err := client.Equipment.GetAllEquipment(equipment.NewGetAllEquipmentParamsWithContext(ctx), auth)

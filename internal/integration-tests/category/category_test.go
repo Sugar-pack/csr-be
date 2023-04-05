@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"flag"
-	"log"
 	"net/http"
 	"os"
 	"testing"
@@ -23,32 +22,14 @@ import (
 var (
 	testCategoryName        = gofakeit.Name()
 	migrationCategoryNumber = 9
-	testLogin               string
-	testPassword            string
 	auth                    runtime.ClientAuthInfoWriterFunc
 )
 
 func TestMain(m *testing.M) {
 	flag.Parse()
 	if !testing.Short() {
-		ctx := context.Background()
-		beClient := utils.SetupClient()
-
-		var err error
-		testLogin, testPassword, err = utils.GenerateLoginAndPassword()
-		if err != nil {
-			log.Fatalf("GenerateLoginAndPassword: %v", err)
-		}
-		_, err = utils.CreateUser(ctx, beClient, testLogin, testPassword)
-		if err != nil {
-			log.Fatalf("CreateUser: %v", err)
-		}
-		loginUser, err := utils.LoginUser(ctx, beClient, testLogin, testPassword)
-		if err != nil {
-			log.Fatalf("LoginUser: %v", err)
-		}
-
-		auth = utils.AuthInfoFunc(loginUser.GetPayload().AccessToken)
+		data := utils.AdminUserLogin(&testing.T{}) // TODO: refactor tests
+		auth = utils.AuthInfoFunc(data.GetPayload().AccessToken)
 
 		os.Exit(m.Run())
 	}

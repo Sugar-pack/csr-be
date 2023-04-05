@@ -8,6 +8,7 @@ import (
 	"go.uber.org/zap"
 
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/authentication"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/services"
 )
 
 func TokenInvalidError() error {
@@ -28,14 +29,14 @@ func BearerAuthenticateFunc(key interface{}, _ *zap.Logger) func(string) (interf
 			return nil, TokenInvalidError()
 		}
 		if token.Valid {
-			login := claims["login"].(string)
-			id := int(claims["id"].(float64))
+			login := claims[services.LoginClaim].(string)
+			id := int(claims[services.IdClaim].(float64))
 			var rolePointer *authentication.Role = nil
-			if claims["role"] != nil {
-				role, ok := claims["role"].(map[string]interface{})
+			if claims[services.RoleClaim] != nil {
+				role, ok := claims[services.RoleClaim].(map[string]interface{})
 				if ok {
-					roleId, ok1 := role["id"].(float64)
-					slug, ok2 := role["slug"].(string)
+					roleId, ok1 := role[services.IdClaim].(float64)
+					slug, ok2 := role[services.SlugClaim].(string)
 					if ok1 && ok2 {
 						rolePointer = &authentication.Role{
 							Id:   int(roleId),
@@ -44,10 +45,21 @@ func BearerAuthenticateFunc(key interface{}, _ *zap.Logger) func(string) (interf
 					}
 				}
 			}
+			isEmailConfirmed := false
+			if claims[services.EmailVerifiedClaim] != nil {
+				isEmailConfirmed = claims[services.EmailVerifiedClaim].(bool)
+			}
+			isPersonalDataConfirmed := false
+
+			if claims[services.DataVerifiedClaim] != nil {
+				isPersonalDataConfirmed = claims[services.DataVerifiedClaim].(bool)
+			}
 			return authentication.Auth{
-				Id:    id,
-				Login: login,
-				Role:  rolePointer,
+				Id:                      id,
+				Login:                   login,
+				IsEmailConfirmed:        isEmailConfirmed,
+				IsPersonalDataConfirmed: isPersonalDataConfirmed,
+				Role:                    rolePointer,
 			}, nil
 		}
 		return nil, TokenInvalidError()

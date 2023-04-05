@@ -16,9 +16,11 @@ const OperatorSlug = "operator"
 const UserSlug = "user"
 
 type Auth struct {
-	Id    int
-	Login string
-	Role  *Role
+	Id                      int
+	Login                   string
+	IsEmailConfirmed        bool
+	IsPersonalDataConfirmed bool
+	Role                    *Role
 }
 
 func (a *Auth) IsAdmin() bool {

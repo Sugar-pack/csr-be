@@ -184,23 +184,16 @@ func (c User) PatchUserFunc(repository domain.UserRepository) users.PatchUserHan
 
 func (c User) AssignRoleToUserFunc(repository domain.UserRepository) users.AssignRoleToUserHandlerFunc {
 	return func(p users.AssignRoleToUserParams, access interface{}) middleware.Responder {
-		isAdmin, err := authentication.IsAdmin(access)
-		if err != nil {
-			c.logger.Error("error while getting authorization", zap.Error(err))
-			return users.NewAssignRoleToUserDefault(http.StatusInternalServerError).
-				WithPayload(&models.Error{Data: &models.ErrorData{Message: "Can't get authorization"}})
-		}
-		if !isAdmin {
-			c.logger.Error("user is not admin", zap.Any("access", access))
-			return users.NewAssignRoleToUserDefault(http.StatusForbidden).
-				WithPayload(&models.Error{Data: &models.ErrorData{Message: "You don't have rights to add new status"}})
-		}
 
 		ctx := p.HTTPRequest.Context()
 		userId := int(p.UserID)
+		if p.Data.RoleID == nil {
+			return users.NewAssignRoleToUserDefault(http.StatusBadRequest).
+				WithPayload(buildStringPayload("role id is required"))
+		}
 		roleId := int(*p.Data.RoleID)
 
-		err = repository.SetUserRole(ctx, userId, roleId)
+		err := repository.SetUserRole(ctx, userId, roleId)
 		if err != nil {
 			c.logger.Error("set user role error", zap.Error(err))
 			return users.NewAssignRoleToUserDefault(http.StatusInternalServerError).WithPayload(buildErrorPayload(err))

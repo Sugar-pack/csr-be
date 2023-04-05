@@ -108,7 +108,7 @@ func (r *userRepository) GetUserByLogin(ctx context.Context, login string) (*ent
 	if err != nil {
 		return nil, err
 	}
-	return tx.User.Query().Where(user.Login(login)).WithGroups().WithRole().Only(ctx)
+	return tx.User.Query().Where(user.Login(login)).WithGroups().WithRole().WithRegistrationConfirm().Only(ctx)
 }
 
 func (r *userRepository) UserByLogin(ctx context.Context, login string) (*ent.User, error) {

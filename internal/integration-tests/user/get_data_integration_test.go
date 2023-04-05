@@ -28,18 +28,13 @@ func TestIntegration_GetCurrentUser(t *testing.T) {
 	ctx := context.Background()
 	client := utils.SetupClient()
 
-	l, p, err := utils.GenerateLoginAndPassword()
-	require.NoError(t, err)
-
-	user, err := utils.CreateUser(ctx, client, l, p)
-	require.NoError(t, err)
-
-	loginUser, err := utils.LoginUser(ctx, client, l, p)
-	require.NoError(t, err)
+	l, p, id := utils.AdminLoginPassword(t)
 
 	testLogin = l
 	testPassword = p
-	testUserID = *user.ID
+	testUserID = id
+
+	loginUser, err := utils.LoginUser(ctx, client, l, p)
 
 	t.Run("get user data passed", func(t *testing.T) {
 		params := users.NewGetCurrentUserParamsWithContext(ctx)
@@ -49,7 +44,7 @@ func TestIntegration_GetCurrentUser(t *testing.T) {
 		require.NoError(t, err)
 
 		assert.Equal(t, *currentUser.Payload.Login, l)
-		assert.Equal(t, currentUser.Payload.ID, user.ID)
+		assert.Equal(t, *currentUser.Payload.ID, testUserID)
 	})
 
 	t.Run("get current user data failed: token contains an invalid number of segments", func(t *testing.T) {
@@ -89,8 +84,7 @@ func TestIntegration_GetAllUsers(t *testing.T) {
 	ctx := context.Background()
 	client := utils.SetupClient()
 
-	loginUser1, err := utils.LoginUser(ctx, client, testLogin, testPassword)
-	require.NoError(t, err)
+	loginUser1 := utils.AdminUserLogin(t)
 	// todo: get rid of access interface{} in GetAllUsersHandlerFunc (not used)
 	t.Run("get all users passed", func(t *testing.T) {
 		params := users.NewGetAllUsersParamsWithContext(ctx)
@@ -106,7 +100,7 @@ func TestIntegration_GetAllUsers(t *testing.T) {
 		params := users.NewGetAllUsersParamsWithContext(ctx)
 		authInfo := utils.AuthInfoFunc(nil)
 
-		_, err = client.Users.GetAllUsers(params, authInfo)
+		_, err := client.Users.GetAllUsers(params, authInfo)
 		assert.Error(t, err)
 
 		errExp := users.NewGetAllUsersDefault(401)
@@ -121,7 +115,7 @@ func TestIntegration_GetAllUsers(t *testing.T) {
 		dummyToken := utils.TokenNotExist
 		authInfo := utils.AuthInfoFunc(&dummyToken)
 
-		_, err = client.Users.GetAllUsers(params, authInfo)
+		_, err := client.Users.GetAllUsers(params, authInfo)
 
 		errExp := users.NewGetAllUsersDefault(http.StatusUnauthorized)
 		errExp.Payload = &models.Error{

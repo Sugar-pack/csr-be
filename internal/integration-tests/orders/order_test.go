@@ -41,18 +41,11 @@ func TestIntegration_BeforeOrderSetup(t *testing.T) {
 	ctx := context.Background()
 	client := common.SetupClient()
 
-	l, p, err := common.GenerateLoginAndPassword()
-	require.NoError(t, err)
-
-	_, err = common.CreateUser(ctx, client, l, p)
-	require.NoError(t, err)
-
-	loginUser, err := common.LoginUser(ctx, client, l, p)
-	require.NoError(t, err)
-
-	token = loginUser.GetPayload().AccessToken
+	login := common.AdminUserLogin(t)
+	token = login.GetPayload().AccessToken
 	auth = common.AuthInfoFunc(token)
 
+	var err error
 	eq, err = createEquipment(ctx, client, auth)
 	require.NoError(t, err)
 }

@@ -21,16 +21,8 @@ func TestIntegration_GetStatuses(t *testing.T) {
 	ctx := context.Background()
 	client := utils.SetupClient()
 
-	l, p, err := utils.GenerateLoginAndPassword()
-	require.NoError(t, err)
-
-	_, err = utils.CreateUser(ctx, client, l, p)
-	require.NoError(t, err)
-
-	loginUser, err := utils.LoginUser(ctx, client, l, p)
-	require.NoError(t, err)
-
-	token := loginUser.GetPayload().AccessToken
+	auth := utils.AdminUserLogin(t)
+	token := auth.GetPayload().AccessToken
 
 	t.Run("Get List Statuses", func(t *testing.T) {
 		params := eqStatusName.NewListEquipmentStatusNamesParamsWithContext(ctx)
@@ -61,16 +53,8 @@ func TestIntegration_GetStatus(t *testing.T) {
 	ctx := context.Background()
 	client := utils.SetupClient()
 
-	l, p, err := utils.GenerateLoginAndPassword()
-	require.NoError(t, err)
-
-	_, err = utils.CreateUser(ctx, client, l, p)
-	require.NoError(t, err)
-
-	loginUser, err := utils.LoginUser(ctx, client, l, p)
-	require.NoError(t, err)
-
-	token := loginUser.GetPayload().AccessToken
+	auth := utils.AdminUserLogin(t)
+	token := auth.GetPayload().AccessToken
 
 	t.Run("Get Status", func(t *testing.T) {
 		params := eqStatusName.NewGetEquipmentStatusNameParamsWithContext(ctx)
@@ -118,16 +102,8 @@ func TestIntegration_PostStatus(t *testing.T) {
 	ctx := context.Background()
 	client := utils.SetupClient()
 
-	l, p, err := utils.GenerateLoginAndPassword()
-	require.NoError(t, err)
-
-	_, err = utils.CreateUser(ctx, client, l, p)
-	require.NoError(t, err)
-
-	loginUser, err := utils.LoginUser(ctx, client, l, p)
-	require.NoError(t, err)
-
-	token := loginUser.GetPayload().AccessToken
+	auth := utils.AdminUserLogin(t)
+	token := auth.GetPayload().AccessToken
 
 	t.Run("Post Status successfully", func(t *testing.T) {
 		want := "test status"
@@ -180,16 +156,8 @@ func TestIntegration_DeleteStatus(t *testing.T) {
 	ctx := context.Background()
 	client := utils.SetupClient()
 
-	l, p, err := utils.GenerateLoginAndPassword()
-	require.NoError(t, err)
-
-	_, err = utils.CreateUser(ctx, client, l, p)
-	require.NoError(t, err)
-
-	loginUser, err := utils.LoginUser(ctx, client, l, p)
-	require.NoError(t, err)
-
-	token := loginUser.GetPayload().AccessToken
+	auth := utils.AdminUserLogin(t)
+	token := auth.GetPayload().AccessToken
 
 	t.Run("Delete Status successfully", func(t *testing.T) {
 		params := eqStatusName.NewDeleteEquipmentStatusNameParamsWithContext(ctx)

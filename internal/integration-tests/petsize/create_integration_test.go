@@ -26,17 +26,10 @@ func TestIntegration_PetSize(t *testing.T) {
 	ctx := context.Background()
 	client := utils.SetupClient()
 
-	l, p, err := utils.GenerateLoginAndPassword()
-	require.NoError(t, err)
-
-	_, err = utils.CreateUser(ctx, client, l, p)
-	require.NoError(t, err)
-
-	loginUser, err := utils.LoginUser(ctx, client, l, p)
-	require.NoError(t, err)
+	auth := utils.AdminUserLogin(t)
+	token := auth.GetPayload().AccessToken
 
 	t.Run("register a new pet size ok", func(t *testing.T) {
-		token := loginUser.GetPayload().AccessToken
 
 		params := pet_size.NewCreateNewPetSizeParamsWithContext(ctx)
 		params.NewPetSize = &models.PetSize{
@@ -57,14 +50,13 @@ func TestIntegration_PetSize(t *testing.T) {
 	})
 
 	t.Run("register a new pet kind failed: validation error", func(t *testing.T) {
-		token := loginUser.GetPayload().AccessToken
 
 		params := pet_size.NewCreateNewPetSizeParamsWithContext(ctx)
 		params.NewPetSize = &models.PetSize{
 			Name: nil,
 		}
 
-		_, err = client.PetSize.CreateNewPetSize(params, utils.AuthInfoFunc(token))
+		_, err := client.PetSize.CreateNewPetSize(params, utils.AuthInfoFunc(token))
 		require.Error(t, err)
 
 		errExp := pet_size.NewCreateNewPetSizeDefault(http.StatusUnprocessableEntity)
@@ -77,7 +69,7 @@ func TestIntegration_PetSize(t *testing.T) {
 	t.Run("register a new pet kind failed: no authorization", func(t *testing.T) {
 		params := pet_size.NewCreateNewPetSizeParamsWithContext(ctx)
 
-		_, err = client.PetSize.CreateNewPetSize(params, utils.AuthInfoFunc(nil))
+		_, err := client.PetSize.CreateNewPetSize(params, utils.AuthInfoFunc(nil))
 		require.Error(t, err)
 
 		errExp := pet_size.NewCreateNewPetSizeDefault(http.StatusUnauthorized)
@@ -91,7 +83,7 @@ func TestIntegration_PetSize(t *testing.T) {
 		params := pet_size.NewCreateNewPetSizeParamsWithContext(ctx)
 		dummyToken := utils.TokenNotExist
 
-		_, err = client.PetSize.CreateNewPetSize(params, utils.AuthInfoFunc(&dummyToken))
+		_, err := client.PetSize.CreateNewPetSize(params, utils.AuthInfoFunc(&dummyToken))
 		require.Error(t, err)
 
 		errExp := pet_size.NewCreateNewPetSizeDefault(http.StatusUnauthorized)

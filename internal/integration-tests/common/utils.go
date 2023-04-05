@@ -7,14 +7,15 @@ import (
 	"math/rand"
 	"net/http"
 	"strings"
+	"testing"
 	"time"
-
-	httptransport "github.com/go-openapi/runtime/client"
-	"go.uber.org/zap"
 
 	"github.com/brianvoe/gofakeit/v6"
 	"github.com/go-openapi/runtime"
+	httptransport "github.com/go-openapi/runtime/client"
 	"github.com/go-openapi/strfmt"
+	"github.com/stretchr/testify/require"
+	"go.uber.org/zap"
 
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/config"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/swagger/client"
@@ -36,6 +37,7 @@ const (
 	LoginNotExist    = "some dummy login"
 	PasswordNotExist = "some dummy password"
 	TokenNotExist    = "some dummy token"
+	AdminID          = 1
 )
 
 func GenerateLoginAndPassword() (string, string, error) {
@@ -104,6 +106,48 @@ func GetUser(ctx context.Context, client *client.Be, authInfo runtime.ClientAuth
 		return nil, err
 	}
 	return currentUser, nil
+}
+
+func AdminLoginPassword(t *testing.T) (string, string, int64) {
+	t.Helper()
+	l, p, err := GenerateLoginAndPassword()
+	require.NoError(t, err)
+
+	ctx := context.Background()
+	client := SetupClient()
+
+	user, err := CreateUser(ctx, client, l, p)
+	require.NoError(t, err)
+
+	// login and get token
+	loginUser, err := LoginUser(ctx, client, l, p)
+	require.NoError(t, err)
+	auth := AuthInfoFunc(loginUser.GetPayload().AccessToken)
+
+	role := int64(AdminID)
+	params := &users.AssignRoleToUserParams{
+		UserID: *user.ID,
+		Data: &models.AssignRoleToUser{
+			RoleID: &role,
+		},
+	}
+	params.SetContext(ctx)
+	params.SetHTTPClient(http.DefaultClient)
+
+	r, err := client.Users.AssignRoleToUser(params, auth)
+	require.NoError(t, err, r)
+	return l, p, *user.ID
+}
+
+func AdminUserLogin(t *testing.T) *users.LoginOK {
+	t.Helper()
+	ctx := context.Background()
+	client := SetupClient()
+	l, p, _ := AdminLoginPassword(t)
+	// login and get token with admin role
+	loginUser, err := LoginUser(ctx, client, l, p)
+	require.NoError(t, err)
+	return loginUser
 }
 
 func SetupClient() *client.Be {

@@ -5,7 +5,6 @@ import (
 	"errors"
 	"flag"
 	"io"
-	"log"
 	"net/http"
 	"os"
 	"testing"
@@ -20,30 +19,15 @@ import (
 )
 
 var (
-	testLogin    string
-	testPassword string
-	auth         runtime.ClientAuthInfoWriterFunc
+	auth runtime.ClientAuthInfoWriterFunc
 )
 
 func TestMain(m *testing.M) {
 	flag.Parse()
 	if !testing.Short() {
-		ctx := context.Background()
-		beClient := common.SetupClient()
 
-		var err error
-		testLogin, testPassword, err = common.GenerateLoginAndPassword()
-		if err != nil {
-			log.Fatalf("GenerateLoginAndPassword: %v", err)
-		}
-		_, err = common.CreateUser(ctx, beClient, testLogin, testPassword)
-		if err != nil {
-			log.Fatalf("CreateUser: %v", err)
-		}
-		loginUser, err := common.LoginUser(ctx, beClient, testLogin, testPassword)
-		if err != nil {
-			log.Fatalf("LoginUser: %v", err)
-		}
+		t := &testing.T{}
+		loginUser := common.AdminUserLogin(t)
 
 		auth = common.AuthInfoFunc(loginUser.GetPayload().AccessToken)
 
