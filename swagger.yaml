@@ -119,6 +119,57 @@ paths:
           schema:
             $ref: "#/definitions/Error"
   /v1/users:
+    get:
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          description: limit of items in page
+          type: integer
+          default: 10
+        - name: offset
+          in: query
+          required: false
+          description: offset of items
+          type: integer
+          default: 0
+        - name: order_by
+          in: query
+          required: false
+          description: how to order list
+          type: string
+          enum:
+            - asc
+            - desc
+          default: asc
+        - name: order_column
+          in: query
+          required: false
+          description: column to order by
+          type: string
+          enum:
+            - id
+            - name
+            - surname
+            - login
+            - email
+            - is_blocked
+          default: id
+      summary: Get all users
+      security:
+        - Bearer: [ ]
+      tags:
+        - Users
+      operationId: GetAllUsers
+      responses:
+        200:
+          description: Success
+          schema:
+            $ref: "#/definitions/GetListUsers"
+        default:
+          description: Unexpected error.
+          schema:
+            $ref: "#/definitions/Error"
     post:
       summary: Register a new user.
       tags:
@@ -247,56 +298,6 @@ paths:
           description: User deleted
           schema:
             type: string
-        default:
-          description: Unexpected error.
-          schema:
-            $ref: "#/definitions/Error"
-  /management/listUsers:
-    get:
-      parameters:
-        - name: limit
-          in: query
-          required: false
-          description: limit of items in page
-          type: integer
-          default: 10
-        - name: offset
-          in: query
-          required: false
-          description: offset of items
-          type: integer
-          default: 0
-        - name: order_by
-          in: query
-          required: false
-          description: how to order list
-          type: string
-          enum:
-            - asc
-            - desc
-          default: asc
-        - name: order_column
-          in: query
-          required: false
-          description: column to order by
-          type: string
-          enum:
-            - id
-            - name
-            - login
-            - email
-          default: id
-      summary: Get all users
-      security:
-        - Bearer: [ ]
-      tags:
-        - Users
-      operationId: GetAllUsers
-      responses:
-        200:
-          description: Success
-          schema:
-            $ref: "#/definitions/GetListUsers"
         default:
           description: Unexpected error.
           schema:
