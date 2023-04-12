@@ -84,7 +84,7 @@ deploy_ssh:
 
 rebuild_project:
 	git pull
-	docker-compose --build csr
+	docker-compose build csr
 start_project:
 	docker-compose up
 stop_project:
