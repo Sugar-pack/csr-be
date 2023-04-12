@@ -82,3 +82,12 @@ deploy_ssh:
 	ssh -o "StrictHostKeyChecking=no" -i ~/.ssh/ssh_deploy -p"${deploy_ssh_port}" "${deploy_ssh_user}@${deploy_ssh_host}" \
 	"sudo systemctl daemon-reload && sudo service ${env}.csr stop && cp ~/tmp_csr /var/www/csr/${env}/server && sudo service ${env}.csr start"
 
+rebuild_
+start_project:
+	git pull
+	 docker-compose up -d postgres
+	 docker-compose up -d --no-deps --build csr
+start_project:
+	docker-compose up
+stop_project:
+	docker-compose down

@@ -5,6 +5,7 @@ services:
     container_name: db-local
     environment:
       - POSTGRES_USER=csr
+#      - POSTGRES_PASSWORD=password
       - POSTGRES_DB=csr
       - POSTGRES_HOST_AUTH_METHOD=trust
     command: -p 5432
@@ -17,3 +18,10 @@ services:
       interval: 2s
       timeout: 1s
       retries: 5
+  csr:
+    build: .
+    depends_on:
+      - postgres
+    ports:
+      - "8080:8080"
+    command: "go run ./cmd/swagger/"
