@@ -22,7 +22,6 @@ Go 1.19.2 is the current version.
     ```shell
     make run
     ```
-  
    The server is here - http://127.0.0.1:8080/api
    Swagger docs are here - http://127.0.0.1:8080/api/docs
 5. Service cURL request example:
@@ -72,4 +71,3 @@ The name of the folder with files is set in environment variable PHOTOS_FOLDER.
 The database stores id - names of files without an extension
 
 <img src="images/equipments_photos.png" alt="files workflow diagrams">
-

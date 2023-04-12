@@ -5,7 +5,6 @@ services:
     container_name: db-local
     environment:
       - POSTGRES_USER=csr
-#      - POSTGRES_PASSWORD=password
       - POSTGRES_DB=csr
       - POSTGRES_HOST_AUTH_METHOD=trust
     command: -p 5432
