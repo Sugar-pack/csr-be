@@ -22,6 +22,7 @@ Go 1.19.2 is the current version.
     ```shell
     make run
     ```
+  
    The server is here - http://127.0.0.1:8080/api
    Swagger docs are here - http://127.0.0.1:8080/api/docs
 5. Service cURL request example:
@@ -43,7 +44,19 @@ Go 1.19.2 is the current version.
    < 
    {"data":{"id":"1"}}
    ```
-
+## How to start project in docker compose
+0. Change in config.json db host to
+   ```
+   "host": "postgres",
+   ```
+1. Run the build container (pull updates and build):
+    ```shell
+    make build_project
+    ```
+2. Run the build container:
+    ```shell
+    make start_project
+    ```
 ### For developers
 
 To draw entities relationships diagram:
@@ -59,3 +72,4 @@ The name of the folder with files is set in environment variable PHOTOS_FOLDER.
 The database stores id - names of files without an extension
 
 <img src="images/equipments_photos.png" alt="files workflow diagrams">
+
