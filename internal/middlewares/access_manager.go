@@ -18,7 +18,7 @@ const apiPrefix = "/api"
 const forbiddenMessage = "User is not authorized"
 const unconfirmedEmailMessage = "User has no confirmed email"
 
-const quantityOfRoleVariations = 4
+const numRoleVariations = 8
 
 type AccessManager interface {
 	AddNewAccess(role Role, method, path string) (bool, error)
@@ -57,6 +57,7 @@ type Role struct {
 	Slug                    string
 	IsEmailConfirmed        bool
 	IsPersonalDataConfirmed bool
+	IsReadonly              bool
 }
 
 // NewAccessManager creates new access manager with admin access to all endpoints.
@@ -78,30 +79,25 @@ func NewAccessManager(roles, fullAccessRoles []Role, endpoints ExistingEndpoints
 }
 
 func allRoleVariation(roles []Role) []Role {
-	allRoleVariations := make([]Role, 0, quantityOfRoleVariations*len(roles))
+	res := make([]Role, 0, numRoleVariations*len(roles))
+	variations := []bool{false, true}
+
 	for _, role := range roles {
-		allRoleVariations = append(allRoleVariations, Role{
-			Slug:                    role.Slug,
-			IsEmailConfirmed:        role.IsEmailConfirmed,
-			IsPersonalDataConfirmed: role.IsPersonalDataConfirmed,
-		})
-		allRoleVariations = append(allRoleVariations, Role{
-			Slug:                    role.Slug,
-			IsEmailConfirmed:        role.IsEmailConfirmed,
-			IsPersonalDataConfirmed: !role.IsPersonalDataConfirmed,
-		})
-		allRoleVariations = append(allRoleVariations, Role{
-			Slug:                    role.Slug,
-			IsEmailConfirmed:        !role.IsEmailConfirmed,
-			IsPersonalDataConfirmed: role.IsPersonalDataConfirmed,
-		})
-		allRoleVariations = append(allRoleVariations, Role{
-			Slug:                    role.Slug,
-			IsEmailConfirmed:        !role.IsEmailConfirmed,
-			IsPersonalDataConfirmed: !role.IsPersonalDataConfirmed,
-		})
+		for _, isEmailConfirmed := range variations {
+			for _, isPersonalDataConfirmed := range variations {
+				for _, isReadonly := range variations {
+					res = append(res, Role{
+						Slug:                    role.Slug,
+						IsEmailConfirmed:        isEmailConfirmed,
+						IsPersonalDataConfirmed: isPersonalDataConfirmed,
+						IsReadonly:              isReadonly,
+					})
+				}
+			}
+		}
 	}
-	return allRoleVariations
+
+	return res
 }
 
 type path struct {
@@ -222,14 +218,16 @@ func (a *blackListAccessManager) Authorize(r *http.Request, auth interface{}) er
 	if !ok {
 		return openApiErrors.New(http.StatusForbidden, forbiddenMessage)
 	}
+
+	if !userInfo.IsEmailConfirmed {
+		return openApiErrors.New(http.StatusForbidden, unconfirmedEmailMessage)
+	}
+
 	role := Role{
 		Slug:                    userInfo.Role.Slug,
 		IsEmailConfirmed:        userInfo.IsEmailConfirmed,
 		IsPersonalDataConfirmed: userInfo.IsPersonalDataConfirmed,
-	}
-
-	if !role.IsEmailConfirmed {
-		return openApiErrors.New(http.StatusForbidden, unconfirmedEmailMessage)
+		IsReadonly:              userInfo.IsReadonly,
 	}
 
 	if !a.HasAccess(role, r.Method, r.URL.Path) {

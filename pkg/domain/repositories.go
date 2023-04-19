@@ -13,10 +13,6 @@ type ActiveAreaRepository interface {
 	TotalActiveAreas(ctx context.Context) (int, error)
 }
 
-type BlockerRepository interface {
-	SetIsBlockedUser(ctx context.Context, userId int, isBlocked bool) error
-}
-
 type Filter struct {
 	Limit, Offset        int
 	OrderBy, OrderColumn string
@@ -157,4 +153,5 @@ type UserRepository interface {
 	Delete(ctx context.Context, id int) error
 	UsersListTotal(ctx context.Context) (int, error)
 	ConfirmRegistration(ctx context.Context, login string) error
+	SetIsReadonly(ctx context.Context, id int, isReadonly bool) error
 }

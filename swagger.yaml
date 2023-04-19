@@ -153,7 +153,7 @@ paths:
             - surname
             - login
             - email
-            - is_blocked
+            - is_readonly
           default: id
       summary: Get all users
       security:
@@ -380,6 +380,54 @@ paths:
           description: User information has been updated.
           schema:
             $ref: "#/definitions/SuccessUserUpdateResponse"
+        default:
+          description: Unexpected error.
+          schema:
+            $ref: "#/definitions/Error"
+
+  /v1/users/{userId}/readonly-access:
+    put:
+      summary: Update user's read-only access status
+      parameters:
+        - name: userId
+          in: path
+          description: ID of the user to update
+          required: true
+          type: integer
+        - name: body
+          in: body
+          description: Request body containing the new read-only access status
+          required: true
+          schema:
+            type: object
+            properties:
+              is_readonly:
+                type: boolean
+                description: New read-only access status for the user
+      tags:
+        - Users
+      security:
+        - Bearer: [ ]
+      operationId: UpdateReadonlyAccess
+      responses:
+        204:
+          description: Success
+        400:
+          description: Bad request
+          schema:
+            $ref: "#/definitions/Error"
+        401:
+          description: Unauthorized
+          schema:
+            $ref: "#/definitions/Error"
+        403:
+          description: Forbidden
+          schema:
+            $ref: "#/definitions/Error"
+        404:
+          description: User not found
+          schema:
+            $ref: "#/definitions/Error"
         default:
           description: Unexpected error.
           schema:
@@ -1572,48 +1620,6 @@ paths:
           description: Unexpected error.
           schema:
             $ref: "#/definitions/Error"
-  /v1/managment/users/{userId}/block:
-    parameters:
-      - name: userId
-        in: path
-        required: true
-        description: user id
-        type: integer
-    post:
-      summary: Block user
-      security:
-        - Bearer: [ ]
-      tags:
-        - Users
-      operationId: blockUser
-      responses:
-        200:
-          description: Success
-        default:
-          description: Unexpected error.
-          schema:
-            $ref: "#/definitions/Error"
-  /v1/managment/users/{userId}/unblock:
-    parameters:
-      - name: userId
-        in: path
-        required: true
-        description: user id
-        type: integer
-    post:
-      summary: Unblock user
-      security:
-        - Bearer: [ ]
-      tags:
-        - Users
-      operationId: unblockUser
-      responses:
-        200:
-          description: Success
-        default:
-          description: Unexpected error.
-          schema:
-            $ref: "#/definitions/Error"
 
   /password_reset/:
     post:
@@ -2118,7 +2124,7 @@ definitions:
       - passport_issue_date
       - phone_number
       - email
-      - is_blocked
+      - is_readonly
       - type
       - org_name
     properties:
@@ -2151,7 +2157,7 @@ definitions:
         type: string
       email:
         type: string
-      is_blocked:
+      is_readonly:
         type: boolean
         example: false
       type:
