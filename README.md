@@ -43,7 +43,20 @@ Go 1.19.2 is the current version.
    < 
    {"data":{"id":"1"}}
    ```
-
+## How to start project in docker compose
+Before starting, you need to install git (https://git-scm.com/downloads) and docker (https://docs.docker.com/desktop/install/windows-install/)
+0. Change in config.json db host to
+   ```
+   "host": "postgres",
+   ```
+1. Run the build container (pull updates and build):
+    ```shell
+    make build_project
+    ```
+2. Run the build container:
+    ```shell
+    make start_project
+    ```
 ### For developers
 
 To draw entities relationships diagram:
