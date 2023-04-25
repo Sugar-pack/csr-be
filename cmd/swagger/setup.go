@@ -57,7 +57,6 @@ func SetupAPI(entClient *ent.Client, lg *zap.Logger, conf *config.AppConfig) (*r
 	api.UseSwaggerUI()
 	api.BearerAuth = middlewares.BearerAuthenticateFunc(jwtSecret, lg)
 	handlers.SetActiveAreaHandler(lg, api)
-	handlers.SetBlockerHandler(lg, api)
 	handlers.SetEquipmentHandler(lg, api)
 	handlers.SetCategoryHandler(lg, api)
 	handlers.SetSubcategoryHandler(lg, api)

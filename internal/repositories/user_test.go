@@ -2,6 +2,7 @@ package repositories
 
 import (
 	"context"
+	"github.com/stretchr/testify/assert"
 	"math"
 	"testing"
 
@@ -78,7 +79,10 @@ func (s *UserSuite) SetupTest() {
 	}
 	for i, value := range s.users {
 		user, errCreate := s.client.User.Create().
-			SetName(value.Name).SetLogin(value.Login).SetPassword(value.Password).SetEmail(value.Email).
+			SetName(value.Name).
+			SetLogin(value.Login).
+			SetPassword(value.Password).
+			SetEmail(value.Email).
 			Save(s.ctx)
 		if errCreate != nil {
 			t.Fatal(errCreate)
@@ -145,7 +149,7 @@ func (s *UserSuite) TestUserRepository_UserList_WrongOrderColumn() {
 	limit := math.MaxInt
 	offset := 0
 	orderBy := utils.AscOrder
-	orderColumn := user.FieldIsBlocked
+	orderColumn := user.FieldIsReadonly
 	repository := NewUserRepository()
 	ctx := s.ctx
 	tx, err := s.client.Tx(ctx)
@@ -288,28 +292,70 @@ func (s *UserSuite) TestUserRepository_UserList_Offset() {
 }
 
 func (s *UserSuite) TestUserRepository_ChangePasswordByLogin() {
+	// Setup test transaction and repo
 	t := s.T()
-	repository := NewUserRepository()
 	ctx := s.ctx
-	login := s.users[1].Login
-	require.NotEmpty(t, login)
-	newPassword := "password1"
 	tx, err := s.client.Tx(ctx)
 	require.NoError(t, err)
 	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
-	err = repository.ChangePasswordByLogin(ctx, login, newPassword)
-	require.NoError(t, err)
-	require.NoError(t, tx.Commit())
+	repo := NewUserRepository()
 
-	tx, err = s.client.Tx(ctx)
+	// Insert a test user
+	user, err := tx.User.Create().
+		SetLogin("test_change_password").
+		SetEmail("test_change_password").
+		SetPassword("test_change_password").
+		SetName("test_change_password").
+		Save(ctx)
+	require.NoError(t, err)
+
+	// Call ChangePasswordByLogin
+	newPassword := "password1"
+	err = repo.ChangePasswordByLogin(ctx, user.Login, newPassword)
+	require.NoError(t, err)
+
+	// Check updated
+	updatedUser, err := tx.User.Get(ctx, user.ID)
+	require.NoError(t, err)
+	err = bcrypt.CompareHashAndPassword([]byte(updatedUser.Password), []byte(newPassword))
+	require.NoError(t, err)
+
+	require.NoError(s.T(), tx.Rollback())
+}
+
+func (s *UserSuite) TestUserRepository_SetIsReadonly() {
+	// Setup test transaction and repo
+	t := s.T()
+	ctx := s.ctx
+	tx, err := s.client.Tx(ctx)
 	require.NoError(t, err)
 	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
-	user, err := repository.UserByLogin(ctx, login)
-	require.NoError(t, err)
-	require.NoError(t, tx.Commit())
+	repo := NewUserRepository()
 
-	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(newPassword))
+	// Insert a test user
+	user, err := tx.User.Create().
+		SetLogin("test_readonly").
+		SetEmail("test_readonly").
+		SetPassword("test_readonly").
+		SetName("test_readonly").
+		SetIsReadonly(false).
+		Save(ctx)
 	require.NoError(t, err)
+
+	// Call SetIsReadonly
+	err = repo.SetIsReadonly(ctx, user.ID, true)
+	require.NoError(t, err)
+
+	// Check updated
+	updatedUser, err := tx.User.Get(ctx, user.ID)
+	require.NoError(t, err)
+	assert.True(t, updatedUser.IsReadonly)
+
+	// Call SetIsReadonly with an invalid ID
+	err = repo.SetIsReadonly(ctx, 9999, true)
+	require.Error(t, err)
+
+	require.NoError(s.T(), tx.Rollback())
 }
 
 func mapContainsUser(t *testing.T, eq *ent.User, m map[int]*ent.User) bool {

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/stretchr/testify/mock"
 	"math"
 	"net/http"
 	"net/http/httptest"
@@ -1047,16 +1048,7 @@ func (s *UserTestSuite) TestUser_DeleteUserFunc_OK() {
 		UserID:      int64(idToDelete),
 	}
 
-	userToDelete := &ent.User{
-		ID: 3,
-		Edges: ent.UserEdges{
-			Role: &ent.Role{},
-		},
-		IsBlocked: true,
-	}
-
 	s.userRepository.On("Delete", ctx, idToDelete).Return(nil)
-	s.userRepository.On("GetUserByID", ctx, idToDelete).Return(userToDelete, nil)
 
 	access := authentication.Auth{
 		Id: 1,
@@ -1235,6 +1227,115 @@ func (s *UserTestSuite) TestUser_ChangePasswordFunc_OK() {
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
 	require.Equal(t, http.StatusNoContent, responseRecorder.Code)
+	s.userRepository.AssertExpectations(t)
+}
+
+func (s *UserTestSuite) TestUser_UpdateReadonlyAccess_Grant() {
+	t := s.T()
+
+	userID := 1232
+	isReadonly := true
+	data := users.UpdateReadonlyAccessParams{
+		HTTPRequest: &http.Request{},
+		UserID:      int64(userID),
+		Body:        users.UpdateReadonlyAccessBody{IsReadonly: isReadonly},
+	}
+
+	s.userRepository.On("SetIsReadonly", mock.Anything, userID, isReadonly).Return(nil)
+
+	handlerFunc := s.user.UpdateReadonlyAccess(s.userRepository)
+	resp := handlerFunc(data, authentication.Auth{})
+	responseRecorder := httptest.NewRecorder()
+	producer := runtime.JSONProducer()
+	resp.WriteResponse(responseRecorder, producer)
+	require.Equal(t, http.StatusNoContent, responseRecorder.Code)
+
+	s.userRepository.AssertExpectations(t)
+}
+
+func (s *UserTestSuite) TestUser_UpdateReadonlyAccess_Revoke() {
+	t := s.T()
+
+	userID := 1232
+	isReadonly := false
+	data := users.UpdateReadonlyAccessParams{
+		HTTPRequest: &http.Request{},
+		UserID:      int64(userID),
+		Body:        users.UpdateReadonlyAccessBody{IsReadonly: isReadonly},
+	}
+
+	s.userRepository.On("SetIsReadonly", mock.Anything, userID, isReadonly).Return(nil)
+
+	handlerFunc := s.user.UpdateReadonlyAccess(s.userRepository)
+	resp := handlerFunc(data, authentication.Auth{})
+	responseRecorder := httptest.NewRecorder()
+	producer := runtime.JSONProducer()
+	resp.WriteResponse(responseRecorder, producer)
+	require.Equal(t, http.StatusNoContent, responseRecorder.Code)
+
+	s.userRepository.AssertExpectations(t)
+}
+
+func (s *UserTestSuite) TestUser_UpdateReadonlyAccess_UserNotFound() {
+	t := s.T()
+
+	userID := 1232
+	isReadonly := false
+	data := users.UpdateReadonlyAccessParams{
+		HTTPRequest: &http.Request{},
+		UserID:      int64(userID),
+		Body:        users.UpdateReadonlyAccessBody{IsReadonly: isReadonly},
+	}
+
+	expectedError := &ent.NotFoundError{}
+	s.userRepository.On("SetIsReadonly", mock.Anything, userID, isReadonly).Return(expectedError)
+
+	handlerFunc := s.user.UpdateReadonlyAccess(s.userRepository)
+	resp := handlerFunc(data, authentication.Auth{})
+	responseRecorder := httptest.NewRecorder()
+	producer := runtime.JSONProducer()
+	resp.WriteResponse(responseRecorder, producer)
+	require.Equal(t, http.StatusNotFound, responseRecorder.Code)
+
+	s.userRepository.AssertExpectations(t)
+}
+
+func (s *UserTestSuite) TestUser_UpdateReadonlyAccess_InternalError() {
+	t := s.T()
+
+	userID := 1232
+	isReadonly := false
+	data := users.UpdateReadonlyAccessParams{
+		HTTPRequest: &http.Request{},
+		UserID:      int64(userID),
+		Body:        users.UpdateReadonlyAccessBody{IsReadonly: isReadonly},
+	}
+
+	expectedError := fmt.Errorf("internal error")
+	s.userRepository.On("SetIsReadonly", mock.Anything, userID, isReadonly).Return(expectedError)
+
+	handlerFunc := s.user.UpdateReadonlyAccess(s.userRepository)
+	resp := handlerFunc(data, authentication.Auth{})
+	responseRecorder := httptest.NewRecorder()
+	producer := runtime.JSONProducer()
+	resp.WriteResponse(responseRecorder, producer)
+	require.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
+
+	s.userRepository.AssertExpectations(t)
+}
+
+func (s *UserTestSuite) TestUser_UpdateReadonlyAccess_UnauthorizedError() {
+	t := s.T()
+
+	invalidAccess := "invalid access"
+
+	handlerFunc := s.user.UpdateReadonlyAccess(s.userRepository)
+	resp := handlerFunc(users.UpdateReadonlyAccessParams{}, invalidAccess)
+	responseRecorder := httptest.NewRecorder()
+	producer := runtime.JSONProducer()
+	resp.WriteResponse(responseRecorder, producer)
+	require.Equal(t, http.StatusUnauthorized, responseRecorder.Code)
+
 	s.userRepository.AssertExpectations(t)
 }
 

@@ -20,6 +20,7 @@ type Auth struct {
 	Login                   string
 	IsEmailConfirmed        bool
 	IsPersonalDataConfirmed bool
+	IsReadonly              bool
 	Role                    *Role
 }
 

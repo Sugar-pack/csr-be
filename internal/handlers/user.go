@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"errors"
+	"fmt"
 	"math"
 	"net/http"
 
@@ -36,6 +37,7 @@ func SetUserHandler(logger *zap.Logger, api *operations.BeAPI,
 	api.UsersDeleteUserHandler = userHandler.DeleteUserByID(userRepo)
 	api.UsersChangePasswordHandler = userHandler.ChangePassword(userRepo)
 	api.UsersLogoutHandler = userHandler.LogoutUserFunc(tokenManager)
+	api.UsersUpdateReadonlyAccessHandler = userHandler.UpdateReadonlyAccess(userRepo)
 }
 
 type User struct {
@@ -282,22 +284,13 @@ func (c User) DeleteUserByID(repo domain.UserRepository) users.DeleteUserHandler
 		}
 
 		ctx := p.HTTPRequest.Context()
-		userToDelete, err := repo.GetUserByID(ctx, int(p.UserID))
-		if err != nil {
-			c.logger.Error("getting user failed", zap.Error(err))
-			return users.NewDeleteUserDefault(http.StatusInternalServerError).
-				WithPayload(buildStringPayload("Can't get user by id"))
-		}
 
-		if userToDelete.IsBlocked != true {
-			c.logger.Error("user must be blocked before delete", zap.Any("access", access))
-			return users.NewDeleteUserDefault(http.StatusConflict).
-				WithPayload(&models.Error{Data: &models.ErrorData{Message: "User must be blocked before delete"}})
-		}
-
-		err = repo.Delete(ctx, int(p.UserID))
-		if err != nil {
+		if err = repo.Delete(ctx, int(p.UserID)); err != nil {
 			c.logger.Error("Error while deleting user by id", zap.Error(err))
+			if ent.IsNotFound(err) {
+				return users.NewDeleteUserDefault(http.StatusInternalServerError).
+					WithPayload(buildStringPayload("Can't get user by id"))
+			}
 			return users.NewDeleteUserDefault(http.StatusInternalServerError).WithPayload(
 				&models.Error{
 					Data: &models.ErrorData{
@@ -335,11 +328,6 @@ func (c User) ChangePassword(repo domain.UserRepository) users.ChangePasswordHan
 			return users.NewChangePasswordDefault(http.StatusInternalServerError).
 				WithPayload(buildStringPayload("Can't get user by id"))
 		}
-		if requestedUser.IsBlocked {
-			c.logger.Error("user is blocked", zap.Any("access", access))
-			return users.NewChangePasswordDefault(http.StatusForbidden).
-				WithPayload(&models.Error{Data: &models.ErrorData{Message: "User is blocked"}})
-		}
 		expectedPasswordHash := requestedUser.Password
 		if err = bcrypt.CompareHashAndPassword([]byte(expectedPasswordHash), []byte(p.PasswordPatch.OldPassword)); err != nil {
 			c.logger.Error("wrong password", zap.Error(err))
@@ -352,6 +340,39 @@ func (c User) ChangePassword(repo domain.UserRepository) users.ChangePasswordHan
 				WithPayload(buildStringPayload("Error while changing password"))
 		}
 		return users.NewChangePasswordNoContent()
+	}
+}
+
+func (c User) UpdateReadonlyAccess(repo domain.UserRepository) users.UpdateReadonlyAccessHandlerFunc {
+	return func(p users.UpdateReadonlyAccessParams, access interface{}) middleware.Responder {
+		currentUserID, err := authentication.GetUserId(access)
+		if err != nil {
+			c.logger.Error("error while getting authorization", zap.Error(err))
+			return users.NewUpdateReadonlyAccessUnauthorized().
+				WithPayload(buildStringPayload("Can't get authorization"))
+		}
+
+		ctx := p.HTTPRequest.Context()
+		userID := int(p.UserID)
+		isReadonly := p.Body.IsReadonly
+
+		if err := repo.SetIsReadonly(ctx, userID, isReadonly); err != nil {
+			c.logger.Error("error while updating readonly access", zap.Error(err))
+			if ent.IsNotFound(err) {
+				return users.NewUpdateReadonlyAccessNotFound().
+					WithPayload(buildStringPayload("User not found"))
+			}
+			return users.NewUpdateReadonlyAccessDefault(http.StatusInternalServerError).
+				WithPayload(buildStringPayload("Unexpected error"))
+		}
+
+		if isReadonly {
+			c.logger.Info(fmt.Sprintf("User %d has been granted read-only access by user %d", userID, currentUserID))
+		} else {
+			c.logger.Info(fmt.Sprintf("Read-only access for user %d has been revoked by user %d", userID, currentUserID))
+		}
+
+		return users.NewUpdateReadonlyAccessNoContent()
 	}
 }
 
@@ -370,7 +391,7 @@ func mapUserInfo(user *ent.User) (*models.UserInfo, error) {
 	result := &models.UserInfo{
 		Email:             &user.Email,
 		ID:                &userID,
-		IsBlocked:         &user.IsBlocked,
+		IsReadonly:        &user.IsReadonly,
 		Login:             &user.Login,
 		Name:              &user.Name,
 		OrgName:           user.OrgName,

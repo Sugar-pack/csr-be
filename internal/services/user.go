@@ -132,14 +132,15 @@ func (s *tokenManager) GenerateTokens(ctx context.Context, login, password strin
 }
 
 const (
-	IdClaim            = "id"
-	LoginClaim         = "login"
-	RoleClaim          = "role"
-	SlugClaim          = "slug"
-	EmailVerifiedClaim = "emailVerified"
-	DataVerifiedClaim  = "dataVerified"
-	GroupClaim         = "group"
-	ExpireClaim        = "exp"
+	IdClaim             = "id"
+	LoginClaim          = "login"
+	RoleClaim           = "role"
+	SlugClaim           = "slug"
+	EmailVerifiedClaim  = "emailVerified"
+	DataVerifiedClaim   = "dataVerified"
+	GroupClaim          = "group"
+	ExpireClaim         = "exp"
+	ReadonlyAccessClaim = "readonlyAccess"
 )
 
 func generateJWT(user *ent.User, jwtSecretKey string) (string, error) {
@@ -160,6 +161,7 @@ func generateJWT(user *ent.User, jwtSecretKey string) (string, error) {
 
 	claims[EmailVerifiedClaim] = user.Edges.RegistrationConfirm != nil && len(user.Edges.RegistrationConfirm) > 0
 	claims[DataVerifiedClaim] = user.IsConfirmed //TODO: is it right field?
+	claims[ReadonlyAccessClaim] = user.IsReadonly
 	claims[ExpireClaim] = time.Now().Add(accessExpireTime).Unix()
 
 	tokenString, err := token.SignedString([]byte(jwtSecretKey))
