@@ -34,9 +34,9 @@ func SetUserHandler(logger *zap.Logger, api *operations.BeAPI,
 	api.UsersGetUserHandler = userHandler.GetUserById(userRepo)
 	api.UsersGetAllUsersHandler = userHandler.GetUsersList(userRepo)
 	api.UsersAssignRoleToUserHandler = userHandler.AssignRoleToUserFunc(userRepo)
-	api.UsersDeleteUserHandler = userHandler.DeleteUserByID(userRepo)
 	api.UsersChangePasswordHandler = userHandler.ChangePassword(userRepo)
 	api.UsersLogoutHandler = userHandler.LogoutUserFunc(tokenManager)
+	api.UsersDeleteCurrentUserHandler = userHandler.DeleteCurrentUser(userRepo)
 	api.UsersUpdateReadonlyAccessHandler = userHandler.UpdateReadonlyAccess(userRepo)
 }
 
@@ -269,36 +269,24 @@ func (c User) GetUsersList(repository domain.UserRepository) users.GetAllUsersHa
 	}
 }
 
-func (c User) DeleteUserByID(repo domain.UserRepository) users.DeleteUserHandlerFunc {
-	return func(p users.DeleteUserParams, access interface{}) middleware.Responder {
-		isAdmin, err := authentication.IsAdmin(access)
-		if err != nil {
-			c.logger.Error("error while getting authorization", zap.Error(err))
-			return users.NewDeleteUserDefault(http.StatusInternalServerError).
-				WithPayload(&models.Error{Data: &models.ErrorData{Message: "Can't get authorization"}})
-		}
-		if !isAdmin {
-			c.logger.Error("user is not admin", zap.Any("access", access))
-			return users.NewDeleteUserDefault(http.StatusForbidden).
-				WithPayload(&models.Error{Data: &models.ErrorData{Message: "You don't have rights"}})
-		}
-
+func (c User) DeleteCurrentUser(repository domain.UserRepository) users.DeleteCurrentUserHandlerFunc {
+	return func(p users.DeleteCurrentUserParams, access interface{}) middleware.Responder {
 		ctx := p.HTTPRequest.Context()
-
-		if err = repo.Delete(ctx, int(p.UserID)); err != nil {
-			c.logger.Error("Error while deleting user by id", zap.Error(err))
-			if ent.IsNotFound(err) {
-				return users.NewDeleteUserDefault(http.StatusInternalServerError).
-					WithPayload(buildStringPayload("Can't get user by id"))
-			}
-			return users.NewDeleteUserDefault(http.StatusInternalServerError).WithPayload(
-				&models.Error{
-					Data: &models.ErrorData{
-						Message: "Error while deleting user",
-					},
-				})
+		userId, err := authentication.GetUserId(access)
+		if err != nil {
+			c.logger.Error("get user id error during deleting user", zap.Error(err))
+			return users.NewDeleteCurrentUserDefault(http.StatusUnauthorized).
+				WithPayload(buildStringPayload("get user id error during deleting user"))
 		}
-		return users.NewDeleteUserOK().WithPayload("User deleted")
+
+		err = repository.Delete(ctx, userId)
+		if err != nil {
+			c.logger.Error("error during deleting user", zap.Error(err))
+			return users.NewDeleteCurrentUserDefault(http.StatusInternalServerError).
+				WithPayload(buildStringPayload("can't delete user"))
+		}
+
+		return users.NewDeleteCurrentUserOK()
 	}
 }
 

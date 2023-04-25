@@ -231,6 +231,24 @@ paths:
           description: Unexpected error
           schema:
             $ref: "#/definitions/Error"
+    delete:
+      summary: Delete the current user account.
+      security:
+        - Bearer: [ ]
+      tags:
+        - Users
+      operationId: deleteCurrentUser
+      responses:
+        200:
+          description: Success
+        401:
+          description: Unauthorized
+          schema:
+            $ref: "#/definitions/Error"
+        default:
+          description: Unexpected error.
+          schema:
+            $ref: "#/definitions/Error"
   /v1/users/me/password:
     patch:
       summary: Change the current user password.
@@ -282,22 +300,6 @@ paths:
           description: Success
           schema:
             $ref: "#/definitions/UserInfo"
-        default:
-          description: Unexpected error.
-          schema:
-            $ref: "#/definitions/Error"
-    delete:
-      summary: Delete user by id
-      security:
-        - Bearer: [ ]
-      tags:
-        - Users
-      operationId: DeleteUser
-      responses:
-        200:
-          description: User deleted
-          schema:
-            type: string
         default:
           description: Unexpected error.
           schema:

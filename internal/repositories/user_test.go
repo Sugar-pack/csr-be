@@ -2,9 +2,10 @@ package repositories
 
 import (
 	"context"
-	"github.com/stretchr/testify/assert"
 	"math"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
@@ -356,6 +357,38 @@ func (s *UserSuite) TestUserRepository_SetIsReadonly() {
 	require.Error(t, err)
 
 	require.NoError(s.T(), tx.Rollback())
+}
+
+func (s *UserSuite) TestUserRepository_DeleteUser_OK() {
+	t := s.T()
+	repository := NewUserRepository()
+	ctx := s.ctx
+	login := s.users[1].Login
+	require.NotEmpty(t, login)
+
+	tx, err := s.client.Tx(ctx)
+	require.NoError(t, err)
+	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
+	user, err := repository.UserByLogin(ctx, login)
+	require.NoError(t, err)
+	require.NoError(t, tx.Commit())
+
+	assert.Equal(t, user.IsDeleted, false)
+
+	tx, err = s.client.Tx(ctx)
+	require.NoError(t, err)
+	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
+	err = repository.Delete(ctx, user.ID)
+	require.NoError(t, err)
+	require.NoError(t, tx.Commit())
+
+	tx, err = s.client.Tx(ctx)
+	require.NoError(t, err)
+	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
+	updatedUser, err := repository.UserByLogin(ctx, login)
+	require.NoError(t, err)
+	require.NoError(t, tx.Commit())
+	assert.Equal(t, updatedUser.IsDeleted, true)
 }
 
 func mapContainsUser(t *testing.T, eq *ent.User, m map[int]*ent.User) bool {

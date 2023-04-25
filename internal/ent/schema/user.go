@@ -36,6 +36,7 @@ func (User) Fields() []ent.Field {
 		field.String("website").Optional().Nillable(),
 		field.String("vk").Optional().Nillable(),
 		field.Bool("is_confirmed").Default(false),
+		field.Bool("is_deleted").Default(false),
 	}
 }
 

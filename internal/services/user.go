@@ -58,6 +58,10 @@ func (s *tokenManager) RefreshToken(ctx context.Context, token string) (string, 
 			return "", "", false, errGet
 		}
 
+		if currentUser.IsDeleted {
+			return "", "", false, errors.New("user deleted, unable to refresh token")
+		}
+
 		newAccessToken, errGenJWT := generateJWT(currentUser, s.jwtSecret)
 		if errGet != nil {
 			s.logger.Error("generate JWT token error")
@@ -108,6 +112,11 @@ func (s *tokenManager) GenerateTokens(ctx context.Context, login, password strin
 	if err != nil {
 		return "", "", true, err
 	}
+
+	if user.IsDeleted {
+		return "", "", false, errors.New("user deleted, unable to generate token")
+	}
+
 	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password))
 	if err != nil {
 		return "", "", false, err

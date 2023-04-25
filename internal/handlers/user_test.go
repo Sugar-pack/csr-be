@@ -4,11 +4,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/stretchr/testify/mock"
 	"math"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/stretchr/testify/mock"
 
 	"entgo.io/ent/entc/integration/ent/user"
 	"github.com/go-openapi/loads"
@@ -51,7 +52,7 @@ func TestSetUserHandler(t *testing.T) {
 	require.NotEmpty(t, api.UsersGetUserHandler)
 	require.NotEmpty(t, api.UsersGetAllUsersHandler)
 	require.NotEmpty(t, api.UsersAssignRoleToUserHandler)
-	require.NotEmpty(t, api.UsersDeleteUserHandler)
+	require.NotEmpty(t, api.UsersDeleteCurrentUserHandler)
 }
 
 type UserTestSuite struct {
@@ -1018,42 +1019,23 @@ func (s *UserTestSuite) TestUser_GetUserById_OK() {
 	s.userRepository.AssertExpectations(t)
 }
 
-func (s *UserTestSuite) TestUser_DeleteUserFunc_Err() {
-	t := s.T()
-	request := http.Request{}
-	idToDelete := 3
-	handlerFunc := s.user.DeleteUserByID(s.userRepository)
-	data := users.DeleteUserParams{
-		HTTPRequest: &request,
-		UserID:      int64(idToDelete),
-	}
-
-	access := "dummy access"
-	resp := handlerFunc(data, access)
-	responseRecorder := httptest.NewRecorder()
-	producer := runtime.JSONProducer()
-	resp.WriteResponse(responseRecorder, producer)
-	require.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
-	s.userRepository.AssertExpectations(t)
-}
-
 func (s *UserTestSuite) TestUser_DeleteUserFunc_OK() {
 	t := s.T()
 	request := http.Request{}
 	ctx := request.Context()
-	idToDelete := 3
-	handlerFunc := s.user.DeleteUserByID(s.userRepository)
-	data := users.DeleteUserParams{
+	userID := 3
+
+	handlerFunc := s.user.DeleteCurrentUser(s.userRepository)
+	data := users.DeleteCurrentUserParams{
 		HTTPRequest: &request,
-		UserID:      int64(idToDelete),
 	}
 
-	s.userRepository.On("Delete", ctx, idToDelete).Return(nil)
+	s.userRepository.On("Delete", ctx, userID).Return(nil)
 
 	access := authentication.Auth{
-		Id: 1,
+		Id: userID,
 		Role: &authentication.Role{
-			Slug: authentication.AdminSlug,
+			Slug: authentication.UserSlug,
 		},
 	}
 

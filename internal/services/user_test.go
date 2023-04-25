@@ -94,6 +94,44 @@ func (s *UserServiceTestSuite) TestUserService_GenerateAccessToken_HashCompareEr
 	s.userRepository.AssertExpectations(t)
 }
 
+func (s *UserServiceTestSuite) TestUserService_GenerateAccessToken_DeletedUserError() {
+	t := s.T()
+	login := "login"
+	password := "password"
+	ctx := context.Background()
+
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	if err != nil {
+		t.Fatal(err)
+	}
+	user := &ent.User{
+		ID:               1,
+		IsDeleted: true,
+		Login:            login,
+		Password:         string(hashedPassword),
+		Edges: ent.UserEdges{
+			Role: &ent.Role{
+				ID:   1,
+				Name: "admin",
+			},
+			Groups: []*ent.Group{
+				{
+					ID: 1,
+				},
+			},
+		},
+	}
+
+	s.userRepository.On("GetUserByLogin", ctx, login).Return(user, nil)
+	accessToken, refreshToken, isInternalErr, errGen := s.userService.GenerateTokens(ctx, login, password)
+	require.Error(t, errGen)
+	require.Empty(t, accessToken)
+	require.Empty(t, refreshToken)
+	require.False(t, isInternalErr)
+	s.userRepository.AssertExpectations(t)
+	s.tokenRepository.AssertExpectations(t)
+}
+
 func (s *UserServiceTestSuite) TestUserService_GenerateAccessToken_TokenRepoErr() {
 	t := s.T()
 	login := "login"
