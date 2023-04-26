@@ -1492,13 +1492,6 @@ func validUser(t *testing.T, id int) *ent.User {
 	}
 }
 
-func deletedUser(t *testing.T, id int) *ent.User {
-	t.Helper()
-	user := validUser(t, id)
-	user.IsDeleted = true
-	return user
-}
-
 func usersDuplicated(t *testing.T, array1, array2 []*models.UserInfo) bool {
 	t.Helper()
 	diff := make(map[int64]int, len(array1))
