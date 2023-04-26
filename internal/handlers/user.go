@@ -37,6 +37,7 @@ func SetUserHandler(logger *zap.Logger, api *operations.BeAPI,
 	api.UsersChangePasswordHandler = userHandler.ChangePassword(userRepo)
 	api.UsersLogoutHandler = userHandler.LogoutUserFunc(tokenManager)
 	api.UsersDeleteCurrentUserHandler = userHandler.DeleteCurrentUser(userRepo)
+	api.UsersDeleteUserHandler = userHandler.DeleteUser(userRepo)
 	api.UsersUpdateReadonlyAccessHandler = userHandler.UpdateReadonlyAccess(userRepo)
 }
 
@@ -287,6 +288,50 @@ func (c User) DeleteCurrentUser(repository domain.UserRepository) users.DeleteCu
 		}
 
 		return users.NewDeleteCurrentUserOK()
+	}
+}
+
+func (c User) DeleteUser(repo domain.UserRepository) users.DeleteUserHandlerFunc {
+	return func(p users.DeleteUserParams, access interface{}) middleware.Responder {
+		deletedByUserID, err := authentication.GetUserId(access)
+		if err != nil {
+			c.logger.Error("getting authorization", zap.Error(err))
+			return users.NewDeleteUserDefault(http.StatusUnauthorized).
+				WithPayload(buildStringPayload("Can't get authorization"))
+		}
+
+		ctx := p.HTTPRequest.Context()
+		userID := int(p.UserID)
+
+		user, err := repo.GetUserByID(ctx, userID)
+		if err != nil {
+			c.logger.Error(fmt.Sprintf("retrieving user by ID %d", userID), zap.Error(err))
+			if ent.IsNotFound(err) {
+				return users.NewDeleteUserNotFound().
+					WithPayload(buildStringPayload("User not found"))
+			}
+			return users.NewDeleteUserDefault(http.StatusInternalServerError).
+				WithPayload(buildStringPayload("Unexpected error"))
+		}
+
+		if !user.IsReadonly {
+			c.logger.Error("User must be readonly for deletion", zap.Int("userID", userID))
+			return users.NewDeleteUserDefault(http.StatusForbidden).
+				WithPayload(buildStringPayload("User must be readonly for deletion"))
+		}
+
+		if err := repo.Delete(ctx, userID); err != nil {
+			c.logger.Error("deleting user", zap.Error(err))
+			if ent.IsNotFound(err) {
+				return users.NewDeleteUserNotFound().
+					WithPayload(buildStringPayload("User not found"))
+			}
+			return users.NewDeleteUserDefault(http.StatusInternalServerError).
+				WithPayload(buildStringPayload("Unexpected error"))
+		}
+
+		c.logger.Info("User deleted successfully", zap.Int("userID", userID), zap.Int("deletedByUserID", deletedByUserID))
+		return users.NewDeleteUserNoContent()
 	}
 }
 

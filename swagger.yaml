@@ -232,7 +232,7 @@ paths:
           schema:
             $ref: "#/definitions/Error"
     delete:
-      summary: Delete the current user account.
+      summary: Delete the current user.
       security:
         - Bearer: [ ]
       tags:
@@ -241,10 +241,6 @@ paths:
       responses:
         200:
           description: Success
-        401:
-          description: Unauthorized
-          schema:
-            $ref: "#/definitions/Error"
         default:
           description: Unexpected error.
           schema:
@@ -382,6 +378,26 @@ paths:
           description: User information has been updated.
           schema:
             $ref: "#/definitions/SuccessUserUpdateResponse"
+        default:
+          description: Unexpected error.
+          schema:
+            $ref: "#/definitions/Error"
+    delete:
+      consumes:
+        - application/json
+      tags:
+        - Users
+      operationId: deleteUser
+      summary: Delete user by ID
+      security:
+        - Bearer: [ ]
+      responses:
+        204:
+          description: Success
+        404:
+          description: User not found
+          schema:
+            $ref: "#/definitions/Error"
         default:
           description: Unexpected error.
           schema:

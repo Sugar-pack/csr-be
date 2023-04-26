@@ -40,7 +40,8 @@
       "role": {
         "slug": "user",
         "isEmailConfirmed": true,
-        "isPersonalDataConfirmed": false
+        "isPersonalDataConfirmed": false,
+        "isReadonly": false
       },
       "allowedEndpoints": {
         "GET": [
@@ -71,7 +72,8 @@
       "role": {
         "slug": "user",
         "isEmailConfirmed": true,
-        "isPersonalDataConfirmed": true
+        "isPersonalDataConfirmed": true,
+        "isReadonly": false
       },
       "allowedEndpoints": {
         "GET": [
@@ -100,6 +102,147 @@
         ],
         "POST": [
           "/v1/orders"
+        ],
+        "DELETE": [
+          "/v1/users/me"
+        ]
+      }
+    },
+    {
+      "role": {
+        "slug": "user",
+        "isEmailConfirmed": true,
+        "isPersonalDataConfirmed": false,
+        "isReadonly": true
+      },
+      "allowedEndpoints": {
+        "GET": [
+          "/v1/users/me",
+          "/v1/active_areas",
+          "/pet_size",
+          "/pet_size/{petSizeId}",
+          "/pet_kind/{petKindId}",
+          "/pet_kind",
+          "/equipmentstatus/repaired/{equipmentstatusId}",
+          "/equipment/status_names",
+          "/equipment/statuses/{statusId}",
+          "/equipment/photos/{photoId}",
+          "/equipment/categories/subcategories/{subcategoryId}",
+          "/equipment/categories/{categoryId}/subcategories",
+          "/equipment/categories",
+          "/equipment/categories/{categoryId}",
+          "/equipment",
+          "/equipment/{equipmentId}"
+        ]
+      }
+    },
+    {
+      "role": {
+        "slug": "user",
+        "isEmailConfirmed": true,
+        "isPersonalDataConfirmed": true,
+        "isReadonly": true
+      },
+      "allowedEndpoints": {
+        "GET": [
+          "/v1/users/me",
+          "/v1/active_areas",
+          "/pet_size",
+          "/pet_size/{petSizeId}",
+          "/pet_kind/{petKindId}",
+          "/pet_kind",
+          "/equipmentstatus/repaired/{equipmentstatusId}",
+          "/equipment/status_names",
+          "/equipment/statuses/{statusId}",
+          "/equipment/photos/{photoId}",
+          "/equipment/categories/subcategories/{subcategoryId}",
+          "/equipment/categories/{categoryId}/subcategories",
+          "/equipment/categories",
+          "/equipment/categories/{categoryId}",
+          "/equipment",
+          "/equipment/{equipmentId}",
+          "/v1/order_statuses/{orderId}",
+          "/v1/status_names"
+        ]
+      }
+    },
+    {
+      "role": {
+        "slug": "manager"
+      },
+      "allowedEndpoints": {
+        "GET": [
+          "/v1/users",
+          "/v1/users/me",
+          "/v1/active_areas",
+          "/pet_size",
+          "/pet_size/{petSizeId}",
+          "/pet_kind/{petKindId}",
+          "/pet_kind",
+          "/equipmentstatus/repaired/{equipmentstatusId}",
+          "/equipment/status_names",
+          "/equipment/statuses/{statusId}",
+          "/equipment/photos/{photoId}",
+          "/equipment/categories/subcategories/{subcategoryId}",
+          "/equipment/categories/{categoryId}/subcategories",
+          "/equipment/categories",
+          "/equipment/categories/{categoryId}",
+          "/equipment",
+          "/equipment/{equipmentId}",
+          "/v1/order_statuses/{orderId}",
+          "/v1/status_names"
+        ],
+        "PATCH": [
+          "/v1/users/me",
+          "/v1/users/me/password"
+        ],
+        "POST": [
+          "/v1/orders"
+        ],
+        "PUT": [
+          "/v1/users/{userId}/readonly-access"
+        ],
+        "DELETE": [
+          "/v1/users/me"
+        ]
+      }
+    },
+    {
+      "role": {
+        "slug": "administrator"
+      },
+      "allowedEndpoints": {
+        "GET": [
+          "/v1/users",
+          "/v1/users/me",
+          "/v1/active_areas",
+          "/pet_size",
+          "/pet_size/{petSizeId}",
+          "/pet_kind/{petKindId}",
+          "/pet_kind",
+          "/equipmentstatus/repaired/{equipmentstatusId}",
+          "/equipment/status_names",
+          "/equipment/statuses/{statusId}",
+          "/equipment/photos/{photoId}",
+          "/equipment/categories/subcategories/{subcategoryId}",
+          "/equipment/categories/{categoryId}/subcategories",
+          "/equipment/categories",
+          "/equipment/categories/{categoryId}",
+          "/equipment",
+          "/equipment/{equipmentId}",
+          "/v1/order_statuses/{orderId}",
+          "/v1/status_names"
+        ],
+        "PATCH": [
+          "/v1/users/me",
+          "/v1/users/me/password"
+        ],
+        "POST": [
+          "/v1/orders"
+        ],
+        "DELETE": [
+          "/v1/users/me",
+          "/v1/users/{userId}"
         ]
       }
     }

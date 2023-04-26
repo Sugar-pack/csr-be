@@ -37,7 +37,7 @@ func (r *userRepository) UsersListTotal(ctx context.Context) (int, error) {
 	if err != nil {
 		return 0, err
 	}
-	return tx.User.Query().Count(ctx)
+	return tx.User.Query().Where(user.IsDeleted(false)).Count(ctx)
 }
 
 func (r *userRepository) UserList(ctx context.Context, limit, offset int,
@@ -53,7 +53,7 @@ func (r *userRepository) UserList(ctx context.Context, limit, offset int,
 	if err != nil {
 		return nil, err
 	}
-	return tx.User.Query().WithRole().Order(orderFunc).Limit(limit).Offset(offset).All(ctx)
+	return tx.User.Query().Where(user.IsDeleted(false)).WithRole().Order(orderFunc).Limit(limit).Offset(offset).All(ctx)
 }
 
 func (r *userRepository) UpdateUserByID(ctx context.Context, id int, patch *models.PatchUserRequest) error {

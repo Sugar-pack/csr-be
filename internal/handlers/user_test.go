@@ -1019,7 +1019,7 @@ func (s *UserTestSuite) TestUser_GetUserById_OK() {
 	s.userRepository.AssertExpectations(t)
 }
 
-func (s *UserTestSuite) TestUser_DeleteUserFunc_OK() {
+func (s *UserTestSuite) TestUser_DeleteCurrentUserFunc_OK() {
 	t := s.T()
 	request := http.Request{}
 	ctx := request.Context()
@@ -1044,6 +1044,160 @@ func (s *UserTestSuite) TestUser_DeleteUserFunc_OK() {
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
 	require.Equal(t, http.StatusOK, responseRecorder.Code)
+	s.userRepository.AssertExpectations(t)
+}
+
+func (s *UserTestSuite) TestUser_DeleteUser_OK() {
+	t := s.T()
+
+	userID := 1232
+	data := users.DeleteUserParams{
+		HTTPRequest: &http.Request{},
+		UserID:      int64(userID),
+	}
+	expectedUser := &ent.User{IsReadonly: true}
+
+	s.userRepository.On("GetUserByID", mock.Anything, userID).Return(expectedUser, nil)
+	s.userRepository.On("Delete", mock.Anything, userID).Return(nil)
+
+	handlerFunc := s.user.DeleteUser(s.userRepository)
+	resp := handlerFunc(data, authentication.Auth{})
+	responseRecorder := httptest.NewRecorder()
+	producer := runtime.JSONProducer()
+	resp.WriteResponse(responseRecorder, producer)
+	require.Equal(t, http.StatusNoContent, responseRecorder.Code)
+
+	s.userRepository.AssertExpectations(t)
+}
+
+func (s *UserTestSuite) TestUser_DeleteUser_DeleteNonReadonlyUserError() {
+	t := s.T()
+
+	userID := 1232
+	data := users.DeleteUserParams{
+		HTTPRequest: &http.Request{},
+		UserID:      int64(userID),
+	}
+	expectedUser := &ent.User{IsReadonly: false}
+
+	s.userRepository.On("GetUserByID", mock.Anything, userID).Return(expectedUser, nil)
+
+	handlerFunc := s.user.DeleteUser(s.userRepository)
+	resp := handlerFunc(data, authentication.Auth{})
+	responseRecorder := httptest.NewRecorder()
+	producer := runtime.JSONProducer()
+	resp.WriteResponse(responseRecorder, producer)
+	require.Equal(t, http.StatusForbidden, responseRecorder.Code)
+
+	s.userRepository.AssertExpectations(t)
+}
+
+func (s *UserTestSuite) TestUser_DeleteUser_GetUserByID_UserNotFound() {
+	t := s.T()
+
+	userID := 1232
+	data := users.DeleteUserParams{
+		HTTPRequest: &http.Request{},
+		UserID:      int64(userID),
+	}
+
+	expectedError := &ent.NotFoundError{}
+	s.userRepository.On("GetUserByID", mock.Anything, userID).Return(nil, expectedError)
+
+	handlerFunc := s.user.DeleteUser(s.userRepository)
+	resp := handlerFunc(data, authentication.Auth{})
+	responseRecorder := httptest.NewRecorder()
+	producer := runtime.JSONProducer()
+	resp.WriteResponse(responseRecorder, producer)
+	require.Equal(t, http.StatusNotFound, responseRecorder.Code)
+
+	s.userRepository.AssertExpectations(t)
+}
+
+func (s *UserTestSuite) TestUser_DeleteUser_GetUserByID_InternalError() {
+	t := s.T()
+
+	userID := 1232
+	data := users.DeleteUserParams{
+		HTTPRequest: &http.Request{},
+		UserID:      int64(userID),
+	}
+
+	expectedError := fmt.Errorf("internal error")
+	s.userRepository.On("GetUserByID", mock.Anything, userID).Return(nil, expectedError)
+
+	handlerFunc := s.user.DeleteUser(s.userRepository)
+	resp := handlerFunc(data, authentication.Auth{})
+	responseRecorder := httptest.NewRecorder()
+	producer := runtime.JSONProducer()
+	resp.WriteResponse(responseRecorder, producer)
+	require.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
+
+	s.userRepository.AssertExpectations(t)
+}
+
+func (s *UserTestSuite) TestUser_DeleteUser_Delete_UserNotFound() {
+	t := s.T()
+
+	userID := 1232
+	data := users.DeleteUserParams{
+		HTTPRequest: &http.Request{},
+		UserID:      int64(userID),
+	}
+
+	expectedUser := &ent.User{IsReadonly: true}
+	expectedError := &ent.NotFoundError{}
+
+	s.userRepository.On("GetUserByID", mock.Anything, userID).Return(expectedUser, nil)
+	s.userRepository.On("Delete", mock.Anything, userID).Return(expectedError)
+
+	handlerFunc := s.user.DeleteUser(s.userRepository)
+	resp := handlerFunc(data, authentication.Auth{})
+	responseRecorder := httptest.NewRecorder()
+	producer := runtime.JSONProducer()
+	resp.WriteResponse(responseRecorder, producer)
+	require.Equal(t, http.StatusNotFound, responseRecorder.Code)
+
+	s.userRepository.AssertExpectations(t)
+}
+
+func (s *UserTestSuite) TestUser_DeleteUser_Delete_InternalError() {
+	t := s.T()
+
+	userID := 1232
+	data := users.DeleteUserParams{
+		HTTPRequest: &http.Request{},
+		UserID:      int64(userID),
+	}
+
+	expectedUser := &ent.User{IsReadonly: true}
+	expectedError := fmt.Errorf("internal error")
+
+	s.userRepository.On("GetUserByID", mock.Anything, userID).Return(expectedUser, nil)
+	s.userRepository.On("Delete", mock.Anything, userID).Return(expectedError)
+
+	handlerFunc := s.user.DeleteUser(s.userRepository)
+	resp := handlerFunc(data, authentication.Auth{})
+	responseRecorder := httptest.NewRecorder()
+	producer := runtime.JSONProducer()
+	resp.WriteResponse(responseRecorder, producer)
+	require.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
+
+	s.userRepository.AssertExpectations(t)
+}
+
+func (s *UserTestSuite) TestUser_DeleteUser_UnauthorizedError() {
+	t := s.T()
+
+	invalidAccess := "invalid access"
+
+	handlerFunc := s.user.DeleteUser(s.userRepository)
+	resp := handlerFunc(users.DeleteUserParams{}, invalidAccess)
+	responseRecorder := httptest.NewRecorder()
+	producer := runtime.JSONProducer()
+	resp.WriteResponse(responseRecorder, producer)
+	require.Equal(t, http.StatusUnauthorized, responseRecorder.Code)
+
 	s.userRepository.AssertExpectations(t)
 }
 
@@ -1336,6 +1490,13 @@ func validUser(t *testing.T, id int) *ent.User {
 			},
 		},
 	}
+}
+
+func deletedUser(t *testing.T, id int) *ent.User {
+	t.Helper()
+	user := validUser(t, id)
+	user.IsDeleted = true
+	return user
 }
 
 func usersDuplicated(t *testing.T, array1, array2 []*models.UserInfo) bool {
