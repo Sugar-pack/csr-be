@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -1050,6 +1051,7 @@ func (s *UserTestSuite) TestUser_DeleteCurrentUserFunc_OK() {
 func (s *UserTestSuite) TestUser_DeleteUser_OK() {
 	t := s.T()
 
+	ctx := context.Background()
 	userID := 1232
 	data := users.DeleteUserParams{
 		HTTPRequest: &http.Request{},
@@ -1057,8 +1059,8 @@ func (s *UserTestSuite) TestUser_DeleteUser_OK() {
 	}
 	expectedUser := &ent.User{IsReadonly: true}
 
-	s.userRepository.On("GetUserByID", mock.Anything, userID).Return(expectedUser, nil)
-	s.userRepository.On("Delete", mock.Anything, userID).Return(nil)
+	s.userRepository.On("GetUserByID", ctx, userID).Return(expectedUser, nil)
+	s.userRepository.On("Delete", ctx, userID).Return(nil)
 
 	handlerFunc := s.user.DeleteUser(s.userRepository)
 	resp := handlerFunc(data, authentication.Auth{})
