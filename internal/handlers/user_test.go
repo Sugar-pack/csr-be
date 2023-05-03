@@ -10,8 +10,6 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/stretchr/testify/mock"
-
 	"entgo.io/ent/entc/integration/ent/user"
 	"github.com/go-openapi/loads"
 	"github.com/go-openapi/runtime"
@@ -1075,6 +1073,7 @@ func (s *UserTestSuite) TestUser_DeleteUser_OK() {
 func (s *UserTestSuite) TestUser_DeleteUser_DeleteNonReadonlyUserError() {
 	t := s.T()
 
+	ctx := context.Background()
 	userID := 1232
 	data := users.DeleteUserParams{
 		HTTPRequest: &http.Request{},
@@ -1082,7 +1081,7 @@ func (s *UserTestSuite) TestUser_DeleteUser_DeleteNonReadonlyUserError() {
 	}
 	expectedUser := &ent.User{IsReadonly: false}
 
-	s.userRepository.On("GetUserByID", mock.Anything, userID).Return(expectedUser, nil)
+	s.userRepository.On("GetUserByID", ctx, userID).Return(expectedUser, nil)
 
 	handlerFunc := s.user.DeleteUser(s.userRepository)
 	resp := handlerFunc(data, authentication.Auth{})
@@ -1097,6 +1096,7 @@ func (s *UserTestSuite) TestUser_DeleteUser_DeleteNonReadonlyUserError() {
 func (s *UserTestSuite) TestUser_DeleteUser_GetUserByID_UserNotFound() {
 	t := s.T()
 
+	ctx := context.Background()
 	userID := 1232
 	data := users.DeleteUserParams{
 		HTTPRequest: &http.Request{},
@@ -1104,7 +1104,7 @@ func (s *UserTestSuite) TestUser_DeleteUser_GetUserByID_UserNotFound() {
 	}
 
 	expectedError := &ent.NotFoundError{}
-	s.userRepository.On("GetUserByID", mock.Anything, userID).Return(nil, expectedError)
+	s.userRepository.On("GetUserByID", ctx, userID).Return(nil, expectedError)
 
 	handlerFunc := s.user.DeleteUser(s.userRepository)
 	resp := handlerFunc(data, authentication.Auth{})
@@ -1119,6 +1119,7 @@ func (s *UserTestSuite) TestUser_DeleteUser_GetUserByID_UserNotFound() {
 func (s *UserTestSuite) TestUser_DeleteUser_GetUserByID_InternalError() {
 	t := s.T()
 
+	ctx := context.Background()
 	userID := 1232
 	data := users.DeleteUserParams{
 		HTTPRequest: &http.Request{},
@@ -1126,7 +1127,7 @@ func (s *UserTestSuite) TestUser_DeleteUser_GetUserByID_InternalError() {
 	}
 
 	expectedError := fmt.Errorf("internal error")
-	s.userRepository.On("GetUserByID", mock.Anything, userID).Return(nil, expectedError)
+	s.userRepository.On("GetUserByID", ctx, userID).Return(nil, expectedError)
 
 	handlerFunc := s.user.DeleteUser(s.userRepository)
 	resp := handlerFunc(data, authentication.Auth{})
@@ -1141,6 +1142,7 @@ func (s *UserTestSuite) TestUser_DeleteUser_GetUserByID_InternalError() {
 func (s *UserTestSuite) TestUser_DeleteUser_Delete_UserNotFound() {
 	t := s.T()
 
+	ctx := context.Background()
 	userID := 1232
 	data := users.DeleteUserParams{
 		HTTPRequest: &http.Request{},
@@ -1150,8 +1152,8 @@ func (s *UserTestSuite) TestUser_DeleteUser_Delete_UserNotFound() {
 	expectedUser := &ent.User{IsReadonly: true}
 	expectedError := &ent.NotFoundError{}
 
-	s.userRepository.On("GetUserByID", mock.Anything, userID).Return(expectedUser, nil)
-	s.userRepository.On("Delete", mock.Anything, userID).Return(expectedError)
+	s.userRepository.On("GetUserByID", ctx, userID).Return(expectedUser, nil)
+	s.userRepository.On("Delete", ctx, userID).Return(expectedError)
 
 	handlerFunc := s.user.DeleteUser(s.userRepository)
 	resp := handlerFunc(data, authentication.Auth{})
@@ -1166,6 +1168,7 @@ func (s *UserTestSuite) TestUser_DeleteUser_Delete_UserNotFound() {
 func (s *UserTestSuite) TestUser_DeleteUser_Delete_InternalError() {
 	t := s.T()
 
+	ctx := context.Background()
 	userID := 1232
 	data := users.DeleteUserParams{
 		HTTPRequest: &http.Request{},
@@ -1175,8 +1178,8 @@ func (s *UserTestSuite) TestUser_DeleteUser_Delete_InternalError() {
 	expectedUser := &ent.User{IsReadonly: true}
 	expectedError := fmt.Errorf("internal error")
 
-	s.userRepository.On("GetUserByID", mock.Anything, userID).Return(expectedUser, nil)
-	s.userRepository.On("Delete", mock.Anything, userID).Return(expectedError)
+	s.userRepository.On("GetUserByID", ctx, userID).Return(expectedUser, nil)
+	s.userRepository.On("Delete", ctx, userID).Return(expectedError)
 
 	handlerFunc := s.user.DeleteUser(s.userRepository)
 	resp := handlerFunc(data, authentication.Auth{})
@@ -1371,6 +1374,7 @@ func (s *UserTestSuite) TestUser_ChangePasswordFunc_OK() {
 func (s *UserTestSuite) TestUser_UpdateReadonlyAccess_Grant() {
 	t := s.T()
 
+	ctx := context.Background()
 	userID := 1232
 	isReadonly := true
 	data := users.UpdateReadonlyAccessParams{
@@ -1379,7 +1383,7 @@ func (s *UserTestSuite) TestUser_UpdateReadonlyAccess_Grant() {
 		Body:        users.UpdateReadonlyAccessBody{IsReadonly: isReadonly},
 	}
 
-	s.userRepository.On("SetIsReadonly", mock.Anything, userID, isReadonly).Return(nil)
+	s.userRepository.On("SetIsReadonly", ctx, userID, isReadonly).Return(nil)
 
 	handlerFunc := s.user.UpdateReadonlyAccess(s.userRepository)
 	resp := handlerFunc(data, authentication.Auth{})
@@ -1394,6 +1398,7 @@ func (s *UserTestSuite) TestUser_UpdateReadonlyAccess_Grant() {
 func (s *UserTestSuite) TestUser_UpdateReadonlyAccess_Revoke() {
 	t := s.T()
 
+	ctx := context.Background()
 	userID := 1232
 	isReadonly := false
 	data := users.UpdateReadonlyAccessParams{
@@ -1402,7 +1407,7 @@ func (s *UserTestSuite) TestUser_UpdateReadonlyAccess_Revoke() {
 		Body:        users.UpdateReadonlyAccessBody{IsReadonly: isReadonly},
 	}
 
-	s.userRepository.On("SetIsReadonly", mock.Anything, userID, isReadonly).Return(nil)
+	s.userRepository.On("SetIsReadonly", ctx, userID, isReadonly).Return(nil)
 
 	handlerFunc := s.user.UpdateReadonlyAccess(s.userRepository)
 	resp := handlerFunc(data, authentication.Auth{})
@@ -1417,6 +1422,7 @@ func (s *UserTestSuite) TestUser_UpdateReadonlyAccess_Revoke() {
 func (s *UserTestSuite) TestUser_UpdateReadonlyAccess_UserNotFound() {
 	t := s.T()
 
+	ctx := context.Background()
 	userID := 1232
 	isReadonly := false
 	data := users.UpdateReadonlyAccessParams{
@@ -1426,7 +1432,7 @@ func (s *UserTestSuite) TestUser_UpdateReadonlyAccess_UserNotFound() {
 	}
 
 	expectedError := &ent.NotFoundError{}
-	s.userRepository.On("SetIsReadonly", mock.Anything, userID, isReadonly).Return(expectedError)
+	s.userRepository.On("SetIsReadonly", ctx, userID, isReadonly).Return(expectedError)
 
 	handlerFunc := s.user.UpdateReadonlyAccess(s.userRepository)
 	resp := handlerFunc(data, authentication.Auth{})
@@ -1441,6 +1447,7 @@ func (s *UserTestSuite) TestUser_UpdateReadonlyAccess_UserNotFound() {
 func (s *UserTestSuite) TestUser_UpdateReadonlyAccess_InternalError() {
 	t := s.T()
 
+	ctx := context.Background()
 	userID := 1232
 	isReadonly := false
 	data := users.UpdateReadonlyAccessParams{
@@ -1450,7 +1457,7 @@ func (s *UserTestSuite) TestUser_UpdateReadonlyAccess_InternalError() {
 	}
 
 	expectedError := fmt.Errorf("internal error")
-	s.userRepository.On("SetIsReadonly", mock.Anything, userID, isReadonly).Return(expectedError)
+	s.userRepository.On("SetIsReadonly", ctx, userID, isReadonly).Return(expectedError)
 
 	handlerFunc := s.user.UpdateReadonlyAccess(s.userRepository)
 	resp := handlerFunc(data, authentication.Auth{})
