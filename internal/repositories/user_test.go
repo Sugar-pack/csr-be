@@ -111,6 +111,70 @@ func (s *UserSuite) TestUserRepository_UsersListTotal() {
 	require.Equal(t, len(s.users), totalUsers)
 }
 
+func (s *UserSuite) TestUserRepository_UsersListTotal_NoDeletedUsersInList() {
+	// Setup test transaction and repo
+	t := s.T()
+	ctx := s.ctx
+	tx, err := s.client.Tx(ctx)
+	require.NoError(t, err)
+	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
+	repo := NewUserRepository()
+
+	// Insert a deleted user
+	_, err = tx.User.Create().
+		SetLogin("test_deleted").
+		SetEmail("test_deleted").
+		SetPassword("test_deleted").
+		SetName("test_deleted").
+		SetIsDeleted(true).
+		Save(ctx)
+	require.NoError(t, err)
+
+	// Check
+	totalUsers, err := repo.UsersListTotal(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	require.NoError(t, err)
+	require.Equal(t, len(s.users), totalUsers)
+
+	require.NoError(s.T(), tx.Rollback())
+}
+
+func (s *UserSuite) TestUserRepository_UsersList_NoDeletedUsersInList() {
+	// Setup test transaction and repo
+	t := s.T()
+	ctx := s.ctx
+	tx, err := s.client.Tx(ctx)
+	require.NoError(t, err)
+	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
+	repo := NewUserRepository()
+
+	// Insert a deleted user
+	_, err = tx.User.Create().
+		SetLogin("test_deleted").
+		SetEmail("test_deleted").
+		SetPassword("test_deleted").
+		SetName("test_deleted").
+		SetIsDeleted(true).
+		Save(ctx)
+	require.NoError(t, err)
+
+	// Check
+	limit := math.MaxInt
+	offset := 0
+	orderBy := utils.AscOrder
+	orderColumn := user.FieldID
+	users, err := repo.UserList(ctx, limit, offset, orderBy, orderColumn)
+	if err != nil {
+		t.Fatal(err)
+	}
+	require.NoError(t, err)
+	require.Equal(t, len(s.users), len(users))
+
+	require.NoError(s.T(), tx.Rollback())
+}
+
 func (s *UserSuite) TestUserRepository_UserList_EmptyOrderBy() {
 	t := s.T()
 	limit := math.MaxInt

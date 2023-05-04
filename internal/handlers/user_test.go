@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -8,8 +9,6 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
-
-	"github.com/stretchr/testify/mock"
 
 	"entgo.io/ent/entc/integration/ent/user"
 	"github.com/go-openapi/loads"
@@ -1019,7 +1018,7 @@ func (s *UserTestSuite) TestUser_GetUserById_OK() {
 	s.userRepository.AssertExpectations(t)
 }
 
-func (s *UserTestSuite) TestUser_DeleteUserFunc_OK() {
+func (s *UserTestSuite) TestUser_DeleteCurrentUserFunc_OK() {
 	t := s.T()
 	request := http.Request{}
 	ctx := request.Context()
@@ -1044,6 +1043,166 @@ func (s *UserTestSuite) TestUser_DeleteUserFunc_OK() {
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
 	require.Equal(t, http.StatusOK, responseRecorder.Code)
+	s.userRepository.AssertExpectations(t)
+}
+
+func (s *UserTestSuite) TestUser_DeleteUser_OK() {
+	t := s.T()
+
+	ctx := context.Background()
+	userID := 1232
+	data := users.DeleteUserParams{
+		HTTPRequest: &http.Request{},
+		UserID:      int64(userID),
+	}
+	expectedUser := &ent.User{IsReadonly: true}
+
+	s.userRepository.On("GetUserByID", ctx, userID).Return(expectedUser, nil)
+	s.userRepository.On("Delete", ctx, userID).Return(nil)
+
+	handlerFunc := s.user.DeleteUser(s.userRepository)
+	resp := handlerFunc(data, authentication.Auth{})
+	responseRecorder := httptest.NewRecorder()
+	producer := runtime.JSONProducer()
+	resp.WriteResponse(responseRecorder, producer)
+	require.Equal(t, http.StatusNoContent, responseRecorder.Code)
+
+	s.userRepository.AssertExpectations(t)
+}
+
+func (s *UserTestSuite) TestUser_DeleteUser_DeleteNonReadonlyUserError() {
+	t := s.T()
+
+	ctx := context.Background()
+	userID := 1232
+	data := users.DeleteUserParams{
+		HTTPRequest: &http.Request{},
+		UserID:      int64(userID),
+	}
+	expectedUser := &ent.User{IsReadonly: false}
+
+	s.userRepository.On("GetUserByID", ctx, userID).Return(expectedUser, nil)
+
+	handlerFunc := s.user.DeleteUser(s.userRepository)
+	resp := handlerFunc(data, authentication.Auth{})
+	responseRecorder := httptest.NewRecorder()
+	producer := runtime.JSONProducer()
+	resp.WriteResponse(responseRecorder, producer)
+	require.Equal(t, http.StatusForbidden, responseRecorder.Code)
+
+	s.userRepository.AssertExpectations(t)
+}
+
+func (s *UserTestSuite) TestUser_DeleteUser_GetUserByID_UserNotFound() {
+	t := s.T()
+
+	ctx := context.Background()
+	userID := 1232
+	data := users.DeleteUserParams{
+		HTTPRequest: &http.Request{},
+		UserID:      int64(userID),
+	}
+
+	expectedError := &ent.NotFoundError{}
+	s.userRepository.On("GetUserByID", ctx, userID).Return(nil, expectedError)
+
+	handlerFunc := s.user.DeleteUser(s.userRepository)
+	resp := handlerFunc(data, authentication.Auth{})
+	responseRecorder := httptest.NewRecorder()
+	producer := runtime.JSONProducer()
+	resp.WriteResponse(responseRecorder, producer)
+	require.Equal(t, http.StatusNotFound, responseRecorder.Code)
+
+	s.userRepository.AssertExpectations(t)
+}
+
+func (s *UserTestSuite) TestUser_DeleteUser_GetUserByID_InternalError() {
+	t := s.T()
+
+	ctx := context.Background()
+	userID := 1232
+	data := users.DeleteUserParams{
+		HTTPRequest: &http.Request{},
+		UserID:      int64(userID),
+	}
+
+	expectedError := fmt.Errorf("internal error")
+	s.userRepository.On("GetUserByID", ctx, userID).Return(nil, expectedError)
+
+	handlerFunc := s.user.DeleteUser(s.userRepository)
+	resp := handlerFunc(data, authentication.Auth{})
+	responseRecorder := httptest.NewRecorder()
+	producer := runtime.JSONProducer()
+	resp.WriteResponse(responseRecorder, producer)
+	require.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
+
+	s.userRepository.AssertExpectations(t)
+}
+
+func (s *UserTestSuite) TestUser_DeleteUser_Delete_UserNotFound() {
+	t := s.T()
+
+	ctx := context.Background()
+	userID := 1232
+	data := users.DeleteUserParams{
+		HTTPRequest: &http.Request{},
+		UserID:      int64(userID),
+	}
+
+	expectedUser := &ent.User{IsReadonly: true}
+	expectedError := &ent.NotFoundError{}
+
+	s.userRepository.On("GetUserByID", ctx, userID).Return(expectedUser, nil)
+	s.userRepository.On("Delete", ctx, userID).Return(expectedError)
+
+	handlerFunc := s.user.DeleteUser(s.userRepository)
+	resp := handlerFunc(data, authentication.Auth{})
+	responseRecorder := httptest.NewRecorder()
+	producer := runtime.JSONProducer()
+	resp.WriteResponse(responseRecorder, producer)
+	require.Equal(t, http.StatusNotFound, responseRecorder.Code)
+
+	s.userRepository.AssertExpectations(t)
+}
+
+func (s *UserTestSuite) TestUser_DeleteUser_Delete_InternalError() {
+	t := s.T()
+
+	ctx := context.Background()
+	userID := 1232
+	data := users.DeleteUserParams{
+		HTTPRequest: &http.Request{},
+		UserID:      int64(userID),
+	}
+
+	expectedUser := &ent.User{IsReadonly: true}
+	expectedError := fmt.Errorf("internal error")
+
+	s.userRepository.On("GetUserByID", ctx, userID).Return(expectedUser, nil)
+	s.userRepository.On("Delete", ctx, userID).Return(expectedError)
+
+	handlerFunc := s.user.DeleteUser(s.userRepository)
+	resp := handlerFunc(data, authentication.Auth{})
+	responseRecorder := httptest.NewRecorder()
+	producer := runtime.JSONProducer()
+	resp.WriteResponse(responseRecorder, producer)
+	require.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
+
+	s.userRepository.AssertExpectations(t)
+}
+
+func (s *UserTestSuite) TestUser_DeleteUser_UnauthorizedError() {
+	t := s.T()
+
+	invalidAccess := "invalid access"
+
+	handlerFunc := s.user.DeleteUser(s.userRepository)
+	resp := handlerFunc(users.DeleteUserParams{}, invalidAccess)
+	responseRecorder := httptest.NewRecorder()
+	producer := runtime.JSONProducer()
+	resp.WriteResponse(responseRecorder, producer)
+	require.Equal(t, http.StatusUnauthorized, responseRecorder.Code)
+
 	s.userRepository.AssertExpectations(t)
 }
 
@@ -1215,6 +1374,7 @@ func (s *UserTestSuite) TestUser_ChangePasswordFunc_OK() {
 func (s *UserTestSuite) TestUser_UpdateReadonlyAccess_Grant() {
 	t := s.T()
 
+	ctx := context.Background()
 	userID := 1232
 	isReadonly := true
 	data := users.UpdateReadonlyAccessParams{
@@ -1223,7 +1383,7 @@ func (s *UserTestSuite) TestUser_UpdateReadonlyAccess_Grant() {
 		Body:        users.UpdateReadonlyAccessBody{IsReadonly: isReadonly},
 	}
 
-	s.userRepository.On("SetIsReadonly", mock.Anything, userID, isReadonly).Return(nil)
+	s.userRepository.On("SetIsReadonly", ctx, userID, isReadonly).Return(nil)
 
 	handlerFunc := s.user.UpdateReadonlyAccess(s.userRepository)
 	resp := handlerFunc(data, authentication.Auth{})
@@ -1238,6 +1398,7 @@ func (s *UserTestSuite) TestUser_UpdateReadonlyAccess_Grant() {
 func (s *UserTestSuite) TestUser_UpdateReadonlyAccess_Revoke() {
 	t := s.T()
 
+	ctx := context.Background()
 	userID := 1232
 	isReadonly := false
 	data := users.UpdateReadonlyAccessParams{
@@ -1246,7 +1407,7 @@ func (s *UserTestSuite) TestUser_UpdateReadonlyAccess_Revoke() {
 		Body:        users.UpdateReadonlyAccessBody{IsReadonly: isReadonly},
 	}
 
-	s.userRepository.On("SetIsReadonly", mock.Anything, userID, isReadonly).Return(nil)
+	s.userRepository.On("SetIsReadonly", ctx, userID, isReadonly).Return(nil)
 
 	handlerFunc := s.user.UpdateReadonlyAccess(s.userRepository)
 	resp := handlerFunc(data, authentication.Auth{})
@@ -1261,6 +1422,7 @@ func (s *UserTestSuite) TestUser_UpdateReadonlyAccess_Revoke() {
 func (s *UserTestSuite) TestUser_UpdateReadonlyAccess_UserNotFound() {
 	t := s.T()
 
+	ctx := context.Background()
 	userID := 1232
 	isReadonly := false
 	data := users.UpdateReadonlyAccessParams{
@@ -1270,7 +1432,7 @@ func (s *UserTestSuite) TestUser_UpdateReadonlyAccess_UserNotFound() {
 	}
 
 	expectedError := &ent.NotFoundError{}
-	s.userRepository.On("SetIsReadonly", mock.Anything, userID, isReadonly).Return(expectedError)
+	s.userRepository.On("SetIsReadonly", ctx, userID, isReadonly).Return(expectedError)
 
 	handlerFunc := s.user.UpdateReadonlyAccess(s.userRepository)
 	resp := handlerFunc(data, authentication.Auth{})
@@ -1285,6 +1447,7 @@ func (s *UserTestSuite) TestUser_UpdateReadonlyAccess_UserNotFound() {
 func (s *UserTestSuite) TestUser_UpdateReadonlyAccess_InternalError() {
 	t := s.T()
 
+	ctx := context.Background()
 	userID := 1232
 	isReadonly := false
 	data := users.UpdateReadonlyAccessParams{
@@ -1294,7 +1457,7 @@ func (s *UserTestSuite) TestUser_UpdateReadonlyAccess_InternalError() {
 	}
 
 	expectedError := fmt.Errorf("internal error")
-	s.userRepository.On("SetIsReadonly", mock.Anything, userID, isReadonly).Return(expectedError)
+	s.userRepository.On("SetIsReadonly", ctx, userID, isReadonly).Return(expectedError)
 
 	handlerFunc := s.user.UpdateReadonlyAccess(s.userRepository)
 	resp := handlerFunc(data, authentication.Auth{})
