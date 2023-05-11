@@ -16,7 +16,6 @@ const apiPrefix = "/api"
 
 // do not change this values, it is used in swagger spec
 const forbiddenMessage = "User is not authorized"
-const unconfirmedEmailMessage = "User has no confirmed email"
 
 const numRoleVariations = 8
 
@@ -55,7 +54,7 @@ func (e ExistingEndpoints) Validate() error {
 
 type Role struct {
 	Slug                    string
-	IsEmailConfirmed        bool
+	IsRegistrationConfirmed bool
 	IsPersonalDataConfirmed bool
 	IsReadonly              bool
 }
@@ -83,12 +82,12 @@ func allRoleVariation(roles []Role) []Role {
 	variations := []bool{false, true}
 
 	for _, role := range roles {
-		for _, isEmailConfirmed := range variations {
+		for _, isRegistrationConfirmed := range variations {
 			for _, isPersonalDataConfirmed := range variations {
 				for _, isReadonly := range variations {
 					res = append(res, Role{
 						Slug:                    role.Slug,
-						IsEmailConfirmed:        isEmailConfirmed,
+						IsRegistrationConfirmed: isRegistrationConfirmed,
 						IsPersonalDataConfirmed: isPersonalDataConfirmed,
 						IsReadonly:              isReadonly,
 					})
@@ -219,13 +218,9 @@ func (a *blackListAccessManager) Authorize(r *http.Request, auth interface{}) er
 		return openApiErrors.New(http.StatusForbidden, forbiddenMessage)
 	}
 
-	if !userInfo.IsEmailConfirmed {
-		return openApiErrors.New(http.StatusForbidden, unconfirmedEmailMessage)
-	}
-
 	role := Role{
 		Slug:                    userInfo.Role.Slug,
-		IsEmailConfirmed:        userInfo.IsEmailConfirmed,
+		IsRegistrationConfirmed: userInfo.IsRegistrationConfirmed,
 		IsPersonalDataConfirmed: userInfo.IsPersonalDataConfirmed,
 		IsReadonly:              userInfo.IsReadonly,
 	}

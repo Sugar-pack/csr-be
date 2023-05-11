@@ -27,7 +27,7 @@
     {
       "role": {
         "slug": "user",
-        "isEmailConfirmed": false,
+        "isRegistrationConfirmed": false,
         "isPersonalDataConfirmed": false
       },
       "allowedEndpoints": {
@@ -39,7 +39,7 @@
     {
       "role": {
         "slug": "user",
-        "isEmailConfirmed": true,
+        "isRegistrationConfirmed": true,
         "isPersonalDataConfirmed": false,
         "isReadonly": false
       },
@@ -71,7 +71,7 @@
     {
       "role": {
         "slug": "user",
-        "isEmailConfirmed": true,
+        "isRegistrationConfirmed": true,
         "isPersonalDataConfirmed": true,
         "isReadonly": false
       },
@@ -111,7 +111,7 @@
     {
       "role": {
         "slug": "user",
-        "isEmailConfirmed": true,
+        "isRegistrationConfirmed": true,
         "isPersonalDataConfirmed": false,
         "isReadonly": true
       },
@@ -139,7 +139,7 @@
     {
       "role": {
         "slug": "user",
-        "isEmailConfirmed": true,
+        "isRegistrationConfirmed": true,
         "isPersonalDataConfirmed": true,
         "isReadonly": true
       },

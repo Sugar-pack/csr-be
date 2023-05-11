@@ -59,31 +59,31 @@ func Test_blackListAccessManager(t *testing.T) {
 		}
 		newAccessRules := []accessRule{
 			{
-				role:   Role{Slug: userRole, IsEmailConfirmed: true},
+				role:   Role{Slug: userRole, IsRegistrationConfirmed: true},
 				method: http.MethodGet,
 				path:   simpleValidPath,
 				isOk:   true,
 			},
 			{
-				role:   Role{Slug: userRole, IsEmailConfirmed: true},
+				role:   Role{Slug: userRole, IsRegistrationConfirmed: true},
 				method: http.MethodGet,
 				path:   simpleValidPath + "/",
 				isErr:  true,
 			},
 			{
-				role:   Role{Slug: userRole, IsEmailConfirmed: true},
+				role:   Role{Slug: userRole, IsRegistrationConfirmed: true},
 				method: http.MethodGet,
 				path:   simpleInvalidPath,
 				isErr:  true,
 			},
 			{
-				role:   Role{Slug: userRole, IsEmailConfirmed: true},
+				role:   Role{Slug: userRole, IsRegistrationConfirmed: true},
 				method: http.MethodGet,
 				path:   validPathWithParam,
 				isOk:   true,
 			},
 			{
-				role:   Role{Slug: userRole, IsEmailConfirmed: true},
+				role:   Role{Slug: userRole, IsRegistrationConfirmed: true},
 				method: http.MethodPut,
 				path:   validPathWithParam,
 				isErr:  true,
@@ -96,13 +96,13 @@ func Test_blackListAccessManager(t *testing.T) {
 				isErr:  false,
 			},
 			{
-				role:   Role{Slug: userRole, IsEmailConfirmed: true},
+				role:   Role{Slug: userRole, IsRegistrationConfirmed: true},
 				method: http.MethodGet,
 				path:   simpleInvalidPath,
 				isErr:  true,
 			},
 			{
-				role:   Role{Slug: "unknown", IsEmailConfirmed: true},
+				role:   Role{Slug: "unknown", IsRegistrationConfirmed: true},
 				method: http.MethodGet,
 				path:   validPathWithParams,
 				isErr:  true,
@@ -126,37 +126,37 @@ func Test_blackListAccessManager(t *testing.T) {
 	}
 	requestsData := []requestData{
 		{
-			role:      Role{Slug: userRole, IsEmailConfirmed: true},
+			role:      Role{Slug: userRole, IsRegistrationConfirmed: true},
 			method:    http.MethodGet,
 			path:      endpointConversion(simpleValidPath),
 			hasAccess: true,
 		},
 		{
-			role:      Role{Slug: adminRole, IsEmailConfirmed: true},
+			role:      Role{Slug: adminRole, IsRegistrationConfirmed: true},
 			method:    http.MethodGet,
 			path:      endpointConversion(simpleValidPath),
 			hasAccess: true,
 		},
 		{
-			role:      Role{Slug: userRole, IsEmailConfirmed: true},
+			role:      Role{Slug: userRole, IsRegistrationConfirmed: true},
 			method:    http.MethodGet,
 			path:      endpointConversion(validPathWithParamExample),
 			hasAccess: true,
 		},
 		{
-			role:      Role{Slug: userRole, IsEmailConfirmed: true},
+			role:      Role{Slug: userRole, IsRegistrationConfirmed: true},
 			method:    http.MethodGet,
 			path:      strings.TrimPrefix(endpointConversion(validPathWithParamExample), "/"),
 			hasAccess: true,
 		},
 		{
-			role:      Role{Slug: userRole, IsEmailConfirmed: true},
+			role:      Role{Slug: userRole, IsRegistrationConfirmed: true},
 			method:    http.MethodGet,
 			path:      strings.TrimPrefix(endpointConversion(validPathWithParamExample), "/") + "/",
 			hasAccess: true,
 		},
 		{
-			role:      Role{Slug: userRole, IsEmailConfirmed: true},
+			role:      Role{Slug: userRole, IsRegistrationConfirmed: true},
 			method:    http.MethodPut,
 			path:      endpointConversion(validPathWithParamExample),
 			hasAccess: false,
@@ -182,7 +182,7 @@ func Test_blackListAccessManager(t *testing.T) {
 				Role: &authentication.Role{
 					Slug: data.role.Slug,
 				},
-				IsEmailConfirmed: true,
+				IsRegistrationConfirmed: true,
 			}
 			err := manager.Authorize(request, auth)
 			if data.hasAccess {

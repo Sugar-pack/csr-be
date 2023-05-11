@@ -228,7 +228,7 @@ func (r *userRepository) ConfirmRegistration(ctx context.Context, login string) 
 	if err != nil {
 		return err
 	}
-	_, err = tx.User.Update().Where(user.LoginEQ(login)).SetIsConfirmed(true).Save(ctx)
+	_, err = tx.User.Update().Where(user.LoginEQ(login)).SetIsRegistrationConfirmed(true).Save(ctx)
 	if err != nil {
 		return err
 	}
