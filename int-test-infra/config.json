@@ -29,7 +29,7 @@
     {
       "role": {
         "slug": "user",
-        "isEmailConfirmed": false,
+        "isRegistrationConfirmed": false,
         "isPersonalDataConfirmed": false
       },
       "allowedEndpoints": {
@@ -38,13 +38,16 @@
         ],
         "POST": [
           "/v1/management/users/{userId}/role"
+        ],
+        "PATCH": [
+          "/v1/users/me/password"
         ]
       }
     },
     {
       "role": {
         "slug": "user",
-        "isEmailConfirmed": true,
+        "isRegistrationConfirmed": true,
         "isPersonalDataConfirmed": false
       },
       "allowedEndpoints": {
@@ -78,7 +81,7 @@
     {
       "role": {
         "slug": "user",
-        "isEmailConfirmed": true,
+        "isRegistrationConfirmed": true,
         "isPersonalDataConfirmed": true
       },
       "allowedEndpoints": {

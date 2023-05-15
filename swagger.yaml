@@ -2145,6 +2145,7 @@ definitions:
       - is_readonly
       - type
       - org_name
+      - is_registration_confirmed
     properties:
       id:
         type: integer
@@ -2182,6 +2183,9 @@ definitions:
         type: string
       org_name:
         type: string
+      is_registration_confirmed:
+        type: boolean
+        example: false
 
   GetListUsers:
     type: object

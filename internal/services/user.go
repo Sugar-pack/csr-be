@@ -141,15 +141,15 @@ func (s *tokenManager) GenerateTokens(ctx context.Context, login, password strin
 }
 
 const (
-	IdClaim             = "id"
-	LoginClaim          = "login"
-	RoleClaim           = "role"
-	SlugClaim           = "slug"
-	EmailVerifiedClaim  = "emailVerified"
-	DataVerifiedClaim   = "dataVerified"
-	GroupClaim          = "group"
-	ExpireClaim         = "exp"
-	ReadonlyAccessClaim = "readonlyAccess"
+	IdClaim                    = "id"
+	LoginClaim                 = "login"
+	RoleClaim                  = "role"
+	SlugClaim                  = "slug"
+	RegistrationConfirmedClaim = "registrationConfirmed"
+	PersonalDataConfirmedClaim = "personalDataConfirmed"
+	GroupClaim                 = "group"
+	ExpireClaim                = "exp"
+	ReadonlyAccessClaim        = "readonlyAccess"
 )
 
 func generateJWT(user *ent.User, jwtSecretKey string) (string, error) {
@@ -168,8 +168,8 @@ func generateJWT(user *ent.User, jwtSecretKey string) (string, error) {
 		return "", err
 	}
 
-	claims[EmailVerifiedClaim] = user.Edges.RegistrationConfirm != nil && len(user.Edges.RegistrationConfirm) > 0
-	claims[DataVerifiedClaim] = user.IsConfirmed //TODO: is it right field?
+	claims[RegistrationConfirmedClaim] = user.IsRegistrationConfirmed
+	claims[PersonalDataConfirmedClaim] = isPersonalDataConfirmed(user)
 	claims[ReadonlyAccessClaim] = user.IsReadonly
 	claims[ExpireClaim] = time.Now().Add(accessExpireTime).Unix()
 
@@ -178,6 +178,13 @@ func generateJWT(user *ent.User, jwtSecretKey string) (string, error) {
 		return "", err
 	}
 	return tokenString, nil
+}
+
+func isPersonalDataConfirmed(user *ent.User) bool {
+	return user != nil &&
+		user.Name != "" &&
+		user.Surname != nil && *user.Surname != "" &&
+		user.Phone != nil && *user.Phone != ""
 }
 
 func fillRoleClaims(claims jwt.MapClaims, user *ent.User) error {

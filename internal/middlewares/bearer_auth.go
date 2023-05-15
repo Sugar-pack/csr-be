@@ -45,13 +45,13 @@ func BearerAuthenticateFunc(key interface{}, _ *zap.Logger) func(string) (interf
 					}
 				}
 			}
-			isEmailConfirmed := false
-			if claims[services.EmailVerifiedClaim] != nil {
-				isEmailConfirmed = claims[services.EmailVerifiedClaim].(bool)
+			isRegistrationConfirmed := false
+			if claims[services.RegistrationConfirmedClaim] != nil {
+				isRegistrationConfirmed = claims[services.RegistrationConfirmedClaim].(bool)
 			}
 			isPersonalDataConfirmed := false
-			if claims[services.DataVerifiedClaim] != nil {
-				isPersonalDataConfirmed = claims[services.DataVerifiedClaim].(bool)
+			if claims[services.PersonalDataConfirmedClaim] != nil {
+				isPersonalDataConfirmed = claims[services.PersonalDataConfirmedClaim].(bool)
 			}
 			isReadonly := false
 			if claims[services.ReadonlyAccessClaim] != nil {
@@ -60,7 +60,7 @@ func BearerAuthenticateFunc(key interface{}, _ *zap.Logger) func(string) (interf
 			return authentication.Auth{
 				Id:                      id,
 				Login:                   login,
-				IsEmailConfirmed:        isEmailConfirmed,
+				IsRegistrationConfirmed: isRegistrationConfirmed,
 				IsPersonalDataConfirmed: isPersonalDataConfirmed,
 				IsReadonly:              isReadonly,
 				Role:                    rolePointer,

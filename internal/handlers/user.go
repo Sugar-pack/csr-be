@@ -422,21 +422,22 @@ func mapUserInfo(user *ent.User) (*models.UserInfo, error) {
 	}
 	typeString := user.Type.String()
 	result := &models.UserInfo{
-		Email:             &user.Email,
-		ID:                &userID,
-		IsReadonly:        &user.IsReadonly,
-		Login:             &user.Login,
-		Name:              &user.Name,
-		OrgName:           user.OrgName,
-		PassportAuthority: user.PassportAuthority,
-		PassportIssueDate: &passportDate,
-		PassportNumber:    user.PassportNumber,
-		PassportSeries:    user.PassportSeries,
-		Patronymic:        user.Patronymic,
-		PhoneNumber:       user.Phone,
-		Role:              &userRoleInfo,
-		Surname:           user.Surname,
-		Type:              &typeString,
+		Email:                   &user.Email,
+		ID:                      &userID,
+		IsReadonly:              &user.IsReadonly,
+		Login:                   &user.Login,
+		Name:                    &user.Name,
+		OrgName:                 user.OrgName,
+		PassportAuthority:       user.PassportAuthority,
+		PassportIssueDate:       &passportDate,
+		PassportNumber:          user.PassportNumber,
+		PassportSeries:          user.PassportSeries,
+		Patronymic:              user.Patronymic,
+		PhoneNumber:             user.Phone,
+		Role:                    &userRoleInfo,
+		Surname:                 user.Surname,
+		Type:                    &typeString,
+		IsRegistrationConfirmed: &user.IsRegistrationConfirmed,
 	}
 	return result, nil
 }

@@ -18,7 +18,7 @@ const UserSlug = "user"
 type Auth struct {
 	Id                      int
 	Login                   string
-	IsEmailConfirmed        bool
+	IsRegistrationConfirmed bool
 	IsPersonalDataConfirmed bool
 	IsReadonly              bool
 	Role                    *Role
