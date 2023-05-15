@@ -38,6 +38,9 @@
         ],
         "POST": [
           "/v1/management/users/{userId}/role"
+        ],
+        "PATCH": [
+          "/v1/users/me/password"
         ]
       }
     },
