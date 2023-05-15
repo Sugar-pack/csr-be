@@ -136,6 +136,19 @@ func (r *userRepository) ChangePasswordByLogin(ctx context.Context, login string
 	return nil
 }
 
+func (r *userRepository) ChangeEmailByLogin(ctx context.Context, login string, email string) error {
+	tx, err := middlewares.TxFromContext(ctx)
+	if err != nil {
+		return err
+	}
+
+	_, err = tx.User.Update().Where(user.LoginEQ(login)).SetEmail(email).Save(ctx)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func NewUserRepository() domain.UserRepository {
 	return &userRepository{}
 }

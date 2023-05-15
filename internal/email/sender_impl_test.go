@@ -85,3 +85,28 @@ func TestSenderImpl_SendRegistrationConfirmLink(t *testing.T) {
 
 	cl.AssertExpectations(t)
 }
+
+func TestSenderImpl_SendEmailConfirmationLink(t *testing.T) {
+	name := "1"
+	email := "2"
+
+	conf := config.Email{
+		SenderFromName:    "sender_from_name",
+		SenderFromAddress: "sender_from_name@gmail.com",
+		IsSendRequired:    true,
+	}
+
+	cl := mocks.NewSMTPClient(t)
+	cl.On("Send", mock.MatchedBy(func(d *domain.SendData) bool {
+		require.Equal(t, conf.SenderFromName, d.FromName)
+		require.Equal(t, conf.SenderFromAddress, d.FromAddr)
+		require.Equal(t, email, d.ToAddr)
+		require.Equal(t, "Email confirmation", d.Subject)
+		return true
+	})).Return(nil)
+
+	s := NewSenderSmtp(conf, cl)
+	require.NoError(t, s.SendEmailConfirmationLink(email, name, "123"))
+
+	cl.AssertExpectations(t)
+}

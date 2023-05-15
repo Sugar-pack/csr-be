@@ -22,7 +22,8 @@ import (
 )
 
 func SetUserHandler(logger *zap.Logger, api *operations.BeAPI,
-	tokenManager domain.TokenManager, regConfirmService domain.RegistrationConfirmService) {
+	tokenManager domain.TokenManager,
+	regConfirmService domain.RegistrationConfirmService, changeEmailService domain.ChangeEmailService) {
 	userRepo := repositories.NewUserRepository()
 	userHandler := NewUser(logger)
 
@@ -39,6 +40,7 @@ func SetUserHandler(logger *zap.Logger, api *operations.BeAPI,
 	api.UsersDeleteCurrentUserHandler = userHandler.DeleteCurrentUser(userRepo)
 	api.UsersDeleteUserHandler = userHandler.DeleteUser(userRepo)
 	api.UsersUpdateReadonlyAccessHandler = userHandler.UpdateReadonlyAccess(userRepo)
+	api.UsersChangeEmailHandler = userHandler.ChangeEmail(userRepo, changeEmailService)
 }
 
 type User struct {
@@ -406,6 +408,41 @@ func (c User) UpdateReadonlyAccess(repo domain.UserRepository) users.UpdateReado
 		}
 
 		return users.NewUpdateReadonlyAccessNoContent()
+	}
+}
+
+func (c User) ChangeEmail(repo domain.UserRepository,
+	changeEmailService domain.ChangeEmailService) users.ChangeEmailHandlerFunc {
+	return func(p users.ChangeEmailParams, access interface{}) middleware.Responder {
+		ctx := p.HTTPRequest.Context()
+		userID, err := authentication.GetUserId(access)
+		if err != nil {
+			c.logger.Error("error while getting authorization during changing email", zap.Error(err))
+			return users.NewChangeEmailUnauthorized().
+				WithPayload(buildStringPayload("Can't get authorization"))
+		}
+
+		if p.EmailPatch == nil {
+			c.logger.Error("email patch is nil", zap.Any("access", access))
+			return users.NewChangeEmailDefault(http.StatusBadRequest).
+				WithPayload(buildStringPayload("Email patch is nil"))
+		}
+
+		requestedUser, err := repo.GetUserByID(ctx, userID)
+		if err != nil {
+			c.logger.Error("getting user for changing email failed", zap.Error(err))
+			return users.NewChangeEmailDefault(http.StatusInternalServerError).
+				WithPayload(buildStringPayload("Can't get user by id"))
+		}
+
+		err = changeEmailService.SendEmailConfirmationLink(ctx, requestedUser.Login, p.EmailPatch.NewEmail)
+		if err != nil {
+			c.logger.Error("error while sending link for confirmation new email", zap.Error(err))
+			return users.NewChangeEmailDefault(http.StatusInternalServerError).
+				WithPayload(buildStringPayload("Can't send link for confirmation new email"))
+		}
+
+		return users.NewChangeEmailNoContent()
 	}
 }
 

@@ -38,6 +38,8 @@ func SetupAPI(entClient *ent.Client, lg *zap.Logger, conf *config.AppConfig) (*r
 	regConfirmRepo := repositories.NewRegistrationConfirmRepository()
 	userRepository := repositories.NewUserRepository()
 	tokenRepository := repositories.NewTokenRepository()
+	emailConfirmRepository := repositories.NewConfirmEmailRepository()
+
 	// conf
 	passwordTTL := conf.Password.ResetExpirationMinutes
 	jwtSecret := conf.JWTSecretKey
@@ -51,7 +53,10 @@ func SetupAPI(entClient *ent.Client, lg *zap.Logger, conf *config.AppConfig) (*r
 		lg, passwordTTL)
 	passwordService := services.NewPasswordResetService(mailSendClient, userRepository, passwordRepo, lg, passwordTTL, passwordGenerator)
 	tokenManager := services.NewTokenManager(userRepository, tokenRepository, jwtSecret, lg)
-
+	changeEmailService := services.NewEmailChangeService(
+		mailSendClient, userRepository,
+		emailConfirmRepository, lg,
+	)
 	// swagger api
 	api := operations.NewBeAPI(swaggerSpec)
 	api.UseSwaggerUI()
@@ -66,11 +71,12 @@ func SetupAPI(entClient *ent.Client, lg *zap.Logger, conf *config.AppConfig) (*r
 	handlers.SetPetSizeHandler(lg, api)
 	handlers.SetPhotoHandler(lg, api)
 	handlers.SetRegistrationHandler(lg, api, regConfirmService)
+	handlers.SetEmailConfirmHandler(lg, api, changeEmailService)
 	handlers.SetRoleHandler(lg, api)
 	handlers.SetEquipmentStatusNameHandler(lg, api)
 	handlers.SetEquipmentStatusHandler(lg, api)
 	handlers.SetEquipmentPeriodsHandler(lg, api)
-	handlers.SetUserHandler(lg, api, tokenManager, regConfirmService)
+	handlers.SetUserHandler(lg, api, tokenManager, regConfirmService, changeEmailService)
 	handlers.SetPetKindHandler(lg, api)
 	handlers.SetHealthHandler(lg, api)
 

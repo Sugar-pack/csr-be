@@ -96,6 +96,12 @@ type PasswordResetRepository interface {
 	DeleteToken(ctx context.Context, token string) error
 }
 
+type EmailConfirmRepository interface {
+	CreateToken(ctx context.Context, token string, ttl time.Time, userID int, email string) error
+	GetToken(ctx context.Context, token string) (*ent.EmailConfirm, error)
+	DeleteToken(ctx context.Context, token string) error
+}
+
 type PetKindRepository interface {
 	Create(ctx context.Context, ps models.PetKind) (*ent.PetKind, error)
 	GetByID(ctx context.Context, id int) (*ent.PetKind, error)
@@ -145,6 +151,7 @@ type UserRepository interface {
 	SetUserRole(ctx context.Context, userId int, roleId int) error
 	UserByLogin(ctx context.Context, login string) (*ent.User, error)
 	ChangePasswordByLogin(ctx context.Context, login string, password string) error
+	ChangeEmailByLogin(ctx context.Context, login string, email string) error
 	CreateUser(ctx context.Context, data *models.UserRegister) (*ent.User, error)
 	GetUserByLogin(ctx context.Context, login string) (*ent.User, error)
 	GetUserByID(ctx context.Context, id int) (*ent.User, error)

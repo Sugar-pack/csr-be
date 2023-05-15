@@ -51,5 +51,6 @@ func (User) Edges() []ent.Edge {
 		edge.To("order_status", OrderStatus.Type),
 		edge.To("password_reset", PasswordReset.Type),
 		edge.To("registration_confirm", RegistrationConfirm.Type),
+		edge.To("email_confirm", EmailConfirm.Type),
 	}
 }
