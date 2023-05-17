@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/swagger/client/subcategories"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/handlers"
 
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/swagger/client"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/swagger/client/categories"
@@ -440,6 +441,57 @@ func TestIntegration_DeleteEquipment(t *testing.T) {
 		wantErr.Payload = &models.Error{Data: nil}
 		assert.Equal(t, wantErr, gotErr)
 	})
+}
+
+func TestIntegration_ArchiveEquipment(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping integration test")
+	}
+
+	ctx := context.Background()
+	client := utils.SetupClient()
+
+	tokens := utils.AdminUserLogin(t)
+
+	auth := utils.AuthInfoFunc(tokens.GetPayload().AccessToken)
+	model, err := setParameters(ctx, client, auth)
+	require.NoError(t, err)
+
+	created, err := createEquipment(ctx, client, auth, model)
+	require.NoError(t, err)
+
+	t.Run("Archive Equipment", func(t *testing.T) {
+		params := equipment.NewArchiveEquipmentParamsWithContext(ctx).WithEquipmentID(*created.Payload.ID)
+		res, err := client.Equipment.ArchiveEquipment(params, auth)
+		require.NoError(t, err)
+
+		require.True(t, res.IsCode(http.StatusNoContent))
+	})
+
+	t.Run("Archive Equipment", func(t *testing.T) {
+		params := equipment.NewArchiveEquipmentParamsWithContext(ctx).WithEquipmentID(0)
+		_, gotErr := client.Equipment.ArchiveEquipment(params, auth)
+		require.Error(t, gotErr)
+
+		wantedErr := equipment.NewArchiveEquipmentNotFound()
+		wantedErr.Payload = &models.Error{Data: &models.ErrorData{Message: handlers.EquipmentNotFoundMsg}}
+
+		require.Equal(t, wantedErr, gotErr)
+	})
+
+	t.Run("Archive Equipment failed: auth failed", func(t *testing.T) {
+		params := equipment.NewArchiveEquipmentParamsWithContext(ctx).WithEquipmentID(*created.Payload.ID)
+		token := utils.TokenNotExist
+
+		_, gotErr := client.Equipment.ArchiveEquipment(params, utils.AuthInfoFunc(&token))
+		require.Error(t, gotErr)
+
+		wantedErr := equipment.NewArchiveEquipmentDefault(http.StatusUnauthorized)
+		wantedErr.Payload = &models.Error{Data: nil}
+		assert.Equal(t, wantedErr, gotErr)
+	})
+
+	// todo: test for archive equipment with non-default status
 }
 
 func setParameters(ctx context.Context, client *client.Be, auth runtime.ClientAuthInfoWriterFunc) (*models.Equipment, error) {

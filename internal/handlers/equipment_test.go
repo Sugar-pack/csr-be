@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -45,6 +46,7 @@ func TestSetEquipmentHandler(t *testing.T) {
 	require.NotEmpty(t, api.EquipmentDeleteEquipmentHandler)
 	require.NotEmpty(t, api.EquipmentGetAllEquipmentHandler)
 	require.NotEmpty(t, api.EquipmentFindEquipmentHandler)
+	require.NotEmpty(t, api.EquipmentArchiveEquipmentHandler)
 }
 
 type EquipmentTestSuite struct {
@@ -87,6 +89,77 @@ func (s *EquipmentTestSuite) SetupTest() {
 	s.equipmentRepo = &mocks.EquipmentRepository{}
 	s.statusRepo = &mocks.EquipmentStatusNameRepository{}
 	s.equipment = NewEquipment(s.logger)
+}
+
+func (s *EquipmentTestSuite) TestEquipment_ArchiveEquipmentFunc_RepoNotFoundErr() {
+	t := s.T()
+	request := http.Request{}
+	ctx := context.Background()
+
+	handlerFunc := s.equipment.ArchiveEquipmentFunc(s.equipmentRepo)
+	id := 1
+	data := equipment.ArchiveEquipmentParams{
+		HTTPRequest: request.WithContext(ctx),
+		EquipmentID: int64(id),
+	}
+	err := &ent.NotFoundError{}
+
+	s.equipmentRepo.On("ArchiveEquipment", ctx, id).Return(err)
+
+	access := "dummy access"
+	resp := handlerFunc(data, access)
+	responseRecorder := httptest.NewRecorder()
+	producer := runtime.JSONProducer()
+	resp.WriteResponse(responseRecorder, producer)
+	require.Equal(t, http.StatusNotFound, responseRecorder.Code)
+	s.equipmentRepo.AssertExpectations(t)
+}
+
+func (s *EquipmentTestSuite) TestEquipment_ArchiveEquipmentFunc_RepoErr() {
+	t := s.T()
+	request := http.Request{}
+	ctx := context.Background()
+
+	handlerFunc := s.equipment.ArchiveEquipmentFunc(s.equipmentRepo)
+	id := 1
+	data := equipment.ArchiveEquipmentParams{
+		HTTPRequest: request.WithContext(ctx),
+		EquipmentID: int64(id),
+	}
+	err := errors.New("some error")
+
+	s.equipmentRepo.On("ArchiveEquipment", ctx, id).Return(err)
+
+	access := "dummy access"
+	resp := handlerFunc(data, access)
+	responseRecorder := httptest.NewRecorder()
+	producer := runtime.JSONProducer()
+	resp.WriteResponse(responseRecorder, producer)
+	require.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
+	s.equipmentRepo.AssertExpectations(t)
+}
+
+func (s *EquipmentTestSuite) TestEquipment_ArchiveEquipmentFunc_Ok() {
+	t := s.T()
+	request := http.Request{}
+	ctx := context.Background()
+
+	handlerFunc := s.equipment.ArchiveEquipmentFunc(s.equipmentRepo)
+	id := 1
+	data := equipment.ArchiveEquipmentParams{
+		HTTPRequest: request.WithContext(ctx),
+		EquipmentID: int64(id),
+	}
+
+	s.equipmentRepo.On("ArchiveEquipment", ctx, id).Return(nil)
+
+	access := "dummy access"
+	resp := handlerFunc(data, access)
+	responseRecorder := httptest.NewRecorder()
+	producer := runtime.JSONProducer()
+	resp.WriteResponse(responseRecorder, producer)
+	require.Equal(t, http.StatusNoContent, responseRecorder.Code)
+	s.equipmentRepo.AssertExpectations(t)
 }
 
 func (s *EquipmentTestSuite) TestEquipment_PostEquipmentFunc_RepoErr() {

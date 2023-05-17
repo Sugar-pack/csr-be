@@ -10,6 +10,7 @@ import (
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/ent"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/ent/category"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/ent/equipment"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/ent/equipmentstatus"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/ent/equipmentstatusname"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/ent/petkind"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/ent/petsize"
@@ -27,6 +28,8 @@ var fieldsToOrderEquipments = []string{
 	equipment.FieldName,
 	equipment.FieldTitle,
 }
+
+const defaultStatusID = 1
 
 type equipmentRepository struct {
 }
@@ -206,6 +209,28 @@ func (r *equipmentRepository) AllEquipmentsTotal(ctx context.Context) (int, erro
 		return 0, err
 	}
 	return total, nil
+}
+
+func (r *equipmentRepository) ArchiveEquipment(ctx context.Context, id int) error {
+	tx, err := middlewares.TxFromContext(ctx)
+	if err != nil {
+		return err
+	}
+	_, err = tx.Equipment.Update().Where(equipment.ID(id)).
+		SetIsArchived(true).SetCurrentStatusID(defaultStatusID).Save(ctx) // todo: get default status id
+	if err != nil {
+		return err
+	}
+	equipmentStatusToDelete, err := tx.EquipmentStatus.Query().
+		QueryEquipments().Where(equipment.ID(id)).QueryEquipmentStatus().IDs(ctx)
+	if err != nil {
+		return err
+	}
+	_, err = tx.EquipmentStatus.Delete().Where(equipmentstatus.IDIn(equipmentStatusToDelete...)).Exec(ctx)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func (r *equipmentRepository) EquipmentsByFilterTotal(ctx context.Context, filter models.EquipmentFilter) (int, error) {

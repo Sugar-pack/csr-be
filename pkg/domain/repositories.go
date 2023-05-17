@@ -43,6 +43,7 @@ type EquipmentRepository interface {
 	UpdateEquipmentByID(ctx context.Context, id int, eq *models.Equipment) (*ent.Equipment, error)
 	AllEquipmentsTotal(ctx context.Context) (int, error)
 	EquipmentsByFilterTotal(ctx context.Context, filter models.EquipmentFilter) (int, error)
+	ArchiveEquipment(ctx context.Context, id int) error
 }
 
 type EquipmentStatusRepository interface {
