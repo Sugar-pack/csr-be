@@ -103,7 +103,7 @@ func generateEmailConfirmMessage(userName, websiteUrl, token string) hermes.Emai
 					Button: hermes.Button{
 						Color: "#DC4D2F",
 						Text:  "Подтвердить",
-						Link:  fmt.Sprintf("%sapi/email_confirm/%s", websiteUrl, token),
+						Link:  fmt.Sprintf("%sapi/v1/email_confirm/%s", websiteUrl, token),
 					},
 				},
 			},
