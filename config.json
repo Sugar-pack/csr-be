@@ -4,7 +4,7 @@
     "port": "5432",
     "user": "csr",
     "database": "csr",
-    "ent_migrations": true
+    "showSql": false
   },
   "JWTSecretKey": 123,
   "email": {
@@ -64,7 +64,14 @@
         ],
         "PATCH": [
           "/v1/users/me",
+          "/v1/users/me/email",
           "/v1/users/me/password"
+        ],
+        "POST": [
+          "/equipment/search"
+        ],
+        "DELETE": [
+          "/v1/users/me"
         ]
       }
     },
@@ -98,10 +105,12 @@
         ],
         "PATCH": [
           "/v1/users/me",
+          "/v1/users/me/email",
           "/v1/users/me/password"
         ],
         "POST": [
-          "/v1/orders"
+          "/v1/orders",
+          "/equipment/search"
         ],
         "DELETE": [
           "/v1/users/me"

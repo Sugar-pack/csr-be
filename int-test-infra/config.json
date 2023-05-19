@@ -5,7 +5,7 @@
     "user": "csr",
     "password": "password",
     "database": "csr",
-    "ent_migrations": false
+    "showSql": false
   },
   "JWTSecretKey": 123,
   "email": {
