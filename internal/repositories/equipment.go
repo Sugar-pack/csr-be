@@ -30,8 +30,6 @@ var fieldsToOrderEquipments = []string{
 	equipment.FieldTitle,
 }
 
-const defaultStatusID = 1
-
 type equipmentRepository struct {
 }
 
@@ -249,14 +247,14 @@ func (r *equipmentRepository) ArchiveEquipment(ctx context.Context, id int) erro
 			return err
 		}
 		// get orders with this equipment status
-		ordersToUpdate := make([]*ent.Order, 0)
+		var ordersToUpdate = []*ent.Order{}
 		ordersToUpdate, err = equipmentStatus.QueryOrder().All(ctx)
 		if err != nil {
 			return err
 		}
 		// change all order statuses to close
 		for _, orderToUpdate := range ordersToUpdate {
-			orderStatusesToUpdate := make([]*ent.OrderStatus, 0)
+			var orderStatusesToUpdate = []*ent.OrderStatus{}
 			orderStatusesToUpdate, err = tx.OrderStatus.Query().QueryOrder().Where(order.ID(orderToUpdate.ID)).
 				QueryOrderStatus().All(ctx)
 			if err != nil {
