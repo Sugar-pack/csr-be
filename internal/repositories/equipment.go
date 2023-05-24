@@ -216,6 +216,10 @@ func (r *equipmentRepository) ArchiveEquipment(ctx context.Context, id int) erro
 	if err != nil {
 		return err
 	}
+	_, err = tx.Equipment.Get(ctx, id)
+	if err != nil {
+		return err
+	}
 	_, err = tx.Equipment.Update().Where(equipment.ID(id)).
 		SetIsArchived(true).SetCurrentStatusID(defaultStatusID).Save(ctx) // todo: get default status id
 	if err != nil {
