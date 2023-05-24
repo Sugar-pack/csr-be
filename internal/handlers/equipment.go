@@ -92,6 +92,7 @@ func (c Equipment) GetEquipmentFunc(repository domain.EquipmentRepository) equip
 func (c Equipment) ArchiveEquipmentFunc(repository domain.EquipmentRepository) equipment.ArchiveEquipmentHandlerFunc {
 	return func(s equipment.ArchiveEquipmentParams, _ interface{}) middleware.Responder {
 		ctx := s.HTTPRequest.Context()
+		c.logger.Info("Archive equipment", zap.Int64("equipmentID", s.EquipmentID))
 		err := repository.ArchiveEquipment(ctx, int(s.EquipmentID))
 		if err != nil {
 			if ent.IsNotFound(err) {

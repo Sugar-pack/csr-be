@@ -25,7 +25,6 @@ func (Equipment) Fields() []ent.Field {
 		field.String("receiptDate").Default("unknown"),
 		field.Int64("maximumDays").Optional(),
 		field.String("description").Default("unknown"),
-		field.Bool("isArchived").Default(false),
 	}
 }
 

@@ -97,7 +97,7 @@ func MapStatus(orderID int64, status *ent.OrderStatus) (*models.OrderStatus, err
 	createdAt := strfmt.DateTime(status.CurrentDate)
 	statusID := int64(status.ID)
 	if status.Edges.OrderStatusName == nil {
-		return nil, errors.New("status name is nil")
+		return nil, errors.New("order status name is nil")
 	}
 	statusName := status.Edges.OrderStatusName.Status
 	if status.Edges.Users == nil {
