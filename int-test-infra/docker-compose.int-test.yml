@@ -4,7 +4,7 @@ services:
     image: csr:int-test
     container_name: csr
     ports:
-      - 8089:8089
+      - "8089:8089"
     networks:
       - go-network
     restart: "on-failure:3"
@@ -26,6 +26,8 @@ services:
     command: -p 9432
     networks:
       - go-network
+    ports:
+      - "9432:9432"
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U postgres -p 9432" ]
       interval: 2s

@@ -96,15 +96,29 @@ func MapStatus(orderID int64, status *ent.OrderStatus) (*models.OrderStatus, err
 	}
 	createdAt := strfmt.DateTime(status.CurrentDate)
 	statusID := int64(status.ID)
+	var statusName string
 	if status.Edges.OrderStatusName == nil {
-		return nil, errors.New("status name is nil")
+		orderStatusName, err := status.QueryOrderStatusName().Only(context.Background())
+		if err != nil {
+			return nil, err
+		}
+		statusName = orderStatusName.Status
+	} else {
+		statusName = status.Edges.OrderStatusName.Status
 	}
-	statusName := status.Edges.OrderStatusName.Status
+	var userID int64
+	var userName string
 	if status.Edges.Users == nil {
-		return nil, errors.New("user is nil")
+		user, err := status.QueryUsers().Only(context.Background())
+		if err != nil {
+			return nil, err
+		}
+		userID = int64(user.ID)
+		userName = user.Login
+	} else {
+		userID = int64(status.Edges.Users.ID)
+		userName = status.Edges.Users.Login
 	}
-	userID := int64(status.Edges.Users.ID)
-	userName := status.Edges.Users.Login
 	user := models.UserEmbeddable{
 		ID:   &userID,
 		Name: &userName,

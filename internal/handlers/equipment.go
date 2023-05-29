@@ -6,18 +6,17 @@ import (
 	"net/http"
 	"time"
 
-	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/ent/order"
-	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/repositories"
-	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/utils"
-	"git.epam.com/epm-lstr/epm-lstr-lc/be/pkg/domain"
-
 	"github.com/go-openapi/runtime/middleware"
 	"go.uber.org/zap"
 
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/ent"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/ent/order"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/swagger/models"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/swagger/restapi/operations"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/swagger/restapi/operations/equipment"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/repositories"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/utils"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/pkg/domain"
 )
 
 func SetEquipmentHandler(logger *zap.Logger, api *operations.BeAPI) {
@@ -30,11 +29,14 @@ func SetEquipmentHandler(logger *zap.Logger, api *operations.BeAPI) {
 	api.EquipmentGetAllEquipmentHandler = equipmentHandler.ListEquipmentFunc(eqRepo)
 	api.EquipmentEditEquipmentHandler = equipmentHandler.EditEquipmentFunc(eqRepo)
 	api.EquipmentFindEquipmentHandler = equipmentHandler.FindEquipmentFunc(eqRepo)
+	api.EquipmentArchiveEquipmentHandler = equipmentHandler.ArchiveEquipmentFunc(eqRepo)
 }
 
 type Equipment struct {
 	logger *zap.Logger
 }
+
+const EquipmentNotFoundMsg = "Equipment not found"
 
 func NewEquipment(logger *zap.Logger) *Equipment {
 	return &Equipment{
@@ -84,6 +86,23 @@ func (c Equipment) GetEquipmentFunc(repository domain.EquipmentRepository) equip
 				WithPayload(buildStringPayload("Error while mapping equipment"))
 		}
 		return equipment.NewGetEquipmentOK().WithPayload(returnEq)
+	}
+}
+
+func (c Equipment) ArchiveEquipmentFunc(repository domain.EquipmentRepository) equipment.ArchiveEquipmentHandlerFunc {
+	return func(s equipment.ArchiveEquipmentParams, _ interface{}) middleware.Responder {
+		ctx := s.HTTPRequest.Context()
+		err := repository.ArchiveEquipment(ctx, int(s.EquipmentID))
+		if err != nil {
+			if ent.IsNotFound(err) {
+				return equipment.NewArchiveEquipmentNotFound().
+					WithPayload(buildStringPayload(EquipmentNotFoundMsg))
+			}
+			c.logger.Error("Error while archiving equipment", zap.Error(err))
+			return equipment.NewArchiveEquipmentDefault(http.StatusInternalServerError).
+				WithPayload(buildStringPayload("Error while archiving equipment"))
+		}
+		return equipment.NewArchiveEquipmentNoContent()
 	}
 }
 

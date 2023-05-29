@@ -1527,6 +1527,32 @@ paths:
           description: Unexpected error.
           schema:
             $ref: "#/definitions/Error"
+  /equipment/achive/{equipmentId}/:
+    parameters:
+      - name: equipmentId
+        in: path
+        required: true
+        description: equipment id
+        type: integer
+    post:
+        summary: Archive equipment by id
+        security:
+            - Bearer: [ ]
+        tags:
+            - Equipment
+        operationId: ArchiveEquipment
+        responses:
+          204:
+            description: Equipment has been archived
+          404:
+            description: Equipment not found
+            schema:
+              $ref: "#/definitions/Error"
+          default:
+            description: Unexpected error.
+            schema:
+                $ref: "#/definitions/Error"
+
   /equipment/search:
     post:
       summary: Equipment filtered list

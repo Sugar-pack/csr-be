@@ -2,24 +2,28 @@ package equipment
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/go-openapi/runtime"
+	"github.com/go-openapi/strfmt"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-
-	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/swagger/client/subcategories"
 
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/swagger/client"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/swagger/client/categories"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/swagger/client/equipment"
 	eqStatusName "git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/swagger/client/equipment_status_name"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/swagger/client/orders"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/swagger/client/pet_kind"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/swagger/client/pet_size"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/swagger/client/photos"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/swagger/client/subcategories"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/swagger/models"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/handlers"
 	utils "git.epam.com/epm-lstr/epm-lstr-lc/be/internal/integration-tests/common"
 )
 
@@ -386,6 +390,72 @@ func TestIntegration_EditEquipment(t *testing.T) {
 	})
 }
 
+func TestIntegration_ArchiveEquipment(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping integration test")
+	}
+
+	ctx := context.Background()
+	client := utils.SetupClient()
+
+	tokens := utils.AdminUserLogin(t)
+
+	auth := utils.AuthInfoFunc(tokens.GetPayload().AccessToken)
+	model, err := setParameters(ctx, client, auth)
+	require.NoError(t, err)
+
+	created, err := createEquipment(ctx, client, auth, model)
+	require.NoError(t, err)
+
+	t.Run("Archive Equipment", func(t *testing.T) {
+		params := equipment.NewArchiveEquipmentParamsWithContext(ctx).WithEquipmentID(*created.Payload.ID)
+		res, gotError := client.Equipment.ArchiveEquipment(params, auth)
+		require.NoError(t, gotError)
+
+		require.True(t, res.IsCode(http.StatusNoContent))
+	})
+
+	t.Run("Archive Equipment failed: equipment not found", func(t *testing.T) {
+		params := equipment.NewArchiveEquipmentParamsWithContext(ctx).WithEquipmentID(-1)
+		resp, gotErr := client.Equipment.ArchiveEquipment(params, auth)
+		require.Error(t, gotErr)
+		fmt.Print(resp)
+
+		wantedErr := equipment.NewArchiveEquipmentNotFound()
+		wantedErr.Payload = &models.Error{Data: &models.ErrorData{Message: handlers.EquipmentNotFoundMsg}}
+
+		require.Equal(t, wantedErr, gotErr)
+	})
+
+	t.Run("Archive Equipment with active orders", func(t *testing.T) {
+		var orderID *int64
+		orderID, err = createOrder(ctx, client, auth, created.Payload.ID)
+		params := equipment.NewArchiveEquipmentParamsWithContext(ctx).WithEquipmentID(*created.Payload.ID)
+		var res *equipment.ArchiveEquipmentNoContent
+		res, err = client.Equipment.ArchiveEquipment(params, auth)
+		require.NoError(t, err)
+		require.True(t, res.IsCode(http.StatusNoContent))
+		var ok bool
+		ok, err = checkOrderStatus(ctx, client, auth, orderID, "closed")
+		require.NoError(t, err)
+		require.True(t, ok)
+	})
+
+	t.Run("Archive Equipment failed: auth failed", func(t *testing.T) {
+		params := equipment.NewArchiveEquipmentParamsWithContext(ctx).WithEquipmentID(*created.Payload.ID)
+		token := utils.TokenNotExist
+
+		_, gotErr := client.Equipment.ArchiveEquipment(params, utils.AuthInfoFunc(&token))
+		require.Error(t, gotErr)
+
+		wantedErr := equipment.NewArchiveEquipmentDefault(http.StatusUnauthorized)
+		wantedErr.Payload = &models.Error{Data: nil}
+		assert.Equal(t, wantedErr, gotErr)
+	})
+
+	// todo: test for archive equipment with non-default status
+}
+
 func TestIntegration_DeleteEquipment(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping integration test")
@@ -440,6 +510,47 @@ func TestIntegration_DeleteEquipment(t *testing.T) {
 		wantErr.Payload = &models.Error{Data: nil}
 		assert.Equal(t, wantErr, gotErr)
 	})
+}
+
+func createOrder(ctx context.Context, be *client.Be, auth runtime.ClientAuthInfoWriterFunc, id *int64) (*int64, error) {
+	rentStart := strfmt.NewDateTime()
+	dateTimeFmt := "2006-01-02 15:04:05"
+	err := rentStart.UnmarshalText([]byte(time.Now().Format(dateTimeFmt)))
+	if err != nil {
+		return nil, err
+	}
+	rentEnd := strfmt.NewDateTime()
+	err = rentEnd.UnmarshalText([]byte(time.Now().AddDate(0, 0, 10).Format(dateTimeFmt)))
+	if err != nil {
+		return nil, err
+	}
+	orderCreated, err := be.Orders.CreateOrder(&orders.CreateOrderParams{
+		Context: ctx,
+		Data: &models.OrderCreateRequest{
+			EquipmentID: id,
+			RentEnd:     &rentEnd,
+			RentStart:   &rentStart,
+		},
+	}, auth)
+	if err != nil {
+		return nil, err
+	}
+	return orderCreated.Payload.ID, nil
+}
+
+func checkOrderStatus(ctx context.Context, be *client.Be, auth runtime.ClientAuthInfoWriterFunc, orderId *int64,
+	statusName string) (bool, error) {
+	orders, err := be.Orders.GetOrdersByStatus(
+		orders.NewGetOrdersByStatusParamsWithContext(ctx).WithStatus(statusName), auth)
+	if err != nil {
+		return false, err
+	}
+	for _, order := range orders.Payload.Items {
+		if *order.ID == *orderId {
+			return true, nil
+		}
+	}
+	return false, nil
 }
 
 func setParameters(ctx context.Context, client *client.Be, auth runtime.ClientAuthInfoWriterFunc) (*models.Equipment, error) {
