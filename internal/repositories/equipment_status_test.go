@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/go-openapi/strfmt"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 
@@ -139,6 +140,84 @@ func (s *equipmentStatusTestSuite) TestEquipmentStatusRepository_Create_OrderNot
 	eqStatus, err := s.repository.Create(ctx, data)
 	require.Error(t, err)
 	require.Nil(t, eqStatus)
+	require.NoError(t, tx.Rollback())
+}
+
+func (s *equipmentStatusTestSuite) TestEquipmentStatusRepository_GetUnavailableEquipmentStatusByEquipmentID_OK() {
+	t := s.T()
+	comment := "test comment"
+	endDate := strfmt.DateTime(s.order.RentEnd.AddDate(0, 0, 1))
+	startDate := strfmt.DateTime(s.order.RentStart)
+	orderID := int64(s.order.ID)
+	equipmentID := int64(s.equipment.ID)
+	status := s.statusNameMap[1]
+	data := &models.NewEquipmentStatus{
+		Comment:     comment,
+		EndDate:     &endDate,
+		EquipmentID: &equipmentID,
+		OrderID:     orderID,
+		StartDate:   &startDate,
+		StatusName:  &status,
+	}
+
+	ctx := s.ctx
+	tx, err := s.client.Tx(ctx)
+	require.NoError(t, err)
+	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
+
+	eqStatus, err := s.repository.Create(ctx, data)
+	require.NoError(t, err)
+	require.NotNil(t, eqStatus)
+
+	result, err := s.repository.GetUnavailableEquipmentStatusByEquipmentID(ctx, int(equipmentID))
+	require.NoError(t, err)
+
+	assert.Equal(t, 1, len(result))
+
+	status = s.statusNameMap[1]
+	data.StatusName = &status
+	eqStatus, err = s.repository.Create(ctx, data)
+	require.NoError(t, err)
+	require.NotNil(t, eqStatus)
+
+	result, err = s.repository.GetUnavailableEquipmentStatusByEquipmentID(ctx, int(equipmentID))
+	require.NoError(t, err)
+	assert.NotEmpty(t, result)
+	assert.Equal(t, 1, len(result))
+
+	status = s.statusNameMap[2]
+	data.StatusName = &status
+	eqStatus, err = s.repository.Create(ctx, data)
+	require.NoError(t, err)
+	require.NotNil(t, eqStatus)
+
+	result, err = s.repository.GetUnavailableEquipmentStatusByEquipmentID(ctx, int(equipmentID))
+	require.NoError(t, err)
+	assert.NotEmpty(t, result)
+	assert.Equal(t, 2, len(result))
+
+	status = s.statusNameMap[3]
+	data.StatusName = &status
+	eqStatus, err = s.repository.Create(ctx, data)
+	require.NoError(t, err)
+	require.NotNil(t, eqStatus)
+
+	result, err = s.repository.GetUnavailableEquipmentStatusByEquipmentID(ctx, int(equipmentID))
+	require.NoError(t, err)
+	assert.NotEmpty(t, result)
+	assert.Equal(t, 3, len(result))
+
+	status = s.statusNameMap[4]
+	data.StatusName = &status
+	eqStatus, err = s.repository.Create(ctx, data)
+	require.NoError(t, err)
+	require.NotNil(t, eqStatus)
+
+	result, err = s.repository.GetUnavailableEquipmentStatusByEquipmentID(ctx, int(equipmentID))
+	require.NoError(t, err)
+	assert.NotEmpty(t, result)
+	assert.Equal(t, 4, len(result))
+
 	require.NoError(t, tx.Rollback())
 }
 
