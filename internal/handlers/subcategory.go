@@ -37,7 +37,7 @@ func NewSubcategory(logger *zap.Logger) *Subcategory {
 }
 
 func (s *Subcategory) CreateNewSubcategoryFunc(repository domain.SubcategoryRepository) subcategories.CreateNewSubcategoryHandlerFunc {
-	return func(p subcategories.CreateNewSubcategoryParams, access interface{}) middleware.Responder {
+	return func(p subcategories.CreateNewSubcategoryParams, _ *models.Principal) middleware.Responder {
 		ctx := p.HTTPRequest.Context()
 		categoryID := int(p.CategoryID)
 		createdSubcategory, err := repository.CreateSubcategory(ctx, categoryID, *p.NewSubcategory)
@@ -59,7 +59,7 @@ func (s *Subcategory) CreateNewSubcategoryFunc(repository domain.SubcategoryRepo
 }
 
 func (s *Subcategory) ListSubcategoriesFunc(repository domain.SubcategoryRepository) subcategories.ListSubcategoriesByCategoryIDHandlerFunc {
-	return func(p subcategories.ListSubcategoriesByCategoryIDParams, access interface{}) middleware.Responder {
+	return func(p subcategories.ListSubcategoriesByCategoryIDParams, _ *models.Principal) middleware.Responder {
 		ctx := p.HTTPRequest.Context()
 		categoryID := int(p.CategoryID)
 		subcategoriesList, err := repository.ListSubcategories(ctx, categoryID)
@@ -83,7 +83,7 @@ func (s *Subcategory) ListSubcategoriesFunc(repository domain.SubcategoryReposit
 }
 
 func (s *Subcategory) GetSubcategoryByIDFunc(repository domain.SubcategoryRepository) subcategories.GetSubcategoryByIDHandlerFunc {
-	return func(p subcategories.GetSubcategoryByIDParams, access interface{}) middleware.Responder {
+	return func(p subcategories.GetSubcategoryByIDParams, _ *models.Principal) middleware.Responder {
 		ctx := p.HTTPRequest.Context()
 		subcategory, err := repository.SubcategoryByID(ctx, int(p.SubcategoryID))
 		if err != nil {
@@ -103,7 +103,7 @@ func (s *Subcategory) GetSubcategoryByIDFunc(repository domain.SubcategoryReposi
 }
 
 func (s *Subcategory) DeleteSubcategoryFunc(repository domain.SubcategoryRepository) subcategories.DeleteSubcategoryHandlerFunc {
-	return func(p subcategories.DeleteSubcategoryParams, access interface{}) middleware.Responder {
+	return func(p subcategories.DeleteSubcategoryParams, _ *models.Principal) middleware.Responder {
 		ctx := p.HTTPRequest.Context()
 		err := repository.DeleteSubcategoryByID(ctx, int(p.SubcategoryID))
 		if err != nil {
@@ -117,7 +117,7 @@ func (s *Subcategory) DeleteSubcategoryFunc(repository domain.SubcategoryReposit
 }
 
 func (s *Subcategory) UpdateSubcategoryFunc(repository domain.SubcategoryRepository) subcategories.UpdateSubcategoryHandlerFunc {
-	return func(p subcategories.UpdateSubcategoryParams, access interface{}) middleware.Responder {
+	return func(p subcategories.UpdateSubcategoryParams, _ *models.Principal) middleware.Responder {
 		ctx := p.HTTPRequest.Context()
 		updateSubcategory, err := repository.UpdateSubcategory(ctx, int(p.SubcategoryID), *p.UpdateSubcategory)
 		if err != nil {

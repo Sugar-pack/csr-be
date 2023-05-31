@@ -106,8 +106,7 @@ func (s *EquipmentTestSuite) TestEquipment_ArchiveEquipmentFunc_RepoNotFoundErr(
 
 	s.equipmentRepo.On("ArchiveEquipment", ctx, id).Return(err)
 
-	access := "dummy access"
-	resp := handlerFunc(data, access)
+	resp := handlerFunc(data, nil)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
@@ -130,8 +129,7 @@ func (s *EquipmentTestSuite) TestEquipment_ArchiveEquipmentFunc_RepoErr() {
 
 	s.equipmentRepo.On("ArchiveEquipment", ctx, id).Return(err)
 
-	access := "dummy access"
-	resp := handlerFunc(data, access)
+	resp := handlerFunc(data, nil)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
@@ -153,8 +151,7 @@ func (s *EquipmentTestSuite) TestEquipment_ArchiveEquipmentFunc_Ok() {
 
 	s.equipmentRepo.On("ArchiveEquipment", ctx, id).Return(nil)
 
-	access := "dummy access"
-	resp := handlerFunc(data, access)
+	resp := handlerFunc(data, nil)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
@@ -181,8 +178,7 @@ func (s *EquipmentTestSuite) TestEquipment_PostEquipmentFunc_RepoErr() {
 	s.statusRepo.On("GetByName", ctx, "available").Return(statusToAdd, nil)
 	s.equipmentRepo.On("CreateEquipment", ctx, equipmentToAdd, statusToAdd).Return(nil, err)
 
-	access := "dummy access"
-	resp := handlerFunc(data, access)
+	resp := handlerFunc(data, nil)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
@@ -207,8 +203,7 @@ func (s *EquipmentTestSuite) TestEquipment_PostEquipmentFunc_RepoStatusErr() {
 
 	s.statusRepo.On("GetByName", ctx, "available").Return(nil, err)
 
-	access := "dummy access"
-	resp := handlerFunc(data, access)
+	resp := handlerFunc(data, nil)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
@@ -235,8 +230,7 @@ func (s *EquipmentTestSuite) TestEquipment_PostEquipmentFunc_MapErr() {
 	s.statusRepo.On("GetByName", ctx, "available").Return(statusToAdd, nil)
 	s.equipmentRepo.On("CreateEquipment", ctx, equipmentToAdd, statusToAdd).Return(equipmentToReturn, nil)
 
-	access := "dummy access"
-	resp := handlerFunc(data, access)
+	resp := handlerFunc(data, nil)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
@@ -263,8 +257,7 @@ func (s *EquipmentTestSuite) TestEquipment_PostEquipmentFunc_OK() {
 	s.statusRepo.On("GetByName", ctx, "available").Return(statusToAdd, nil)
 	s.equipmentRepo.On("CreateEquipment", ctx, equipmentToAdd, statusToAdd).Return(equipmentToReturn, nil)
 
-	access := "dummy access"
-	resp := handlerFunc(data, access)
+	resp := handlerFunc(data, nil)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
@@ -294,8 +287,7 @@ func (s *EquipmentTestSuite) TestEquipment_GetEquipmentFunc_RepoErr() {
 
 	s.equipmentRepo.On("EquipmentByID", ctx, int(equipmentId)).Return(nil, err)
 
-	access := "dummy access"
-	resp := handlerFunc(data, access)
+	resp := handlerFunc(data, nil)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
@@ -318,8 +310,7 @@ func (s *EquipmentTestSuite) TestEquipment_GetEquipmentFunc_MapErr() {
 
 	s.equipmentRepo.On("EquipmentByID", ctx, int(equipmentId)).Return(equipmentToReturn, nil)
 
-	access := "dummy access"
-	resp := handlerFunc(data, access)
+	resp := handlerFunc(data, nil)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
@@ -342,8 +333,7 @@ func (s *EquipmentTestSuite) TestEquipment_GetEquipmentFunc_OK() {
 
 	s.equipmentRepo.On("EquipmentByID", ctx, int(equipmentId)).Return(equipmentToReturn, nil)
 
-	access := "dummy access"
-	resp := handlerFunc(data, access)
+	resp := handlerFunc(data, nil)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
@@ -375,8 +365,7 @@ func (s *EquipmentTestSuite) TestEquipment_DeleteEquipmentFunc_RepoErr() {
 	s.equipmentRepo.On("EquipmentByID", ctx, int(equipmentId)).Return(equipmentToReturn, nil)
 	s.equipmentRepo.On("DeleteEquipmentByID", ctx, int(equipmentId)).Return(err)
 
-	access := "dummy access"
-	resp := handlerFunc(data, access)
+	resp := handlerFunc(data, nil)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
@@ -401,8 +390,7 @@ func (s *EquipmentTestSuite) TestEquipment_DeleteEquipmentFunc_OK() {
 	s.equipmentRepo.On("DeleteEquipmentByID", ctx, int(equipmentId)).Return(nil)
 	s.equipmentRepo.On("DeleteEquipmentPhoto", ctx, equipmentToReturn.Edges.Photo.ID).Return(nil)
 
-	access := "dummy access"
-	resp := handlerFunc(data, access)
+	resp := handlerFunc(data, nil)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
@@ -422,8 +410,7 @@ func (s *EquipmentTestSuite) TestEquipment_ListEquipmentFunc_RepoErr() {
 	err := errors.New("test error")
 	s.equipmentRepo.On("AllEquipmentsTotal", ctx).Return(0, err)
 
-	access := "dummy access"
-	resp := handlerFunc(data, access)
+	resp := handlerFunc(data, nil)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
@@ -442,8 +429,7 @@ func (s *EquipmentTestSuite) TestEquipment_ListEquipmentFunc_NotFound() {
 	}
 	s.equipmentRepo.On("AllEquipmentsTotal", ctx).Return(0, nil)
 
-	access := "dummy access"
-	resp := handlerFunc(data, access)
+	resp := handlerFunc(data, nil)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
@@ -477,8 +463,7 @@ func (s *EquipmentTestSuite) TestEquipment_ListEquipmentFunc_MapErr() {
 	s.equipmentRepo.On("AllEquipmentsTotal", ctx).Return(1, nil)
 	s.equipmentRepo.On("AllEquipments", ctx, limit, offset, orderBy, orderColumn).Return(equipmentToReturn, nil)
 
-	access := "dummy access"
-	resp := handlerFunc(data, access)
+	resp := handlerFunc(data, nil)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
@@ -504,8 +489,7 @@ func (s *EquipmentTestSuite) TestEquipment_ListEquipmentFunc_EmptyPaginationPara
 	s.equipmentRepo.On("AllEquipmentsTotal", ctx).Return(1, nil)
 	s.equipmentRepo.On("AllEquipments", ctx, limit, offset, orderBy, orderColumn).Return(equipmentToReturn, nil)
 
-	access := "dummy access"
-	resp := handlerFunc(data, access)
+	resp := handlerFunc(data, nil)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
@@ -543,8 +527,7 @@ func (s *EquipmentTestSuite) TestEquipment_ListEquipmentFunc_LimitGreaterThanTot
 	s.equipmentRepo.On("AllEquipmentsTotal", ctx).Return(1, nil)
 	s.equipmentRepo.On("AllEquipments", ctx, int(limit), int(offset), orderBy, orderColumn).Return(equipmentToReturn, nil)
 
-	access := "dummy access"
-	resp := handlerFunc(data, access)
+	resp := handlerFunc(data, nil)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
@@ -588,8 +571,7 @@ func (s *EquipmentTestSuite) TestEquipment_ListEquipmentFunc_LimitLessThanTotal(
 	s.equipmentRepo.On("AllEquipments", ctx, int(limit), int(offset), orderBy, orderColumn).
 		Return(equipmentToReturn[:limit], nil)
 
-	access := "dummy access"
-	resp := handlerFunc(data, access)
+	resp := handlerFunc(data, nil)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
@@ -637,8 +619,7 @@ func (s *EquipmentTestSuite) TestEquipment_ListEquipmentFunc_SecondPage() {
 	s.equipmentRepo.On("AllEquipments", ctx, int(limit), int(offset), orderBy, orderColumn).
 		Return(equipmentToReturn[offset:], nil)
 
-	access := "dummy access"
-	resp := handlerFunc(data, access)
+	resp := handlerFunc(data, nil)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
@@ -686,8 +667,7 @@ func (s *EquipmentTestSuite) TestEquipment_ListEquipmentFunc_SeveralPages() {
 	s.equipmentRepo.On("AllEquipments", ctx, int(limit), int(offset), orderBy, orderColumn).
 		Return(equipmentToReturn[:limit], nil)
 
-	access := "dummy access"
-	resp := handlerFunc(data, access)
+	resp := handlerFunc(data, nil)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
@@ -710,7 +690,7 @@ func (s *EquipmentTestSuite) TestEquipment_ListEquipmentFunc_SeveralPages() {
 	s.equipmentRepo.On("AllEquipmentsTotal", ctx).Return(5, nil)
 	s.equipmentRepo.On("AllEquipments", ctx, int(limit), int(offset), orderBy, orderColumn).
 		Return(equipmentToReturn[offset:], nil)
-	resp = handlerFunc(data, access)
+	resp = handlerFunc(data, nil)
 	responseRecorder = httptest.NewRecorder()
 	producer = runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
@@ -750,8 +730,7 @@ func (s *EquipmentTestSuite) TestEquipment_FindEquipmentFunc_RepoErr() {
 
 	s.equipmentRepo.On("EquipmentsByFilterTotal", ctx, equipmentFilter).Return(0, err)
 
-	access := "dummy access"
-	resp := handlerFunc(data, access)
+	resp := handlerFunc(data, nil)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
@@ -775,8 +754,7 @@ func (s *EquipmentTestSuite) TestEquipment_FindEquipmentFunc_NoResult() {
 
 	s.equipmentRepo.On("EquipmentsByFilterTotal", ctx, equipmentFilter).Return(0, nil)
 
-	access := "dummy access"
-	resp := handlerFunc(data, access)
+	resp := handlerFunc(data, nil)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
@@ -816,8 +794,7 @@ func (s *EquipmentTestSuite) TestEquipment_FindEquipmentFunc_MapErr() {
 	s.equipmentRepo.On("EquipmentsByFilter", ctx, equipmentFilter, limit, offset, orderBy, orderColumn).
 		Return(equipmentToReturn, nil)
 
-	access := "dummy access"
-	resp := handlerFunc(data, access)
+	resp := handlerFunc(data, nil)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
@@ -853,8 +830,7 @@ func (s *EquipmentTestSuite) TestEquipment_FindEquipmentFunc_EmptyPaginationPara
 	s.equipmentRepo.On("EquipmentsByFilter", ctx, equipmentFilter, limit, offset, orderBy, orderColumn).
 		Return(equipmentToReturn[:2], nil)
 
-	access := "dummy access"
-	resp := handlerFunc(data, access)
+	resp := handlerFunc(data, nil)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
@@ -905,8 +881,7 @@ func (s *EquipmentTestSuite) TestEquipment_FindEquipmentFunc_LimitGreaterThanTot
 	s.equipmentRepo.On("EquipmentsByFilter", ctx, equipmentFilter, int(limit), int(offset), orderBy, orderColumn).
 		Return(equipmentToReturn[:2], nil)
 
-	access := "dummy access"
-	resp := handlerFunc(data, access)
+	resp := handlerFunc(data, nil)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
@@ -956,8 +931,7 @@ func (s *EquipmentTestSuite) TestEquipment_FindEquipmentFunc_LimitLessThanTotal(
 	s.equipmentRepo.On("EquipmentsByFilter", ctx, equipmentFilter, int(limit), int(offset), orderBy, orderColumn).
 		Return(equipmentToReturn[:2], nil)
 
-	access := "dummy access"
-	resp := handlerFunc(data, access)
+	resp := handlerFunc(data, nil)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
@@ -1008,8 +982,7 @@ func (s *EquipmentTestSuite) TestEquipment_FindEquipmentFunc_SecondPage() {
 	s.equipmentRepo.On("EquipmentsByFilter", ctx, equipmentFilter, int(limit), int(offset), orderBy, orderColumn).
 		Return(equipmentToReturn[offset:], nil)
 
-	access := "dummy access"
-	resp := handlerFunc(data, access)
+	resp := handlerFunc(data, nil)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
@@ -1050,8 +1023,7 @@ func (s *EquipmentTestSuite) TestEquipment_EditEquipmentFunc_RepoErr() {
 	s.equipmentRepo.On("UpdateEquipmentByID", ctx, int(equipmentId), equipmentUpdate).
 		Return(nil, err)
 
-	access := "dummy access"
-	resp := handlerFunc(data, access)
+	resp := handlerFunc(data, nil)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
@@ -1080,8 +1052,7 @@ func (s *EquipmentTestSuite) TestEquipment_EditEquipmentFunc_MapErr() {
 	s.equipmentRepo.On("UpdateEquipmentByID", ctx, int(equipmentId), equipmentUpdate).
 		Return(equipmentToReturn, nil)
 
-	access := "dummy access"
-	resp := handlerFunc(data, access)
+	resp := handlerFunc(data, nil)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
@@ -1110,8 +1081,7 @@ func (s *EquipmentTestSuite) TestEquipment_EditEquipmentFunc_OK() {
 	s.equipmentRepo.On("UpdateEquipmentByID", ctx, int(equipmentId), equipmentUpdate).
 		Return(equipmentToReturn, nil)
 
-	access := "dummy access"
-	resp := handlerFunc(data, access)
+	resp := handlerFunc(data, nil)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)

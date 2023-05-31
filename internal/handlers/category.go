@@ -39,7 +39,7 @@ func NewCategory(logger *zap.Logger) *Category {
 }
 
 func (c *Category) CreateNewCategoryFunc(repository domain.CategoryRepository) categories.CreateNewCategoryHandlerFunc {
-	return func(s categories.CreateNewCategoryParams, access interface{}) middleware.Responder {
+	return func(s categories.CreateNewCategoryParams, _ *models.Principal) middleware.Responder {
 		ctx := s.HTTPRequest.Context()
 		createdCategory, err := repository.CreateCategory(ctx, *s.NewCategory)
 		if err != nil {
@@ -54,7 +54,7 @@ func (c *Category) CreateNewCategoryFunc(repository domain.CategoryRepository) c
 }
 
 func (c *Category) GetAllCategoriesFunc(repository domain.CategoryRepository) categories.GetAllCategoriesHandlerFunc {
-	return func(s categories.GetAllCategoriesParams, access interface{}) middleware.Responder {
+	return func(s categories.GetAllCategoriesParams, _ *models.Principal) middleware.Responder {
 		ctx := s.HTTPRequest.Context()
 		limit := utils.GetValueByPointerOrDefaultValue(s.Limit, math.MaxInt)
 		offset := utils.GetValueByPointerOrDefaultValue(s.Offset, 0)
@@ -101,7 +101,7 @@ func (c *Category) GetAllCategoriesFunc(repository domain.CategoryRepository) ca
 }
 
 func (c *Category) GetCategoryByIDFunc(repository domain.CategoryRepository) categories.GetCategoryByIDHandlerFunc {
-	return func(s categories.GetCategoryByIDParams, access interface{}) middleware.Responder {
+	return func(s categories.GetCategoryByIDParams, _ *models.Principal) middleware.Responder {
 		ctx := s.HTTPRequest.Context()
 		category, err := repository.CategoryByID(ctx, int(s.CategoryID))
 		if err != nil {
@@ -116,7 +116,7 @@ func (c *Category) GetCategoryByIDFunc(repository domain.CategoryRepository) cat
 }
 
 func (c *Category) DeleteCategoryFunc(repository domain.CategoryRepository) categories.DeleteCategoryHandlerFunc {
-	return func(s categories.DeleteCategoryParams, access interface{}) middleware.Responder {
+	return func(s categories.DeleteCategoryParams, _ *models.Principal) middleware.Responder {
 		ctx := s.HTTPRequest.Context()
 		err := repository.DeleteCategoryByID(ctx, int(s.CategoryID))
 		if err != nil {
@@ -129,7 +129,7 @@ func (c *Category) DeleteCategoryFunc(repository domain.CategoryRepository) cate
 }
 
 func (c *Category) UpdateCategoryFunc(repository domain.CategoryRepository) categories.UpdateCategoryHandlerFunc {
-	return func(s categories.UpdateCategoryParams, access interface{}) middleware.Responder {
+	return func(s categories.UpdateCategoryParams, _ *models.Principal) middleware.Responder {
 		ctx := s.HTTPRequest.Context()
 		updatedCategory, err := repository.UpdateCategory(ctx, int(s.CategoryID), *s.UpdateCategory)
 		if err != nil {

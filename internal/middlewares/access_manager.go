@@ -8,7 +8,7 @@ import (
 
 	openApiErrors "github.com/go-openapi/errors"
 
-	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/authentication"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/swagger/models"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/utils"
 )
 
@@ -61,19 +61,17 @@ type Role struct {
 
 // NewAccessManager creates new access manager with admin access to all endpoints.
 // All roles can be declared with slug only.
-func NewAccessManager(roles, fullAccessRoles []Role, endpoints ExistingEndpoints) (AccessManager, error) {
-	err := endpoints.Validate()
-	if err != nil {
+func NewAccessManager(acceptableRoles, fullAccessRoles []Role, endpoints ExistingEndpoints) (AccessManager, error) {
+	if err := endpoints.Validate(); err != nil {
 		return nil, err
 	}
-	accessMap := make(map[Role]map[string][]path)
+	acceptableRoleVariations := allRoleVariation(acceptableRoles)
 	fullAccessRoleVariations := allRoleVariation(fullAccessRoles)
-	roleVariations := allRoleVariation(roles)
 	return &blackListAccessManager{
 		endpoints:       endpoints,
-		acceptableRoles: roleVariations,
+		acceptableRoles: acceptableRoleVariations,
 		fullAccessRoles: fullAccessRoleVariations,
-		accessMap:       accessMap,
+		accessMap:       make(map[Role]map[string][]path),
 	}, nil
 }
 
@@ -213,16 +211,16 @@ func (a *blackListAccessManager) HasAccess(role Role, method, path string) bool 
 }
 
 func (a *blackListAccessManager) Authorize(r *http.Request, auth interface{}) error {
-	userInfo, ok := auth.(authentication.Auth)
+	principal, ok := auth.(*models.Principal)
 	if !ok {
 		return openApiErrors.New(http.StatusForbidden, forbiddenMessage)
 	}
 
 	role := Role{
-		Slug:                    userInfo.Role.Slug,
-		IsRegistrationConfirmed: userInfo.IsRegistrationConfirmed,
-		IsPersonalDataConfirmed: userInfo.IsPersonalDataConfirmed,
-		IsReadonly:              userInfo.IsReadonly,
+		Slug:                    principal.Role,
+		IsRegistrationConfirmed: principal.IsRegistrationConfirmed,
+		IsPersonalDataConfirmed: principal.IsPersonalDataConfirmed,
+		IsReadonly:              principal.IsReadonly,
 	}
 
 	if !a.HasAccess(role, r.Method, r.URL.Path) {

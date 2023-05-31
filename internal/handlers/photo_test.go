@@ -83,8 +83,8 @@ func (s *PhotoTestSuite) TestPhoto_CreatePhoto_EmptyFile() {
 	}
 
 	handlerFunc := s.handler.CreateNewPhotoFunc(s.repository)
-	access := "dummy access"
-	resp := handlerFunc.Handle(data, access)
+
+	resp := handlerFunc.Handle(data, nil)
 
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
@@ -126,8 +126,8 @@ func (s *PhotoTestSuite) TestPhoto_CreatePhoto_WrongMimeType() {
 	}
 
 	handlerFunc := s.handler.CreateNewPhotoFunc(s.repository)
-	access := "dummy access"
-	resp := handlerFunc.Handle(data, access)
+
+	resp := handlerFunc.Handle(data, nil)
 
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
@@ -180,8 +180,8 @@ func (s *PhotoTestSuite) TestPhoto_CreatePhoto_OK() {
 	}, nil)
 
 	handlerFunc := s.handler.CreateNewPhotoFunc(s.repository)
-	access := "dummy access"
-	resp := handlerFunc.Handle(data, access)
+
+	resp := handlerFunc.Handle(data, nil)
 
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
@@ -219,8 +219,8 @@ func (s *PhotoTestSuite) TestPhoto_GetPhoto_OK() {
 	}, nil)
 
 	handlerFunc := s.handler.GetPhotoFunc(s.repository)
-	access := "dummy access"
-	resp := handlerFunc.Handle(data, access)
+
+	resp := handlerFunc.Handle(data, nil)
 
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
@@ -248,8 +248,8 @@ func (s *PhotoTestSuite) TestPhoto_GetPhoto_RepoErr() {
 	s.repository.On("PhotoByID", ctx, data.PhotoID).Return(nil, errorToReturn)
 
 	handlerFunc := s.handler.GetPhotoFunc(s.repository)
-	access := "dummy access"
-	resp := handlerFunc(data, access)
+
+	resp := handlerFunc(data, nil)
 
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
@@ -290,8 +290,8 @@ func (s *PhotoTestSuite) TestPhoto_DownloadPhoto_OK() {
 	}, nil)
 
 	handlerFunc := s.handler.DownloadPhotoFunc(s.repository)
-	access := "dummy access"
-	resp := handlerFunc.Handle(data, access)
+
+	resp := handlerFunc.Handle(data, nil)
 
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
@@ -319,8 +319,8 @@ func (s *PhotoTestSuite) TestPhoto_DeletePhoto_NotExists() {
 	s.repository.On("PhotoByID", ctx, data.PhotoID).Return(nil, errorToReturn)
 
 	handlerFunc := s.handler.DeletePhotoFunc(s.repository)
-	access := "dummy access"
-	resp := handlerFunc.Handle(data, access)
+
+	resp := handlerFunc.Handle(data, nil)
 
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
@@ -358,8 +358,8 @@ func (s *PhotoTestSuite) TestPhoto_DeletePhoto_OK() {
 	s.repository.On("DeletePhotoByID", ctx, data.PhotoID).Return(nil)
 
 	handlerFunc := s.handler.DeletePhotoFunc(s.repository)
-	access := "dummy access"
-	resp := handlerFunc.Handle(data, access)
+
+	resp := handlerFunc.Handle(data, nil)
 
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()

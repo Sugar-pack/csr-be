@@ -34,7 +34,7 @@ func NewActiveArea(logger *zap.Logger) *ActiveArea {
 }
 
 func (area ActiveArea) GetActiveAreasFunc(repository domain.ActiveAreaRepository) active_areas.GetAllActiveAreasHandlerFunc {
-	return func(a active_areas.GetAllActiveAreasParams, access interface{}) middleware.Responder {
+	return func(a active_areas.GetAllActiveAreasParams, _ *models.Principal) middleware.Responder {
 		ctx := a.HTTPRequest.Context()
 		limit := utils.GetValueByPointerOrDefaultValue(a.Limit, math.MaxInt)
 		offset := utils.GetValueByPointerOrDefaultValue(a.Offset, 0)

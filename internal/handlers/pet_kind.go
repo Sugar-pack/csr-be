@@ -36,7 +36,7 @@ func NewPetKind(logger *zap.Logger) *PetKind {
 }
 
 func (pk PetKind) CreatePetKindFunc(repository domain.PetKindRepository) pet_kind.CreateNewPetKindHandlerFunc {
-	return func(p pet_kind.CreateNewPetKindParams, access interface{}) middleware.Responder {
+	return func(p pet_kind.CreateNewPetKindParams, _ *models.Principal) middleware.Responder {
 		ctx := p.HTTPRequest.Context()
 		petKind, err := repository.Create(ctx, *p.NewPetKind)
 		if err != nil {
@@ -59,7 +59,7 @@ func (pk PetKind) CreatePetKindFunc(repository domain.PetKindRepository) pet_kin
 }
 
 func (pk PetKind) GetAllPetKindFunc(repository domain.PetKindRepository) pet_kind.GetAllPetKindsHandlerFunc {
-	return func(p pet_kind.GetAllPetKindsParams, access interface{}) middleware.Responder {
+	return func(p pet_kind.GetAllPetKindsParams, _ *models.Principal) middleware.Responder {
 		ctx := p.HTTPRequest.Context()
 		petKinds, err := repository.GetAll(ctx)
 		if err != nil {
@@ -82,7 +82,7 @@ func (pk PetKind) GetAllPetKindFunc(repository domain.PetKindRepository) pet_kin
 }
 
 func (pk PetKind) GetPetKindsByID(repo domain.PetKindRepository) pet_kind.GetPetKindHandlerFunc {
-	return func(p pet_kind.GetPetKindParams, access interface{}) middleware.Responder {
+	return func(p pet_kind.GetPetKindParams, _ *models.Principal) middleware.Responder {
 		ctx := p.HTTPRequest.Context()
 		petKind, err := repo.GetByID(ctx, int(p.PetKindID))
 		if err != nil {
@@ -100,7 +100,7 @@ func (pk PetKind) GetPetKindsByID(repo domain.PetKindRepository) pet_kind.GetPet
 }
 
 func (pk PetKind) DeletePetKindByID(repo domain.PetKindRepository) pet_kind.DeletePetKindHandlerFunc {
-	return func(p pet_kind.DeletePetKindParams, access interface{}) middleware.Responder {
+	return func(p pet_kind.DeletePetKindParams, _ *models.Principal) middleware.Responder {
 		ctx := p.HTTPRequest.Context()
 		err := repo.Delete(ctx, int(p.PetKindID))
 		if err != nil {
@@ -113,7 +113,7 @@ func (pk PetKind) DeletePetKindByID(repo domain.PetKindRepository) pet_kind.Dele
 }
 
 func (pk PetKind) UpdatePetKindByID(repo domain.PetKindRepository) pet_kind.EditPetKindHandlerFunc {
-	return func(p pet_kind.EditPetKindParams, access interface{}) middleware.Responder {
+	return func(p pet_kind.EditPetKindParams, _ *models.Principal) middleware.Responder {
 		ctx := p.HTTPRequest.Context()
 		petSize, err := repo.Update(ctx, int(p.PetKindID), p.EditPetKind)
 		if err != nil {

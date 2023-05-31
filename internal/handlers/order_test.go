@@ -17,7 +17,6 @@ import (
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/zap"
 
-	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/authentication"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/ent"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/ent/enttest"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/ent/order"
@@ -105,20 +104,10 @@ func (s *orderTestSuite) SetupTest() {
 	s.orderHandler = NewOrder(s.logger)
 }
 
-func (s *orderTestSuite) TestOrder_ListOrder_AccessErr() {
-	t := s.T()
-	request := http.Request{}
-
-	handlerFunc := s.orderHandler.ListOrderFunc(s.orderRepository)
-	data := orders.GetAllOrdersParams{HTTPRequest: &request}
-	access := "definitely not an access"
-	resp := handlerFunc.Handle(data, access)
-
-	responseRecorder := httptest.NewRecorder()
-	producer := runtime.JSONProducer()
-	resp.WriteResponse(responseRecorder, producer)
-	require.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
-	s.orderRepository.AssertExpectations(t)
+func (s *orderTestSuite) TearDownTest() {
+	s.orderRepository.AssertExpectations(s.T())
+	s.eqStatusRepository.AssertExpectations(s.T())
+	s.equipmentRepository.AssertExpectations(s.T())
 }
 
 func (s *orderTestSuite) TestOrder_ListOrder_RepoErr() {
@@ -132,14 +121,14 @@ func (s *orderTestSuite) TestOrder_ListOrder_RepoErr() {
 
 	handlerFunc := s.orderHandler.ListOrderFunc(s.orderRepository)
 	data := orders.GetAllOrdersParams{HTTPRequest: &request}
-	access := authentication.Auth{Id: userID}
-	resp := handlerFunc.Handle(data, access)
+
+	principal := &models.Principal{ID: int64(userID)}
+	resp := handlerFunc.Handle(data, principal)
 
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
 	require.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
-	s.orderRepository.AssertExpectations(t)
 }
 
 func (s *orderTestSuite) TestOrder_ListOrder_MapErr() {
@@ -160,14 +149,13 @@ func (s *orderTestSuite) TestOrder_ListOrder_MapErr() {
 
 	handlerFunc := s.orderHandler.ListOrderFunc(s.orderRepository)
 	data := orders.GetAllOrdersParams{HTTPRequest: &request}
-	access := authentication.Auth{Id: userID}
-	resp := handlerFunc.Handle(data, access)
+	principal := &models.Principal{ID: int64(userID)}
+	resp := handlerFunc.Handle(data, principal)
 
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
 	require.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
-	s.orderRepository.AssertExpectations(t)
 }
 
 func (s *orderTestSuite) TestOrder_ListOrder_NotFound() {
@@ -180,8 +168,8 @@ func (s *orderTestSuite) TestOrder_ListOrder_NotFound() {
 
 	handlerFunc := s.orderHandler.ListOrderFunc(s.orderRepository)
 	data := orders.GetAllOrdersParams{HTTPRequest: &request}
-	access := authentication.Auth{Id: userID}
-	resp := handlerFunc.Handle(data, access)
+	principal := &models.Principal{ID: int64(userID)}
+	resp := handlerFunc.Handle(data, principal)
 
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
@@ -195,7 +183,6 @@ func (s *orderTestSuite) TestOrder_ListOrder_NotFound() {
 	}
 	require.Equal(t, 0, int(*response.Total))
 	require.Equal(t, 0, len(response.Items))
-	s.orderRepository.AssertExpectations(t)
 }
 
 func (s *orderTestSuite) TestOrder_ListOrder_EmptyParams() {
@@ -217,8 +204,8 @@ func (s *orderTestSuite) TestOrder_ListOrder_EmptyParams() {
 
 	handlerFunc := s.orderHandler.ListOrderFunc(s.orderRepository)
 	data := orders.GetAllOrdersParams{HTTPRequest: &request}
-	access := authentication.Auth{Id: userID}
-	resp := handlerFunc.Handle(data, access)
+	principal := &models.Principal{ID: int64(userID)}
+	resp := handlerFunc.Handle(data, principal)
 
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
@@ -235,7 +222,6 @@ func (s *orderTestSuite) TestOrder_ListOrder_EmptyParams() {
 	for _, item := range response.Items {
 		require.True(t, containsOrder(t, orderList, item))
 	}
-	s.orderRepository.AssertExpectations(t)
 }
 
 func (s *orderTestSuite) TestOrder_ListOrder_LimitGreaterThanTotal() {
@@ -264,8 +250,8 @@ func (s *orderTestSuite) TestOrder_ListOrder_LimitGreaterThanTotal() {
 		OrderBy:     &orderBy,
 		OrderColumn: &orderColumn,
 	}
-	access := authentication.Auth{Id: userID}
-	resp := handlerFunc.Handle(data, access)
+	principal := &models.Principal{ID: int64(userID)}
+	resp := handlerFunc.Handle(data, principal)
 
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
@@ -282,8 +268,6 @@ func (s *orderTestSuite) TestOrder_ListOrder_LimitGreaterThanTotal() {
 	for _, item := range response.Items {
 		require.True(t, containsOrder(t, orderList, item))
 	}
-
-	s.orderRepository.AssertExpectations(t)
 }
 
 func (s *orderTestSuite) TestOrder_ListOrder_LimitLessThanTotal() {
@@ -314,8 +298,8 @@ func (s *orderTestSuite) TestOrder_ListOrder_LimitLessThanTotal() {
 		OrderBy:     &orderBy,
 		OrderColumn: &orderColumn,
 	}
-	access := authentication.Auth{Id: userID}
-	resp := handlerFunc.Handle(data, access)
+	principal := &models.Principal{ID: int64(userID)}
+	resp := handlerFunc.Handle(data, principal)
 
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
@@ -332,8 +316,6 @@ func (s *orderTestSuite) TestOrder_ListOrder_LimitLessThanTotal() {
 	for _, item := range response.Items {
 		require.True(t, containsOrder(t, orderList, item))
 	}
-
-	s.orderRepository.AssertExpectations(t)
 }
 
 func (s *orderTestSuite) TestOrder_ListOrder_SecondPage() {
@@ -364,8 +346,8 @@ func (s *orderTestSuite) TestOrder_ListOrder_SecondPage() {
 		OrderBy:     &orderBy,
 		OrderColumn: &orderColumn,
 	}
-	access := authentication.Auth{Id: userID}
-	resp := handlerFunc.Handle(data, access)
+	principal := &models.Principal{ID: int64(userID)}
+	resp := handlerFunc.Handle(data, principal)
 
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
@@ -382,8 +364,6 @@ func (s *orderTestSuite) TestOrder_ListOrder_SecondPage() {
 	for _, item := range response.Items {
 		require.True(t, containsOrder(t, orderList, item))
 	}
-
-	s.orderRepository.AssertExpectations(t)
 }
 
 func (s *orderTestSuite) TestOrder_ListOrder_SeveralPages() {
@@ -414,8 +394,8 @@ func (s *orderTestSuite) TestOrder_ListOrder_SeveralPages() {
 		OrderBy:     &orderBy,
 		OrderColumn: &orderColumn,
 	}
-	access := authentication.Auth{Id: userID}
-	resp := handlerFunc.Handle(data, access)
+	principal := &models.Principal{ID: int64(userID)}
+	resp := handlerFunc.Handle(data, principal)
 
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
@@ -445,7 +425,7 @@ func (s *orderTestSuite) TestOrder_ListOrder_SeveralPages() {
 		OrderBy:     &orderBy,
 		OrderColumn: &orderColumn,
 	}
-	resp = handlerFunc.Handle(data, access)
+	resp = handlerFunc.Handle(data, principal)
 
 	responseRecorder = httptest.NewRecorder()
 	producer = runtime.JSONProducer()
@@ -464,25 +444,6 @@ func (s *orderTestSuite) TestOrder_ListOrder_SeveralPages() {
 	}
 
 	require.False(t, ordersDuplicated(t, firstPage.Items, secondPage.Items))
-	s.orderRepository.AssertExpectations(t)
-}
-
-func (s *orderTestSuite) TestOrder_CreateOrder_AccessErr() {
-	t := s.T()
-	request := http.Request{}
-
-	handlerFunc := s.orderHandler.CreateOrderFunc(s.orderRepository, s.eqStatusRepository, s.equipmentRepository)
-	data := orders.CreateOrderParams{
-		HTTPRequest: &request,
-	}
-	access := "definitely not an access"
-	resp := handlerFunc.Handle(data, access)
-
-	responseRecorder := httptest.NewRecorder()
-	producer := runtime.JSONProducer()
-	resp.WriteResponse(responseRecorder, producer)
-	require.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
-	s.orderRepository.AssertExpectations(t)
 }
 
 func (s *orderTestSuite) TestOrder_CreateOrder_RepoErr() {
@@ -511,14 +472,13 @@ func (s *orderTestSuite) TestOrder_CreateOrder_RepoErr() {
 		HTTPRequest: &request,
 		Data:        createOrder,
 	}
-	access := authentication.Auth{Id: userID}
-	resp := handlerFunc.Handle(data, access)
+	principal := &models.Principal{ID: int64(userID)}
+	resp := handlerFunc.Handle(data, principal)
 
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
 	require.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
-	s.orderRepository.AssertExpectations(t)
 }
 
 func (s *orderTestSuite) TestOrder_CreateOrder_MapErr() {
@@ -561,14 +521,13 @@ func (s *orderTestSuite) TestOrder_CreateOrder_MapErr() {
 		HTTPRequest: &request,
 		Data:        createOrder,
 	}
-	access := authentication.Auth{Id: userID}
-	resp := handlerFunc.Handle(data, access)
+	principal := &models.Principal{ID: int64(userID)}
+	resp := handlerFunc.Handle(data, principal)
 
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
 	require.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
-	s.orderRepository.AssertExpectations(t)
 }
 
 func (s *orderTestSuite) TestOrder_CreateOrder_NoAvailableEquipments() {
@@ -598,8 +557,8 @@ func (s *orderTestSuite) TestOrder_CreateOrder_NoAvailableEquipments() {
 		HTTPRequest: &request,
 		Data:        createOrder,
 	}
-	access := authentication.Auth{Id: userID}
-	resp := handlerFunc.Handle(data, access)
+	principal := &models.Principal{ID: int64(userID)}
+	resp := handlerFunc.Handle(data, principal)
 
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
@@ -611,8 +570,6 @@ func (s *orderTestSuite) TestOrder_CreateOrder_NoAvailableEquipments() {
 		t.Fatal(err)
 	}
 	require.Empty(t, responseOrder)
-
-	s.orderRepository.AssertExpectations(t)
 }
 
 func (s *orderTestSuite) TestOrder_CreateOrder_OK() {
@@ -655,8 +612,8 @@ func (s *orderTestSuite) TestOrder_CreateOrder_OK() {
 		HTTPRequest: &request,
 		Data:        createOrder,
 	}
-	access := authentication.Auth{Id: userID}
-	resp := handlerFunc.Handle(data, access)
+	principal := &models.Principal{ID: int64(userID)}
+	resp := handlerFunc.Handle(data, principal)
 
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
@@ -668,26 +625,6 @@ func (s *orderTestSuite) TestOrder_CreateOrder_OK() {
 		t.Fatal(err)
 	}
 	require.Equal(t, orderToReturn.ID, int(*responseOrder.ID))
-
-	s.orderRepository.AssertExpectations(t)
-}
-
-func (s *orderTestSuite) TestOrder_UpdateOrder_AccessErr() {
-	t := s.T()
-	request := http.Request{}
-
-	handlerFunc := s.orderHandler.UpdateOrderFunc(s.orderRepository)
-	data := orders.UpdateOrderParams{
-		HTTPRequest: &request,
-	}
-	access := "definitely not an access"
-	resp := handlerFunc.Handle(data, access)
-
-	responseRecorder := httptest.NewRecorder()
-	producer := runtime.JSONProducer()
-	resp.WriteResponse(responseRecorder, producer)
-	require.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
-	s.orderRepository.AssertExpectations(t)
 }
 
 func (s *orderTestSuite) TestOrder_UpdateOrder_RepoErr() {
@@ -716,14 +653,13 @@ func (s *orderTestSuite) TestOrder_UpdateOrder_RepoErr() {
 		Data:        createOrder,
 		OrderID:     int64(orderID),
 	}
-	access := authentication.Auth{Id: userID}
-	resp := handlerFunc.Handle(data, access)
+	principal := &models.Principal{ID: int64(userID)}
+	resp := handlerFunc.Handle(data, principal)
 
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
 	require.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
-	s.orderRepository.AssertExpectations(t)
 }
 
 func (s *orderTestSuite) TestOrder_UpdateOrder_MapErr() {
@@ -752,14 +688,13 @@ func (s *orderTestSuite) TestOrder_UpdateOrder_MapErr() {
 		Data:        createOrder,
 		OrderID:     int64(orderID),
 	}
-	access := authentication.Auth{Id: userID}
-	resp := handlerFunc.Handle(data, access)
+	principal := &models.Principal{ID: int64(userID)}
+	resp := handlerFunc.Handle(data, principal)
 
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
 	require.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
-	s.orderRepository.AssertExpectations(t)
 }
 
 func (s *orderTestSuite) TestOrder_UpdateOrder_OK() {
@@ -788,8 +723,8 @@ func (s *orderTestSuite) TestOrder_UpdateOrder_OK() {
 		Data:        createOrder,
 		OrderID:     int64(orderID),
 	}
-	access := authentication.Auth{Id: userID}
-	resp := handlerFunc.Handle(data, access)
+	principal := &models.Principal{ID: int64(userID)}
+	resp := handlerFunc.Handle(data, principal)
 
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
@@ -802,8 +737,6 @@ func (s *orderTestSuite) TestOrder_UpdateOrder_OK() {
 		t.Fatal(err)
 	}
 	require.Equal(t, orderToReturn.ID, int(*responseOrder.ID))
-
-	s.orderRepository.AssertExpectations(t)
 }
 
 func containsOrder(t *testing.T, list []*ent.Order, order *models.Order) bool {

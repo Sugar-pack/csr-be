@@ -45,7 +45,7 @@ func NewEquipment(logger *zap.Logger) *Equipment {
 }
 
 func (c Equipment) PostEquipmentFunc(eqRepo domain.EquipmentRepository, eqStatusNameRepo domain.EquipmentStatusNameRepository) equipment.CreateNewEquipmentHandlerFunc {
-	return func(s equipment.CreateNewEquipmentParams, access interface{}) middleware.Responder {
+	return func(s equipment.CreateNewEquipmentParams, _ *models.Principal) middleware.Responder {
 		ctx := s.HTTPRequest.Context()
 		status, err := eqStatusNameRepo.GetByName(ctx, "available")
 		if err != nil {
@@ -71,7 +71,7 @@ func (c Equipment) PostEquipmentFunc(eqRepo domain.EquipmentRepository, eqStatus
 }
 
 func (c Equipment) GetEquipmentFunc(repository domain.EquipmentRepository) equipment.GetEquipmentHandlerFunc {
-	return func(s equipment.GetEquipmentParams, access interface{}) middleware.Responder {
+	return func(s equipment.GetEquipmentParams, _ *models.Principal) middleware.Responder {
 		ctx := s.HTTPRequest.Context()
 		eq, err := repository.EquipmentByID(ctx, int(s.EquipmentID))
 		if err != nil {
@@ -90,7 +90,7 @@ func (c Equipment) GetEquipmentFunc(repository domain.EquipmentRepository) equip
 }
 
 func (c Equipment) ArchiveEquipmentFunc(repository domain.EquipmentRepository) equipment.ArchiveEquipmentHandlerFunc {
-	return func(s equipment.ArchiveEquipmentParams, _ interface{}) middleware.Responder {
+	return func(s equipment.ArchiveEquipmentParams, _ *models.Principal) middleware.Responder {
 		ctx := s.HTTPRequest.Context()
 		err := repository.ArchiveEquipment(ctx, int(s.EquipmentID))
 		if err != nil {
@@ -107,7 +107,7 @@ func (c Equipment) ArchiveEquipmentFunc(repository domain.EquipmentRepository) e
 }
 
 func (c Equipment) DeleteEquipmentFunc(repository domain.EquipmentRepository) equipment.DeleteEquipmentHandlerFunc {
-	return func(s equipment.DeleteEquipmentParams, access interface{}) middleware.Responder {
+	return func(s equipment.DeleteEquipmentParams, _ *models.Principal) middleware.Responder {
 		ctx := s.HTTPRequest.Context()
 		eq, err := repository.EquipmentByID(ctx, int(s.EquipmentID))
 		if err != nil {
@@ -134,7 +134,7 @@ func (c Equipment) DeleteEquipmentFunc(repository domain.EquipmentRepository) eq
 }
 
 func (c Equipment) ListEquipmentFunc(repository domain.EquipmentRepository) equipment.GetAllEquipmentHandlerFunc {
-	return func(s equipment.GetAllEquipmentParams, access interface{}) middleware.Responder {
+	return func(s equipment.GetAllEquipmentParams, _ *models.Principal) middleware.Responder {
 		ctx := s.HTTPRequest.Context()
 		limit := utils.GetValueByPointerOrDefaultValue(s.Limit, math.MaxInt)
 		offset := utils.GetValueByPointerOrDefaultValue(s.Offset, 0)
@@ -174,7 +174,7 @@ func (c Equipment) ListEquipmentFunc(repository domain.EquipmentRepository) equi
 }
 
 func (c Equipment) EditEquipmentFunc(repository domain.EquipmentRepository) equipment.EditEquipmentHandlerFunc {
-	return func(s equipment.EditEquipmentParams, access interface{}) middleware.Responder {
+	return func(s equipment.EditEquipmentParams, _ *models.Principal) middleware.Responder {
 		ctx := s.HTTPRequest.Context()
 		eq, err := repository.UpdateEquipmentByID(ctx, int(s.EquipmentID), s.EditEquipment)
 		if err != nil {
@@ -194,7 +194,7 @@ func (c Equipment) EditEquipmentFunc(repository domain.EquipmentRepository) equi
 }
 
 func (c Equipment) FindEquipmentFunc(repository domain.EquipmentRepository) equipment.FindEquipmentHandlerFunc {
-	return func(s equipment.FindEquipmentParams, access interface{}) middleware.Responder {
+	return func(s equipment.FindEquipmentParams, _ *models.Principal) middleware.Responder {
 		ctx := s.HTTPRequest.Context()
 		limit := utils.GetValueByPointerOrDefaultValue(s.Limit, math.MaxInt)
 		offset := utils.GetValueByPointerOrDefaultValue(s.Offset, 0)

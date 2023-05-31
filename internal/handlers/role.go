@@ -31,7 +31,7 @@ func NewRole(logger *zap.Logger) *Role {
 }
 
 func (r Role) GetRolesFunc(repository domain.RoleRepository) roles.GetRolesHandlerFunc {
-	return func(s roles.GetRolesParams, access interface{}) middleware.Responder {
+	return func(s roles.GetRolesParams, _ *models.Principal) middleware.Responder {
 		ctx := s.HTTPRequest.Context()
 		e, err := repository.GetRoles(ctx)
 		if err != nil {

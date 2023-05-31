@@ -10,7 +10,6 @@ import (
 	"github.com/go-openapi/strfmt"
 	"go.uber.org/zap"
 
-	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/authentication"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/ent"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/ent/order"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/swagger/models"
@@ -175,23 +174,15 @@ func mapOrdersToResponse(entOrders []*ent.Order, log *zap.Logger) ([]*models.Ord
 }
 
 func (o Order) ListOrderFunc(repository domain.OrderRepository) orders.GetAllOrdersHandlerFunc {
-	return func(p orders.GetAllOrdersParams, access interface{}) middleware.Responder {
+	return func(p orders.GetAllOrdersParams, principal *models.Principal) middleware.Responder {
 		ctx := p.HTTPRequest.Context()
+		userID := int(principal.ID)
 		limit := utils.GetValueByPointerOrDefaultValue(p.Limit, math.MaxInt)
 		offset := utils.GetValueByPointerOrDefaultValue(p.Offset, 0)
 		orderBy := utils.GetValueByPointerOrDefaultValue(p.OrderBy, utils.AscOrder)
 		orderColumn := utils.GetValueByPointerOrDefaultValue(p.OrderColumn, order.FieldID)
 
-		ownerId, err := authentication.GetUserId(access)
-		if err != nil {
-			o.logger.Error("get user id failed", zap.Error(err))
-			status := http.StatusInternalServerError
-			if errors.Is(err, repositories.OrderAccessDenied{}) {
-				status = http.StatusForbidden
-			}
-			return orders.NewGetAllOrdersDefault(status).WithPayload(buildErrorPayload(err))
-		}
-		total, err := repository.OrdersTotal(ctx, ownerId)
+		total, err := repository.OrdersTotal(ctx, userID)
 		if err != nil {
 			o.logger.Error("Error while getting total of all user's orders", zap.Error(err))
 			return equipment.NewGetAllEquipmentDefault(http.StatusInternalServerError).
@@ -200,7 +191,7 @@ func (o Order) ListOrderFunc(repository domain.OrderRepository) orders.GetAllOrd
 
 		var items []*ent.Order
 		if total > 0 {
-			items, err = repository.List(ctx, ownerId, int(limit), int(offset), orderBy, orderColumn)
+			items, err = repository.List(ctx, userID, int(limit), int(offset), orderBy, orderColumn)
 			if err != nil {
 				o.logger.Error("list items failed", zap.Error(err))
 				return orders.NewGetAllOrdersDefault(http.StatusInternalServerError).WithPayload(buildErrorPayload(err))
@@ -226,13 +217,9 @@ func (o Order) CreateOrderFunc(
 	eqStatusRepo domain.EquipmentStatusRepository,
 	equipmentRepo domain.EquipmentRepository,
 ) orders.CreateOrderHandlerFunc {
-	return func(p orders.CreateOrderParams, access interface{}) middleware.Responder {
+	return func(p orders.CreateOrderParams, principal *models.Principal) middleware.Responder {
 		ctx := p.HTTPRequest.Context()
-		ownerId, err := authentication.GetUserId(access)
-		if err != nil {
-			o.logger.Error("get user ID failed", zap.Error(err))
-			return orders.NewCreateOrderDefault(http.StatusInternalServerError).WithPayload(buildErrorPayload(err))
-		}
+		userID := int(principal.ID)
 
 		id := int(*p.Data.EquipmentID)
 		isEquipmentAvailable, err := eqStatusRepo.HasStatusByPeriod(ctx, domain.EquipmentStatusAvailable, id,
@@ -248,7 +235,7 @@ func (o Order) CreateOrderFunc(
 				WithPayload(buildStringPayload("requested equipment is not free"))
 		}
 
-		order, err := orderRepo.Create(ctx, p.Data, ownerId, []int{id})
+		order, err := orderRepo.Create(ctx, p.Data, userID, []int{id})
 		if err != nil {
 			o.logger.Error("map orders to response failed", zap.Error(err))
 			return orders.NewCreateOrderDefault(http.StatusInternalServerError).WithPayload(buildErrorPayload(err))
@@ -280,17 +267,12 @@ func (o Order) CreateOrderFunc(
 }
 
 func (o Order) UpdateOrderFunc(repository domain.OrderRepository) orders.UpdateOrderHandlerFunc {
-	return func(p orders.UpdateOrderParams, access interface{}) middleware.Responder {
+	return func(p orders.UpdateOrderParams, principal *models.Principal) middleware.Responder {
 		ctx := p.HTTPRequest.Context()
-
-		ownerId, err := authentication.GetUserId(access)
-		if err != nil {
-			o.logger.Error("get userID failed", zap.Error(err))
-			return orders.NewGetAllOrdersDefault(http.StatusInternalServerError).WithPayload(buildErrorPayload(err))
-		}
-
+		userID := int(principal.ID)
 		orderID := int(p.OrderID)
-		order, err := repository.Update(ctx, orderID, p.Data, ownerId)
+
+		order, err := repository.Update(ctx, orderID, p.Data, userID)
 		if err != nil {
 			o.logger.Error("update order failed", zap.Error(err))
 			return orders.NewUpdateOrderDefault(http.StatusInternalServerError).WithPayload(buildErrorPayload(err))

@@ -27,7 +27,7 @@ clean/swagger:
 	cd ./internal/generated/swagger/restapi/operations && find . ! -name 'gethandlers.go' -type f -exec rm -fv {} +
 
 generate/swagger: clean/swagger
-	swagger generate server -f ./swagger.yaml -s ./internal/generated/swagger/restapi -m ./internal/generated/swagger/models --exclude-main
+	swagger generate server -P models.Principal -f ./swagger.yaml -s ./internal/generated/swagger/restapi -m ./internal/generated/swagger/models --exclude-main
 	swagger generate client -c ./internal/generated/swagger/client -f ./swagger.yaml -m ./internal/generated/swagger/models
 
 clean/ent:
