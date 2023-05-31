@@ -83,9 +83,7 @@ func (s *SubcategoryTestSuite) TestSubcategory_CreateSubcategory_RepoErr() {
 		Return(nil, err)
 
 	handlerFunc := s.handler.CreateNewSubcategoryFunc(s.repository)
-	access := "dummy access"
-	resp := handlerFunc.Handle(data, access)
-
+	resp := handlerFunc.Handle(data, nil)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
@@ -117,8 +115,7 @@ func (s *SubcategoryTestSuite) TestSubcategory_CreateSubcategory_OK() {
 		Return(subcategoryToReturn, nil)
 
 	handlerFunc := s.handler.CreateNewSubcategoryFunc(s.repository)
-	access := "dummy access"
-	resp := handlerFunc.Handle(data, access)
+	resp := handlerFunc.Handle(data, nil)
 
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
@@ -154,8 +151,7 @@ func (s *SubcategoryTestSuite) TestSubcategory_GetAllSubcategories_RepoErr() {
 		Return(nil, err)
 
 	handlerFunc := s.handler.ListSubcategoriesFunc(s.repository)
-	access := "dummy access"
-	resp := handlerFunc.Handle(data, access)
+	resp := handlerFunc.Handle(data, nil)
 
 	returnedSubcategory := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
@@ -180,8 +176,7 @@ func (s *SubcategoryTestSuite) TestSubcategory_GetAllSubcategories_NotFound() {
 		Return([]*ent.Subcategory{}, nil)
 
 	handlerFunc := s.handler.ListSubcategoriesFunc(s.repository)
-	access := "dummy access"
-	resp := handlerFunc.Handle(data, access)
+	resp := handlerFunc.Handle(data, nil)
 
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
@@ -218,8 +213,7 @@ func (s *SubcategoryTestSuite) TestSubcategory_GetAllSubcategories_OK() {
 		Return(subcategoriesToReturn, nil)
 
 	handlerFunc := s.handler.ListSubcategoriesFunc(s.repository)
-	access := "dummy access"
-	resp := handlerFunc.Handle(data, access)
+	resp := handlerFunc.Handle(data, nil)
 
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
@@ -251,8 +245,7 @@ func (s *SubcategoryTestSuite) TestSubcategory_GetSubcategoryByID_RepoErr() {
 		Return(nil, err)
 
 	handlerFunc := s.handler.GetSubcategoryByIDFunc(s.repository)
-	access := "dummy access"
-	resp := handlerFunc.Handle(data, access)
+	resp := handlerFunc.Handle(data, nil)
 
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
@@ -277,8 +270,7 @@ func (s *SubcategoryTestSuite) TestSubcategory_GetSubcategoryByID_OK() {
 		Return(subcatToReturn, nil)
 
 	handlerFunc := s.handler.GetSubcategoryByIDFunc(s.repository)
-	access := "dummy access"
-	resp := handlerFunc.Handle(data, access)
+	resp := handlerFunc.Handle(data, nil)
 
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
@@ -312,8 +304,7 @@ func (s *SubcategoryTestSuite) TestSubcategory_DeleteSubcategory_RepoErr() {
 	s.repository.On("DeleteSubcategoryByID", ctx, int(data.SubcategoryID)).Return(err)
 
 	handlerFunc := s.handler.DeleteSubcategoryFunc(s.repository)
-	access := "dummy access"
-	resp := handlerFunc.Handle(data, access)
+	resp := handlerFunc.Handle(data, nil)
 
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
@@ -336,8 +327,7 @@ func (s *SubcategoryTestSuite) TestSubcategory_DeleteSubcategory_OK() {
 	s.repository.On("DeleteSubcategoryByID", ctx, int(data.SubcategoryID)).Return(nil)
 
 	handlerFunc := s.handler.DeleteSubcategoryFunc(s.repository)
-	access := "dummy access"
-	resp := handlerFunc.Handle(data, access)
+	resp := handlerFunc.Handle(data, nil)
 
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
@@ -367,8 +357,7 @@ func (s *SubcategoryTestSuite) TestSubcategory_UpdateSubcategory_RepoErr() {
 		Return(nil, err)
 
 	handlerFunc := s.handler.UpdateSubcategoryFunc(s.repository)
-	access := "dummy access"
-	resp := handlerFunc.Handle(data, access)
+	resp := handlerFunc.Handle(data, nil)
 
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
@@ -399,8 +388,7 @@ func (s *SubcategoryTestSuite) TestSubcategory_UpdateSubcategory_OK() {
 		Return(updatedSubcategory, nil)
 
 	handlerFunc := s.handler.UpdateSubcategoryFunc(s.repository)
-	access := "dummy access"
-	resp := handlerFunc.Handle(data, access)
+	resp := handlerFunc.Handle(data, nil)
 
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()

@@ -35,7 +35,7 @@ func NewPetSize(logger *zap.Logger) *PetSize {
 }
 
 func (ps PetSize) CreatePetSizeFunc(repository domain.PetSizeRepository) pet_size.CreateNewPetSizeHandlerFunc {
-	return func(p pet_size.CreateNewPetSizeParams, access interface{}) middleware.Responder {
+	return func(p pet_size.CreateNewPetSizeParams, _ *models.Principal) middleware.Responder {
 		ctx := p.HTTPRequest.Context()
 		allPetSizes, err := repository.GetAll(ctx)
 		if err != nil {
@@ -89,7 +89,7 @@ func (ps PetSize) CreatePetSizeFunc(repository domain.PetSizeRepository) pet_siz
 }
 
 func (ps PetSize) GetAllPetSizeFunc(repository domain.PetSizeRepository) pet_size.GetAllPetSizeHandlerFunc {
-	return func(p pet_size.GetAllPetSizeParams, access interface{}) middleware.Responder {
+	return func(p pet_size.GetAllPetSizeParams, _ *models.Principal) middleware.Responder {
 		ctx := p.HTTPRequest.Context()
 		petSizes, err := repository.GetAll(ctx)
 		if err != nil {
@@ -124,7 +124,7 @@ func (ps PetSize) GetAllPetSizeFunc(repository domain.PetSizeRepository) pet_siz
 }
 
 func (ps PetSize) GetPetSizeByID(repo domain.PetSizeRepository) pet_size.GetPetSizeHandlerFunc {
-	return func(p pet_size.GetPetSizeParams, access interface{}) middleware.Responder {
+	return func(p pet_size.GetPetSizeParams, _ *models.Principal) middleware.Responder {
 		ctx := p.HTTPRequest.Context()
 		petSize, err := repo.GetByID(ctx, int(p.PetSizeID))
 		if err != nil {
@@ -150,7 +150,7 @@ func (ps PetSize) GetPetSizeByID(repo domain.PetSizeRepository) pet_size.GetPetS
 }
 
 func (ps PetSize) DeletePetSizeByID(repo domain.PetSizeRepository) pet_size.DeletePetSizeHandlerFunc {
-	return func(p pet_size.DeletePetSizeParams, access interface{}) middleware.Responder {
+	return func(p pet_size.DeletePetSizeParams, _ *models.Principal) middleware.Responder {
 		ctx := p.HTTPRequest.Context()
 		err := repo.Delete(ctx, int(p.PetSizeID))
 		if err != nil {
@@ -167,7 +167,7 @@ func (ps PetSize) DeletePetSizeByID(repo domain.PetSizeRepository) pet_size.Dele
 }
 
 func (ps PetSize) UpdatePetSizeByID(repo domain.PetSizeRepository) pet_size.EditPetSizeHandlerFunc {
-	return func(p pet_size.EditPetSizeParams, access interface{}) middleware.Responder {
+	return func(p pet_size.EditPetSizeParams, _ *models.Principal) middleware.Responder {
 		ctx := p.HTTPRequest.Context()
 		petSize, err := repo.Update(ctx, int(p.PetSizeID), p.EditPetSize)
 		if err != nil {

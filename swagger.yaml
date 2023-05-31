@@ -1904,6 +1904,19 @@ paths:
           schema:
             $ref: "#/definitions/Error"
 definitions:
+  principal:
+    type: object
+    properties:
+      ID:
+        type: integer
+      role:
+        type: string
+      is_registration_confirmed:
+        type: boolean
+      is_personal_data_confirmed:
+        type: boolean
+      is_readonly:
+        type: boolean
   SwaggerError: # Do not delete it. It is used for generating error responses.
     type: object
     required:

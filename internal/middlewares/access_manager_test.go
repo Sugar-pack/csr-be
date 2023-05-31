@@ -8,7 +8,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/authentication"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/swagger/models"
 )
 
 const (
@@ -178,19 +178,29 @@ func Test_blackListAccessManager(t *testing.T) {
 					Path: data.path,
 				},
 			}
-			auth := authentication.Auth{
-				Role: &authentication.Role{
-					Slug: data.role.Slug,
-				},
-				IsRegistrationConfirmed: true,
+			principal := &models.Principal{
+				Role:                    data.role.Slug,
+				IsRegistrationConfirmed: data.role.IsRegistrationConfirmed,
 			}
-			err := manager.Authorize(request, auth)
+			err := manager.Authorize(request, principal)
 			if data.hasAccess {
 				assert.NoError(t, err)
 			} else {
 				assert.Error(t, err)
 			}
 		}
+	})
 
+	t.Run("Authorize_InvalidPrincipal", func(t *testing.T) {
+		request := &http.Request{
+			Method: http.MethodGet,
+			URL: &url.URL{
+				Path: endpointConversion(simpleValidPath),
+			},
+		}
+		invalidPrincipal := "invalid_principal"
+
+		err := manager.Authorize(request, invalidPrincipal)
+		assert.Error(t, err)
 	})
 }

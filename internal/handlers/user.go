@@ -10,7 +10,6 @@ import (
 	"go.uber.org/zap"
 	"golang.org/x/crypto/bcrypt"
 
-	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/authentication"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/ent"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/ent/user"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/swagger/models"
@@ -140,16 +139,11 @@ func (c User) Refresh(manager domain.TokenManager) users.RefreshHandlerFunc {
 }
 
 func (c User) GetUserFunc(repository domain.UserRepository) users.GetCurrentUserHandlerFunc {
-	return func(p users.GetCurrentUserParams, access interface{}) middleware.Responder {
+	return func(p users.GetCurrentUserParams, principal *models.Principal) middleware.Responder {
 		ctx := p.HTTPRequest.Context()
-		userId, err := authentication.GetUserId(access)
-		if err != nil {
-			c.logger.Error("get user id error", zap.Error(err))
-			return users.NewGetCurrentUserDefault(http.StatusUnauthorized).WithPayload(&models.Error{Data: &models.ErrorData{
-				Message: "get user id error",
-			}})
-		}
-		userByID, err := repository.GetUserByID(ctx, userId)
+		userID := int(principal.ID)
+
+		user, err := repository.GetUserByID(ctx, userID)
 		if err != nil {
 			c.logger.Error("get user by id error", zap.Error(err))
 			return users.NewGetCurrentUserDefault(http.StatusInternalServerError).WithPayload(&models.Error{Data: &models.ErrorData{
@@ -157,7 +151,7 @@ func (c User) GetUserFunc(repository domain.UserRepository) users.GetCurrentUser
 			}})
 		}
 
-		result, err := mapUserInfo(userByID)
+		result, err := mapUserInfo(user)
 		if err != nil {
 			c.logger.Error("map user error", zap.Error(err))
 			return users.NewGetCurrentUserDefault(http.StatusInternalServerError).
@@ -169,15 +163,11 @@ func (c User) GetUserFunc(repository domain.UserRepository) users.GetCurrentUser
 }
 
 func (c User) PatchUserFunc(repository domain.UserRepository) users.PatchUserHandlerFunc {
-	return func(p users.PatchUserParams, access interface{}) middleware.Responder {
+	return func(p users.PatchUserParams, principal *models.Principal) middleware.Responder {
 		ctx := p.HTTPRequest.Context()
-		userId, err := authentication.GetUserId(access)
-		if err != nil {
-			c.logger.Error("get user id error", zap.Error(err))
-			return users.NewPatchUserDefault(http.StatusUnauthorized).
-				WithPayload(buildStringPayload("get user id error"))
-		}
-		err = repository.UpdateUserByID(ctx, userId, p.UserPatch)
+		userID := int(principal.ID)
+
+		err := repository.UpdateUserByID(ctx, userID, p.UserPatch)
 		if err != nil {
 			c.logger.Error("get user by id error", zap.Error(err))
 			return users.NewPatchUserDefault(http.StatusInternalServerError).
@@ -188,7 +178,7 @@ func (c User) PatchUserFunc(repository domain.UserRepository) users.PatchUserHan
 }
 
 func (c User) AssignRoleToUserFunc(repository domain.UserRepository) users.AssignRoleToUserHandlerFunc {
-	return func(p users.AssignRoleToUserParams, access interface{}) middleware.Responder {
+	return func(p users.AssignRoleToUserParams, principal *models.Principal) middleware.Responder {
 
 		ctx := p.HTTPRequest.Context()
 		userId := int(p.UserID)
@@ -209,7 +199,7 @@ func (c User) AssignRoleToUserFunc(repository domain.UserRepository) users.Assig
 }
 
 func (c User) GetUserById(repository domain.UserRepository) users.GetUserHandlerFunc {
-	return func(p users.GetUserParams, access interface{}) middleware.Responder {
+	return func(p users.GetUserParams, principal *models.Principal) middleware.Responder {
 		ctx := p.HTTPRequest.Context()
 		id := int(p.UserID)
 		foundUser, err := repository.GetUserByID(ctx, id)
@@ -230,7 +220,7 @@ func (c User) GetUserById(repository domain.UserRepository) users.GetUserHandler
 }
 
 func (c User) GetUsersList(repository domain.UserRepository) users.GetAllUsersHandlerFunc {
-	return func(p users.GetAllUsersParams, access interface{}) middleware.Responder {
+	return func(p users.GetAllUsersParams, _ *models.Principal) middleware.Responder {
 		ctx := p.HTTPRequest.Context()
 		limit := utils.GetValueByPointerOrDefaultValue(p.Limit, math.MaxInt)
 		offset := utils.GetValueByPointerOrDefaultValue(p.Offset, 0)
@@ -273,16 +263,11 @@ func (c User) GetUsersList(repository domain.UserRepository) users.GetAllUsersHa
 }
 
 func (c User) DeleteCurrentUser(repository domain.UserRepository) users.DeleteCurrentUserHandlerFunc {
-	return func(p users.DeleteCurrentUserParams, access interface{}) middleware.Responder {
+	return func(p users.DeleteCurrentUserParams, principal *models.Principal) middleware.Responder {
 		ctx := p.HTTPRequest.Context()
-		userId, err := authentication.GetUserId(access)
-		if err != nil {
-			c.logger.Error("get user id error during deleting user", zap.Error(err))
-			return users.NewDeleteCurrentUserDefault(http.StatusUnauthorized).
-				WithPayload(buildStringPayload("get user id error during deleting user"))
-		}
+		userID := int(principal.ID)
 
-		err = repository.Delete(ctx, userId)
+		err := repository.Delete(ctx, userID)
 		if err != nil {
 			c.logger.Error("error during deleting user", zap.Error(err))
 			return users.NewDeleteCurrentUserDefault(http.StatusInternalServerError).
@@ -294,16 +279,10 @@ func (c User) DeleteCurrentUser(repository domain.UserRepository) users.DeleteCu
 }
 
 func (c User) DeleteUser(repo domain.UserRepository) users.DeleteUserHandlerFunc {
-	return func(p users.DeleteUserParams, access interface{}) middleware.Responder {
-		deletedByUserID, err := authentication.GetUserId(access)
-		if err != nil {
-			c.logger.Error("getting authorization", zap.Error(err))
-			return users.NewDeleteUserDefault(http.StatusUnauthorized).
-				WithPayload(buildStringPayload("Can't get authorization"))
-		}
-
+	return func(p users.DeleteUserParams, principal *models.Principal) middleware.Responder {
 		ctx := p.HTTPRequest.Context()
 		userID := int(p.UserID)
+		deletedByUserID := int(principal.ID)
 
 		user, err := repo.GetUserByID(ctx, userID)
 		if err != nil {
@@ -338,22 +317,18 @@ func (c User) DeleteUser(repo domain.UserRepository) users.DeleteUserHandlerFunc
 }
 
 func (c User) ChangePassword(repo domain.UserRepository) users.ChangePasswordHandlerFunc {
-	return func(p users.ChangePasswordParams, access interface{}) middleware.Responder {
+	return func(p users.ChangePasswordParams, principal *models.Principal) middleware.Responder {
 		ctx := p.HTTPRequest.Context()
-		userID, err := authentication.GetUserId(access)
-		if err != nil {
-			c.logger.Error("error while getting authorization", zap.Error(err))
-			return users.NewChangePasswordUnauthorized().
-				WithPayload(buildStringPayload("Can't get authorization"))
-		}
+		userID := int(principal.ID)
+
 		if p.PasswordPatch == nil {
-			c.logger.Error("password patch is nil", zap.Any("access", access))
+			c.logger.Error("password patch is nil", zap.Any("principal", principal))
 			return users.NewChangePasswordDefault(http.StatusBadRequest).
 				WithPayload(buildStringPayload("Password patch is nil"))
 		}
 		//TODO: add validation for password or ask frontend to do it
 		if p.PasswordPatch.OldPassword == p.PasswordPatch.NewPassword {
-			c.logger.Error("old and new passwords are the same", zap.Any("access", access))
+			c.logger.Error("old and new passwords are the same", zap.Any("principal", principal))
 			return users.NewChangePasswordDefault(http.StatusBadRequest).
 				WithPayload(buildStringPayload("Old and new passwords are the same"))
 		}
@@ -379,15 +354,9 @@ func (c User) ChangePassword(repo domain.UserRepository) users.ChangePasswordHan
 }
 
 func (c User) UpdateReadonlyAccess(repo domain.UserRepository) users.UpdateReadonlyAccessHandlerFunc {
-	return func(p users.UpdateReadonlyAccessParams, access interface{}) middleware.Responder {
-		currentUserID, err := authentication.GetUserId(access)
-		if err != nil {
-			c.logger.Error("error while getting authorization", zap.Error(err))
-			return users.NewUpdateReadonlyAccessUnauthorized().
-				WithPayload(buildStringPayload("Can't get authorization"))
-		}
-
+	return func(p users.UpdateReadonlyAccessParams, principal *models.Principal) middleware.Responder {
 		ctx := p.HTTPRequest.Context()
+		currentUserID := int(principal.ID)
 		userID := int(p.UserID)
 		isReadonly := p.Body.IsReadonly
 
@@ -413,17 +382,12 @@ func (c User) UpdateReadonlyAccess(repo domain.UserRepository) users.UpdateReado
 
 func (c User) ChangeEmail(repo domain.UserRepository,
 	changeEmailService domain.ChangeEmailService) users.ChangeEmailHandlerFunc {
-	return func(p users.ChangeEmailParams, access interface{}) middleware.Responder {
+	return func(p users.ChangeEmailParams, principal *models.Principal) middleware.Responder {
 		ctx := p.HTTPRequest.Context()
-		userID, err := authentication.GetUserId(access)
-		if err != nil {
-			c.logger.Error("error while getting authorization during changing email", zap.Error(err))
-			return users.NewChangeEmailUnauthorized().
-				WithPayload(buildStringPayload("Can't get authorization"))
-		}
+		userID := int(principal.ID)
 
 		if p.EmailPatch == nil {
-			c.logger.Error("email patch is nil", zap.Any("access", access))
+			c.logger.Error("email patch is nil", zap.Any("principal", principal))
 			return users.NewChangeEmailDefault(http.StatusBadRequest).
 				WithPayload(buildStringPayload("Email patch is nil"))
 		}

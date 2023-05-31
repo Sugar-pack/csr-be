@@ -4,10 +4,11 @@ import (
 	"fmt"
 
 	"github.com/go-openapi/loads"
+	"github.com/go-openapi/runtime"
+	"github.com/go-openapi/runtime/security"
 	"github.com/rs/cors"
 	"go.uber.org/zap"
 
-	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/authentication"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/config"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/docs"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/email"
@@ -18,6 +19,7 @@ import (
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/middlewares"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/overdue"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/repositories"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/roles"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/services"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/utils"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/pkg/domain"
@@ -60,7 +62,11 @@ func SetupAPI(entClient *ent.Client, lg *zap.Logger, conf *config.AppConfig) (*r
 	// swagger api
 	api := operations.NewBeAPI(swaggerSpec)
 	api.UseSwaggerUI()
-	api.BearerAuth = middlewares.BearerAuthenticateFunc(jwtSecret, lg)
+
+	api.APIKeyAuthenticator = func(name string, in string, _ security.TokenAuthentication) runtime.Authenticator {
+		return security.APIKeyAuthCtx(name, in, middlewares.APIKeyAuthFunc(jwtSecret, userRepository))
+	}
+
 	handlers.SetActiveAreaHandler(lg, api)
 	handlers.SetEquipmentHandler(lg, api)
 	handlers.SetCategoryHandler(lg, api)
@@ -130,33 +136,33 @@ func loadSwaggerSpec() (*loads.Document, error) {
 }
 
 func AccessManager(api *operations.BeAPI, bindings []config.RoleEndpointBinding) (middlewares.AccessManager, error) {
-	roles := []middlewares.Role{
+	acceptableRoles := []middlewares.Role{
 		{
-			Slug: authentication.AdminSlug,
+			Slug: roles.Admin,
 		},
 		{
-			Slug: authentication.UserSlug,
+			Slug: roles.User,
 		},
 		{
-			Slug: authentication.OperatorSlug,
+			Slug: roles.Operator,
 		},
 		{
-			Slug: authentication.ManagerSlug,
+			Slug: roles.Manager,
 		},
 	}
 	fullAccessRoles := []middlewares.Role{
 		{
-			Slug: authentication.AdminSlug,
+			Slug: roles.Admin,
 		},
 		{
-			Slug: authentication.ManagerSlug,
+			Slug: roles.Manager,
 		},
 		{
-			Slug: authentication.OperatorSlug,
+			Slug: roles.Operator,
 		},
 	}
 
-	manager, err := middlewares.NewAccessManager(roles, fullAccessRoles, api.GetExistingEndpoints())
+	manager, err := middlewares.NewAccessManager(acceptableRoles, fullAccessRoles, api.GetExistingEndpoints())
 	if err != nil {
 		return nil, err
 	}

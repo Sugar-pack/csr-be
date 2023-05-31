@@ -85,8 +85,8 @@ func (s *CategoryTestSuite) TestCategory_CreateCategory_RepoErr() {
 	s.repository.On("CreateCategory", ctx, newCategory).Return(nil, err)
 
 	handlerFunc := s.handler.CreateNewCategoryFunc(s.repository)
-	access := "dummy access"
-	resp := handlerFunc.Handle(data, access)
+
+	resp := handlerFunc.Handle(data, nil)
 
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
@@ -125,8 +125,8 @@ func (s *CategoryTestSuite) TestCategory_CreateCategory_OK() {
 	s.repository.On("CreateCategory", ctx, newCategory).Return(categoryToReturn, nil)
 
 	handlerFunc := s.handler.CreateNewCategoryFunc(s.repository)
-	access := "dummy access"
-	resp := handlerFunc.Handle(data, access)
+
+	resp := handlerFunc.Handle(data, nil)
 
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
@@ -160,8 +160,8 @@ func (s *CategoryTestSuite) TestCategory_GetAllCategories_RepoErr() {
 	s.repository.On("AllCategoriesTotal", ctx).Return(0, err)
 
 	handlerFunc := s.handler.GetAllCategoriesFunc(s.repository)
-	access := "dummy access"
-	resp := handlerFunc.Handle(data, access)
+
+	resp := handlerFunc.Handle(data, nil)
 
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
@@ -183,8 +183,8 @@ func (s *CategoryTestSuite) TestCategory_GetAllCategories_NotFound() {
 	s.repository.On("AllCategoriesTotal", ctx).Return(0, nil)
 
 	handlerFunc := s.handler.GetAllCategoriesFunc(s.repository)
-	access := "dummy access"
-	resp := handlerFunc.Handle(data, access)
+
+	resp := handlerFunc.Handle(data, nil)
 
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
@@ -228,8 +228,8 @@ func (s *CategoryTestSuite) TestCategory_GetAllCategories_EmptyParams() {
 	s.repository.On("AllCategories", ctx, filter).Return(categoriesToReturn, nil)
 
 	handlerFunc := s.handler.GetAllCategoriesFunc(s.repository)
-	access := "dummy access"
-	resp := handlerFunc.Handle(data, access)
+
+	resp := handlerFunc.Handle(data, nil)
 
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
@@ -282,8 +282,8 @@ func (s *CategoryTestSuite) TestCategory_GetAllCategories_LimitGreaterThanTotal(
 	s.repository.On("AllCategories", ctx, filter).Return(categoriesToReturn, nil)
 
 	handlerFunc := s.handler.GetAllCategoriesFunc(s.repository)
-	access := "dummy access"
-	resp := handlerFunc.Handle(data, access)
+
+	resp := handlerFunc.Handle(data, nil)
 
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
@@ -337,8 +337,8 @@ func (s *CategoryTestSuite) TestCategory_GetAllCategories_LimitLessThanTotal() {
 	s.repository.On("AllCategories", ctx, filter).Return(categoriesToReturn[:limit], nil)
 
 	handlerFunc := s.handler.GetAllCategoriesFunc(s.repository)
-	access := "dummy access"
-	resp := handlerFunc.Handle(data, access)
+
+	resp := handlerFunc.Handle(data, nil)
 
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
@@ -393,8 +393,8 @@ func (s *CategoryTestSuite) TestCategory_GetAllCategories_SecondPage() {
 	s.repository.On("AllCategories", ctx, filter).Return(categoriesToReturn[offset:], nil)
 
 	handlerFunc := s.handler.GetAllCategoriesFunc(s.repository)
-	access := "dummy access"
-	resp := handlerFunc.Handle(data, access)
+
+	resp := handlerFunc.Handle(data, nil)
 
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
@@ -450,8 +450,8 @@ func (s *CategoryTestSuite) TestCategory_GetAllCategories_SeveralPages() {
 	s.repository.On("AllCategories", ctx, filter).Return(categoriesToReturn[:limit], nil)
 
 	handlerFunc := s.handler.GetAllCategoriesFunc(s.repository)
-	access := "dummy access"
-	resp := handlerFunc.Handle(data, access)
+
+	resp := handlerFunc.Handle(data, nil)
 
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
@@ -479,7 +479,7 @@ func (s *CategoryTestSuite) TestCategory_GetAllCategories_SeveralPages() {
 	s.repository.On("AllCategoriesTotal", ctx).Return(len(categoriesToReturn), nil)
 	s.repository.On("AllCategories", ctx, filter).Return(categoriesToReturn[offset:], nil)
 
-	resp = handlerFunc.Handle(data, access)
+	resp = handlerFunc.Handle(data, nil)
 	responseRecorder = httptest.NewRecorder()
 	producer = runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
@@ -513,8 +513,8 @@ func (s *CategoryTestSuite) TestCategory_GetCategoryByID_RepoErr() {
 	s.repository.On("CategoryByID", ctx, int(data.CategoryID)).Return(nil, err)
 
 	handlerFunc := s.handler.GetCategoryByIDFunc(s.repository)
-	access := "dummy access"
-	resp := handlerFunc.Handle(data, access)
+
+	resp := handlerFunc.Handle(data, nil)
 
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
@@ -544,8 +544,8 @@ func (s *CategoryTestSuite) TestCategory_GetCategoryByID_OK() {
 	s.repository.On("CategoryByID", ctx, int(data.CategoryID)).Return(categoryToReturn, nil)
 
 	handlerFunc := s.handler.GetCategoryByIDFunc(s.repository)
-	access := "dummy access"
-	resp := handlerFunc.Handle(data, access)
+
+	resp := handlerFunc.Handle(data, nil)
 
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
@@ -580,8 +580,8 @@ func (s *CategoryTestSuite) TestCategory_DeleteCategory_RepoErr() {
 	s.repository.On("DeleteCategoryByID", ctx, int(data.CategoryID)).Return(err)
 
 	handlerFunc := s.handler.DeleteCategoryFunc(s.repository)
-	access := "dummy access"
-	resp := handlerFunc.Handle(data, access)
+
+	resp := handlerFunc.Handle(data, nil)
 
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
@@ -604,8 +604,8 @@ func (s *CategoryTestSuite) TestCategory_DeleteCategory_OK() {
 	s.repository.On("DeleteCategoryByID", ctx, int(data.CategoryID)).Return(nil)
 
 	handlerFunc := s.handler.DeleteCategoryFunc(s.repository)
-	access := "dummy access"
-	resp := handlerFunc.Handle(data, access)
+
+	resp := handlerFunc.Handle(data, nil)
 
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
@@ -634,8 +634,8 @@ func (s *CategoryTestSuite) TestCategory_UpdateCategory_RepoErr() {
 	s.repository.On("UpdateCategory", ctx, int(data.CategoryID), update).Return(nil, err)
 
 	handlerFunc := s.handler.UpdateCategoryFunc(s.repository)
-	access := "dummy access"
-	resp := handlerFunc.Handle(data, access)
+
+	resp := handlerFunc.Handle(data, nil)
 
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
@@ -675,8 +675,8 @@ func (s *CategoryTestSuite) TestCategory_UpdateCategory_OK() {
 	s.repository.On("UpdateCategory", ctx, int(data.CategoryID), update).Return(updatedCategory, nil)
 
 	handlerFunc := s.handler.UpdateCategoryFunc(s.repository)
-	access := "dummy access"
-	resp := handlerFunc.Handle(data, access)
+
+	resp := handlerFunc.Handle(data, nil)
 
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()

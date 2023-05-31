@@ -84,9 +84,8 @@ func (s *EquipmentPeriodsTestSuite) Test_Get_EquipmentUnavailableDatesFunc_OK() 
 	handlerFunc := s.handler.GetEquipmentUnavailableDatesFunc(
 		s.equipmentStatusRepository,
 	)
-	access := "dummy access"
 
-	resp := handlerFunc(data, access)
+	resp := handlerFunc(data, nil)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)

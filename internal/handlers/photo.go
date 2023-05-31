@@ -40,7 +40,7 @@ func NewPhoto(logger *zap.Logger) *Photo {
 }
 
 func (p Photo) CreateNewPhotoFunc(repository domain.PhotoRepository) photos.CreateNewPhotoHandlerFunc {
-	return func(s photos.CreateNewPhotoParams, access interface{}) middleware.Responder {
+	return func(s photos.CreateNewPhotoParams, _ *models.Principal) middleware.Responder {
 		ctx := s.HTTPRequest.Context()
 		// read input file
 		fileBytes, err := io.ReadAll(s.File)
@@ -98,7 +98,7 @@ func (p Photo) CreateNewPhotoFunc(repository domain.PhotoRepository) photos.Crea
 }
 
 func (p Photo) GetPhotoFunc(repository domain.PhotoRepository) photos.GetPhotoHandlerFunc {
-	return func(s photos.GetPhotoParams, access interface{}) middleware.Responder {
+	return func(s photos.GetPhotoParams, _ *models.Principal) middleware.Responder {
 		return middleware.ResponderFunc(func(w http.ResponseWriter, _ runtime.Producer) {
 			ctx := s.HTTPRequest.Context()
 			photo, err := repository.PhotoByID(ctx, s.PhotoID)
@@ -120,7 +120,7 @@ func (p Photo) GetPhotoFunc(repository domain.PhotoRepository) photos.GetPhotoHa
 }
 
 func (p Photo) DownloadPhotoFunc(repository domain.PhotoRepository) photos.DownloadPhotoHandlerFunc {
-	return func(s photos.DownloadPhotoParams, access interface{}) middleware.Responder {
+	return func(s photos.DownloadPhotoParams, _ *models.Principal) middleware.Responder {
 		return middleware.ResponderFunc(func(w http.ResponseWriter, _ runtime.Producer) {
 
 			ctx := s.HTTPRequest.Context()
@@ -152,7 +152,7 @@ func (p Photo) DownloadPhotoFunc(repository domain.PhotoRepository) photos.Downl
 }
 
 func (p Photo) DeletePhotoFunc(repository domain.PhotoRepository) photos.DeletePhotoHandlerFunc {
-	return func(s photos.DeletePhotoParams, access interface{}) middleware.Responder {
+	return func(s photos.DeletePhotoParams, _ *models.Principal) middleware.Responder {
 		ctx := s.HTTPRequest.Context()
 		photo, err := repository.PhotoByID(ctx, s.PhotoID)
 		if err != nil {

@@ -104,8 +104,7 @@ func (s *PetKindTestSuite) TestPetKind_CreatePetKindFunc_OK() {
 
 	s.petKindRepo.On("Create", ctx, petKindToAdd).Return(petKindToReturn, nil)
 
-	access := "dummy access"
-	resp := handlerFunc(data, access)
+	resp := handlerFunc(data, nil)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
@@ -140,8 +139,7 @@ func (s *PetKindTestSuite) TestPetKind_CreatePetKindFunc_ErrFromRepo() {
 
 	s.petKindRepo.On("Create", ctx, petKindToAdd).Return(nil, err)
 
-	access := "dummy access"
-	resp := handlerFunc.Handle(data, access)
+	resp := handlerFunc.Handle(data, nil)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
@@ -167,8 +165,7 @@ func (s *PetKindTestSuite) TestPetKind_CreatePetKindFunc_ErrRespNil() {
 
 	s.petKindRepo.On("Create", ctx, petKindToAdd).Return(toReturn, nil)
 
-	access := "dummy access"
-	resp := handlerFunc.Handle(data, access)
+	resp := handlerFunc.Handle(data, nil)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
@@ -190,8 +187,7 @@ func (s *PetKindTestSuite) TestPetKind_GetAllPetKindFunc_OK() {
 	}
 	s.petKindRepo.On("GetAll", ctx).Return(petKindToReturn, nil)
 
-	access := "dummy access"
-	resp := handlerFunc.Handle(data, access)
+	resp := handlerFunc.Handle(data, nil)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
@@ -222,8 +218,7 @@ func (s *PetKindTestSuite) TestPetKind_GetAllPetKindFunc_ErrFromRepo() {
 
 	s.petKindRepo.On("GetAll", ctx).Return(nil, err)
 
-	access := "dummy access"
-	resp := handlerFunc(data, access)
+	resp := handlerFunc(data, nil)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
@@ -242,8 +237,7 @@ func (s *PetKindTestSuite) TestPetKind_GetAllPetKindFunc_ErrRespNil() {
 	}
 	s.petKindRepo.On("GetAll", ctx).Return(toReturn, nil)
 
-	access := "dummy access"
-	resp := handlerFunc(data, access)
+	resp := handlerFunc(data, nil)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
@@ -265,8 +259,7 @@ func (s *PetKindTestSuite) TestPetKind_DeletePetKindFunc_Err() {
 
 	s.petKindRepo.On("Delete", ctx, idToDelete).Return(err)
 
-	access := "dummy access"
-	resp := handlerFunc(data, access)
+	resp := handlerFunc(data, nil)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
@@ -286,8 +279,7 @@ func (s *PetKindTestSuite) TestPetKind_DeletePetKindFunc_OK() {
 	}
 	s.petKindRepo.On("Delete", ctx, idToDelete).Return(nil)
 
-	access := "dummy access"
-	resp := handlerFunc(data, access)
+	resp := handlerFunc(data, nil)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
@@ -308,8 +300,7 @@ func (s *PetKindTestSuite) TestPetKind_GetPetKindByIDFunc_OK() {
 	petKindToReturn := ValidPetKind(t)
 	s.petKindRepo.On("GetByID", ctx, idToGet).Return(petKindToReturn, nil)
 
-	access := "dummy access"
-	resp := handlerFunc(data, access)
+	resp := handlerFunc(data, nil)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
@@ -340,8 +331,7 @@ func (s *PetKindTestSuite) TestPetKind_GetPetKindByIDFunc_ErrFromRepo() {
 	err := errors.New("test")
 	s.petKindRepo.On("GetByID", ctx, idToGet).Return(nil, err)
 
-	access := "dummy access"
-	resp := handlerFunc(data, access)
+	resp := handlerFunc(data, nil)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
@@ -361,8 +351,7 @@ func (s *PetKindTestSuite) TestPetKind_GetPetKindByIDFunc_ErrRespNil() {
 	}
 	s.petKindRepo.On("GetByID", ctx, idToGet).Return(nil, nil)
 
-	access := "dummy access"
-	resp := handlerFunc(data, access)
+	resp := handlerFunc(data, nil)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
@@ -389,8 +378,7 @@ func (s *PetKindTestSuite) TestPetKind_EditPetKindFunc_OK() {
 
 	s.petKindRepo.On("Update", ctx, id, petKindToUpdate).Return(petKindToReturn, nil)
 
-	access := "dummy access"
-	resp := handlerFunc(data, access)
+	resp := handlerFunc(data, nil)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
@@ -423,8 +411,7 @@ func (s *PetKindTestSuite) TestPetKind_EditPetKindFunc_ErrRespNil() {
 	}
 	s.petKindRepo.On("Update", ctx, id, petKindToUpdate).Return(nil, nil)
 
-	access := "dummy access"
-	resp := handlerFunc(data, access)
+	resp := handlerFunc(data, nil)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
@@ -449,8 +436,7 @@ func (s *PetKindTestSuite) TestPetKind_EditPetKindFunc_ErrFromRepo() {
 	err := errors.New("test")
 	s.petKindRepo.On("Update", ctx, id, petKindToUpdate).Return(nil, err)
 
-	access := "dummy access"
-	resp := handlerFunc(data, access)
+	resp := handlerFunc(data, nil)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)

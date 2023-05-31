@@ -37,7 +37,7 @@ func (c EquipmentPeriods) GetEquipmentUnavailableDatesFunc(
 ) eqPeriods.GetUnavailabilityPeriodsByEquipmentIDHandlerFunc {
 	return func(
 		s eqPeriods.GetUnavailabilityPeriodsByEquipmentIDParams,
-		access interface{},
+		_ *models.Principal,
 	) middleware.Responder {
 		ctx := s.HTTPRequest.Context()
 		id := int(s.EquipmentID)

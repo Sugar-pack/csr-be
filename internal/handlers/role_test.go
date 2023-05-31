@@ -66,8 +66,8 @@ func (s *RoleTestSuite) TestRole_GetRoles_RepoErr() {
 	s.repository.On("GetRoles", ctx).Return(nil, err)
 
 	handlerFunc := s.handler.GetRolesFunc(s.repository)
-	access := "dummy access"
-	resp := handlerFunc.Handle(data, access)
+
+	resp := handlerFunc.Handle(data, nil)
 
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
@@ -92,8 +92,8 @@ func (s *RoleTestSuite) TestRole_GetRoles_OK() {
 	s.repository.On("GetRoles", ctx).Return(rolesToReturn, nil)
 
 	handlerFunc := s.handler.GetRolesFunc(s.repository)
-	access := "dummy access"
-	resp := handlerFunc.Handle(data, access)
+
+	resp := handlerFunc.Handle(data, nil)
 
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()

@@ -35,7 +35,7 @@ func NewEquipmentStatusName(logger *zap.Logger) *EquipmentStatusName {
 }
 
 func (c EquipmentStatusName) PostEquipmentStatusNameFunc(repository domain.EquipmentStatusNameRepository) eqStatusName.PostEquipmentStatusNameHandlerFunc {
-	return func(s eqStatusName.PostEquipmentStatusNameParams, access interface{}) middleware.Responder {
+	return func(s eqStatusName.PostEquipmentStatusNameParams, _ *models.Principal) middleware.Responder {
 		ctx := s.HTTPRequest.Context()
 		name := s.Name.Name
 		createdStatus, err := repository.Create(ctx, *name)
@@ -52,7 +52,7 @@ func (c EquipmentStatusName) PostEquipmentStatusNameFunc(repository domain.Equip
 }
 
 func (c EquipmentStatusName) ListEquipmentStatusNamesFunc(repository domain.EquipmentStatusNameRepository) eqStatusName.ListEquipmentStatusNamesHandlerFunc {
-	return func(s eqStatusName.ListEquipmentStatusNamesParams, access interface{}) middleware.Responder {
+	return func(s eqStatusName.ListEquipmentStatusNamesParams, _ *models.Principal) middleware.Responder {
 		ctx := s.HTTPRequest.Context()
 		statuses, err := repository.GetAll(ctx)
 		if err != nil {
@@ -69,7 +69,7 @@ func (c EquipmentStatusName) ListEquipmentStatusNamesFunc(repository domain.Equi
 }
 
 func (c EquipmentStatusName) GetEquipmentStatusNameFunc(repository domain.EquipmentStatusNameRepository) eqStatusName.GetEquipmentStatusNameHandlerFunc {
-	return func(s eqStatusName.GetEquipmentStatusNameParams, access interface{}) middleware.Responder {
+	return func(s eqStatusName.GetEquipmentStatusNameParams, _ *models.Principal) middleware.Responder {
 		ctx := s.HTTPRequest.Context()
 		foundStatus, err := repository.Get(ctx, int(s.StatusID))
 		if err != nil {
@@ -85,7 +85,7 @@ func (c EquipmentStatusName) GetEquipmentStatusNameFunc(repository domain.Equipm
 }
 
 func (c EquipmentStatusName) DeleteEquipmentStatusNameFunc(repository domain.EquipmentStatusNameRepository) eqStatusName.DeleteEquipmentStatusNameHandlerFunc {
-	return func(s eqStatusName.DeleteEquipmentStatusNameParams, access interface{}) middleware.Responder {
+	return func(s eqStatusName.DeleteEquipmentStatusNameParams, _ *models.Principal) middleware.Responder {
 		ctx := s.HTTPRequest.Context()
 		deletedStatus, err := repository.Delete(ctx, int(s.StatusID))
 		if err != nil {

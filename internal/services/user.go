@@ -15,8 +15,10 @@ import (
 )
 
 const (
-	accessExpireTime  = 60 * time.Minute
-	refreshExpireTime = 148 * time.Hour
+	accessExpireTime   = 60 * time.Minute
+	refreshExpireTime  = 148 * time.Hour
+	UserIDTokenClaim   = "id"
+	ExpireAtTokenClaim = "exp"
 )
 
 type tokenManager struct {
@@ -140,38 +142,12 @@ func (s *tokenManager) GenerateTokens(ctx context.Context, login, password strin
 	return accessToken, refreshToken, false, nil
 }
 
-const (
-	IdClaim                    = "id"
-	LoginClaim                 = "login"
-	RoleClaim                  = "role"
-	SlugClaim                  = "slug"
-	RegistrationConfirmedClaim = "registrationConfirmed"
-	PersonalDataConfirmedClaim = "personalDataConfirmed"
-	GroupClaim                 = "group"
-	ExpireClaim                = "exp"
-	ReadonlyAccessClaim        = "readonlyAccess"
-)
-
 func generateJWT(user *ent.User, jwtSecretKey string) (string, error) {
 	token := jwt.New(jwt.SigningMethodHS256)
+
 	claims := token.Claims.(jwt.MapClaims)
-
-	claims[IdClaim] = user.ID
-	claims[LoginClaim] = user.Login
-
-	err := fillRoleClaims(claims, user)
-	if err != nil {
-		return "", err
-	}
-	err = fillGroupClaims(claims, user)
-	if err != nil {
-		return "", err
-	}
-
-	claims[RegistrationConfirmedClaim] = user.IsRegistrationConfirmed
-	claims[PersonalDataConfirmedClaim] = isPersonalDataConfirmed(user)
-	claims[ReadonlyAccessClaim] = user.IsReadonly
-	claims[ExpireClaim] = time.Now().Add(accessExpireTime).Unix()
+	claims[UserIDTokenClaim] = user.ID
+	claims[ExpireAtTokenClaim] = time.Now().Add(accessExpireTime).Unix()
 
 	tokenString, err := token.SignedString([]byte(jwtSecretKey))
 	if err != nil {
@@ -180,48 +156,12 @@ func generateJWT(user *ent.User, jwtSecretKey string) (string, error) {
 	return tokenString, nil
 }
 
-func isPersonalDataConfirmed(user *ent.User) bool {
-	return user != nil &&
-		user.Name != "" &&
-		user.Surname != nil && *user.Surname != "" &&
-		user.Phone != nil && *user.Phone != ""
-}
-
-func fillRoleClaims(claims jwt.MapClaims, user *ent.User) error {
-	claims[RoleClaim] = nil
-	role := user.Edges.Role
-	if role == nil {
-		return errors.New("role is nil")
-	}
-	claims[RoleClaim] = map[string]interface{}{
-		IdClaim:   role.ID,
-		SlugClaim: role.Slug,
-	}
-	return nil
-}
-
-func fillGroupClaims(claims jwt.MapClaims, user *ent.User) error {
-	claims[GroupClaim] = nil
-	groups := user.Edges.Groups
-	if groups == nil {
-		return errors.New("groups is nil")
-	}
-	groupsIDs := make([]int, len(groups))
-	for i, group := range groups {
-		groupsIDs[i] = group.ID
-	}
-	claims[GroupClaim] = map[string]interface{}{
-		"ids": groupsIDs,
-	}
-	return nil
-}
-
 func generateRefreshToken(user *ent.User, jwtSecretKey string) (string, error) {
 	refreshToken := jwt.New(jwt.SigningMethodHS256)
 	claims := refreshToken.Claims.(jwt.MapClaims)
 
-	claims["id"] = user.ID
-	claims[ExpireClaim] = time.Now().Add(refreshExpireTime).Unix()
+	claims[UserIDTokenClaim] = user.ID
+	claims[ExpireAtTokenClaim] = time.Now().Add(refreshExpireTime).Unix()
 
 	signedToken, err := refreshToken.SignedString([]byte(jwtSecretKey))
 	if err != nil {

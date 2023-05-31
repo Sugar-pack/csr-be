@@ -4,7 +4,6 @@ import (
 	"net/http"
 	"time"
 
-	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/authentication"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/swagger/models"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/swagger/restapi/operations"
 	eqStatus "git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/swagger/restapi/operations/equipment_status"
@@ -47,17 +46,12 @@ func NewEquipmentStatus(logger *zap.Logger) *EquipmentStatus {
 
 func (c EquipmentStatus) GetEquipmentStatusCheckDatesFunc(
 	eqStatusRepository domain.EquipmentStatusRepository) eqStatus.CheckEquipmentStatusHandlerFunc {
-	return func(s eqStatus.CheckEquipmentStatusParams, access interface{}) middleware.Responder {
+	return func(s eqStatus.CheckEquipmentStatusParams, principal *models.Principal) middleware.Responder {
 		ctx := s.HTTPRequest.Context()
 		newStatus := s.Name.StatusName
 
-		errResponder := c.checkEquipmentStatusAccessRights(access)
-		if errResponder != nil {
-			return errResponder
-		}
-
 		if !newStatusIsUnavailable(*newStatus) {
-			c.logger.Error("Wrong new equipment status, status should be only 'not available'", zap.Any("access", access))
+			c.logger.Error("Wrong new equipment status, status should be only 'not available'", zap.Any("principal", principal))
 			return orders.NewAddNewOrderStatusDefault(http.StatusForbidden).
 				WithPayload(&models.Error{Data: &models.ErrorData{Message: "Wrong new equipment status, status should be only 'not available'"}})
 		}
@@ -117,17 +111,12 @@ func (c EquipmentStatus) GetEquipmentStatusCheckDatesFunc(
 func (c EquipmentStatus) PutEquipmentStatusInRepairFunc(
 	eqStatusRepository domain.EquipmentStatusRepository,
 	orderStatusRepo domain.OrderStatusRepository) eqStatus.UpdateEquipmentStatusOnUnavailableHandlerFunc {
-	return func(s eqStatus.UpdateEquipmentStatusOnUnavailableParams, access interface{}) middleware.Responder {
+	return func(s eqStatus.UpdateEquipmentStatusOnUnavailableParams, principal *models.Principal) middleware.Responder {
 		ctx := s.HTTPRequest.Context()
 		newStatus := s.Name.StatusName
 
-		errResponder := c.checkEquipmentStatusAccessRights(access)
-		if errResponder != nil {
-			return errResponder
-		}
-
 		if !newStatusIsUnavailable(*newStatus) {
-			c.logger.Error("Wrong new equipment status, status should be only 'not available'", zap.Any("access", access))
+			c.logger.Error("Wrong new equipment status, status should be only 'not available'", zap.Any("principal", principal))
 			return orders.NewAddNewOrderStatusDefault(http.StatusForbidden).
 				WithPayload(&models.Error{Data: &models.ErrorData{Message: "Wrong new equipment status, status should be only 'not available'"}})
 		}
@@ -206,17 +195,12 @@ func (c EquipmentStatus) PutEquipmentStatusInRepairFunc(
 func (c EquipmentStatus) DeleteEquipmentStatusFromRepairFunc(
 	eqStatusRepository domain.EquipmentStatusRepository,
 	orderStatusRepo domain.OrderStatusRepository) eqStatus.UpdateEquipmentStatusOnAvailableHandlerFunc {
-	return func(s eqStatus.UpdateEquipmentStatusOnAvailableParams, access interface{}) middleware.Responder {
+	return func(s eqStatus.UpdateEquipmentStatusOnAvailableParams, principal *models.Principal) middleware.Responder {
 		ctx := s.HTTPRequest.Context()
 		newStatus := s.Name.StatusName
 
-		errResponder := c.checkEquipmentStatusAccessRights(access)
-		if errResponder != nil {
-			return errResponder
-		}
-
 		if !newStatusIsAvailable(*newStatus) {
-			c.logger.Error("Wrong new equipment status, status should be only 'available'", zap.Any("access", access))
+			c.logger.Error("Wrong new equipment status, status should be only 'available'", zap.Any("principal", principal))
 			return orders.NewAddNewOrderStatusDefault(http.StatusForbidden).
 				WithPayload(&models.Error{Data: &models.ErrorData{Message: "Wrong new equipment status, status should be only 'not available'"}})
 		}
@@ -265,13 +249,8 @@ func (c EquipmentStatus) DeleteEquipmentStatusFromRepairFunc(
 func (c EquipmentStatus) PatchEquipmentStatusEditDatesFunc(
 	eqStatusRepository domain.EquipmentStatusRepository,
 ) eqStatus.UpdateRepairedEquipmentStatusDatesHandlerFunc {
-	return func(s eqStatus.UpdateRepairedEquipmentStatusDatesParams, access interface{}) middleware.Responder {
+	return func(s eqStatus.UpdateRepairedEquipmentStatusDatesParams, principal *models.Principal) middleware.Responder {
 		ctx := s.HTTPRequest.Context()
-
-		errResponder := c.checkEquipmentStatusAccessRights(access)
-		if errResponder != nil {
-			return errResponder
-		}
 
 		existEqStatus, err := eqStatusRepository.GetEquipmentStatusByID(
 			ctx, int(s.EquipmentstatusID))
@@ -316,37 +295,6 @@ func (c EquipmentStatus) PatchEquipmentStatusEditDatesFunc(
 				},
 			})
 	}
-}
-
-func (c EquipmentStatus) checkEquipmentStatusAccessRights(
-	access interface{}) middleware.Responder {
-	ok, err := equipmentStatusAccessRights(access)
-	if err != nil {
-		c.logger.Error("Error while getting authorization", zap.Error(err))
-		return orders.NewAddNewOrderStatusDefault(http.StatusInternalServerError).
-			WithPayload(&models.Error{Data: &models.ErrorData{Message: "Can't get authorization"}})
-
-	}
-
-	if !ok {
-		c.logger.Error("User have no right to change equipment status",
-			zap.Any("access", access))
-		return orders.NewAddNewOrderStatusDefault(http.StatusForbidden).
-			WithPayload(&models.Error{Data: &models.ErrorData{
-				Message: "You don't have rights to change equipment status"}},
-			)
-	}
-
-	return nil
-}
-
-func equipmentStatusAccessRights(access interface{}) (bool, error) {
-	isManager, err := authentication.IsManager(access)
-	if err != nil {
-		return false, err
-	}
-
-	return isManager, nil
 }
 
 func newStatusIsUnavailable(status string) bool {
