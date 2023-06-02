@@ -21,12 +21,12 @@ type AppConfig struct {
 }
 
 type DB struct {
-	Host          string `validate:"required"`
-	Port          string
-	User          string `validate:"required"`
-	Password      string
-	Database      string `validate:"required"`
-	EntMigrations bool
+	Host     string `validate:"required"`
+	Port     string
+	User     string `validate:"required"`
+	Password string
+	Database string `validate:"required"`
+	ShowSql  bool
 }
 
 func (db DB) GetConnectionString() string {
