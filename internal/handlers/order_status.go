@@ -241,6 +241,7 @@ func (h *OrderStatus) AddNewStatusToOrder(
 			}
 
 			if currentOrderStatus.Edges.OrderStatusName.Status == domain.OrderStatusApproved ||
+				currentOrderStatus.Edges.OrderStatusName.Status == domain.OrderStatusBlocked ||
 				currentOrderStatus.Edges.OrderStatusName.Status == domain.OrderStatusPrepared &&
 					userRole == roles.Manager {
 				if len(orderEquipmentStatuses) != 0 {
@@ -437,7 +438,7 @@ func canRoleChangeStatus(role string, currentStatus *ent.OrderStatus, newStatus 
 	case domain.OrderStatusApproved:
 		switch newStatus {
 		case domain.OrderStatusPrepared:
-			return role == roles.Operator
+			return role == roles.Operator || role == roles.Admin
 		case domain.OrderStatusClosed:
 			return role == roles.Manager
 		}
@@ -454,6 +455,12 @@ func canRoleChangeStatus(role string, currentStatus *ent.OrderStatus, newStatus 
 		if newStatus == domain.OrderStatusClosed {
 			return role == roles.Manager || role == roles.Operator
 		}
+
+	case domain.OrderStatusBlocked:
+		if newStatus == domain.OrderStatusClosed {
+			return role == roles.Manager
+		}
+
 	}
 
 	return role == roles.Admin ||

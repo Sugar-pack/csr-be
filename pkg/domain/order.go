@@ -8,4 +8,5 @@ var (
 	OrderStatusClosed     = "closed"
 	OrderStatusPrepared   = "prepared"
 	OrderStatusOverdue    = "overdue"
+	OrderStatusBlocked    = "blocked"
 )

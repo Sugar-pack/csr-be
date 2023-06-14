@@ -54,7 +54,7 @@ coverage:
 	go tool cover -func=coverage.out
 
 coverage_total:
-	go tool cover -func=coverage.out | tail -n1 | awk '{print $3}' | grep -Eo '\d+(.\d+)?'
+	go tool cover -func=coverage.out | tail -n1 | awk '{print $3}' | grep -Eo '[0-9]+(\.[0-9]+)?'
 
 int-test:
 	DOCKER_BUILDKIT=1  docker build -f ./int-test-infra/Dockerfile.int-test --network host --no-cache -t csr:int-test --target run .

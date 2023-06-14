@@ -4,12 +4,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/roles"
 	"math"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 	"time"
+
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/roles"
 
 	"github.com/go-openapi/loads"
 	"github.com/go-openapi/runtime"
@@ -370,6 +371,7 @@ func (s *OrderStatusTestSuite) TestOrderStatus_AddNewStatusToOrder_NoAccess() {
 		domain.OrderStatusClosed,
 		domain.OrderStatusRejected,
 		domain.OrderStatusInProgress,
+		domain.OrderStatusBlocked,
 	}
 
 	for _, testStatus := range testsStatus {
@@ -457,6 +459,10 @@ func (s *OrderStatusTestSuite) TestOrderStatus_AddNewStatusToOrder_InReviewToApp
 		Data:        data,
 	}
 	existingOrder := orderWithEdges(t, 1)
+
+	existingOrder.Edges.OrderStatus[0].Edges.OrderStatusName = &ent.OrderStatusName{
+		Status: domain.OrderStatusInReview,
+	}
 	s.orderStatusRepository.On("GetOrderCurrentStatus", ctx, int(*data.OrderID)).
 		Return(existingOrder.Edges.OrderStatus[0], nil)
 	s.equipmentStatusRepository.On("GetEquipmentsStatusesByOrder", ctx,
@@ -656,6 +662,57 @@ func (s *OrderStatusTestSuite) TestOrderStatus_AddNewStatusToOrder_OperatorAppro
 	}
 	existingOrder := orderWithEdges(t, 1)
 	existingOrder.Edges.EquipmentStatus[0].Edges.EquipmentStatusName.Name = domain.EquipmentStatusBooked
+
+	existingOrder.Edges.OrderStatus[0].Edges.OrderStatusName = &ent.OrderStatusName{
+		Status: domain.OrderStatusApproved,
+	}
+
+	s.orderStatusRepository.On("GetOrderCurrentStatus", ctx, int(*data.OrderID)).
+		Return(existingOrder.Edges.OrderStatus[0], nil)
+	s.equipmentStatusRepository.On("GetEquipmentsStatusesByOrder", ctx,
+		existingOrder.ID).
+		Return(existingOrder.Edges.EquipmentStatus, nil)
+	s.orderStatusRepository.On("UpdateStatus", ctx, userID, *data).Return(nil)
+
+	resp := handlerFunc(params, principal)
+	responseRecorder := httptest.NewRecorder()
+	producer := runtime.JSONProducer()
+	resp.WriteResponse(responseRecorder, producer)
+	require.Equal(t, http.StatusOK, responseRecorder.Code)
+	s.orderStatusRepository.AssertExpectations(t)
+}
+
+func (s *OrderStatusTestSuite) TestOrderStatus_AddNewStatusToOrder_AdminApprovedToPreparedOK() {
+	t := s.T()
+	request := http.Request{}
+	ctx := request.Context()
+	userID := 1
+	principal := &models.Principal{
+		ID:   int64(userID),
+		Role: roles.Admin,
+	}
+	handlerFunc := s.orderStatus.AddNewStatusToOrder(s.orderStatusRepository, s.equipmentStatusRepository)
+	statusComment := "test comment"
+	now := strfmt.DateTime(time.Now())
+	orderID := int64(1)
+	statusID := domain.OrderStatusPrepared
+	data := &models.NewOrderStatus{
+		Comment:   &statusComment,
+		CreatedAt: &now,
+		OrderID:   &orderID,
+		Status:    &statusID,
+	}
+	params := orders.AddNewOrderStatusParams{
+		HTTPRequest: &request,
+		Data:        data,
+	}
+	existingOrder := orderWithEdges(t, 1)
+	existingOrder.Edges.EquipmentStatus[0].Edges.EquipmentStatusName.Name = domain.EquipmentStatusBooked
+
+	existingOrder.Edges.OrderStatus[0].Edges.OrderStatusName = &ent.OrderStatusName{
+		Status: domain.OrderStatusApproved,
+	}
+
 	s.orderStatusRepository.On("GetOrderCurrentStatus", ctx, int(*data.OrderID)).
 		Return(existingOrder.Edges.OrderStatus[0], nil)
 	s.equipmentStatusRepository.On("GetEquipmentsStatusesByOrder", ctx,
@@ -702,6 +759,63 @@ func (s *OrderStatusTestSuite) TestOrderStatus_AddNewStatusToOrder_ManagerInProg
 	existingOrder.Edges.OrderStatus[0].ID = 3
 	existingOrder.Edges.OrderStatus[0].Edges.OrderStatusName = &ent.OrderStatusName{
 		Status: domain.OrderStatusInProgress,
+	}
+
+	s.orderStatusRepository.On("GetOrderCurrentStatus", ctx, int(*data.OrderID)).
+		Return(existingOrder.Edges.OrderStatus[0], nil)
+	s.equipmentStatusRepository.On("GetEquipmentsStatusesByOrder", ctx,
+		existingOrder.ID).
+		Return(existingOrder.Edges.EquipmentStatus, nil)
+	s.orderStatusRepository.On("UpdateStatus", ctx, userID, *data).Return(nil)
+
+	addOneDayToCurrentEndDate := strfmt.DateTime(
+		existingOrder.Edges.EquipmentStatus[0].EndDate.AddDate(0, 0, 1),
+	)
+	s.equipmentStatusRepository.On("Update", ctx, &models.EquipmentStatus{
+		StatusName: &domain.EquipmentStatusAvailable,
+		ID:         &equipmentID,
+		EndDate:    &addOneDayToCurrentEndDate,
+	}).Return(nil, nil)
+
+	resp := handlerFunc(params, principal)
+	responseRecorder := httptest.NewRecorder()
+	producer := runtime.JSONProducer()
+	resp.WriteResponse(responseRecorder, producer)
+	require.Equal(t, http.StatusOK, responseRecorder.Code)
+	s.orderStatusRepository.AssertExpectations(t)
+}
+
+func (s *OrderStatusTestSuite) TestOrderStatus_AddNewStatusToOrder_ManagerBlockedToClosedOK() {
+	t := s.T()
+	request := http.Request{}
+	ctx := request.Context()
+	userID := 1
+	principal := &models.Principal{
+		ID:   int64(userID),
+		Role: roles.Manager,
+	}
+	handlerFunc := s.orderStatus.AddNewStatusToOrder(s.orderStatusRepository, s.equipmentStatusRepository)
+	statusComment := "test comment"
+	now := strfmt.DateTime(time.Now())
+	orderID := int64(1)
+	statusID := domain.OrderStatusClosed
+	data := &models.NewOrderStatus{
+		Comment:   &statusComment,
+		CreatedAt: &now,
+		OrderID:   &orderID,
+		Status:    &statusID,
+	}
+	params := orders.AddNewOrderStatusParams{
+		HTTPRequest: &request,
+		Data:        data,
+	}
+	existingOrder := orderWithEdges(t, 1)
+	equipmentID := int64(existingOrder.Edges.Equipments[0].ID)
+
+	existingOrder.Edges.EquipmentStatus[0].EndDate = time.Time(now)
+	existingOrder.Edges.OrderStatus[0].ID = 8
+	existingOrder.Edges.OrderStatus[0].Edges.OrderStatusName = &ent.OrderStatusName{
+		Status: domain.OrderStatusBlocked,
 	}
 
 	s.orderStatusRepository.On("GetOrderCurrentStatus", ctx, int(*data.OrderID)).
