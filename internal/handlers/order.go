@@ -241,13 +241,13 @@ func (o Order) CreateOrderFunc(
 			return orders.NewCreateOrderDefault(http.StatusInternalServerError).WithPayload(buildErrorPayload(err))
 		}
 
-		endDate := time.Time(*p.Data.RentEnd).AddDate(0, 0, 1)
-		equipmentBookedEndDate := strfmt.DateTime(endDate)
+		equipmentBookedStartDate := strfmt.DateTime(time.Time(*p.Data.RentStart).AddDate(0, 0, -1))
+		equipmentBookedEndDate := strfmt.DateTime(time.Time(*p.Data.RentEnd).AddDate(0, 0, 1))
 		eqID := int64(id)
 		if _, err = eqStatusRepo.Create(ctx, &models.NewEquipmentStatus{
-			EndDate:     &equipmentBookedEndDate,
 			EquipmentID: &eqID,
-			StartDate:   p.Data.RentStart,
+			StartDate:   &equipmentBookedStartDate,
+			EndDate:     &equipmentBookedEndDate,
 			StatusName:  &domain.EquipmentStatusBooked,
 			OrderID:     int64(order.ID),
 		}); err != nil {

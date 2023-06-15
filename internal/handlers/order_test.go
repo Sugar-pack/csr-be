@@ -502,8 +502,12 @@ func (s *orderTestSuite) TestOrder_CreateOrder_MapErr() {
 	orderToReturn := orderWithNoEdges()
 	equipment := orderWithEdges(t, id).Edges.Equipments[0]
 	equipmentID := int64(equipment.ID)
+
 	endDate := time.Time(rentEnd).AddDate(0, 0, 1)
 	equipmentBookedEndDate := strfmt.DateTime(endDate)
+
+	startDate := time.Time(rentStart).AddDate(0, 0, -1)
+	equipmentBookedStartDate := strfmt.DateTime(startDate)
 
 	s.eqStatusRepository.On("HasStatusByPeriod", ctx, domain.EquipmentStatusAvailable, equipment.ID,
 		time.Time(rentStart), time.Time(rentEnd)).Return(true, nil)
@@ -512,7 +516,7 @@ func (s *orderTestSuite) TestOrder_CreateOrder_MapErr() {
 		EndDate:     &equipmentBookedEndDate,
 		EquipmentID: &equipmentID,
 		OrderID:     int64(orderToReturn.ID),
-		StartDate:   createOrder.RentStart,
+		StartDate:   &equipmentBookedStartDate,
 		StatusName:  &domain.EquipmentStatusBooked,
 	}).Return(nil, nil)
 
@@ -596,6 +600,9 @@ func (s *orderTestSuite) TestOrder_CreateOrder_OK() {
 	endDate := time.Time(rentEnd).AddDate(0, 0, 1)
 	equipmentBookedEndDate := strfmt.DateTime(endDate)
 
+	startDate := time.Time(rentStart).AddDate(0, 0, -1)
+	equipmentBookedStartDate := strfmt.DateTime(startDate)
+
 	s.eqStatusRepository.On("HasStatusByPeriod", ctx, domain.EquipmentStatusAvailable, equipment.ID,
 		time.Time(rentStart), time.Time(rentEnd)).Return(true, nil)
 	s.orderRepository.On("Create", ctx, createOrder, userID, []int{equipment.ID}).Return(orderToReturn, nil)
@@ -603,7 +610,7 @@ func (s *orderTestSuite) TestOrder_CreateOrder_OK() {
 		EndDate:     &equipmentBookedEndDate,
 		EquipmentID: &equipmentID,
 		OrderID:     int64(orderToReturn.ID),
-		StartDate:   createOrder.RentStart,
+		StartDate:   &equipmentBookedStartDate,
 		StatusName:  &domain.EquipmentStatusBooked,
 	}).Return(nil, nil)
 
