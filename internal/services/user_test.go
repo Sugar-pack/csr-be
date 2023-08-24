@@ -105,10 +105,10 @@ func (s *UserServiceTestSuite) TestUserService_GenerateAccessToken_DeletedUserEr
 		t.Fatal(err)
 	}
 	user := &ent.User{
-		ID:               1,
+		ID:        1,
 		IsDeleted: true,
-		Login:            login,
-		Password:         string(hashedPassword),
+		Login:     login,
+		Password:  string(hashedPassword),
 		Edges: ent.UserEdges{
 			Role: &ent.Role{
 				ID:   1,

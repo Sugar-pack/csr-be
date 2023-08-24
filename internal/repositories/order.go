@@ -2,10 +2,12 @@ package repositories
 
 import (
 	"context"
+	"database/sql/driver"
 	"errors"
 	"fmt"
 	"time"
 
+	"entgo.io/ent/dialect/sql"
 	"github.com/go-openapi/strfmt"
 
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/ent"
@@ -69,11 +71,11 @@ func getQuantity(quantity int, maxQuantity int) (*int, error) {
 	return &quantity, nil
 }
 
-func (r *orderRepository) List(ctx context.Context, ownerId, limit, offset int, orderBy, orderColumn string) ([]*ent.Order, error) {
-	if !utils.IsValueInList(orderColumn, fieldsToOrderOrders) {
+func (r *orderRepository) List(ctx context.Context, ownerId int, filter domain.OrderFilter) ([]*ent.Order, error) {
+	if !utils.IsValueInList(filter.OrderColumn, fieldsToOrderOrders) {
 		return nil, errors.New("wrong column to order by")
 	}
-	orderFunc, err := utils.GetOrderFunc(orderBy, orderColumn)
+	orderFunc, err := utils.GetOrderFunc(filter.OrderBy, filter.OrderColumn)
 	if err != nil {
 		return nil, err
 	}
@@ -81,21 +83,17 @@ func (r *orderRepository) List(ctx context.Context, ownerId, limit, offset int, 
 	if err != nil {
 		return nil, err
 	}
-	items, err := tx.Order.Query().
+	query := tx.Order.Query().
 		Where(order.HasUsersWith(user.ID(ownerId))).
-		Order(orderFunc).
-		Limit(limit).Offset(offset).
-		WithUsers().WithOrderStatus().
-		All(ctx)
+		Order(orderFunc).Limit(filter.Limit).Offset(filter.Offset)
+		
+	query = r.applyListFilters(query, filter)
+
+	items, err := query.WithUsers().WithOrderStatus().WithEquipments().All(ctx)
 	if err != nil {
 		return nil, err
 	}
-	for i, item := range items { // get order status relations
-		items[i], err = r.getFullOrder(ctx, item)
-		if err != nil {
-			return nil, err
-		}
-	}
+
 	return items, err
 }
 
@@ -155,6 +153,11 @@ func (r *orderRepository) Create(ctx context.Context, data *models.OrderCreateRe
 		isFirst = true
 	}
 
+	statusName, err := tx.OrderStatusName.Query().Where(orderstatusname.StatusEQ(domain.OrderStatusInReview)).Only(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	createdOrder, err := tx.Order.
 		Create().
 		SetDescription(data.Description).
@@ -164,6 +167,7 @@ func (r *orderRepository) Create(ctx context.Context, data *models.OrderCreateRe
 		SetUsers(owner).
 		SetUsersID(owner.ID).
 		SetIsFirst(isFirst).
+		SetCurrentStatus(statusName).
 		AddEquipments(equipments...).
 		AddEquipmentIDs(equipmentIDs...).
 		Save(ctx)
@@ -171,10 +175,6 @@ func (r *orderRepository) Create(ctx context.Context, data *models.OrderCreateRe
 		return nil, err
 	}
 
-	statusName, err := tx.OrderStatusName.Query().Where(orderstatusname.StatusEQ(domain.OrderStatusInReview)).Only(ctx)
-	if err != nil {
-		return nil, err
-	}
 	_, err = tx.OrderStatus.Create().
 		SetComment("Order created").
 		SetCurrentDate(time.Now()).
@@ -256,6 +256,22 @@ func (r *orderRepository) Update(ctx context.Context, id int, data *models.Order
 	return r.getFullOrder(ctx, returnOrder)
 }
 
+func (r *orderRepository) applyListFilters(q *ent.OrderQuery, filter domain.OrderFilter) *ent.OrderQuery {
+	if filter.Status != nil && *filter.Status != domain.OrderStatusAll {
+		statuses, isAggregated := domain.OrderStatusAggregation[*filter.Status]
+		if !isAggregated {
+			statuses = []string{*filter.Status}
+		}
+		statusValues := make([]driver.Value, len(statuses))
+		for i, s := range statuses {
+			statusValues[i] = s
+		}
+		q = q.Where(order.HasCurrentStatusWith(func(s *sql.Selector) {
+			s.Where(sql.InValues(s.C(orderstatusname.FieldStatus), statusValues...))
+		}))
+	}
+	return q
+}
 func (r *orderRepository) getFullOrder(ctx context.Context, order *ent.Order) (*ent.Order, error) {
 	for i, orderStatus := range order.Edges.OrderStatus { // get order status relations
 		statusName, err := orderStatus.QueryOrderStatusName().Only(ctx)

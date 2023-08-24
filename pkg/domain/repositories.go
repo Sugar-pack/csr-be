@@ -23,6 +23,11 @@ type CategoryFilter struct {
 	HasEquipments bool
 }
 
+type OrderFilter struct {
+	Filter
+	Status *string
+}
+
 type CategoryRepository interface {
 	CreateCategory(ctx context.Context, newCategory models.CreateNewCategory) (*ent.Category, error)
 	AllCategories(ctx context.Context, filter CategoryFilter) ([]*ent.Category, error)
@@ -65,7 +70,7 @@ type EquipmentStatusNameRepository interface {
 }
 
 type OrderRepository interface {
-	List(ctx context.Context, ownerId, limit, offset int, orderBy, orderColumn string) ([]*ent.Order, error)
+	List(ctx context.Context, ownerId int, filter OrderFilter) ([]*ent.Order, error)
 	OrdersTotal(ctx context.Context, ownerId int) (int, error)
 	Create(ctx context.Context, data *models.OrderCreateRequest, ownerId int, equipmentIDs []int) (*ent.Order, error)
 	Update(ctx context.Context, id int, data *models.OrderUpdateRequest, ownerId int) (*ent.Order, error)

@@ -10,12 +10,26 @@ erDiagram
         int id
         string name
     }
+    Category {
+        int id
+        string name
+        bool has_subcategory
+        int64 max_reservation_time
+        int64 max_reservation_units
+    }
+    EmailConfirm {
+        int id
+        timeDOTTime ttl
+        string token
+        string email
+    }
     Equipment {
         int id
-        string category
+        string termsOfUse
         string name
         string title
         int64 compensationCost
+        bool tech_issue
         string condition
         int64 inventoryNumber
         string supplier
@@ -23,14 +37,20 @@ erDiagram
         int64 maximumDays
         string description
     }
-    Group {
+    EquipmentStatus {
         int id
+        string comment
+        timeDOTTime created_at
+        timeDOTTime updated_at
+        timeDOTTime start_date
+        timeDOTTime end_date
     }
-    Kind {
+    EquipmentStatusName {
         int id
         string name
-        int64 max_reservation_time
-        int64 max_reservation_units
+    }
+    Group {
+        int id
     }
     Order {
         int id
@@ -39,28 +59,56 @@ erDiagram
         timeDOTTime rent_start
         timeDOTTime rent_end
         timeDOTTime created_at
+        bool is_first
     }
     OrderStatus {
         int id
         string comment
         timeDOTTime current_date
     }
+    OrderStatusName {
+        int id
+        string status
+    }
+    PasswordReset {
+        int id
+        timeDOTTime ttl
+        string token
+    }
     Permission {
         int id
         string name
+    }
+    PetKind {
+        int id
+        string name
+    }
+    PetSize {
+        int id
+        string name
+        string size
+        bool is_universal
+    }
+    Photo {
+        string id
+        string fileName
+        LBRACKRBRACKbyte content
+    }
+    RegistrationConfirm {
+        int id
+        timeDOTTime ttl
+        string token
     }
     Role {
         int id
         string name
         string slug
     }
-    StatusName {
-        int id
-        string status
-    }
-    Statuses {
+    Subcategory {
         int id
         string name
+        int64 max_reservation_time
+        int64 max_reservation_units
     }
     Token {
         int id
@@ -81,39 +129,53 @@ erDiagram
         timeDOTTime passport_issue_date
         string phone
         bool is_readonly
-        bool is_registration_confirmed
-        bool is_deleted
         userDOTType type
         string org_name
         string website
         string vk
+        bool is_registration_confirmed
+        bool is_deleted
     }
     	ActiveArea }o--o{ User : "users/active_areas"
+    	Category |o--o{ Equipment : "equipments/category"
+    	Category |o--o{ Subcategory : "subcategories/category"
+    	Equipment |o--o{ EquipmentStatus : "equipment_status/equipments"
+    	Equipment }o--o{ Order : "order/equipments"
+    	EquipmentStatusName |o--o{ Equipment : "equipments/current_status"
+    	EquipmentStatusName |o--o{ EquipmentStatus : "equipment_status/equipment_status_name"
     	Group }o--o{ User : "users/groups"
     	Group }o--o{ Permission : "permissions/groups"
-    	Kind |o--o{ Equipment : "equipments/kind"
-    	Order }o--o{ User : "users/order"
-    	Order }o--o{ Equipment : "equipments/order"
     	Order |o--o{ OrderStatus : "order_status/order"
+    	Order |o--o{ EquipmentStatus : "equipment_status/order"
+    	OrderStatusName |o--o{ Order : "orders/current_status"
+    	OrderStatusName |o--o{ OrderStatus : "order_status/order_status_name"
+    	PetKind }o--o{ Equipment : "equipments/petKinds"
+    	PetSize |o--o{ Equipment : "equipments/pet_size"
+    	Photo |o--o{ Equipment : "equipments/photo"
     	Role |o--o{ User : "users/role"
-    	StatusName |o--o{ OrderStatus : "order_status/status_name"
-    	Statuses |o--o{ Equipment : "equipments/status"
+    	Subcategory |o--o{ Equipment : "equipments/subcategory"
     	User |o--o{ Token : "tokens/owner"
+    	User |o--o{ Order : "order/users"
     	User |o--o{ OrderStatus : "order_status/users"
+    	User |o--o{ PasswordReset : "password_reset/users"
+    	User |o--o{ RegistrationConfirm : "registration_confirm/users"
+    	User |o--o{ EmailConfirm : "email_confirm/users"
 		</div>
 	<script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+	<script src="https://unpkg.com/panzoom@9.4.3/dist/panzoom.min.js"></script>
 	<script>
 		mermaid.mermaidAPI.initialize({
 			startOnLoad: true,
 		});
 		var observer = new MutationObserver((event) => {
-			document.querySelectorAll('text[id^=entity]').forEach(text => {
+			document.querySelectorAll('text[id^=text-entity]').forEach(text => {
 				text.textContent = text.textContent.replace('DOT', '.');
 				text.textContent = text.textContent.replace('STAR', '*');
 				text.textContent = text.textContent.replace('LBRACK', '[');
 				text.textContent = text.textContent.replace('RBRACK', ']');
 			});
 			observer.disconnect();
+			panzoom(document.getElementById('er-diagram'));
 		});
 		observer.observe(document.getElementById('er-diagram'), { attributes: true, childList: true });
 	</script>

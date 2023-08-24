@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"errors"
+	"fmt"
 	"math"
 	"net/http"
 	"time"
@@ -14,7 +15,6 @@ import (
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/ent/order"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/swagger/models"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/swagger/restapi/operations"
-	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/swagger/restapi/operations/equipment"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/swagger/restapi/operations/orders"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/repositories"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/utils"
@@ -182,16 +182,33 @@ func (o Order) ListOrderFunc(repository domain.OrderRepository) orders.GetAllOrd
 		orderBy := utils.GetValueByPointerOrDefaultValue(p.OrderBy, utils.AscOrder)
 		orderColumn := utils.GetValueByPointerOrDefaultValue(p.OrderColumn, order.FieldID)
 
+		orderFilter := domain.OrderFilter{
+			Filter: domain.Filter{
+				Limit:       int(limit),
+				Offset:      int(offset),
+				OrderBy:     orderBy,
+				OrderColumn: orderColumn,
+			},
+			Status: p.Status,
+		}
+		if p.Status != nil {
+			_, ok := domain.AllOrderStatuses[*p.Status]
+			if !ok {
+				return orders.NewGetAllOrdersDefault(http.StatusBadRequest).
+					WithPayload(buildStringPayload(fmt.Sprintf("Invalid order status '%v'", *p.Status)))
+			}
+		}
+
 		total, err := repository.OrdersTotal(ctx, userID)
 		if err != nil {
 			o.logger.Error("Error while getting total of all user's orders", zap.Error(err))
-			return equipment.NewGetAllEquipmentDefault(http.StatusInternalServerError).
+			return orders.NewGetAllOrdersDefault(http.StatusInternalServerError).
 				WithPayload(buildErrorPayload(err))
 		}
 
 		var items []*ent.Order
 		if total > 0 {
-			items, err = repository.List(ctx, userID, int(limit), int(offset), orderBy, orderColumn)
+			items, err = repository.List(ctx, userID, orderFilter)
 			if err != nil {
 				o.logger.Error("list items failed", zap.Error(err))
 				return orders.NewGetAllOrdersDefault(http.StatusInternalServerError).WithPayload(buildErrorPayload(err))

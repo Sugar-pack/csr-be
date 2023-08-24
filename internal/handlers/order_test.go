@@ -3,6 +3,7 @@ package handlers
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"math"
 	"net/http"
 	"net/http/httptest"
@@ -131,20 +132,53 @@ func (s *orderTestSuite) TestOrder_ListOrder_RepoErr() {
 	require.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
 }
 
+func (s *orderTestSuite) TestOrder_ListOrder_WrongStatus() {
+	t := s.T()
+	request := http.Request{}
+	userID := 1
+	st := "qwe"
+
+	handlerFunc := s.orderHandler.ListOrderFunc(s.orderRepository)
+	data := orders.GetAllOrdersParams{
+		HTTPRequest: &request,
+		Status:      &st,
+	}
+
+	principal := &models.Principal{ID: int64(userID)}
+	resp := handlerFunc.Handle(data, principal)
+
+	responseRecorder := httptest.NewRecorder()
+	producer := runtime.JSONProducer()
+	resp.WriteResponse(responseRecorder, producer)
+
+	var response models.Error
+	err := json.Unmarshal(responseRecorder.Body.Bytes(), &response)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	require.Equal(t, http.StatusBadRequest, responseRecorder.Code)
+	require.Equal(t, fmt.Sprintf("Invalid order status '%v'", st), response.Data.Message)
+}
+
 func (s *orderTestSuite) TestOrder_ListOrder_MapErr() {
 	t := s.T()
 	request := http.Request{}
 	ctx := request.Context()
 
 	userID := 1
-	limit := math.MaxInt
-	offset := 0
-	orderBy := utils.AscOrder
-	orderColumn := order.FieldID
+	filter := domain.OrderFilter{
+		Filter: domain.Filter{
+			Limit:       math.MaxInt,
+			Offset:      0,
+			OrderBy:     utils.AscOrder,
+			OrderColumn: order.FieldID,
+		},
+	}
 	var orderList []*ent.Order
 	orderList = append(orderList, orderWithNoEdges())
 	s.orderRepository.On("OrdersTotal", ctx, userID).Return(1, nil)
-	s.orderRepository.On("List", ctx, userID, limit, offset, orderBy, orderColumn).
+	s.orderRepository.On("List", ctx, userID, filter).
 		Return(orderList, nil)
 
 	handlerFunc := s.orderHandler.ListOrderFunc(s.orderRepository)
@@ -191,15 +225,19 @@ func (s *orderTestSuite) TestOrder_ListOrder_EmptyParams() {
 	ctx := request.Context()
 
 	userID := 1
-	limit := math.MaxInt
-	offset := 0
-	orderBy := utils.AscOrder
-	orderColumn := order.FieldID
+	filter := domain.OrderFilter{
+		Filter: domain.Filter{
+			Limit:       math.MaxInt,
+			Offset:      0,
+			OrderBy:     utils.AscOrder,
+			OrderColumn: order.FieldID,
+		},
+	}
 	orderList := []*ent.Order{
 		orderWithAllEdges(t, 1),
 	}
 	s.orderRepository.On("OrdersTotal", ctx, userID).Return(1, nil)
-	s.orderRepository.On("List", ctx, userID, limit, offset, orderBy, orderColumn).
+	s.orderRepository.On("List", ctx, userID, filter).
 		Return(orderList, nil)
 
 	handlerFunc := s.orderHandler.ListOrderFunc(s.orderRepository)
@@ -218,7 +256,7 @@ func (s *orderTestSuite) TestOrder_ListOrder_EmptyParams() {
 		t.Fatal(err)
 	}
 	require.Equal(t, len(orderList), int(*response.Total))
-	require.GreaterOrEqual(t, limit, len(response.Items))
+	require.GreaterOrEqual(t, filter.Limit, len(response.Items))
 	for _, item := range response.Items {
 		require.True(t, containsOrder(t, orderList, item))
 	}
@@ -234,12 +272,20 @@ func (s *orderTestSuite) TestOrder_ListOrder_LimitGreaterThanTotal() {
 	offset := int64(0)
 	orderBy := utils.AscOrder
 	orderColumn := order.FieldID
+	filter := domain.OrderFilter{
+		Filter: domain.Filter{
+			Limit:       int(limit),
+			Offset:      int(offset),
+			OrderBy:     utils.AscOrder,
+			OrderColumn: order.FieldID,
+		},
+	}
 	orderList := []*ent.Order{
 		orderWithAllEdges(t, 1),
 		orderWithAllEdges(t, 2),
 	}
 	s.orderRepository.On("OrdersTotal", ctx, userID).Return(2, nil)
-	s.orderRepository.On("List", ctx, userID, int(limit), int(offset), orderBy, orderColumn).
+	s.orderRepository.On("List", ctx, userID, filter).
 		Return(orderList, nil)
 
 	handlerFunc := s.orderHandler.ListOrderFunc(s.orderRepository)
@@ -280,6 +326,14 @@ func (s *orderTestSuite) TestOrder_ListOrder_LimitLessThanTotal() {
 	offset := int64(0)
 	orderBy := utils.AscOrder
 	orderColumn := order.FieldID
+	filter := domain.OrderFilter{
+		Filter: domain.Filter{
+			Limit:       int(limit),
+			Offset:      int(offset),
+			OrderBy:     utils.AscOrder,
+			OrderColumn: order.FieldID,
+		},
+	}
 	orderList := []*ent.Order{
 		orderWithAllEdges(t, 1),
 		orderWithAllEdges(t, 2),
@@ -287,7 +341,7 @@ func (s *orderTestSuite) TestOrder_ListOrder_LimitLessThanTotal() {
 		orderWithAllEdges(t, 4),
 	}
 	s.orderRepository.On("OrdersTotal", ctx, userID).Return(4, nil)
-	s.orderRepository.On("List", ctx, userID, int(limit), int(offset), orderBy, orderColumn).
+	s.orderRepository.On("List", ctx, userID, filter).
 		Return(orderList[:limit], nil)
 
 	handlerFunc := s.orderHandler.ListOrderFunc(s.orderRepository)
@@ -328,6 +382,14 @@ func (s *orderTestSuite) TestOrder_ListOrder_SecondPage() {
 	offset := int64(2)
 	orderBy := utils.AscOrder
 	orderColumn := order.FieldID
+	filter := domain.OrderFilter{
+		Filter: domain.Filter{
+			Limit:       int(limit),
+			Offset:      int(offset),
+			OrderBy:     utils.AscOrder,
+			OrderColumn: order.FieldID,
+		},
+	}
 	orderList := []*ent.Order{
 		orderWithAllEdges(t, 1),
 		orderWithAllEdges(t, 2),
@@ -335,7 +397,7 @@ func (s *orderTestSuite) TestOrder_ListOrder_SecondPage() {
 		orderWithAllEdges(t, 4),
 	}
 	s.orderRepository.On("OrdersTotal", ctx, userID).Return(4, nil)
-	s.orderRepository.On("List", ctx, userID, int(limit), int(offset), orderBy, orderColumn).
+	s.orderRepository.On("List", ctx, userID, filter).
 		Return(orderList[offset:], nil)
 
 	handlerFunc := s.orderHandler.ListOrderFunc(s.orderRepository)
@@ -376,6 +438,14 @@ func (s *orderTestSuite) TestOrder_ListOrder_SeveralPages() {
 	offset := int64(0)
 	orderBy := utils.AscOrder
 	orderColumn := order.FieldID
+	filter := domain.OrderFilter{
+		Filter: domain.Filter{
+			Limit:       int(limit),
+			Offset:      int(offset),
+			OrderBy:     utils.AscOrder,
+			OrderColumn: order.FieldID,
+		},
+	}
 	orderList := []*ent.Order{
 		orderWithAllEdges(t, 1),
 		orderWithAllEdges(t, 2),
@@ -383,7 +453,7 @@ func (s *orderTestSuite) TestOrder_ListOrder_SeveralPages() {
 		orderWithAllEdges(t, 4),
 	}
 	s.orderRepository.On("OrdersTotal", ctx, userID).Return(4, nil)
-	s.orderRepository.On("List", ctx, userID, int(limit), int(offset), orderBy, orderColumn).
+	s.orderRepository.On("List", ctx, userID, filter).
 		Return(orderList[:limit], nil)
 
 	handlerFunc := s.orderHandler.ListOrderFunc(s.orderRepository)
@@ -414,8 +484,9 @@ func (s *orderTestSuite) TestOrder_ListOrder_SeveralPages() {
 	}
 
 	offset = limit
+	filter.Offset = int(offset)
 	s.orderRepository.On("OrdersTotal", ctx, userID).Return(4, nil)
-	s.orderRepository.On("List", ctx, userID, int(limit), int(offset), orderBy, orderColumn).
+	s.orderRepository.On("List", ctx, userID, filter).
 		Return(orderList[offset:], nil)
 
 	data = orders.GetAllOrdersParams{
@@ -444,6 +515,103 @@ func (s *orderTestSuite) TestOrder_ListOrder_SeveralPages() {
 	}
 
 	require.False(t, ordersDuplicated(t, firstPage.Items, secondPage.Items))
+}
+
+func (s *orderTestSuite) TestOrder_ListOrder_StatusFilter() {
+	t := s.T()
+	request := http.Request{}
+	ctx := request.Context()
+
+	userID := 1
+	limit := int64(10)
+	offset := int64(0)
+	orderBy := utils.AscOrder
+	orderColumn := order.FieldID
+	filter := domain.Filter{
+		Limit:       int(limit),
+		Offset:      int(offset),
+		OrderBy:     utils.AscOrder,
+		OrderColumn: order.FieldID,
+	}
+	orderList := []*ent.Order{
+		orderWithAllEdges(t, 1),
+		orderWithAllEdges(t, 2),
+		orderWithAllEdges(t, 3),
+		orderWithAllEdges(t, 4),
+	}
+	orderList[0].Edges.OrderStatus[0].ID = 1 // in review (active)
+	orderList[1].Edges.OrderStatus[0].ID = 2 // approved (active)
+	orderList[2].Edges.OrderStatus[0].ID = 6 // prepared (active)
+	orderList[3].Edges.OrderStatus[0].ID = 4 // rejected (finished)
+
+	handlerFunc := s.orderHandler.ListOrderFunc(s.orderRepository)
+	tests := map[string]struct {
+		fl   domain.OrderFilter
+		ords []*ent.Order
+	}{
+		"all": {
+			fl: domain.OrderFilter{
+				Filter: filter,
+				Status: &domain.OrderStatusAll,
+			},
+			ords: orderList,
+		},
+		"active": {
+			fl: domain.OrderFilter{
+				Filter: filter,
+				Status: &domain.OrderStatusActive,
+			},
+			ords: []*ent.Order{orderList[0], orderList[1], orderList[2]},
+		},
+		"finished": {
+			fl: domain.OrderFilter{
+				Filter: filter,
+				Status: &domain.OrderStatusFinished,
+			},
+			ords: []*ent.Order{orderList[3]},
+		},
+		"rejected": {
+			fl: domain.OrderFilter{
+				Filter: filter,
+				Status: &domain.OrderStatusRejected,
+			},
+			ords: []*ent.Order{orderList[3]},
+		},
+	}
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			s.orderRepository.On("OrdersTotal", ctx, userID).Return(4, nil)
+			s.orderRepository.On("List", ctx, userID, tc.fl).
+				Return(tc.ords, nil)
+
+			data := orders.GetAllOrdersParams{
+				HTTPRequest: &request,
+				Limit:       &limit,
+				Offset:      &offset,
+				OrderBy:     &orderBy,
+				OrderColumn: &orderColumn,
+				Status:      tc.fl.Status,
+			}
+			principal := &models.Principal{ID: int64(userID)}
+			resp := handlerFunc.Handle(data, principal)
+
+			responseRecorder := httptest.NewRecorder()
+			producer := runtime.JSONProducer()
+			resp.WriteResponse(responseRecorder, producer)
+			require.Equal(t, http.StatusOK, responseRecorder.Code)
+
+			var response models.OrderList
+			err := json.Unmarshal(responseRecorder.Body.Bytes(), &response)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			require.Equal(t, len(tc.ords), len(response.Items))
+			for i, o := range response.Items {
+				require.Equal(t, tc.ords[i].ID, int(*o.ID))
+			}
+		})
+	}
 }
 
 func (s *orderTestSuite) TestOrder_CreateOrder_RepoErr() {

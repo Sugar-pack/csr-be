@@ -70,6 +70,8 @@ func (r *orderFilterRepository) OrdersByPeriodAndStatus(ctx context.Context, fro
 		Where(orderstatus.CurrentDateLTE(to)).
 		QueryOrder().
 		WithOrderStatus().
+		WithEquipments().
+		WithUsers().
 		Order(orderFunc).Limit(limit).Offset(offset).All(ctx)
 	if err != nil {
 		return nil, err

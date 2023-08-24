@@ -13,6 +13,7 @@ import (
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/ent"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/ent/enttest"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/ent/order"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/ent/orderstatusname"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/swagger/models"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/middlewares"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/utils"
@@ -103,6 +104,24 @@ func (s *OrderSuite) SetupTest() {
 		s.equipments[i] = e
 	}
 
+	// list of statuses with IDs. Amount of statuses is equal to amount of orders.
+	statusNameMap := map[int]string{
+		1: "in review",   // active
+		2: "in progress", // active
+		3: "rejected",    // finished
+		4: "closed",      // finished
+	}
+	_, err = s.client.OrderStatusName.Delete().Exec(s.ctx) // clean up
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, statusName := range statusNameMap { // create statuses
+		_, errCreation := s.client.OrderStatusName.Create().SetStatus(statusName).Save(s.ctx)
+		if errCreation != nil {
+			t.Fatal(errCreation)
+		}
+	}
+
 	s.orders = []*ent.Order{
 		{
 			Quantity:  1,
@@ -143,27 +162,37 @@ func (s *OrderSuite) SetupTest() {
 		t.Fatal(err)
 	}
 	for i, order := range s.orders {
+		statusName, err := s.client.OrderStatusName.Query().
+			Where(orderstatusname.StatusEQ(statusNameMap[i+1])).Only(s.ctx)
+		if err != nil {
+			t.Fatal(err)
+		}
+
 		o, err := s.client.Order.Create().
 			SetDescription(order.Description).
 			SetQuantity(order.Quantity).
 			SetRentStart(order.RentStart).
 			SetRentEnd(order.RentEnd).
 			SetUsers(order.Edges.Users).
+			SetCurrentStatus(statusName).
 			Save(s.ctx)
 		if err != nil {
 			t.Fatal(err)
 		}
 		s.orders[i].ID = o.ID
 		s.orders[i].CreatedAt = o.CreatedAt
-	}
 
-	_, err = s.client.OrderStatusName.Delete().Exec(s.ctx)
-	if err != nil {
-		t.Fatal(err)
-	}
-	_, err = s.client.OrderStatusName.Create().SetStatus(domain.OrderStatusInReview).Save(s.ctx)
-	if err != nil {
-		t.Fatal(err)
+		_, err = s.client.OrderStatus.Create().
+			SetComment("Test order status").
+			SetCurrentDate(time.Now()).
+			SetOrder(o).
+			SetOrderStatusName(statusName).
+			SetUsers(s.user).
+			SetUsersID(s.user.ID).
+			Save(s.ctx)
+		if err != nil {
+			t.Fatal(err)
+		}
 	}
 }
 
@@ -292,9 +321,6 @@ func (s *OrderSuite) TestOrderRepository_Create_isFirstCreatedOrderIsTrueIfOneOf
 		RentStart:   &startDate,
 	}
 
-	err = s.client.OrderStatusName.Create().
-		SetStatus(domain.OrderStatusRejected).
-		Exec(ctx)
 	require.NoError(t, err)
 	orderId := int64(s.orders[0].ID)
 	testComment := "testComment"
@@ -433,7 +459,15 @@ func (s *OrderSuite) TestOrderRepository_Create_isFirstFieldForPreviousCreatedOr
 	err = s.orderStatusRepository.UpdateStatus(ctx, s.user.ID, model)
 	require.NoError(t, err)
 
-	orderList, err := s.orderRepository.List(ctx, s.user.ID, math.MaxInt, 0, utils.AscOrder, order.FieldID)
+	filter := domain.OrderFilter{
+		Filter: domain.Filter{
+			Limit:       math.MaxInt,
+			Offset:      0,
+			OrderBy:     utils.AscOrder,
+			OrderColumn: order.FieldID,
+		},
+	}
+	orderList, err := s.orderRepository.List(ctx, s.user.ID, filter)
 	require.NoError(t, err)
 
 	for _, order := range orderList {
@@ -460,15 +494,20 @@ func (s *OrderSuite) TestOrderRepository_OrdersTotal() {
 
 func (s *OrderSuite) TestOrderRepository_List_EmptyOrderBy() {
 	t := s.T()
-	limit := math.MaxInt
-	offset := 0
-	orderBy := ""
-	orderColumn := order.FieldID
+	filter := domain.OrderFilter{
+		Filter: domain.Filter{
+			Limit:       math.MaxInt,
+			Offset:      0,
+			OrderBy:     "",
+			OrderColumn: order.FieldID,
+		},
+	}
 	ctx := s.ctx
 	tx, err := s.client.Tx(ctx)
 	require.NoError(t, err)
 	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
-	orders, err := s.orderRepository.List(ctx, s.user.ID, limit, offset, orderBy, orderColumn)
+
+	orders, err := s.orderRepository.List(ctx, s.user.ID, filter)
 	require.Error(t, err)
 	require.NoError(t, tx.Rollback())
 	require.Nil(t, orders)
@@ -476,15 +515,19 @@ func (s *OrderSuite) TestOrderRepository_List_EmptyOrderBy() {
 
 func (s *OrderSuite) TestOrderRepository_List_WrongOrderColumn() {
 	t := s.T()
-	limit := math.MaxInt
-	offset := 0
-	orderBy := utils.AscOrder
-	orderColumn := order.FieldDescription
+	filter := domain.OrderFilter{
+		Filter: domain.Filter{
+			Limit:       math.MaxInt,
+			Offset:      0,
+			OrderBy:     utils.AscOrder,
+			OrderColumn: order.FieldDescription,
+		},
+	}
 	ctx := s.ctx
 	tx, err := s.client.Tx(ctx)
 	require.NoError(t, err)
 	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
-	orders, err := s.orderRepository.List(ctx, s.user.ID, limit, offset, orderBy, orderColumn)
+	orders, err := s.orderRepository.List(ctx, s.user.ID, filter)
 	require.Error(t, err)
 	require.NoError(t, tx.Rollback())
 	require.Nil(t, orders)
@@ -492,15 +535,19 @@ func (s *OrderSuite) TestOrderRepository_List_WrongOrderColumn() {
 
 func (s *OrderSuite) TestOrderRepository_List_OrderByIDDesc() {
 	t := s.T()
-	limit := math.MaxInt
-	offset := 0
-	orderBy := utils.DescOrder
-	orderColumn := order.FieldID
+	filter := domain.OrderFilter{
+		Filter: domain.Filter{
+			Limit:       math.MaxInt,
+			Offset:      0,
+			OrderBy:     utils.DescOrder,
+			OrderColumn: order.FieldID,
+		},
+	}
 	ctx := s.ctx
 	tx, err := s.client.Tx(ctx)
 	require.NoError(t, err)
 	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
-	orders, err := s.orderRepository.List(ctx, s.user.ID, limit, offset, orderBy, orderColumn)
+	orders, err := s.orderRepository.List(ctx, s.user.ID, filter)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -516,15 +563,19 @@ func (s *OrderSuite) TestOrderRepository_List_OrderByIDDesc() {
 
 func (s *OrderSuite) TestOrderRepository_List_OrderByRentStartDesc() {
 	t := s.T()
-	limit := math.MaxInt
-	offset := 0
-	orderBy := utils.DescOrder
-	orderColumn := order.FieldRentStart
+	filter := domain.OrderFilter{
+		Filter: domain.Filter{
+			Limit:       math.MaxInt,
+			Offset:      0,
+			OrderBy:     utils.DescOrder,
+			OrderColumn: order.FieldRentStart,
+		},
+	}
 	ctx := s.ctx
 	tx, err := s.client.Tx(ctx)
 	require.NoError(t, err)
 	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
-	orders, err := s.orderRepository.List(ctx, s.user.ID, limit, offset, orderBy, orderColumn)
+	orders, err := s.orderRepository.List(ctx, s.user.ID, filter)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -540,15 +591,19 @@ func (s *OrderSuite) TestOrderRepository_List_OrderByRentStartDesc() {
 
 func (s *OrderSuite) TestOrderRepository_List_OrderByIDAsc() {
 	t := s.T()
-	limit := math.MaxInt
-	offset := 0
-	orderBy := utils.AscOrder
-	orderColumn := order.FieldID
+	filter := domain.OrderFilter{
+		Filter: domain.Filter{
+			Limit:       math.MaxInt,
+			Offset:      0,
+			OrderBy:     utils.AscOrder,
+			OrderColumn: order.FieldID,
+		},
+	}
 	ctx := s.ctx
 	tx, err := s.client.Tx(ctx)
 	require.NoError(t, err)
 	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
-	orders, err := s.orderRepository.List(ctx, s.user.ID, limit, offset, orderBy, orderColumn)
+	orders, err := s.orderRepository.List(ctx, s.user.ID, filter)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -564,15 +619,19 @@ func (s *OrderSuite) TestOrderRepository_List_OrderByIDAsc() {
 
 func (s *OrderSuite) TestOrderRepository_List_OrderByRentStartAsc() {
 	t := s.T()
-	limit := math.MaxInt
-	offset := 0
-	orderBy := utils.AscOrder
-	orderColumn := order.FieldRentStart
+	filter := domain.OrderFilter{
+		Filter: domain.Filter{
+			Limit:       math.MaxInt,
+			Offset:      0,
+			OrderBy:     utils.AscOrder,
+			OrderColumn: order.FieldRentStart,
+		},
+	}
 	ctx := s.ctx
 	tx, err := s.client.Tx(ctx)
 	require.NoError(t, err)
 	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
-	orders, err := s.orderRepository.List(ctx, s.user.ID, limit, offset, orderBy, orderColumn)
+	orders, err := s.orderRepository.List(ctx, s.user.ID, filter)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -588,40 +647,274 @@ func (s *OrderSuite) TestOrderRepository_List_OrderByRentStartAsc() {
 
 func (s *OrderSuite) TestOrderRepository_List_Limit() {
 	t := s.T()
-	limit := 2
-	offset := 0
-	orderBy := utils.AscOrder
-	orderColumn := order.FieldID
+	filter := domain.OrderFilter{
+		Filter: domain.Filter{
+			Limit:       2,
+			Offset:      0,
+			OrderBy:     utils.AscOrder,
+			OrderColumn: order.FieldID,
+		},
+	}
 	ctx := s.ctx
 	tx, err := s.client.Tx(ctx)
 	require.NoError(t, err)
 	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
-	orders, err := s.orderRepository.List(ctx, s.user.ID, limit, offset, orderBy, orderColumn)
+	orders, err := s.orderRepository.List(ctx, s.user.ID, filter)
 	if err != nil {
 		t.Fatal(err)
 	}
 	require.NoError(t, tx.Commit())
-	require.Equal(t, limit, len(orders))
+	require.Equal(t, filter.Limit, len(orders))
 	require.Greater(t, len(s.orders), len(orders))
 }
 
 func (s *OrderSuite) TestOrderRepository_List_Offset() {
 	t := s.T()
-	limit := 0
-	offset := 3
-	orderBy := utils.AscOrder
-	orderColumn := order.FieldID
+	filter := domain.OrderFilter{
+		Filter: domain.Filter{
+			Limit:       0,
+			Offset:      3,
+			OrderBy:     utils.AscOrder,
+			OrderColumn: order.FieldID,
+		},
+	}
 	ctx := s.ctx
 	tx, err := s.client.Tx(ctx)
 	require.NoError(t, err)
 	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
-	orders, err := s.orderRepository.List(ctx, s.user.ID, limit, offset, orderBy, orderColumn)
+	orders, err := s.orderRepository.List(ctx, s.user.ID, filter)
 	if err != nil {
 		t.Fatal(err)
 	}
 	require.NoError(t, tx.Commit())
-	require.Equal(t, len(s.orders)-offset, len(orders))
+	require.Equal(t, len(s.orders)-filter.Offset, len(orders))
 	require.Greater(t, len(s.orders), len(orders))
+}
+
+func (s *OrderSuite) TestOrderRepository_List_StatusFilter() {
+	t := s.T()
+	filter := domain.Filter{
+		Limit:       10,
+		Offset:      0,
+		OrderBy:     utils.AscOrder,
+		OrderColumn: order.FieldID,
+	}
+	tests := map[string]struct {
+		fl          domain.OrderFilter
+		expectedErr string
+		expectedIDs []int // in AscOrder
+	}{
+		"all": {
+			fl: domain.OrderFilter{
+				Filter: filter,
+				Status: &domain.OrderStatusAll,
+			},
+			expectedIDs: []int{s.orders[0].ID, s.orders[1].ID, s.orders[2].ID, s.orders[3].ID},
+		},
+		"active": {
+			fl: domain.OrderFilter{
+				Filter: filter,
+				Status: &domain.OrderStatusActive,
+			},
+			expectedIDs: []int{s.orders[0].ID, s.orders[1].ID},
+		},
+		"finished": {
+			fl: domain.OrderFilter{
+				Filter: filter,
+				Status: &domain.OrderStatusFinished,
+			},
+			expectedIDs: []int{s.orders[2].ID, s.orders[3].ID},
+		},
+		"in review": {
+			fl: domain.OrderFilter{
+				Filter: filter,
+				Status: &domain.OrderStatusInReview,
+			},
+			expectedIDs: []int{s.orders[0].ID},
+		},
+		"in progress": {
+			fl: domain.OrderFilter{
+				Filter: filter,
+				Status: &domain.OrderStatusInProgress,
+			},
+			expectedIDs: []int{s.orders[1].ID},
+		},
+		"rejected": {
+			fl: domain.OrderFilter{
+				Filter: filter,
+				Status: &domain.OrderStatusRejected,
+			},
+			expectedIDs: []int{s.orders[2].ID},
+		},
+		"closed": {
+			fl: domain.OrderFilter{
+				Filter: filter,
+				Status: &domain.OrderStatusClosed,
+			},
+			expectedIDs: []int{s.orders[3].ID},
+		},
+	}
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			ctx := s.ctx
+			tx, err := s.client.Tx(ctx)
+			require.NoError(t, err)
+			ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
+			orders, err := s.orderRepository.List(ctx, s.user.ID, tc.fl)
+			if tc.expectedErr != "" {
+				require.EqualError(t, err, tc.expectedErr)
+				require.NoError(t, tx.Rollback())
+			} else {
+				require.NoError(t, err)
+				require.NoError(t, tx.Commit())
+				ids := make([]int, 0, len(orders))
+				for _, o := range orders {
+					ids = append(ids, o.ID)
+				}
+				require.Equal(t, tc.expectedIDs, ids)
+			}
+		})
+	}
+}
+
+func (s *OrderSuite) TestOrderRepository_Update_OK() {
+	t := s.T()
+	ctx := s.ctx
+	crtx, err := s.client.Tx(ctx)
+	require.NoError(t, err)
+	ctx = context.WithValue(ctx, middlewares.TxContextKey, crtx)
+
+	description := "test"
+	eqID := int64(1)
+	startDate := strfmt.DateTime(time.Now().UTC())
+	endDate := strfmt.DateTime(time.Now().UTC().Add(time.Hour * 24 * 5))
+	data := &models.OrderCreateRequest{
+		Description: description,
+		EquipmentID: &eqID,
+		RentEnd:     &endDate,
+		RentStart:   &startDate,
+	}
+	createdOrder, err := s.orderRepository.Create(ctx, data, s.user.ID, []int{s.equipments[0].ID})
+	require.NoError(t, err)
+	require.NoError(t, crtx.Commit())
+
+	tx, err := s.client.Tx(ctx)
+	require.NoError(t, err)
+	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
+	newDesc := "new desc"
+	newStartDate := strfmt.DateTime(time.Now().UTC())
+	newEndDate := strfmt.DateTime(time.Now().UTC().Add(time.Hour * 24 * 10))
+	newQuantity := int64(1)
+	req := &models.OrderUpdateRequest{
+		Description: &newDesc,
+		Quantity:    &newQuantity,
+		RentStart:   &newStartDate,
+		RentEnd:     &newEndDate,
+	}
+	updated, err := s.orderRepository.Update(ctx, createdOrder.ID, req, s.user.ID)
+	require.NoError(t, err)
+	require.NoError(t, tx.Commit())
+	require.Equal(t, newDesc, updated.Description)
+	require.Equal(t, newEndDate, strfmt.DateTime(updated.RentEnd))
+	require.Equal(t, newStartDate, strfmt.DateTime(updated.RentStart))
+}
+
+func (s *OrderSuite) TestOrderRepository_Update_MissingOrder() {
+	t := s.T()
+	ctx := s.ctx
+	tx, err := s.client.Tx(ctx)
+	require.NoError(t, err)
+	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
+
+	newDesc := "new desc"
+	newStartDate := strfmt.DateTime(time.Now().UTC())
+	newEndDate := strfmt.DateTime(time.Now().UTC().Add(time.Hour * 24 * 10))
+	newQuantity := int64(1)
+	req := &models.OrderUpdateRequest{
+		Description: &newDesc,
+		Quantity:    &newQuantity,
+		RentStart:   &newStartDate,
+		RentEnd:     &newEndDate,
+	}
+	updated, err := s.orderRepository.Update(ctx, 123, req, s.user.ID)
+	require.EqualError(t, err, "ent: order not found")
+	require.NoError(t, tx.Rollback())
+	require.Nil(t, updated)
+}
+
+func (s *OrderSuite) TestOrderRepository_Update_WrongOwner() {
+	t := s.T()
+	ctx := s.ctx
+	crtx, err := s.client.Tx(ctx)
+	require.NoError(t, err)
+	ctx = context.WithValue(ctx, middlewares.TxContextKey, crtx)
+
+	description := "test"
+	eqID := int64(1)
+	startDate := strfmt.DateTime(time.Now().UTC())
+	endDate := strfmt.DateTime(time.Now().UTC().Add(time.Hour * 24 * 5))
+	data := &models.OrderCreateRequest{
+		Description: description,
+		EquipmentID: &eqID,
+		RentEnd:     &endDate,
+		RentStart:   &startDate,
+	}
+	createdOrder, err := s.orderRepository.Create(ctx, data, s.user.ID, []int{s.equipments[0].ID})
+	require.NoError(t, err)
+	require.NoError(t, crtx.Commit())
+
+	tx, err := s.client.Tx(ctx)
+	require.NoError(t, err)
+	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
+	newDesc := "new desc"
+	newStartDate := strfmt.DateTime(time.Now().UTC())
+	newEndDate := strfmt.DateTime(time.Now().UTC().Add(time.Hour * 24 * 10))
+	newQuantity := int64(1)
+	req := &models.OrderUpdateRequest{
+		Description: &newDesc,
+		Quantity:    &newQuantity,
+		RentStart:   &newStartDate,
+		RentEnd:     &newEndDate,
+	}
+	updated, err := s.orderRepository.Update(ctx, createdOrder.ID, req, s.user.ID+1)
+	require.EqualError(t, err, "permission denied")
+	require.NoError(t, tx.Rollback())
+	require.Nil(t, updated)
+}
+
+func (s *OrderSuite) TestOrderRepository_getQuantity() {
+	t := s.T()
+	valid := int(1)
+	tests := map[string]struct {
+		q         int
+		maxQ      int
+		res       *int
+		errString string
+	}{
+		"ok": {
+			q:         1,
+			maxQ:      2,
+			res:       &valid,
+			errString: "",
+		},
+		"nok": {
+			q:         2,
+			maxQ:      1,
+			res:       nil,
+			errString: "quantity limit exceeded: 1 allowed",
+		},
+	}
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			res, err := getQuantity(tc.q, tc.maxQ)
+			if tc.errString != "" {
+				require.EqualError(t, err, tc.errString)
+			} else {
+				require.NoError(t, err)
+				require.Equal(t, tc.res, res)
+			}
+		})
+	}
 }
 
 func containsOrder(t *testing.T, order *ent.Order, orders []*ent.Order) bool {

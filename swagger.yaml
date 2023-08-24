@@ -1052,6 +1052,24 @@ paths:
         - Orders
       operationId: GetAllOrders
       parameters:
+        - name: status
+          in: query
+          required: false
+          description: filter orders by status (in review, approved, closed, etc) or aggregated status (all, active or finished)
+          type: string
+          enum:
+            - all
+            - active
+            - finished
+            - in review
+            - approved
+            - in progress
+            - rejected
+            - closed
+            - prepared
+            - overdue
+            - blocked
+          default: all
         - name: limit
           in: query
           required: false
