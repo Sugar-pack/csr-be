@@ -186,7 +186,49 @@ func ManagerUserLogin(t *testing.T) *users.LoginOK {
 	ctx := context.Background()
 	client := SetupClient()
 	l, p, _ := ManagerLoginPassword(t)
-	// login and get token with admin role
+	// login and get token with manager role
+	loginUser, err := LoginUser(ctx, client, l, p)
+	require.NoError(t, err)
+	return loginUser
+}
+
+func OperatorLoginPassword(t *testing.T) (string, string, int64) {
+	t.Helper()
+	l, p, err := GenerateLoginAndPassword()
+	require.NoError(t, err)
+
+	ctx := context.Background()
+	client := SetupClient()
+
+	user, err := CreateUser(ctx, client, l, p)
+	require.NoError(t, err)
+
+	// login and get token
+	loginUser, err := LoginUser(ctx, client, l, p)
+	require.NoError(t, err)
+	auth := AuthInfoFunc(loginUser.GetPayload().AccessToken)
+
+	role := int64(3) // operator
+	params := &users.AssignRoleToUserParams{
+		UserID: *user.ID,
+		Data: &models.AssignRoleToUser{
+			RoleID: &role,
+		},
+	}
+	params.SetContext(ctx)
+	params.SetHTTPClient(http.DefaultClient)
+
+	r, err := client.Users.AssignRoleToUser(params, auth)
+	require.NoError(t, err, r)
+	return l, p, *user.ID
+}
+
+func OperatorUserLogin(t *testing.T) *users.LoginOK {
+	t.Helper()
+	ctx := context.Background()
+	client := SetupClient()
+	l, p, _ := OperatorLoginPassword(t)
+	// login and get token with operator role
 	loginUser, err := LoginUser(ctx, client, l, p)
 	require.NoError(t, err)
 	return loginUser

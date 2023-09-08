@@ -15,6 +15,7 @@ import (
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/swagger/restapi/operations"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/swagger/restapi/operations/equipment"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/repositories"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/roles"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/utils"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/pkg/domain"
 )
@@ -30,6 +31,7 @@ func SetEquipmentHandler(logger *zap.Logger, api *operations.BeAPI) {
 	api.EquipmentEditEquipmentHandler = equipmentHandler.EditEquipmentFunc(eqRepo)
 	api.EquipmentFindEquipmentHandler = equipmentHandler.FindEquipmentFunc(eqRepo)
 	api.EquipmentArchiveEquipmentHandler = equipmentHandler.ArchiveEquipmentFunc(eqRepo)
+	api.EquipmentBlockEquipmentHandler = equipmentHandler.BlockEquipmentFunc(eqRepo)
 }
 
 type Equipment struct {
@@ -47,7 +49,7 @@ func NewEquipment(logger *zap.Logger) *Equipment {
 func (c Equipment) PostEquipmentFunc(eqRepo domain.EquipmentRepository, eqStatusNameRepo domain.EquipmentStatusNameRepository) equipment.CreateNewEquipmentHandlerFunc {
 	return func(s equipment.CreateNewEquipmentParams, _ *models.Principal) middleware.Responder {
 		ctx := s.HTTPRequest.Context()
-		status, err := eqStatusNameRepo.GetByName(ctx, "available")
+		status, err := eqStatusNameRepo.GetByName(ctx, domain.EquipmentStatusAvailable)
 		if err != nil {
 			c.logger.Error("Error while getting status", zap.Error(err))
 			return equipment.NewCreateNewEquipmentDefault(http.StatusInternalServerError).
@@ -299,4 +301,33 @@ func mapEquipmentResponse(eq *ent.Equipment) (*models.EquipmentResponse, error) 
 		PhotoID:          &photoID,
 		PetKinds:         petKinds,
 	}, nil
+}
+
+func (c Equipment) BlockEquipmentFunc(repository domain.EquipmentRepository) equipment.BlockEquipmentHandlerFunc {
+	return func(s equipment.BlockEquipmentParams, principal *models.Principal) middleware.Responder {
+		ctx := s.HTTPRequest.Context()
+		userID := int(principal.ID)
+		role := principal.Role
+
+		if role != roles.Manager {
+			c.logger.Warn("User have no right to block the equipment", zap.Any("principal", principal))
+			return equipment.
+				NewBlockEquipmentDefault(http.StatusForbidden).
+				WithPayload(&models.Error{Data: &models.ErrorData{Message: "You don't have rights to block the equipment"}})
+		}
+
+		err := repository.BlockEquipment(
+			ctx, int(s.EquipmentID), time.Time(s.Data.StartDate), time.Time(s.Data.EndDate), userID,
+		)
+		if err != nil {
+			if ent.IsNotFound(err) {
+				return equipment.NewBlockEquipmentNotFound().
+					WithPayload(buildStringPayload(EquipmentNotFoundMsg))
+			}
+			c.logger.Error("Error while blocking equipment", zap.Error(err))
+			return equipment.NewBlockEquipmentDefault(http.StatusInternalServerError).
+				WithPayload(buildStringPayload("Error while blocking equipment"))
+		}
+		return equipment.NewBlockEquipmentNoContent()
+	}
 }

@@ -9,9 +9,11 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/go-openapi/loads"
 	"github.com/go-openapi/runtime"
+	"github.com/go-openapi/strfmt"
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
@@ -24,6 +26,7 @@ import (
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/swagger/restapi"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/swagger/restapi/operations"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/swagger/restapi/operations/equipment"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/roles"
 )
 
 func TestSetEquipmentHandler(t *testing.T) {
@@ -47,6 +50,7 @@ func TestSetEquipmentHandler(t *testing.T) {
 	require.NotEmpty(t, api.EquipmentGetAllEquipmentHandler)
 	require.NotEmpty(t, api.EquipmentFindEquipmentHandler)
 	require.NotEmpty(t, api.EquipmentArchiveEquipmentHandler)
+	require.NotEmpty(t, api.EquipmentBlockEquipmentHandler)
 }
 
 type EquipmentTestSuite struct {
@@ -1094,6 +1098,78 @@ func (s *EquipmentTestSuite) TestEquipment_EditEquipmentFunc_OK() {
 	}
 	require.Equal(t, equipmentToReturn.Name, *responseEquipment.Name)
 
+	s.equipmentRepo.AssertExpectations(t)
+}
+
+func (s *EquipmentTestSuite) TestEquipment_BlockEquipmentFunc_RepoNotFoundErr() {
+	t := s.T()
+	request := http.Request{}
+	ctx := context.Background()
+
+	handlerFunc := s.equipment.BlockEquipmentFunc(s.equipmentRepo)
+	userID, equipmentID := 1, 1
+	startDate, endDate := time.Now(), time.Now().Add(time.Hour*24)
+	params := equipment.BlockEquipmentParams{
+		HTTPRequest: request.WithContext(ctx),
+		EquipmentID: int64(equipmentID),
+		Data: &models.ChangeEquipmentStatusToBlockedRequest{
+			StartDate: strfmt.DateTime(startDate),
+			EndDate:   strfmt.DateTime(endDate),
+		},
+	}
+	err := &ent.NotFoundError{}
+
+	s.equipmentRepo.On("BlockEquipment", ctx, equipmentID, startDate, endDate, userID).Return(err)
+	responseRecorder := httptest.NewRecorder()
+	producer := runtime.JSONProducer()
+	principal := &models.Principal{ID: int64(userID), Role: roles.Manager}
+	resp := handlerFunc(params, principal)
+	resp.WriteResponse(responseRecorder, producer)
+	require.Equal(t, http.StatusNotFound, responseRecorder.Code)
+	s.equipmentRepo.AssertExpectations(t)
+
+	responseRecorder = httptest.NewRecorder()
+	producer = runtime.JSONProducer()
+	principal = &models.Principal{ID: int64(userID), Role: roles.Admin}
+	resp = handlerFunc(params, principal)
+	resp.WriteResponse(responseRecorder, producer)
+	require.Equal(t, http.StatusForbidden, responseRecorder.Code)
+	s.equipmentRepo.AssertExpectations(t)
+}
+
+func (s *EquipmentTestSuite) TestEquipment_BlockEquipmentFunc_OK() {
+	t := s.T()
+	request := http.Request{}
+	ctx := context.Background()
+
+	handlerFunc := s.equipment.BlockEquipmentFunc(s.equipmentRepo)
+	userID, equipmentID := 1, 1
+	startDate, endDate := time.Now(), time.Now().Add(time.Hour*24)
+	params := equipment.BlockEquipmentParams{
+		HTTPRequest: request.WithContext(ctx),
+		EquipmentID: int64(equipmentID),
+		Data: &models.ChangeEquipmentStatusToBlockedRequest{
+			StartDate: strfmt.DateTime(startDate),
+			EndDate:   strfmt.DateTime(endDate),
+		},
+	}
+
+	s.equipmentRepo.On("BlockEquipment", ctx, equipmentID, startDate, endDate, userID).Return(nil)
+	principal := &models.Principal{ID: int64(userID), Role: roles.Manager}
+	resp := handlerFunc(params, principal)
+	responseRecorder := httptest.NewRecorder()
+	producer := runtime.JSONProducer()
+	resp.WriteResponse(responseRecorder, producer)
+	require.Equal(t, http.StatusNoContent, responseRecorder.Code)
+	s.equipmentRepo.AssertExpectations(t)
+
+	s.equipmentRepo.On("BlockEquipment", ctx, equipmentID, startDate, endDate, userID).Return(nil)
+	principal = &models.Principal{ID: int64(userID), Role: roles.Operator}
+	resp = handlerFunc(params, principal)
+	responseRecorder = httptest.NewRecorder()
+	producer = runtime.JSONProducer()
+	resp.WriteResponse(responseRecorder, producer)
+	require.Equal(t, http.StatusForbidden, responseRecorder.Code)
 	s.equipmentRepo.AssertExpectations(t)
 }
 

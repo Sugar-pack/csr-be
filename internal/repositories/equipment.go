@@ -484,3 +484,103 @@ func OptionalIntsPetKind(k []int64, field string) predicate.PetKind {
 		s.Where(sql.InInts(s.C(field), petKind...))
 	}
 }
+
+func (r *equipmentRepository) BlockEquipment(
+	ctx context.Context, id int, startDate, endDate time.Time, userID int) error {
+	tx, err := middlewares.TxFromContext(ctx)
+	if err != nil {
+		return err
+	}
+
+	eqToBlock, err := tx.Equipment.Get(ctx, id)
+	if err != nil {
+		return err
+	}
+
+	// Get EquipmentStatusName form DB
+	eqStatusNotAvailable, err := tx.EquipmentStatusName.
+		Query().
+		Where(equipmentstatusname.Name(domain.EquipmentStatusNotAvailable)).
+		Only(ctx)
+	if err != nil {
+		return err
+	}
+
+	start, end, err := checkDates(&startDate, &endDate)
+	if err != nil {
+		return err
+	}
+
+	// Set a new EquipmentStatusName for current Equipment
+	_, err = eqToBlock.Update().SetCurrentStatus(eqStatusNotAvailable).Save(ctx)
+	if err != nil {
+		return err
+	}
+
+	// Create a new EquipmentStatus and set startDate, endDate, Equipment and EquipmentStatusName
+	_, err = tx.EquipmentStatus.Create().
+		SetCreatedAt(time.Now()).
+		SetEndDate(*end).
+		SetStartDate(*start).
+		SetEquipments(eqToBlock).
+		SetEquipmentStatusName(eqStatusNotAvailable).
+		SetUpdatedAt(time.Now()).
+		Save(ctx)
+	if err != nil {
+		return err
+	}
+
+	// Get OrderStatusName form DB
+	orStatusBlocked, err := tx.OrderStatusName.
+		Query().
+		Where(orderstatusname.Status(domain.OrderStatusBlocked)).
+		Only(ctx)
+	if err != nil {
+		return err
+	}
+
+	// Find all Orders which have OrderStatusName booked and start from startDate and later
+	orderIDs, err := eqToBlock.QueryOrder().
+		Where(order.RentStartGTE(*start), order.RentStartLTE(*end)). // rentStart must be in range of startDate..endDate
+		Where(order.RentEndGTE(*start)).                             // rentEnd must be equal or greater than startDate
+		Where(order.HasCurrentStatusWith(orderstatusname.StatusIn(
+			domain.OrderStatusPrepared,
+			domain.OrderStatusApproved))).
+		IDs(ctx)
+	if err != nil {
+		return err
+	}
+
+	// Set a new OrderStatusName for these Orders
+	_, err = tx.Order.Update().Where(order.IDIn(orderIDs...)).SetCurrentStatus(orStatusBlocked).Save(ctx)
+	if err != nil {
+		return err
+	}
+
+	// Create new OrderStatuses for orders
+	oss := make([]*ent.OrderStatusCreate, len(orderIDs))
+	for i, order := range orderIDs {
+		oss[i] = tx.OrderStatus.Create().
+			SetComment("").
+			SetCurrentDate(time.Now()).
+			SetOrderID(order).
+			SetUsersID(userID).
+			SetOrderStatusName(orStatusBlocked)
+	}
+	_, err = tx.OrderStatus.CreateBulk(oss...).Save(ctx)
+	if err != nil {
+		return err
+	}
+	return err
+}
+
+func checkDates(start *time.Time, end *time.Time) (*time.Time, *time.Time, error) {
+	startDate := time.Time(*start)
+	endDate := time.Time(*end)
+
+	if startDate.After(endDate) {
+		return nil, nil, errors.New("start date should be before end date")
+	}
+
+	return &startDate, &endDate, nil
+}

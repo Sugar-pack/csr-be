@@ -1570,7 +1570,38 @@ paths:
             description: Unexpected error.
             schema:
                 $ref: "#/definitions/Error"
-
+  /equipment/{equipmentId}/blocking:
+    parameters:
+      - name: equipmentId
+        in: path
+        required: true
+        description: equipment id
+        type: integer
+    post:
+        summary: Block equipment by id
+        security:
+            - Bearer: [ ]
+        parameters:
+        - name: data
+          in: body
+          description: Periods of blocking.
+          required: true
+          schema:
+            $ref: "#/definitions/ChangeEquipmentStatusToBlockedRequest"
+        tags:
+            - Equipment
+        operationId: BlockEquipment
+        responses:
+          204:
+            description: Equipment has been blocked
+          404:
+            description: Equipment not found
+            schema:
+              $ref: "#/definitions/Error"
+          default:
+            description: Unexpected error.
+            schema:
+                $ref: "#/definitions/Error"
   /equipment/search:
     post:
       summary: Equipment filtered list
@@ -2412,6 +2443,16 @@ definitions:
     properties:
       data:
         $ref: "#/definitions/EquipmentStatus"
+  #ChangeEquipmentStatusToBlockedRequest
+  ChangeEquipmentStatusToBlockedRequest:
+    type: object
+    properties:
+      start_date:
+        type: string
+        format: date-time
+      end_date:
+        type: string
+        format: date-time
   #EquipmentStatusRepairConfirmationResponse
   EquipmentStatusRepairConfirmationResponse:
     type: object
