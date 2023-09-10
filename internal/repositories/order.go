@@ -86,7 +86,7 @@ func (r *orderRepository) List(ctx context.Context, ownerId int, filter domain.O
 	query := tx.Order.Query().
 		Where(order.HasUsersWith(user.ID(ownerId))).
 		Order(orderFunc).Limit(filter.Limit).Offset(filter.Offset)
-		
+
 	query = r.applyListFilters(query, filter)
 
 	items, err := query.WithUsers().WithOrderStatus().WithEquipments().All(ctx)

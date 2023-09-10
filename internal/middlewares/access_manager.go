@@ -14,14 +14,11 @@ import (
 
 const apiPrefix = "/api"
 
-// do not change this values, it is used in swagger spec
-const forbiddenMessage = "User is not authorized"
-
 const numRoleVariations = 8
 
 type AccessManager interface {
 	AddNewAccess(role Role, method, path string) (bool, error)
-	HasAccess(role Role, method, path string) bool
+	VerifyAccess(role Role, method, path string) error
 	Authorize(r *http.Request, i interface{}) error
 }
 
@@ -193,27 +190,32 @@ func (a *blackListAccessManager) AddNewAccess(role Role, endpointMethod, endpoin
 
 }
 
-// HasAccess checks if role has access to the endpoint
-func (a *blackListAccessManager) HasAccess(role Role, method, path string) bool {
+// VerifyAccess checks if role has access to the endpoint.
+//
+// It returns the error with description (go-openapi/error) or `nil“ if role has an access
+func (a *blackListAccessManager) VerifyAccess(role Role, method, path string) error {
 	if utils.IsValueInList(role, a.fullAccessRoles) {
-		return true
+		return nil
 	}
 	allowedPaths, ok := a.accessMap[role][method]
 	if !ok {
-		return false
+		return openApiErrors.New(http.StatusForbidden, models.SwaggerErrorMessageUserIsNotAuthorized)
 	}
 	for _, allowedPath := range allowedPaths {
 		if allowedPath.isMatch(path) {
-			return true
+			return nil
 		}
 	}
-	return false
+	if !role.IsRegistrationConfirmed {
+		return openApiErrors.New(http.StatusForbidden, models.SwaggerErrorMessageUserHasNoConfirmedEmail)
+	}
+	return openApiErrors.New(http.StatusForbidden, models.SwaggerErrorMessageUserIsNotAuthorized)
 }
 
 func (a *blackListAccessManager) Authorize(r *http.Request, auth interface{}) error {
 	principal, ok := auth.(*models.Principal)
 	if !ok {
-		return openApiErrors.New(http.StatusForbidden, forbiddenMessage)
+		return openApiErrors.New(http.StatusForbidden, models.SwaggerErrorMessageUserIsNotAuthorized)
 	}
 
 	role := Role{
@@ -223,8 +225,5 @@ func (a *blackListAccessManager) Authorize(r *http.Request, auth interface{}) er
 		IsReadonly:              principal.IsReadonly,
 	}
 
-	if !a.HasAccess(role, r.Method, r.URL.Path) {
-		return openApiErrors.New(http.StatusForbidden, forbiddenMessage)
-	}
-	return nil
+	return a.VerifyAccess(role, r.Method, r.URL.Path)
 }

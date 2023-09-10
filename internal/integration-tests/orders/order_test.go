@@ -349,8 +349,8 @@ func TestIntegration_List_Filtered(t *testing.T) {
 		createParams := orders.NewCreateOrderParamsWithContext(ctx)
 		desc := fmt.Sprintf("order %v", i)
 		eqID := equip.ID
-		rentStart := strfmt.DateTime(time.Now().Add(time.Hour * time.Duration(2 * i) * 24))
-		rentEnd := strfmt.DateTime(time.Now().Add(time.Hour * time.Duration(2 * i + 1) * 24))
+		rentStart := strfmt.DateTime(time.Now().Add(time.Hour * time.Duration(2*i) * 24))
+		rentEnd := strfmt.DateTime(time.Now().Add(time.Hour * time.Duration(2*i+1) * 24))
 		createParams.Data = &models.OrderCreateRequest{
 			Description: desc,
 			EquipmentID: eqID,
@@ -415,10 +415,10 @@ func TestIntegration_List_Filtered(t *testing.T) {
 		dt := strfmt.DateTime(time.Now())
 		osp := orders.NewAddNewOrderStatusParamsWithContext(ctx)
 		osp.Data = &models.NewOrderStatus{
-			OrderID: o.ID,
+			OrderID:   o.ID,
 			CreatedAt: &dt,
-			Status: &st,
-			Comment: &st,
+			Status:    &st,
+			Comment:   &st,
 		}
 		_, err = client.Orders.AddNewOrderStatus(osp, managerAuth)
 		require.NoError(t, err)
@@ -482,10 +482,10 @@ func TestIntegration_List_Filtered(t *testing.T) {
 	dt := strfmt.DateTime(time.Now())
 	osp := orders.NewAddNewOrderStatusParamsWithContext(ctx)
 	osp.Data = &models.NewOrderStatus{
-		OrderID: res.Payload.Items[0].ID,
+		OrderID:   res.Payload.Items[0].ID,
 		CreatedAt: &dt,
-		Status: &domain.OrderStatusClosed,
-		Comment: &domain.OrderStatusClosed,
+		Status:    &domain.OrderStatusClosed,
+		Comment:   &domain.OrderStatusClosed,
 	}
 	_, err = client.Orders.AddNewOrderStatus(osp, auth)
 	require.NoError(t, err)
@@ -497,7 +497,7 @@ func TestIntegration_List_Filtered(t *testing.T) {
 		res, err := client.Orders.GetAllOrders(listParams, auth)
 		require.NoError(t, err)
 		assert.Equal(t, 6, len(res.GetPayload().Items))
-	})	
+	})
 
 	t.Run("Get Orders 2 Finished Ok", func(t *testing.T) {
 		listParams := orders.NewGetAllOrdersParamsWithContext(ctx)
@@ -506,7 +506,7 @@ func TestIntegration_List_Filtered(t *testing.T) {
 		res, err := client.Orders.GetAllOrders(listParams, auth)
 		require.NoError(t, err)
 		assert.Equal(t, 2, len(res.GetPayload().Items))
-	})	
+	})
 
 	t.Run("Get Orders 1 Closed Ok", func(t *testing.T) {
 		listParams := orders.NewGetAllOrdersParamsWithContext(ctx)

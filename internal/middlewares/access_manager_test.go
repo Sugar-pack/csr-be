@@ -161,12 +161,23 @@ func Test_blackListAccessManager(t *testing.T) {
 			path:      endpointConversion(validPathWithParamExample),
 			hasAccess: false,
 		},
+		{
+			role:      Role{Slug: userRole, IsRegistrationConfirmed: false},
+			method:    http.MethodGet,
+			path:      strings.TrimPrefix(endpointConversion(validPathWithParamExample), "/") + "/",
+			hasAccess: false,
+		},
 	}
 
-	t.Run("HasAccess", func(t *testing.T) {
+	t.Run("VerifyAccess", func(t *testing.T) {
 		for _, data := range requestsData {
-			assert.Equalf(t, data.hasAccess, manager.HasAccess(data.role, data.method, data.path),
-				"HasAccess(%v, %s, %s)", data.role, data.method, data.path)
+			hasAccess := true
+			err := manager.VerifyAccess(data.role, data.method, data.path)
+			if err != nil {
+				hasAccess = false
+			}
+			assert.Equalf(t, data.hasAccess, hasAccess,
+				"VerifyAccess(%v, %s, %s)", data.role, data.method, data.path)
 		}
 	})
 
