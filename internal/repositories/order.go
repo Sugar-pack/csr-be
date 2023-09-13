@@ -71,7 +71,10 @@ func getQuantity(quantity int, maxQuantity int) (*int, error) {
 	return &quantity, nil
 }
 
-func (r *orderRepository) List(ctx context.Context, ownerId int, filter domain.OrderFilter) ([]*ent.Order, error) {
+// List retrieves a list of orders from the order repository based on the provided criteria.
+// It takes an optional ownerId to filter orders by owner and a domain.OrderFilter for
+// additional filtering options. If ownerId is `nil` it retrievesall  orders for all users.
+func (r *orderRepository) List(ctx context.Context, ownerId *int, filter domain.OrderFilter) ([]*ent.Order, error) {
 	if !utils.IsValueInList(filter.OrderColumn, fieldsToOrderOrders) {
 		return nil, errors.New("wrong column to order by")
 	}
@@ -84,8 +87,11 @@ func (r *orderRepository) List(ctx context.Context, ownerId int, filter domain.O
 		return nil, err
 	}
 	query := tx.Order.Query().
-		Where(order.HasUsersWith(user.ID(ownerId))).
 		Order(orderFunc).Limit(filter.Limit).Offset(filter.Offset)
+
+	if ownerId != nil {
+		query = query.Where(order.HasUsersWith(user.ID(*ownerId)))
+	}
 
 	query = r.applyListFilters(query, filter)
 
@@ -97,12 +103,16 @@ func (r *orderRepository) List(ctx context.Context, ownerId int, filter domain.O
 	return items, err
 }
 
-func (r *orderRepository) OrdersTotal(ctx context.Context, ownerId int) (int, error) {
+func (r *orderRepository) OrdersTotal(ctx context.Context, ownerId *int) (int, error) {
 	tx, err := middlewares.TxFromContext(ctx)
 	if err != nil {
 		return 0, err
 	}
-	return tx.Order.Query().Where(order.HasUsersWith(user.ID(ownerId))).Count(ctx)
+	query := tx.Order.Query()
+	if ownerId != nil {
+		query = query.Where(order.HasUsersWith(user.ID(*ownerId)))
+	}
+	return query.Count(ctx)
 }
 
 func (r *orderRepository) Create(ctx context.Context, data *models.OrderCreateRequest, ownerId int, equipmentIDs []int) (*ent.Order, error) {
@@ -269,6 +279,9 @@ func (r *orderRepository) applyListFilters(q *ent.OrderQuery, filter domain.Orde
 		q = q.Where(order.HasCurrentStatusWith(func(s *sql.Selector) {
 			s.Where(sql.InValues(s.C(orderstatusname.FieldStatus), statusValues...))
 		}))
+	}
+	if filter.EquipmentID != nil {
+		q = q.Where(order.HasEquipmentsWith(equipment.ID(*filter.EquipmentID)))
 	}
 	return q
 }

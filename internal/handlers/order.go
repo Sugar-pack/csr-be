@@ -27,9 +27,10 @@ func SetOrderHandler(logger *zap.Logger, api *operations.BeAPI) {
 	equipmentRepo := repositories.NewEquipmentRepository()
 	ordersHandler := NewOrder(logger)
 
-	api.OrdersGetAllOrdersHandler = ordersHandler.ListOrderFunc(orderRepo)
+	api.OrdersGetUserOrdersHandler = ordersHandler.ListUserOrdersFunc(orderRepo)
 	api.OrdersCreateOrderHandler = ordersHandler.CreateOrderFunc(orderRepo, eqStatusRepo, equipmentRepo)
 	api.OrdersUpdateOrderHandler = ordersHandler.UpdateOrderFunc(orderRepo)
+	api.OrdersGetAllOrdersHandler = ordersHandler.ListAllOrdersFunc(orderRepo)
 }
 
 type Order struct {
@@ -42,7 +43,7 @@ func NewOrder(logger *zap.Logger) *Order {
 	}
 }
 
-func mapOrder(o *ent.Order, log *zap.Logger) (*models.Order, error) {
+func mapUserOrder(o *ent.Order, log *zap.Logger) (*models.UserOrder, error) {
 	if o == nil {
 		log.Warn("order is nil")
 		return nil, errors.New("order is nil")
@@ -143,7 +144,7 @@ func mapOrder(o *ent.Order, log *zap.Logger) (*models.Order, error) {
 		statusToOrder = mappedStatus
 	}
 
-	return &models.Order{
+	return &models.UserOrder{
 		Description: &o.Description,
 		Equipments:  orderEquipments,
 		ID:          &id,
@@ -159,10 +160,10 @@ func mapOrder(o *ent.Order, log *zap.Logger) (*models.Order, error) {
 	}, nil
 }
 
-func mapOrdersToResponse(entOrders []*ent.Order, log *zap.Logger) ([]*models.Order, error) {
-	modelOrders := make([]*models.Order, len(entOrders))
+func mapUserOrdersToResponse(entOrders []*ent.Order, log *zap.Logger) ([]*models.UserOrder, error) {
+	modelOrders := make([]*models.UserOrder, len(entOrders))
 	for i, o := range entOrders {
-		order, err := mapOrder(o, log)
+		order, err := mapUserOrder(o, log)
 		if err != nil {
 			log.Error("failed to map order", zap.Error(err))
 			return nil, err
@@ -173,8 +174,33 @@ func mapOrdersToResponse(entOrders []*ent.Order, log *zap.Logger) ([]*models.Ord
 	return modelOrders, nil
 }
 
-func (o Order) ListOrderFunc(repository domain.OrderRepository) orders.GetAllOrdersHandlerFunc {
-	return func(p orders.GetAllOrdersParams, principal *models.Principal) middleware.Responder {
+func mapOrdersToResponse(entOrders []*ent.Order, log *zap.Logger) ([]*models.Order, error) {
+	modelOrders := make([]*models.Order, len(entOrders))
+	for i, o := range entOrders {
+		uo, err := mapUserOrder(o, log)
+		if err != nil {
+			log.Error("failed to map order", zap.Error(err))
+			return nil, err
+		}
+		user := mapUserInfoWoRole(o.Edges.Users)
+		mo := &models.Order{
+			Description: uo.Description,
+			Equipments:  uo.Equipments,
+			ID:          uo.ID,
+			IsFirst:     uo.IsFirst,
+			LastStatus:  uo.LastStatus,
+			Quantity:    uo.Quantity,
+			RentEnd:     uo.RentEnd,
+			RentStart:   uo.RentStart,
+			User:        user,
+		}
+		modelOrders[i] = mo
+	}
+	return modelOrders, nil
+}
+
+func (o Order) ListUserOrdersFunc(repository domain.OrderRepository) orders.GetUserOrdersHandlerFunc {
+	return func(p orders.GetUserOrdersParams, principal *models.Principal) middleware.Responder {
 		ctx := p.HTTPRequest.Context()
 		userID := int(principal.ID)
 		limit := utils.GetValueByPointerOrDefaultValue(p.Limit, math.MaxInt)
@@ -194,21 +220,82 @@ func (o Order) ListOrderFunc(repository domain.OrderRepository) orders.GetAllOrd
 		if p.Status != nil {
 			_, ok := domain.AllOrderStatuses[*p.Status]
 			if !ok {
-				return orders.NewGetAllOrdersDefault(http.StatusBadRequest).
+				return orders.NewGetUserOrdersDefault(http.StatusBadRequest).
 					WithPayload(buildStringPayload(fmt.Sprintf("Invalid order status '%v'", *p.Status)))
 			}
 		}
 
-		total, err := repository.OrdersTotal(ctx, userID)
+		total, err := repository.OrdersTotal(ctx, &userID)
 		if err != nil {
 			o.logger.Error("Error while getting total of all user's orders", zap.Error(err))
+			return orders.NewGetUserOrdersDefault(http.StatusInternalServerError).
+				WithPayload(buildErrorPayload(err))
+		}
+
+		var items []*ent.Order
+		if total > 0 {
+			items, err = repository.List(ctx, &userID, orderFilter)
+			if err != nil {
+				o.logger.Error("list items failed", zap.Error(err))
+				return orders.NewGetUserOrdersDefault(http.StatusInternalServerError).WithPayload(buildErrorPayload(err))
+			}
+		}
+
+		mappedOrders, err := mapUserOrdersToResponse(items, o.logger)
+		if err != nil {
+			o.logger.Error("map orders to response failed", zap.Error(err))
+			return orders.NewGetUserOrdersDefault(http.StatusInternalServerError).WithPayload(buildErrorPayload(err))
+		}
+		totalOrders := int64(total)
+		listOrders := &models.UserOrdersList{
+			Items: mappedOrders,
+			Total: &totalOrders,
+		}
+		return orders.NewGetUserOrdersOK().WithPayload(listOrders)
+	}
+}
+
+func (o Order) ListAllOrdersFunc(repository domain.OrderRepository) orders.GetAllOrdersHandlerFunc {
+	return func(p orders.GetAllOrdersParams, _ *models.Principal) middleware.Responder {
+		ctx := p.HTTPRequest.Context()
+		limit := utils.GetValueByPointerOrDefaultValue(p.Limit, math.MaxInt)
+		offset := utils.GetValueByPointerOrDefaultValue(p.Offset, 0)
+		orderBy := utils.GetValueByPointerOrDefaultValue(p.OrderBy, utils.AscOrder)
+		orderColumn := utils.GetValueByPointerOrDefaultValue(p.OrderColumn, order.FieldID)
+
+		orderFilter := domain.OrderFilter{
+			Filter: domain.Filter{
+				Limit:       int(limit),
+				Offset:      int(offset),
+				OrderBy:     orderBy,
+				OrderColumn: orderColumn,
+			},
+		}
+
+		if p.Status != nil {
+			_, ok := domain.AllOrderStatuses[*p.Status]
+			if !ok {
+				return orders.NewGetAllOrdersDefault(http.StatusBadRequest).
+					WithPayload(buildStringPayload(fmt.Sprintf("Invalid order status '%v'", *p.Status)))
+			}
+			orderFilter.Status = p.Status
+		}
+
+		if p.EquipmentID != nil {
+			eid := int(*p.EquipmentID)
+			orderFilter.EquipmentID = &eid
+		}
+
+		total, err := repository.OrdersTotal(ctx, nil)
+		if err != nil {
+			o.logger.Error("Error while getting total of all orders", zap.Error(err))
 			return orders.NewGetAllOrdersDefault(http.StatusInternalServerError).
 				WithPayload(buildErrorPayload(err))
 		}
 
 		var items []*ent.Order
 		if total > 0 {
-			items, err = repository.List(ctx, userID, orderFilter)
+			items, err = repository.List(ctx, nil, orderFilter)
 			if err != nil {
 				o.logger.Error("list items failed", zap.Error(err))
 				return orders.NewGetAllOrdersDefault(http.StatusInternalServerError).WithPayload(buildErrorPayload(err))
@@ -221,7 +308,7 @@ func (o Order) ListOrderFunc(repository domain.OrderRepository) orders.GetAllOrd
 			return orders.NewGetAllOrdersDefault(http.StatusInternalServerError).WithPayload(buildErrorPayload(err))
 		}
 		totalOrders := int64(total)
-		listOrders := &models.OrderList{
+		listOrders := &models.OrdersList{
 			Items: mappedOrders,
 			Total: &totalOrders,
 		}
@@ -269,14 +356,14 @@ func (o Order) CreateOrderFunc(
 			OrderID:     int64(order.ID),
 		}); err != nil {
 			o.logger.Error("error while creating equipment status", zap.Error(err))
-			return orders.NewGetAllOrdersDefault(http.StatusInternalServerError).
+			return orders.NewGetUserOrdersDefault(http.StatusInternalServerError).
 				WithPayload(buildErrorPayload(err))
 		}
 
-		mappedOrder, err := mapOrder(order, o.logger)
+		mappedOrder, err := mapUserOrder(order, o.logger)
 		if err != nil {
 			o.logger.Error("failed to map order", zap.Error(err))
-			return orders.NewGetAllOrdersDefault(http.StatusInternalServerError).WithPayload(buildErrorPayload(err))
+			return orders.NewGetUserOrdersDefault(http.StatusInternalServerError).WithPayload(buildErrorPayload(err))
 		}
 
 		return orders.NewCreateOrderCreated().WithPayload(mappedOrder)
@@ -295,7 +382,7 @@ func (o Order) UpdateOrderFunc(repository domain.OrderRepository) orders.UpdateO
 			return orders.NewUpdateOrderDefault(http.StatusInternalServerError).WithPayload(buildErrorPayload(err))
 		}
 
-		mappedOrder, err := mapOrder(order, o.logger)
+		mappedOrder, err := mapUserOrder(order, o.logger)
 		if err != nil {
 			o.logger.Error("failed to map order", zap.Error(err))
 			return orders.NewUpdateOrderDefault(http.StatusInternalServerError).WithPayload(buildErrorPayload(err))

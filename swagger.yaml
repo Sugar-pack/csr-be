@@ -1050,7 +1050,7 @@ paths:
     get:
       tags:
         - Orders
-      operationId: GetAllOrders
+      operationId: GetUserOrders
       parameters:
         - name: status
           in: query
@@ -1106,7 +1106,7 @@ paths:
         200:
           description: Success
           schema:
-            $ref: "#/definitions/OrderList"
+            $ref: "#/definitions/UserOrdersList"
         default:
           description: 'Unexpected error'
           schema:
@@ -1123,7 +1123,7 @@ paths:
         201:
           description: 'Order created'
           schema:
-            $ref: '#/definitions/Order'
+            $ref: '#/definitions/UserOrder'
         default:
           description: 'Unexpected error'
           schema:
@@ -1159,7 +1159,7 @@ paths:
         200:
           description: Order updated
           schema:
-            $ref: "#/definitions/Order"
+            $ref: "#/definitions/UserOrder"
         default:
           description: Unexpected error.
           schema:
@@ -1266,7 +1266,7 @@ paths:
         200:
           description: Success
           schema:
-            $ref: "#/definitions/OrderList"
+            $ref: "#/definitions/UserOrdersList"
         404:
           description: No orders found
           schema:
@@ -1335,7 +1335,7 @@ paths:
         200:
           description: Success
           schema:
-            $ref: "#/definitions/OrderList"
+            $ref: "#/definitions/UserOrdersList"
         404:
           description: No orders found
           schema:
@@ -1952,6 +1952,79 @@ paths:
           description: Unexpected error.
           schema:
             $ref: "#/definitions/Error"
+  /management/orders:
+    get:
+      summary: Get all orders
+      security:
+        - Bearer: [ ]
+      tags:
+        - Orders
+      operationId: GetAllOrders
+      parameters:
+        - name: status
+          in: query
+          required: false
+          description: filter orders by status (in review, approved, closed, etc) or aggregated status (all, active or finished)
+          type: string
+          enum:
+            - all
+            - active
+            - finished
+            - in review
+            - approved
+            - in progress
+            - rejected
+            - closed
+            - prepared
+            - overdue
+            - blocked
+          default: all
+        - name: equipment_id
+          in: query
+          required: false
+          description: filter orders by Equipment's ID
+          type: integer
+        - name: limit
+          in: query
+          required: false
+          description: limit of items in page
+          type: integer
+          default: 10
+        - name: offset
+          in: query
+          required: false
+          description: offset of items
+          type: integer
+          default: 0
+        - name: order_by
+          in: query
+          required: false
+          description: how to order list
+          type: string
+          enum:
+            - asc
+            - desc
+          default: desc
+        - name: order_column
+          in: query
+          required: false
+          description: column to order by
+          type: string
+          enum:
+            - id
+            - name
+            - title
+          default: id
+      responses:
+        200:
+          description: Success
+          schema:
+            $ref: "#/definitions/OrdersList"
+        default:
+          description: Unexpected error.
+          schema:
+            $ref: "#/definitions/Error"
+
 definitions:
   principal:
     type: object
@@ -3126,7 +3199,7 @@ definitions:
       rent_end:
         type: string
         format: date-time
-  Order:
+  UserOrder:
     type: object
     required:
       - id
@@ -3154,6 +3227,44 @@ definitions:
       user:
         type: object
         $ref: '#/definitions/UserEmbeddable'
+      equipments:
+        type: array
+        items:
+          $ref: '#/definitions/EquipmentResponse'
+      last_status:
+        type: object
+        $ref: '#/definitions/OrderStatus'
+      is_first:
+        type: boolean
+        example: false
+  Order:
+    type: object
+    required:
+      - id
+      - description
+      - quantity
+      - rent_start
+      - rent_end
+      - user
+      - equipments
+      - last_status
+      - is_first
+    properties:
+      id:
+        type: integer
+      description:
+        type: string
+      quantity:
+        type: integer
+      rent_start:
+        type: string
+        format: date-time
+      rent_end:
+        type: string
+        format: date-time
+      user:
+        type: object
+        $ref: '#/definitions/UserInfo'
       equipments:
         type: array
         items:
@@ -3192,7 +3303,19 @@ definitions:
         $ref: '#/definitions/UserEmbeddable'
       order_id:
         type: integer
-  OrderList:
+  UserOrdersList:
+    type: object
+    required:
+      - total
+      - items
+    properties:
+      total:
+        type: integer
+      items:
+        type: array
+        items:
+          $ref: "#/definitions/UserOrder"
+  OrdersList:
     type: object
     required:
       - total

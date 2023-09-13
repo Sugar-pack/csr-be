@@ -28,7 +28,7 @@ func TestIntegration_GetCurrentUser(t *testing.T) {
 	ctx := context.Background()
 	client := utils.SetupClient()
 
-	l, p, id := utils.AdminLoginPassword(t)
+	l, p, id := utils.CreateLoginPassword(t, 1)
 
 	testLogin = l
 	testPassword = p

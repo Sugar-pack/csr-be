@@ -411,16 +411,24 @@ func (c User) ChangeEmail(repo domain.UserRepository,
 }
 
 func mapUserInfo(user *ent.User) (*models.UserInfo, error) {
-	userID := int64(user.ID)
-	passportDate := user.PassportIssueDate.String()
 	if user.Edges.Role == nil {
 		return nil, errors.New("role is nil")
 	}
+	info := mapUserInfoWoRole(user)
 	userRole := user.Edges.Role
 	userRoleInfo := models.UserInfoRole{
 		ID:   int64(userRole.ID),
 		Name: userRole.Name,
 	}
+
+	info.Role = &userRoleInfo
+
+	return info, nil
+}
+
+func mapUserInfoWoRole(user *ent.User) *models.UserInfo {
+	userID := int64(user.ID)
+	passportDate := user.PassportIssueDate.String()
 	typeString := user.Type.String()
 	result := &models.UserInfo{
 		Email:                   &user.Email,
@@ -435,10 +443,9 @@ func mapUserInfo(user *ent.User) (*models.UserInfo, error) {
 		PassportSeries:          user.PassportSeries,
 		Patronymic:              user.Patronymic,
 		PhoneNumber:             user.Phone,
-		Role:                    &userRoleInfo,
 		Surname:                 user.Surname,
 		Type:                    &typeString,
 		IsRegistrationConfirmed: &user.IsRegistrationConfirmed,
 	}
-	return result, nil
+	return result
 }

@@ -288,9 +288,9 @@ func (h *OrderStatus) GetOrdersByStatus(repository domain.OrderRepositoryWithFil
 					WithPayload(buildStringPayload(fmt.Sprintf("Can't get orders by status. error: %s", err.Error())))
 			}
 		}
-		ordersResult := make([]*models.Order, len(ordersByStatus))
+		ordersResult := make([]*models.UserOrder, len(ordersByStatus))
 		for index, order := range ordersByStatus {
-			tmpOrder, errMap := mapOrder(order, h.logger)
+			tmpOrder, errMap := mapUserOrder(order, h.logger)
 			if errMap != nil {
 				h.logger.Error("GetOrdersByStatus error", zap.Error(errMap))
 				return orders.NewGetOrdersByStatusDefault(http.StatusInternalServerError).
@@ -300,7 +300,7 @@ func (h *OrderStatus) GetOrdersByStatus(repository domain.OrderRepositoryWithFil
 		}
 
 		totalOrders := int64(total)
-		listOrders := &models.OrderList{
+		listOrders := &models.UserOrdersList{
 			Items: ordersResult,
 			Total: &totalOrders,
 		}
@@ -335,9 +335,9 @@ func (h *OrderStatus) GetOrdersByPeriodAndStatus(repository domain.OrderReposito
 					WithPayload(buildStringPayload("Can't get orders by period and status"))
 			}
 		}
-		ordersResult := make([]*models.Order, len(ordersByPeriodAndStatus))
+		ordersResult := make([]*models.UserOrder, len(ordersByPeriodAndStatus))
 		for index, order := range ordersByPeriodAndStatus {
-			tmpOrder, errMap := mapOrder(order, h.logger)
+			tmpOrder, errMap := mapUserOrder(order, h.logger)
 			if errMap != nil {
 				h.logger.Error("GetOrdersByPeriodAndStatus error", zap.Error(errMap))
 				return orders.NewGetOrdersByDateAndStatusDefault(http.StatusInternalServerError).
@@ -347,7 +347,7 @@ func (h *OrderStatus) GetOrdersByPeriodAndStatus(repository domain.OrderReposito
 		}
 
 		totalOrders := int64(total)
-		listOrders := &models.OrderList{
+		listOrders := &models.UserOrdersList{
 			Items: ordersResult,
 			Total: &totalOrders,
 		}
