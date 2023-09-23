@@ -43,7 +43,6 @@ func SetupAPI(entClient *ent.Client, lg *zap.Logger, conf *config.AppConfig) (*r
 	emailConfirmRepository := repositories.NewConfirmEmailRepository()
 
 	// conf
-	passwordTTL := conf.Password.ResetExpirationMinutes
 	jwtSecret := conf.JWTSecretKey
 	// services
 	mailSendClient := email.NewSenderSmtp(conf.Email, email.NewWrapperSmtp(
@@ -52,8 +51,9 @@ func SetupAPI(entClient *ent.Client, lg *zap.Logger, conf *config.AppConfig) (*r
 		conf.Email.Password,
 	))
 	regConfirmService := services.NewRegistrationConfirmService(mailSendClient, userRepository, regConfirmRepo,
-		lg, passwordTTL)
-	passwordService := services.NewPasswordResetService(mailSendClient, userRepository, passwordRepo, lg, passwordTTL, passwordGenerator)
+		lg, conf.Email.ConfirmLinkExpiration)
+	passwordService := services.NewPasswordResetService(mailSendClient,
+		userRepository, passwordRepo, lg, conf.Password.ResetLinkExpiration, passwordGenerator)
 	tokenManager := services.NewTokenManager(userRepository, tokenRepository, jwtSecret, lg)
 	changeEmailService := services.NewEmailChangeService(
 		mailSendClient, userRepository,

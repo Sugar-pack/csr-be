@@ -13,11 +13,12 @@
     "password": "any",
     "senderFromAddress": "any",
     "senderFromName": "any",
+    "confirmLinkExpiration": "15m",
     "isSendRequired": false
   },
   "password": {
     "length": 8,
-    "resetExpirationMinutes": 15
+    "resetLinkExpiration": "15m"
   },
   "orderStatusOverdueTimeCheckDuration": "4h",
   "server": {
