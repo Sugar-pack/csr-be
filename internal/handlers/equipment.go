@@ -32,6 +32,7 @@ func SetEquipmentHandler(logger *zap.Logger, api *operations.BeAPI) {
 	api.EquipmentFindEquipmentHandler = equipmentHandler.FindEquipmentFunc(eqRepo)
 	api.EquipmentArchiveEquipmentHandler = equipmentHandler.ArchiveEquipmentFunc(eqRepo)
 	api.EquipmentBlockEquipmentHandler = equipmentHandler.BlockEquipmentFunc(eqRepo)
+	api.EquipmentUnblockEquipmentHandler = equipmentHandler.UnblockEquipmentFunc(eqRepo)
 }
 
 type Equipment struct {
@@ -313,7 +314,8 @@ func (c Equipment) BlockEquipmentFunc(repository domain.EquipmentRepository) equ
 			c.logger.Warn("User have no right to block the equipment", zap.Any("principal", principal))
 			return equipment.
 				NewBlockEquipmentDefault(http.StatusForbidden).
-				WithPayload(&models.Error{Data: &models.ErrorData{Message: "You don't have rights to block the equipment"}})
+				WithPayload(&models.Error{Data: &models.ErrorData{
+					Message: "You don't have rights to block the equipment"}})
 		}
 
 		err := repository.BlockEquipment(
@@ -329,5 +331,31 @@ func (c Equipment) BlockEquipmentFunc(repository domain.EquipmentRepository) equ
 				WithPayload(buildStringPayload("Error while blocking equipment"))
 		}
 		return equipment.NewBlockEquipmentNoContent()
+	}
+}
+
+func (c Equipment) UnblockEquipmentFunc(repository domain.EquipmentRepository) equipment.UnblockEquipmentHandlerFunc {
+	return func(s equipment.UnblockEquipmentParams, principal *models.Principal) middleware.Responder {
+		ctx := s.HTTPRequest.Context()
+		role := principal.Role
+
+		if role != roles.Manager {
+			c.logger.Warn("User have no right to unblock the equipment", zap.Any("principal", principal))
+			return equipment.
+				NewUnblockEquipmentDefault(http.StatusForbidden).
+				WithPayload(buildStringPayload("You don't have rights to unblock the equipment"))
+		}
+
+		err := repository.UnblockEquipment(ctx, int(s.EquipmentID))
+		if err != nil {
+			if ent.IsNotFound(err) {
+				return equipment.NewUnblockEquipmentNotFound().
+					WithPayload(buildStringPayload(EquipmentNotFoundMsg))
+			}
+			c.logger.Error("Error while unblocking equipment", zap.Error(err))
+			return equipment.NewUnblockEquipmentDefault(http.StatusInternalServerError).
+				WithPayload(buildStringPayload("Error while unblocking equipment"))
+		}
+		return equipment.NewUnblockEquipmentNoContent()
 	}
 }

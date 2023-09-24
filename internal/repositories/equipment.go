@@ -10,6 +10,7 @@ import (
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/ent"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/ent/category"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/ent/equipment"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/ent/equipmentstatus"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/ent/equipmentstatusname"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/ent/order"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/ent/orderstatusname"
@@ -574,6 +575,65 @@ func (r *equipmentRepository) BlockEquipment(
 	return err
 }
 
+func (r *equipmentRepository) UnblockEquipment(ctx context.Context, id int) error {
+	tx, err := middlewares.TxFromContext(ctx)
+	if err != nil {
+		return err
+	}
+
+	eqToUnblock, err := tx.Equipment.Get(ctx, id)
+	if err != nil {
+		return err
+	}
+
+	// Get EquipmentStatusNames form DB
+	eqStatusNotAvailable, err := tx.EquipmentStatusName.
+		Query().
+		Where(equipmentstatusname.Name(domain.EquipmentStatusNotAvailable)).
+		Only(ctx)
+	if err != nil {
+		return err
+	}
+
+	eqStatusAvailable, err := tx.EquipmentStatusName.
+		Query().
+		Where(equipmentstatusname.Name(domain.EquipmentStatusAvailable)).
+		Only(ctx)
+	if err != nil {
+		return err
+	}
+
+	// Set a new EquipmentStatusName for current Equipment
+	_, err = eqToUnblock.Update().SetCurrentStatus(eqStatusAvailable).Save(ctx)
+	if err != nil {
+		return err
+	}
+
+	// Get last EqupmentStatus for Equipment according to some criteria
+	equipmentStatus, err := tx.EquipmentStatus.
+		Query().
+		Where(equipmentstatus.HasEquipmentsWith(equipment.ID(eqToUnblock.ID))).
+		Where(equipmentstatus.HasEquipmentStatusNameWith(equipmentstatusname.ID(eqStatusNotAvailable.ID))).
+		Order(ent.Asc(equipmentstatus.FieldEndDate)).
+		First(ctx)
+	if err != nil {
+		return err
+	}
+
+	if equipmentStatus != nil {
+		_, err = equipmentStatus.
+			Update().
+			SetEquipmentStatusName(eqStatusAvailable).
+			SetEndDate(truncateHours(&equipmentStatus.EndDate)).
+			Save(ctx)
+		if err != nil {
+			return err
+		}
+
+	}
+	return err
+}
+
 func checkDates(start *time.Time, end *time.Time) (*time.Time, *time.Time, error) {
 	startDate := time.Time(*start)
 	endDate := time.Time(*end)
@@ -583,4 +643,11 @@ func checkDates(start *time.Time, end *time.Time) (*time.Time, *time.Time, error
 	}
 
 	return &startDate, &endDate, nil
+}
+
+// Set EquipmentStatus EndDate back in time to give access for the unblocked equipment again
+func truncateHours(date *time.Time) time.Time {
+	extraHour := 1
+	hours := date.Hour() + extraHour
+	return date.Add(time.Duration(-hours) * time.Hour)
 }

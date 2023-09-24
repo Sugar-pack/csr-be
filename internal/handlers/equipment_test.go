@@ -51,6 +51,7 @@ func TestSetEquipmentHandler(t *testing.T) {
 	require.NotEmpty(t, api.EquipmentFindEquipmentHandler)
 	require.NotEmpty(t, api.EquipmentArchiveEquipmentHandler)
 	require.NotEmpty(t, api.EquipmentBlockEquipmentHandler)
+	require.NotEmpty(t, api.EquipmentUnblockEquipmentHandler)
 }
 
 type EquipmentTestSuite struct {
@@ -1163,7 +1164,6 @@ func (s *EquipmentTestSuite) TestEquipment_BlockEquipmentFunc_OK() {
 	require.Equal(t, http.StatusNoContent, responseRecorder.Code)
 	s.equipmentRepo.AssertExpectations(t)
 
-	s.equipmentRepo.On("BlockEquipment", ctx, equipmentID, startDate, endDate, userID).Return(nil)
 	principal = &models.Principal{ID: int64(userID), Role: roles.Operator}
 	resp = handlerFunc(params, principal)
 	responseRecorder = httptest.NewRecorder()
@@ -1171,6 +1171,68 @@ func (s *EquipmentTestSuite) TestEquipment_BlockEquipmentFunc_OK() {
 	resp.WriteResponse(responseRecorder, producer)
 	require.Equal(t, http.StatusForbidden, responseRecorder.Code)
 	s.equipmentRepo.AssertExpectations(t)
+}
+
+func (s *EquipmentTestSuite) TestEquipment_UnblockEquipmentFunc_RepoNotFoundErr() {
+	t := s.T()
+	request := http.Request{}
+	ctx := context.Background()
+
+	handlerFunc := s.equipment.UnblockEquipmentFunc(s.equipmentRepo)
+	userID, equipmentID := 1, 1
+	params := equipment.UnblockEquipmentParams{
+		HTTPRequest: request.WithContext(ctx),
+		EquipmentID: int64(equipmentID),
+	}
+	err := &ent.NotFoundError{}
+	authRoles := []string{roles.Manager, roles.Operator, roles.Admin}
+	s.equipmentRepo.On("UnblockEquipment", ctx, equipmentID).Return(err)
+
+	for _, r := range authRoles {
+		httpStatus := http.StatusForbidden
+		if r == roles.Manager {
+			httpStatus = http.StatusNotFound
+		}
+
+		responseRecorder := httptest.NewRecorder()
+		producer := runtime.JSONProducer()
+		principal := &models.Principal{ID: int64(userID), Role: r}
+		resp := handlerFunc(params, principal)
+		resp.WriteResponse(responseRecorder, producer)
+		require.Equal(t, httpStatus, responseRecorder.Code)
+		s.equipmentRepo.AssertExpectations(t)
+	}
+}
+
+func (s *EquipmentTestSuite) TestEquipment_UnblockEquipmentFunc_OK() {
+	t := s.T()
+	request := http.Request{}
+	ctx := context.Background()
+
+	handlerFunc := s.equipment.UnblockEquipmentFunc(s.equipmentRepo)
+	userID, equipmentID := 1, 1
+	params := equipment.UnblockEquipmentParams{
+		HTTPRequest: request.WithContext(ctx),
+		EquipmentID: int64(equipmentID),
+	}
+
+	authRoles := []string{roles.Manager, roles.Operator, roles.Admin}
+	s.equipmentRepo.On("UnblockEquipment", ctx, equipmentID).Return(nil)
+
+	for _, r := range authRoles {
+		httpStatus := http.StatusForbidden
+		if r == roles.Manager {
+			httpStatus = http.StatusNoContent
+		}
+
+		principal := &models.Principal{ID: int64(userID), Role: r}
+		resp := handlerFunc(params, principal)
+		responseRecorder := httptest.NewRecorder()
+		producer := runtime.JSONProducer()
+		resp.WriteResponse(responseRecorder, producer)
+		require.Equal(t, httpStatus, responseRecorder.Code)
+		s.equipmentRepo.AssertExpectations(t)
+	}
 }
 
 func containsEquipment(t *testing.T, array []*ent.Equipment, item *models.EquipmentResponse) bool {

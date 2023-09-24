@@ -1602,6 +1602,31 @@ paths:
             description: Unexpected error.
             schema:
                 $ref: "#/definitions/Error"
+  /equipment/{equipmentId}/unblocking:
+    parameters:
+      - name: equipmentId
+        in: path
+        required: true
+        description: equipment id
+        type: integer
+    post:
+        summary: Unblock equipment by id
+        security:
+            - Bearer: [ ]
+        tags:
+            - Equipment
+        operationId: UnblockEquipment
+        responses:
+          204:
+            description: Equipment has been unblocked
+          404:
+            description: Equipment not found
+            schema:
+              $ref: "#/definitions/Error"
+          default:
+            description: Unexpected error.
+            schema:
+                $ref: "#/definitions/Error"
   /equipment/search:
     post:
       summary: Equipment filtered list
