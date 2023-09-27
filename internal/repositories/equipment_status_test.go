@@ -40,10 +40,10 @@ func (s *equipmentStatusTestSuite) SetupTest() {
 	s.client = client
 
 	s.statusNameMap = map[int]string{
-		1: "available",
-		2: "booked",
-		3: "in use",
-		4: "not available",
+		1: domain.EquipmentStatusAvailable,
+		2: domain.EquipmentStatusBooked,
+		3: domain.EquipmentStatusInUse,
+		4: domain.EquipmentStatusNotAvailable,
 	}
 
 	_, err := s.client.EquipmentStatusName.Delete().Exec(s.ctx)
@@ -73,7 +73,7 @@ func (s *equipmentStatusTestSuite) SetupTest() {
 		if errCreation != nil {
 			t.Fatal(errCreation)
 		}
-		if statusName == "not available" {
+		if statusName == domain.EquipmentStatusNotAvailable {
 			notAvailableEquipment = eqStatus
 		}
 	}

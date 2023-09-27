@@ -27,6 +27,7 @@ import (
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/swagger/restapi/operations"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/swagger/restapi/operations/equipment"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/roles"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/pkg/domain"
 )
 
 func TestSetEquipmentHandler(t *testing.T) {
@@ -180,7 +181,7 @@ func (s *EquipmentTestSuite) TestEquipment_PostEquipmentFunc_RepoErr() {
 	}
 	err := errors.New("test error")
 
-	s.statusRepo.On("GetByName", ctx, "available").Return(statusToAdd, nil)
+	s.statusRepo.On("GetByName", ctx, domain.EquipmentStatusAvailable).Return(statusToAdd, nil)
 	s.equipmentRepo.On("CreateEquipment", ctx, equipmentToAdd, statusToAdd).Return(nil, err)
 
 	resp := handlerFunc(data, nil)
@@ -206,7 +207,7 @@ func (s *EquipmentTestSuite) TestEquipment_PostEquipmentFunc_RepoStatusErr() {
 	}
 	err := errors.New("test error")
 
-	s.statusRepo.On("GetByName", ctx, "available").Return(nil, err)
+	s.statusRepo.On("GetByName", ctx, domain.EquipmentStatusAvailable).Return(nil, err)
 
 	resp := handlerFunc(data, nil)
 	responseRecorder := httptest.NewRecorder()
@@ -232,7 +233,7 @@ func (s *EquipmentTestSuite) TestEquipment_PostEquipmentFunc_MapErr() {
 	statusToAdd := ValidStatus(t)
 	equipmentToReturn := InvalidEquipment(t)
 
-	s.statusRepo.On("GetByName", ctx, "available").Return(statusToAdd, nil)
+	s.statusRepo.On("GetByName", ctx, domain.EquipmentStatusAvailable).Return(statusToAdd, nil)
 	s.equipmentRepo.On("CreateEquipment", ctx, equipmentToAdd, statusToAdd).Return(equipmentToReturn, nil)
 
 	resp := handlerFunc(data, nil)
@@ -259,7 +260,7 @@ func (s *EquipmentTestSuite) TestEquipment_PostEquipmentFunc_OK() {
 	statusToAdd := ValidStatus(t)
 	equipmentToReturn := ValidEquipment(t, 1)
 
-	s.statusRepo.On("GetByName", ctx, "available").Return(statusToAdd, nil)
+	s.statusRepo.On("GetByName", ctx, domain.EquipmentStatusAvailable).Return(statusToAdd, nil)
 	s.equipmentRepo.On("CreateEquipment", ctx, equipmentToAdd, statusToAdd).Return(equipmentToReturn, nil)
 
 	resp := handlerFunc(data, nil)

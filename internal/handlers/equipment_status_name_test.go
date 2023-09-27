@@ -21,6 +21,7 @@ import (
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/swagger/restapi"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/swagger/restapi/operations"
 	eqStatusName "git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/swagger/restapi/operations/equipment_status_name"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/pkg/domain"
 )
 
 func TestSetEquipmentStatusNameHandler(t *testing.T) {
@@ -52,7 +53,7 @@ func ValidStatus(t *testing.T) *ent.EquipmentStatusName {
 	t.Helper()
 	return &ent.EquipmentStatusName{
 		ID:   1,
-		Name: "available",
+		Name: domain.EquipmentStatusAvailable,
 	}
 
 }
