@@ -549,28 +549,28 @@ func (s *orderTestSuite) TestOrder_ListUserOrders_StatusFilter() {
 		fl   domain.OrderFilter
 		ords []*ent.Order
 	}{
-		"all": {
+		domain.OrderStatusAll: {
 			fl: domain.OrderFilter{
 				Filter: filter,
 				Status: &domain.OrderStatusAll,
 			},
 			ords: orderList,
 		},
-		"active": {
+		domain.OrderStatusActive: {
 			fl: domain.OrderFilter{
 				Filter: filter,
 				Status: &domain.OrderStatusActive,
 			},
 			ords: []*ent.Order{orderList[0], orderList[1], orderList[2]},
 		},
-		"finished": {
+		domain.OrderStatusFinished: {
 			fl: domain.OrderFilter{
 				Filter: filter,
 				Status: &domain.OrderStatusFinished,
 			},
 			ords: []*ent.Order{orderList[3]},
 		},
-		"rejected": {
+		domain.OrderStatusRejected: {
 			fl: domain.OrderFilter{
 				Filter: filter,
 				Status: &domain.OrderStatusRejected,
@@ -645,28 +645,28 @@ func (s *orderTestSuite) TestOrder_ListAllOrders_StatusFilter() {
 		fl   domain.OrderFilter
 		ords []*ent.Order
 	}{
-		"all": {
+		domain.OrderStatusAll: {
 			fl: domain.OrderFilter{
 				Filter: filter,
 				Status: &domain.OrderStatusAll,
 			},
 			ords: orderList,
 		},
-		"active": {
+		domain.OrderStatusActive: {
 			fl: domain.OrderFilter{
 				Filter: filter,
 				Status: &domain.OrderStatusActive,
 			},
 			ords: []*ent.Order{orderList[0], orderList[1], orderList[2]},
 		},
-		"finished": {
+		domain.OrderStatusFinished: {
 			fl: domain.OrderFilter{
 				Filter: filter,
 				Status: &domain.OrderStatusFinished,
 			},
 			ords: []*ent.Order{orderList[3]},
 		},
-		"rejected": {
+		domain.OrderStatusRejected: {
 			fl: domain.OrderFilter{
 				Filter: filter,
 				Status: &domain.OrderStatusRejected,

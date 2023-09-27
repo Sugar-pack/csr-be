@@ -113,10 +113,10 @@ func (s *OrderSuite) SetupTest() {
 
 	// list of statuses with IDs. Amount of statuses is equal to amount of orders.
 	statusNameMap := map[int]string{
-		1: "in review",   // active
-		2: "in progress", // active
-		3: "rejected",    // finished
-		4: "closed",      // finished
+		1: domain.OrderStatusInReview,   // active
+		2: domain.OrderStatusInProgress, // active
+		3: domain.OrderStatusRejected,   // finished
+		4: domain.OrderStatusClosed,     // finished
 	}
 	_, err = s.client.OrderStatusName.Delete().Exec(s.ctx) // clean up
 	if err != nil {
@@ -719,49 +719,49 @@ func (s *OrderSuite) TestOrderRepository_List_StatusFilter() {
 		expectedErr string
 		expectedIDs []int // in AscOrder
 	}{
-		"all": {
+		domain.OrderStatusAll: {
 			fl: domain.OrderFilter{
 				Filter: filter,
 				Status: &domain.OrderStatusAll,
 			},
 			expectedIDs: []int{s.orders[0].ID, s.orders[1].ID, s.orders[2].ID, s.orders[3].ID},
 		},
-		"active": {
+		domain.OrderStatusActive: {
 			fl: domain.OrderFilter{
 				Filter: filter,
 				Status: &domain.OrderStatusActive,
 			},
 			expectedIDs: []int{s.orders[0].ID, s.orders[1].ID},
 		},
-		"finished": {
+		domain.OrderStatusFinished: {
 			fl: domain.OrderFilter{
 				Filter: filter,
 				Status: &domain.OrderStatusFinished,
 			},
 			expectedIDs: []int{s.orders[2].ID, s.orders[3].ID},
 		},
-		"in review": {
+		domain.OrderStatusInReview: {
 			fl: domain.OrderFilter{
 				Filter: filter,
 				Status: &domain.OrderStatusInReview,
 			},
 			expectedIDs: []int{s.orders[0].ID},
 		},
-		"in progress": {
+		domain.OrderStatusInProgress: {
 			fl: domain.OrderFilter{
 				Filter: filter,
 				Status: &domain.OrderStatusInProgress,
 			},
 			expectedIDs: []int{s.orders[1].ID},
 		},
-		"rejected": {
+		domain.OrderStatusRejected: {
 			fl: domain.OrderFilter{
 				Filter: filter,
 				Status: &domain.OrderStatusRejected,
 			},
 			expectedIDs: []int{s.orders[2].ID},
 		},
-		"closed": {
+		domain.OrderStatusClosed: {
 			fl: domain.OrderFilter{
 				Filter: filter,
 				Status: &domain.OrderStatusClosed,
@@ -804,7 +804,7 @@ func (s *OrderSuite) TestOrderRepository_List_EquipmentFilter() {
 		fl          domain.OrderFilter
 		expectedIDs []int // in AscOrder
 	}{
-		"all": {
+		domain.OrderStatusAll: {
 			fl: domain.OrderFilter{
 				Filter: filter,
 			},

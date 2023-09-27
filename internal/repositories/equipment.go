@@ -227,7 +227,10 @@ func (r *equipmentRepository) ArchiveEquipment(ctx context.Context, id int) erro
 		return err
 	}
 	// get closed order status id
-	orderStatusClosed, err := tx.OrderStatusName.Query().Where(orderstatusname.Status("closed")).Only(ctx)
+	orderStatusClosed, err := tx.OrderStatusName.
+		Query().
+		Where(orderstatusname.Status(domain.OrderStatusClosed)).
+		Only(ctx)
 	if err != nil {
 		return err
 	}
