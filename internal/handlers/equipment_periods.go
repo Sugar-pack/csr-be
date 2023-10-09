@@ -7,6 +7,7 @@ import (
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/swagger/restapi/operations"
 	eqPeriods "git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/swagger/restapi/operations/equipment"
 	eqStatus "git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/swagger/restapi/operations/equipment_status"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/messages"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/repositories"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/pkg/domain"
 	"github.com/go-openapi/runtime/middleware"
@@ -44,12 +45,9 @@ func (c EquipmentPeriods) GetEquipmentUnavailableDatesFunc(
 
 		equipmentStatuses, err := eqStatusRepository.GetUnavailableEquipmentStatusByEquipmentID(ctx, id)
 		if err != nil {
-			c.logger.Error(
-				"error during the search for unavailable equipment status dates",
-				zap.Error(err),
-			)
+			c.logger.Error(messages.ErrGetUnavailableEqStatus, zap.Error(err))
 			return eqStatus.NewCheckEquipmentStatusDefault(http.StatusInternalServerError).
-				WithPayload(buildStringPayload("can't find unavailable equipment status dates"))
+				WithPayload(buildInternalErrorPayload(messages.ErrGetUnavailableEqStatus, err.Error()))
 		}
 
 		var result []*models.EquipmentUnavailabilityPeriods

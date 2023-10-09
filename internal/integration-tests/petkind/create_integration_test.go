@@ -9,6 +9,7 @@ import (
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/swagger/client/pet_kind"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/swagger/models"
 	utils "git.epam.com/epm-lstr/epm-lstr-lc/be/internal/integration-tests/common"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/messages"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -53,8 +54,11 @@ func TestIntegration_PetKind(t *testing.T) {
 		require.Error(t, err)
 
 		errExp := pet_kind.NewCreateNewPetKindDefault(http.StatusUnprocessableEntity)
-		errExp.Payload = &models.Error{
-			Data: nil,
+		msgExp := "name in body is required"
+		codeExp := int32(602)
+		errExp.Payload = &models.SwaggerError{
+			Code:    &codeExp,
+			Message: &msgExp,
 		}
 		assert.Equal(t, errExp, err)
 	})
@@ -66,8 +70,11 @@ func TestIntegration_PetKind(t *testing.T) {
 		require.Error(t, err)
 
 		errExp := pet_kind.NewCreateNewPetKindDefault(http.StatusUnauthorized)
-		errExp.Payload = &models.Error{
-			Data: nil,
+		msgExp := "unauthenticated for invalid credentials"
+		codeExp := int32(http.StatusUnauthorized)
+		errExp.Payload = &models.SwaggerError{
+			Code:    &codeExp,
+			Message: &msgExp,
 		}
 		assert.Equal(t, errExp, err)
 	})
@@ -80,8 +87,10 @@ func TestIntegration_PetKind(t *testing.T) {
 		require.Error(t, err)
 
 		errExp := pet_kind.NewCreateNewPetKindDefault(http.StatusUnauthorized)
-		errExp.Payload = &models.Error{
-			Data: nil,
+		codeExp := int32(http.StatusUnauthorized)
+		errExp.Payload = &models.SwaggerError{
+			Code:    &codeExp,
+			Message: &messages.ErrInvalidToken,
 		}
 		assert.Equal(t, errExp, err)
 	})

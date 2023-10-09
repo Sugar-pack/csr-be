@@ -32,7 +32,7 @@ paths:
         default:
           description: Unexpected error.
           schema:
-            $ref: "#/definitions/Error"
+            $ref: "#/definitions/SwaggerError"
   /v1/login:
     post:
       description: 'Returns token for authorized User'
@@ -60,7 +60,7 @@ paths:
         default:
           description: Unexpected error.
           schema:
-            $ref: "#/definitions/Error"
+            $ref: "#/definitions/SwaggerError"
   /v1/logout:
     post:
       description: 'Logout user'
@@ -84,11 +84,11 @@ paths:
         404:
           description: Refresh token not found.
           schema:
-            $ref: "#/definitions/Error"
+            $ref: "#/definitions/SwaggerError"
         default:
           description: Unexpected error.
           schema:
-            $ref: "#/definitions/Error"
+            $ref: "#/definitions/SwaggerError"
   /v1/refresh:
     post:
       description: 'Returns new token pair for an authorized User'
@@ -113,11 +113,11 @@ paths:
         404:
           description: Refresh token not found.
           schema:
-            $ref: "#/definitions/Error"
+            $ref: "#/definitions/SwaggerError"
         default:
           description: Unexpected error.
           schema:
-            $ref: "#/definitions/Error"
+            $ref: "#/definitions/SwaggerError"
   /v1/users:
     get:
       parameters:
@@ -169,7 +169,7 @@ paths:
         default:
           description: Unexpected error.
           schema:
-            $ref: "#/definitions/Error"
+            $ref: "#/definitions/SwaggerError"
     post:
       summary: Register a new user.
       tags:
@@ -190,7 +190,7 @@ paths:
         default:
           description: Unexpected error.
           schema:
-            $ref: "#/definitions/Error"
+            $ref: "#/definitions/SwaggerError"
   /v1/users/me:
     get:
       summary: Get the current user data.
@@ -207,7 +207,7 @@ paths:
         default:
           description: Unexpected error.
           schema:
-            $ref: "#/definitions/Error"
+            $ref: "#/definitions/SwaggerError"
     patch:
       summary: Edit selected fields of the current user.
       security:
@@ -230,7 +230,7 @@ paths:
         default:
           description: Unexpected error
           schema:
-            $ref: "#/definitions/Error"
+            $ref: "#/definitions/SwaggerError"
     delete:
       summary: Delete the current user.
       security:
@@ -244,7 +244,7 @@ paths:
         default:
           description: Unexpected error.
           schema:
-            $ref: "#/definitions/Error"
+            $ref: "#/definitions/SwaggerError"
   /v1/users/me/password:
     patch:
       summary: Change the current user password.
@@ -268,15 +268,15 @@ paths:
         401:
           description: Unauthorized
           schema:
-            $ref: "#/definitions/Error"
+            $ref: "#/definitions/SwaggerError"
         403:
           description: Wrong old password
           schema:
-            $ref: "#/definitions/Error"
+            $ref: "#/definitions/SwaggerError"
         default:
           description: Unexpected error
           schema:
-            $ref: "#/definitions/Error"
+            $ref: "#/definitions/SwaggerError"
   /v1/users/me/email:
     patch:
       summary: Change the current email.
@@ -300,11 +300,11 @@ paths:
         401:
           description: Unauthorized
           schema:
-            $ref: "#/definitions/Error"
+            $ref: "#/definitions/SwaggerError"
         default:
           description: Unexpected error.
           schema:
-            $ref: "#/definitions/Error"
+            $ref: "#/definitions/SwaggerError"
   /v1/email_confirm/{token}:
     get:
       summary: Verify email confirmation token.
@@ -324,7 +324,7 @@ paths:
         default:
           description: Unexpected error.
           schema:
-            $ref: "#/definitions/Error"
+            $ref: "#/definitions/SwaggerError"
   /management/users/{userId}:
     parameters:
       - name: userId
@@ -347,7 +347,7 @@ paths:
         default:
           description: Unexpected error.
           schema:
-            $ref: "#/definitions/Error"
+            $ref: "#/definitions/SwaggerError"
   /v1/roles:
     get:
       summary: List all roles.
@@ -364,7 +364,7 @@ paths:
         default:
           description: Unexpected error.
           schema:
-            $ref: "#/definitions/Error"
+            $ref: "#/definitions/SwaggerError"
   /v1/management/users/{userId}/role:
     parameters:
       - name: userId
@@ -396,7 +396,7 @@ paths:
         default:
           description: Unexpected error.
           schema:
-            $ref: "#/definitions/Error"
+            $ref: "#/definitions/SwaggerError"
 
   /v1/users/{userId}:
     parameters:
@@ -429,7 +429,7 @@ paths:
         default:
           description: Unexpected error.
           schema:
-            $ref: "#/definitions/Error"
+            $ref: "#/definitions/SwaggerError"
     delete:
       consumes:
         - application/json
@@ -445,11 +445,11 @@ paths:
         404:
           description: User not found
           schema:
-            $ref: "#/definitions/Error"
+            $ref: "#/definitions/SwaggerError"
         default:
           description: Unexpected error.
           schema:
-            $ref: "#/definitions/Error"
+            $ref: "#/definitions/SwaggerError"
 
   /v1/users/{userId}/readonly-access:
     put:
@@ -481,23 +481,23 @@ paths:
         400:
           description: Bad request
           schema:
-            $ref: "#/definitions/Error"
+            $ref: "#/definitions/SwaggerError"
         401:
           description: Unauthorized
           schema:
-            $ref: "#/definitions/Error"
+            $ref: "#/definitions/SwaggerError"
         403:
           description: Forbidden
           schema:
-            $ref: "#/definitions/Error"
+            $ref: "#/definitions/SwaggerError"
         404:
           description: User not found
           schema:
-            $ref: "#/definitions/Error"
+            $ref: "#/definitions/SwaggerError"
         default:
           description: Unexpected error.
           schema:
-            $ref: "#/definitions/Error"
+            $ref: "#/definitions/SwaggerError"
 
   /equipmentstatus/repaired/{equipmentstatusId}:
     parameters:
@@ -528,7 +528,7 @@ paths:
         default:
           description: Unexpected error.
           schema:
-            $ref: "#/definitions/Error"
+            $ref: "#/definitions/SwaggerError"
     put:
       summary: Change equipment status on unavailable with start/end dates by id.
       security:
@@ -551,7 +551,7 @@ paths:
         default:
           description: Unexpected error.
           schema:
-            $ref: "#/definitions/Error"
+            $ref: "#/definitions/SwaggerError"
     get:
       summary: Check that equipment status has orders on provided dates.
       security:
@@ -574,7 +574,7 @@ paths:
         default:
           description: Unexpected error.
           schema:
-            $ref: "#/definitions/Error"
+            $ref: "#/definitions/SwaggerError"
     patch:
       summary: Change repaired equipment status dates by id.
       security:
@@ -597,7 +597,7 @@ paths:
         default:
           description: Unexpected error.
           schema:
-            $ref: "#/definitions/Error"
+            $ref: "#/definitions/SwaggerError"
   /equipment/status_names:
     post:
       summary: Creating a new equipment status.
@@ -621,7 +621,7 @@ paths:
         default:
           description: Unexpected error.
           schema:
-            $ref: "#/definitions/Error"
+            $ref: "#/definitions/SwaggerError"
     get:
       summary: List all statuses.
       security:
@@ -637,7 +637,7 @@ paths:
         default:
           description: Unexpected error.
           schema:
-            $ref: "#/definitions/Error"
+            $ref: "#/definitions/SwaggerError"
   /equipment/statuses/{statusId}:
     parameters:
       - name: statusId
@@ -660,7 +660,7 @@ paths:
         default:
           description: Unexpected error.
           schema:
-            $ref: "#/definitions/Error"
+            $ref: "#/definitions/SwaggerError"
     delete:
       summary: Delete status by id
       security:
@@ -676,7 +676,7 @@ paths:
         default:
           description: Unexpected error.
           schema:
-            $ref: "#/definitions/Error"
+            $ref: "#/definitions/SwaggerError"
   /equipment/categories:
     get:
       parameters:
@@ -730,7 +730,7 @@ paths:
         default:
           description: Unexpected error.
           schema:
-            $ref: "#/definitions/Error"
+            $ref: "#/definitions/SwaggerError"
     post:
       summary: Create a new Category.
       security:
@@ -753,7 +753,7 @@ paths:
         default:
           description: Unexpected error.
           schema:
-            $ref: "#/definitions/Error"
+            $ref: "#/definitions/SwaggerError"
   /equipment/unavailability_periods/{equipmentId}:
     parameters:
       - name: equipmentId
@@ -776,7 +776,7 @@ paths:
         default:
           description: Unexpected error.
           schema:
-            $ref: "#/definitions/Error"
+            $ref: "#/definitions/SwaggerError"
         404:
           schema:
             type: string
@@ -803,7 +803,7 @@ paths:
         default:
           description: Unexpected error.
           schema:
-            $ref: "#/definitions/Error"
+            $ref: "#/definitions/SwaggerError"
     delete:
       summary: Delete category of equipment from db by id.
       security:
@@ -819,7 +819,7 @@ paths:
         default:
           description: Unexpected error.
           schema:
-            $ref: "#/definitions/Error"
+            $ref: "#/definitions/SwaggerError"
     put:
       summary: Edit equipment category by id.
       security:
@@ -841,7 +841,7 @@ paths:
         default:
           description: Unexpected error
           schema:
-            $ref: "#/definitions/Error"
+            $ref: "#/definitions/SwaggerError"
   /equipment/categories/{categoryId}/subcategories:
     parameters:
       - name: categoryId
@@ -864,7 +864,7 @@ paths:
         default:
           description: Unexpected error.
           schema:
-            $ref: "#/definitions/Error"
+            $ref: "#/definitions/SwaggerError"
     post:
       summary: Create a new Subcategory.
       security:
@@ -887,7 +887,7 @@ paths:
         default:
           description: Unexpected error.
           schema:
-            $ref: "#/definitions/Error"
+            $ref: "#/definitions/SwaggerError"
   /equipment/categories/subcategories/{subcategoryId}:
     parameters:
       - name: subcategoryId
@@ -910,7 +910,7 @@ paths:
         default:
           description: Unexpected error.
           schema:
-            $ref: "#/definitions/Error"
+            $ref: "#/definitions/SwaggerError"
     delete:
       summary: Delete subcategory of equipment from db by id.
       security:
@@ -926,7 +926,7 @@ paths:
         default:
           description: Unexpected error.
           schema:
-            $ref: "#/definitions/Error"
+            $ref: "#/definitions/SwaggerError"
     put:
       summary: Edit equipment subcategory by id.
       security:
@@ -948,7 +948,7 @@ paths:
         default:
           description: Unexpected error
           schema:
-            $ref: "#/definitions/Error"
+            $ref: "#/definitions/SwaggerError"
   /equipment/photos:
     post:
       summary: Upload a new equipment photo
@@ -973,11 +973,11 @@ paths:
         400:
           description: Bad request
           schema:
-            $ref: "#/definitions/Error"
+            $ref: "#/definitions/SwaggerError"
         default:
           description: Unexpected error.
           schema:
-            $ref: "#/definitions/Error"
+            $ref: "#/definitions/SwaggerError"
   /equipment/photos/{photoId}:
     parameters:
       - name: photoId
@@ -1003,7 +1003,7 @@ paths:
         default:
           description: Unexpected error.
           schema:
-            $ref: "#/definitions/Error"
+            $ref: "#/definitions/SwaggerError"
     delete:
       summary: Delete photo by id
       security:
@@ -1019,7 +1019,7 @@ paths:
         default:
           description: Unexpected error.
           schema:
-            $ref: "#/definitions/Error"
+            $ref: "#/definitions/SwaggerError"
   /equipment/photos/{photoId}/download:
     parameters:
       - name: photoId
@@ -1045,7 +1045,7 @@ paths:
         default:
           description: Unexpected error.
           schema:
-            $ref: "#/definitions/Error"
+            $ref: "#/definitions/SwaggerError"
   /v1/orders:
     get:
       tags:
@@ -1110,7 +1110,7 @@ paths:
         default:
           description: 'Unexpected error'
           schema:
-            $ref: '#/definitions/Error'
+            $ref: '#/definitions/SwaggerError'
     post:
       tags:
         - Orders
@@ -1127,7 +1127,7 @@ paths:
         default:
           description: 'Unexpected error'
           schema:
-            $ref: '#/definitions/Error'
+            $ref: '#/definitions/SwaggerError'
       parameters:
         - name: data
           in: body
@@ -1163,7 +1163,7 @@ paths:
         default:
           description: Unexpected error.
           schema:
-            $ref: "#/definitions/Error"
+            $ref: "#/definitions/SwaggerError"
   /v1/order_statuses/{orderId}:
     get:
       summary: Get full order status history.
@@ -1190,7 +1190,7 @@ paths:
         default:
           description: Unexpected error.
           schema:
-            $ref: "#/definitions/Error"
+            $ref: "#/definitions/SwaggerError"
   /v1/order_statuses/:
     post:
       summary: Add new order status to order status history.
@@ -1214,7 +1214,7 @@ paths:
         default:
           description: Unexpected error.
           schema:
-            $ref: '#/definitions/Error'
+            $ref: '#/definitions/SwaggerError'
   /v1/orders/status/{status}:
     get:
       summary: Get orders by status.
@@ -1274,7 +1274,7 @@ paths:
         default:
           description: Unexpected error.
           schema:
-            $ref: '#/definitions/Error'
+            $ref: '#/definitions/SwaggerError'
   /v1/orders/from={fromDate}&to={toDate}&status={statusName}:
     get:
       summary: Get orders by date and status.
@@ -1343,7 +1343,7 @@ paths:
         default:
           description: Unexpected error.
           schema:
-            $ref: '#/definitions/Error'
+            $ref: '#/definitions/SwaggerError'
   /v1/status_names:
     get:
       summary: Get all status names.
@@ -1360,7 +1360,7 @@ paths:
         default:
           description: Unexpected error.
           schema:
-            $ref: '#/definitions/Error'
+            $ref: '#/definitions/SwaggerError'
   /v1/active_areas:
     get:
       parameters:
@@ -1408,7 +1408,7 @@ paths:
         default:
           description: Unexpected error.
           schema:
-            $ref: "#/definitions/Error"
+            $ref: "#/definitions/SwaggerError"
   /equipment:
     post:
       summary: Register a new equipment
@@ -1434,7 +1434,7 @@ paths:
         default:
           description: Unexpected error.
           schema:
-            $ref: "#/definitions/Error"
+            $ref: "#/definitions/SwaggerError"
     get:
       summary: Get all equipment
       security:
@@ -1482,7 +1482,7 @@ paths:
         default:
           description: Unexpected error.
           schema:
-            $ref: "#/definitions/Error"
+            $ref: "#/definitions/SwaggerError"
   /equipment/{equipmentId}:
     parameters:
       - name: equipmentId
@@ -1505,7 +1505,7 @@ paths:
         default:
           description: Unexpected error.
           schema:
-            $ref: "#/definitions/Error"
+            $ref: "#/definitions/SwaggerError"
     delete:
       summary: Delete equipment by id
       security:
@@ -1521,7 +1521,7 @@ paths:
         default:
           description: Unexpected error.
           schema:
-            $ref: "#/definitions/Error"
+            $ref: "#/definitions/SwaggerError"
     put:
       summary: Edit equipment by id
       security:
@@ -1544,7 +1544,7 @@ paths:
         default:
           description: Unexpected error.
           schema:
-            $ref: "#/definitions/Error"
+            $ref: "#/definitions/SwaggerError"
   /equipment/achive/{equipmentId}/:
     parameters:
       - name: equipmentId
@@ -1565,11 +1565,11 @@ paths:
           404:
             description: Equipment not found
             schema:
-              $ref: "#/definitions/Error"
+              $ref: "#/definitions/SwaggerError"
           default:
             description: Unexpected error.
             schema:
-                $ref: "#/definitions/Error"
+                $ref: "#/definitions/SwaggerError"
   /equipment/{equipmentId}/blocking:
     parameters:
       - name: equipmentId
@@ -1597,11 +1597,11 @@ paths:
           404:
             description: Equipment not found
             schema:
-              $ref: "#/definitions/Error"
+              $ref: "#/definitions/SwaggerError"
           default:
             description: Unexpected error.
             schema:
-                $ref: "#/definitions/Error"
+                $ref: "#/definitions/SwaggerError"
   /equipment/{equipmentId}/unblocking:
     parameters:
       - name: equipmentId
@@ -1622,11 +1622,11 @@ paths:
           404:
             description: Equipment not found
             schema:
-              $ref: "#/definitions/Error"
+              $ref: "#/definitions/SwaggerError"
           default:
             description: Unexpected error.
             schema:
-                $ref: "#/definitions/Error"
+                $ref: "#/definitions/SwaggerError"
   /equipment/search:
     post:
       summary: Equipment filtered list
@@ -1681,7 +1681,7 @@ paths:
         default:
           description: Unexpected error.
           schema:
-            $ref: "#/definitions/Error"
+            $ref: "#/definitions/SwaggerError"
   /pet_size:
     post:
       summary: Register a new pet size
@@ -1707,7 +1707,7 @@ paths:
         default:
           description: Unexpected error.
           schema:
-            $ref: "#/definitions/Error"
+            $ref: "#/definitions/SwaggerError"
     get:
       summary: Get all pet size
       security:
@@ -1723,7 +1723,7 @@ paths:
         default:
           description: Unexpected error.
           schema:
-            $ref: "#/definitions/Error"
+            $ref: "#/definitions/SwaggerError"
   /pet_size/{petSizeId}:
     parameters:
       - name: petSizeId
@@ -1746,7 +1746,7 @@ paths:
         default:
           description: Unexpected error.
           schema:
-            $ref: "#/definitions/Error"
+            $ref: "#/definitions/SwaggerError"
     delete:
       summary: Delete pet size by id
       security:
@@ -1762,7 +1762,7 @@ paths:
         default:
           description: Unexpected error.
           schema:
-            $ref: "#/definitions/Error"
+            $ref: "#/definitions/SwaggerError"
     put:
       summary: Edit pet size by id
       security:
@@ -1785,7 +1785,7 @@ paths:
         default:
           description: Unexpected error.
           schema:
-            $ref: "#/definitions/Error"
+            $ref: "#/definitions/SwaggerError"
 
   /password_reset/:
     post:
@@ -1807,7 +1807,7 @@ paths:
         default:
           description: Unexpected error.
           schema:
-            $ref: "#/definitions/Error"
+            $ref: "#/definitions/SwaggerError"
 
   /password_reset/{token}:
     get:
@@ -1828,7 +1828,7 @@ paths:
         default:
           description: Unexpected error.
           schema:
-            $ref: "#/definitions/Error"
+            $ref: "#/definitions/SwaggerError"
 
   /pet_kind:
     get:
@@ -1846,7 +1846,7 @@ paths:
         default:
           description: Unexpected error.
           schema:
-            $ref: "#/definitions/Error"
+            $ref: "#/definitions/SwaggerError"
     post:
       summary: Register a new pet kind
       security:
@@ -1871,7 +1871,7 @@ paths:
         default:
           description: Unexpected error.
           schema:
-            $ref: "#/definitions/Error"
+            $ref: "#/definitions/SwaggerError"
   /pet_kind/{petKindId}:
     parameters:
       - name: petKindId
@@ -1894,7 +1894,7 @@ paths:
         default:
           description: Unexpected error.
           schema:
-            $ref: "#/definitions/Error"
+            $ref: "#/definitions/SwaggerError"
     delete:
       summary: Delete pet kind by id
       security:
@@ -1910,7 +1910,7 @@ paths:
         default:
           description: Unexpected error.
           schema:
-            $ref: "#/definitions/Error"
+            $ref: "#/definitions/SwaggerError"
     put:
       summary: Edit pet kind by id
       security:
@@ -1933,7 +1933,7 @@ paths:
         default:
           description: Unexpected error.
           schema:
-            $ref: "#/definitions/Error"
+            $ref: "#/definitions/SwaggerError"
 
   /registration_confirm/:
     post:
@@ -1955,7 +1955,7 @@ paths:
         default:
           description: Unexpected error.
           schema:
-            $ref: "#/definitions/Error"
+            $ref: "#/definitions/SwaggerError"
 
   /registration_confirm/{token}:
     get:
@@ -1976,7 +1976,7 @@ paths:
         default:
           description: Unexpected error.
           schema:
-            $ref: "#/definitions/Error"
+            $ref: "#/definitions/SwaggerError"
   /management/orders:
     get:
       summary: Get all orders
@@ -2048,7 +2048,7 @@ paths:
         default:
           description: Unexpected error.
           schema:
-            $ref: "#/definitions/Error"
+            $ref: "#/definitions/SwaggerError"
 
 definitions:
   principal:
@@ -2072,16 +2072,11 @@ definitions:
     properties:
         code:
             type: integer
-            enum:
-              - 401
-              - 403
             format: int32
         message:
             type: string
-            enum:
-              - Token is invalid
-              - User is not authorized
-              - User has no confirmed email
+        details:
+            type: string
   PetKind:
     type: object
     required:
@@ -2089,18 +2084,6 @@ definitions:
     properties:
       name:
         type: string
-  Error:
-    type: object
-    required:
-      - data
-    properties:
-      data:
-        type: object
-        properties:
-          correlationId:
-            type: string
-          message:
-            type: string
 
   ListOfPetKinds:
     type: array

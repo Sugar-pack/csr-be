@@ -23,8 +23,8 @@ import (
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/swagger/client/photos"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/swagger/client/subcategories"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/swagger/models"
-	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/handlers"
 	utils "git.epam.com/epm-lstr/epm-lstr-lc/be/internal/integration-tests/common"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/messages"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/pkg/domain"
 )
 
@@ -128,9 +128,12 @@ func TestIntegration_CreateEquipment(t *testing.T) {
 		require.Error(t, gotErr)
 
 		wantErr := equipment.NewCreateNewEquipmentDefault(500)
-		wantErr.Payload = &models.Error{Data: &models.ErrorData{
-			Message: "Error while creating equipment",
-		}}
+		codeExp := int32(http.StatusInternalServerError)
+		wantErr.Payload = &models.SwaggerError{
+			Code:    &codeExp,
+			Message: &messages.ErrCreateEquipment,
+			Details: "ent: constraint failed: ERROR: insert or update on table \"equipment\" violates foreign key constraint \"equipment_photo_equipments_fkey\" (SQLSTATE 23503)",
+		}
 		assert.Equal(t, wantErr, gotErr)
 	})
 
@@ -146,7 +149,11 @@ func TestIntegration_CreateEquipment(t *testing.T) {
 		require.Error(t, gotErr)
 
 		wantErr := equipment.NewCreateNewEquipmentDefault(http.StatusUnauthorized)
-		wantErr.Payload = &models.Error{Data: nil}
+		codeExp := int32(http.StatusUnauthorized)
+		wantErr.Payload = &models.SwaggerError{
+			Code:    &codeExp,
+			Message: &messages.ErrInvalidToken,
+		}
 		assert.Equal(t, wantErr, gotErr)
 	})
 }
@@ -179,7 +186,11 @@ func TestIntegration_GetAllEquipment(t *testing.T) {
 		require.Error(t, gotErr)
 
 		wantErr := equipment.NewGetAllEquipmentDefault(http.StatusUnauthorized)
-		wantErr.Payload = &models.Error{Data: nil}
+		codeExp := int32(http.StatusUnauthorized)
+		wantErr.Payload = &models.SwaggerError{
+			Code:    &codeExp,
+			Message: &messages.ErrInvalidToken,
+		}
 		assert.Equal(t, wantErr, gotErr)
 	})
 }
@@ -239,8 +250,13 @@ func TestIntegration_GetEquipment(t *testing.T) {
 		_, gotErr := client.Equipment.GetEquipment(params, auth)
 		require.Error(t, gotErr)
 
-		wantErr := equipment.NewGetEquipmentDefault(500)
-		wantErr.Payload = &models.Error{Data: &models.ErrorData{Message: "Error while getting equipment"}}
+		wantErr := equipment.NewGetEquipmentDefault(http.StatusInternalServerError)
+		codeExp := int32(http.StatusInternalServerError)
+		wantErr.Payload = &models.SwaggerError{
+			Code:    &codeExp,
+			Message: &messages.ErrGetEquipment,
+			Details: "ent: equipment not found",
+		}
 		assert.Equal(t, wantErr, gotErr)
 	})
 
@@ -254,7 +270,11 @@ func TestIntegration_GetEquipment(t *testing.T) {
 		require.Error(t, gotErr)
 
 		wantErr := equipment.NewGetEquipmentDefault(http.StatusUnauthorized)
-		wantErr.Payload = &models.Error{Data: nil}
+		codeExp := int32(http.StatusUnauthorized)
+		wantErr.Payload = &models.SwaggerError{
+			Code:    &codeExp,
+			Message: &messages.ErrInvalidToken,
+		}
 		assert.Equal(t, wantErr, gotErr)
 	})
 }
@@ -316,7 +336,11 @@ func TestIntegration_FindEquipment(t *testing.T) {
 		require.Error(t, gotErr)
 
 		wantErr := equipment.NewFindEquipmentDefault(http.StatusUnauthorized)
-		wantErr.Payload = &models.Error{Data: nil}
+		codeExp := int32(http.StatusUnauthorized)
+		wantErr.Payload = &models.SwaggerError{
+			Code:    &codeExp,
+			Message: &messages.ErrInvalidToken,
+		}
 		assert.Equal(t, wantErr, gotErr)
 	})
 
@@ -371,8 +395,13 @@ func TestIntegration_EditEquipment(t *testing.T) {
 		_, gotErr := client.Equipment.EditEquipment(params, auth)
 		require.Error(t, gotErr)
 
-		wantErr := equipment.NewEditEquipmentDefault(500)
-		wantErr.Payload = &models.Error{Data: &models.ErrorData{Message: "Error while updating equipment"}}
+		wantErr := equipment.NewEditEquipmentDefault(http.StatusInternalServerError)
+		codeExp := int32(http.StatusInternalServerError)
+		wantErr.Payload = &models.SwaggerError{
+			Code:    &codeExp,
+			Message: &messages.ErrUpdateEquipment,
+			Details: "ent: equipment not found",
+		}
 		assert.Equal(t, wantErr, gotErr)
 	})
 
@@ -386,7 +415,11 @@ func TestIntegration_EditEquipment(t *testing.T) {
 		require.Error(t, gotErr)
 
 		wantErr := equipment.NewEditEquipmentDefault(http.StatusUnauthorized)
-		wantErr.Payload = &models.Error{Data: nil}
+		codeExp := int32(http.StatusUnauthorized)
+		wantErr.Payload = &models.SwaggerError{
+			Code:    &codeExp,
+			Message: &messages.ErrInvalidToken,
+		}
 		assert.Equal(t, wantErr, gotErr)
 	})
 }
@@ -422,15 +455,20 @@ func TestIntegration_ArchiveEquipment(t *testing.T) {
 		require.Error(t, gotErr)
 		fmt.Print(resp)
 
-		wantedErr := equipment.NewArchiveEquipmentNotFound()
-		wantedErr.Payload = &models.Error{Data: &models.ErrorData{Message: handlers.EquipmentNotFoundMsg}}
+		wantErr := equipment.NewArchiveEquipmentNotFound()
+		codeExp := int32(http.StatusNotFound)
+		wantErr.Payload = &models.SwaggerError{
+			Code:    &codeExp,
+			Message: &messages.ErrEquipmentNotFound,
+		}
 
-		require.Equal(t, wantedErr, gotErr)
+		require.Equal(t, wantErr, gotErr)
 	})
 
 	t.Run("Archive Equipment with active orders", func(t *testing.T) {
 		orStartDate, orEndDate := time.Now(), time.Now().AddDate(0, 0, 1)
 		orderID, err := createOrder(ctx, client, auth, created.Payload.ID, orStartDate, orEndDate)
+		require.NoError(t, err)
 		params := equipment.NewArchiveEquipmentParamsWithContext(ctx).WithEquipmentID(*created.Payload.ID)
 		var res *equipment.ArchiveEquipmentNoContent
 		res, err = client.Equipment.ArchiveEquipment(params, auth)
@@ -448,9 +486,13 @@ func TestIntegration_ArchiveEquipment(t *testing.T) {
 		_, gotErr := client.Equipment.ArchiveEquipment(params, utils.AuthInfoFunc(&token))
 		require.Error(t, gotErr)
 
-		wantedErr := equipment.NewArchiveEquipmentDefault(http.StatusUnauthorized)
-		wantedErr.Payload = &models.Error{Data: nil}
-		assert.Equal(t, wantedErr, gotErr)
+		wantErr := equipment.NewArchiveEquipmentDefault(http.StatusUnauthorized)
+		codeExp := int32(http.StatusUnauthorized)
+		wantErr.Payload = &models.SwaggerError{
+			Code:    &codeExp,
+			Message: &messages.ErrInvalidToken,
+		}
+		assert.Equal(t, wantErr, gotErr)
 	})
 
 	// todo: test for archive equipment with non-default status
@@ -545,7 +587,11 @@ func TestIntegration_BlockEquipment(t *testing.T) {
 		require.Error(t, err)
 
 		wantErr := equipment.NewBlockEquipmentNotFound()
-		wantErr.Payload = &models.Error{Data: &models.ErrorData{Message: handlers.EquipmentNotFoundMsg}}
+		codeExp := int32(http.StatusNotFound)
+		wantErr.Payload = &models.SwaggerError{
+			Code:    &codeExp,
+			Message: &messages.ErrEquipmentNotFound,
+		}
 		assert.Equal(t, wantErr, err)
 	})
 
@@ -562,9 +608,11 @@ func TestIntegration_BlockEquipment(t *testing.T) {
 		require.Error(t, err)
 
 		wantErr := equipment.NewBlockEquipmentDefault(http.StatusForbidden)
-		wantErr.Payload = &models.Error{Data: &models.ErrorData{
-			Message: "You don't have rights to block the equipment",
-		}}
+		codeExp := int32(http.StatusForbidden)
+		wantErr.Payload = &models.SwaggerError{
+			Code:    &codeExp,
+			Message: &messages.ErrEquipmentBlockForbidden,
+		}
 		assert.Equal(t, wantErr, err)
 	})
 
@@ -581,9 +629,11 @@ func TestIntegration_BlockEquipment(t *testing.T) {
 		require.Error(t, err)
 
 		wantErr := equipment.NewBlockEquipmentDefault(http.StatusForbidden)
-		wantErr.Payload = &models.Error{Data: &models.ErrorData{
-			Message: "You don't have rights to block the equipment",
-		}}
+		codeExp := int32(http.StatusForbidden)
+		wantErr.Payload = &models.SwaggerError{
+			Code:    &codeExp,
+			Message: &messages.ErrEquipmentBlockForbidden,
+		}
 		assert.Equal(t, wantErr, err)
 	})
 
@@ -599,6 +649,27 @@ func TestIntegration_BlockEquipment(t *testing.T) {
 		res, err := client.Equipment.BlockEquipment(params, auth)
 		require.NoError(t, err)
 		require.True(t, res.IsCode(http.StatusNoContent))
+	})
+
+	t.Run("Block Equipment is failed, endDate before startDate", func(t *testing.T) {
+		tokens := utils.ManagerUserLogin(t)
+		auth := utils.AuthInfoFunc(tokens.GetPayload().AccessToken)
+		params := equipment.NewBlockEquipmentParamsWithContext(ctx).WithEquipmentID(*eq.Payload.ID)
+		params.Data = &models.ChangeEquipmentStatusToBlockedRequest{
+			StartDate: strfmt.DateTime(endDate),
+			EndDate:   strfmt.DateTime(startDate),
+		}
+
+		_, err := client.Equipment.BlockEquipment(params, auth)
+		require.Error(t, err)
+
+		wantErr := equipment.NewBlockEquipmentDefault(http.StatusBadRequest)
+		codeExp := int32(http.StatusBadRequest)
+		wantErr.Payload = &models.SwaggerError{
+			Code:    &codeExp,
+			Message: &messages.ErrStartDateAfterEnd,
+		}
+		assert.Equal(t, wantErr, err)
 	})
 }
 
@@ -638,9 +709,12 @@ func TestIntegration_DeleteEquipment(t *testing.T) {
 		require.Error(t, gotErr)
 
 		wantErr := equipment.NewDeleteEquipmentDefault(500)
-		wantErr.Payload = &models.Error{Data: &models.ErrorData{
-			Message: "Error while getting equipment",
-		}}
+		codeExp := int32(http.StatusInternalServerError)
+		wantErr.Payload = &models.SwaggerError{
+			Code:    &codeExp,
+			Message: &messages.ErrDeleteEquipment,
+			Details: "ent: equipment not found",
+		}
 		assert.Equal(t, wantErr, gotErr)
 	})
 
@@ -653,7 +727,11 @@ func TestIntegration_DeleteEquipment(t *testing.T) {
 		require.Error(t, gotErr)
 
 		wantErr := equipment.NewDeleteEquipmentDefault(http.StatusUnauthorized)
-		wantErr.Payload = &models.Error{Data: nil}
+		codeExp := int32(http.StatusUnauthorized)
+		wantErr.Payload = &models.SwaggerError{
+			Code:    &codeExp,
+			Message: &messages.ErrInvalidToken,
+		}
 		assert.Equal(t, wantErr, gotErr)
 	})
 }
@@ -684,9 +762,11 @@ func TestIntegration_UnblockEquipment(t *testing.T) {
 		require.Error(t, err)
 
 		wantErr := equipment.NewUnblockEquipmentDefault(http.StatusForbidden)
-		wantErr.Payload = &models.Error{Data: &models.ErrorData{
-			Message: "You don't have rights to unblock the equipment",
-		}}
+		codeExp := int32(http.StatusForbidden)
+		wantErr.Payload = &models.SwaggerError{
+			Code:    &codeExp,
+			Message: &messages.ErrEquipmentUnblockForbidden,
+		}
 		assert.Equal(t, wantErr, err)
 	})
 
@@ -699,9 +779,11 @@ func TestIntegration_UnblockEquipment(t *testing.T) {
 		require.Error(t, err)
 
 		wantErr := equipment.NewUnblockEquipmentDefault(http.StatusForbidden)
-		wantErr.Payload = &models.Error{Data: &models.ErrorData{
-			Message: "You don't have rights to unblock the equipment",
-		}}
+		codeExp := int32(http.StatusForbidden)
+		wantErr.Payload = &models.SwaggerError{
+			Code:    &codeExp,
+			Message: &messages.ErrEquipmentUnblockForbidden,
+		}
 		assert.Equal(t, wantErr, err)
 	})
 
@@ -748,7 +830,11 @@ func TestIntegration_UnblockEquipment(t *testing.T) {
 		require.Error(t, err)
 
 		wantErr := equipment.NewUnblockEquipmentNotFound()
-		wantErr.Payload = &models.Error{Data: &models.ErrorData{Message: handlers.EquipmentNotFoundMsg}}
+		codeExp := int32(http.StatusNotFound)
+		wantErr.Payload = &models.SwaggerError{
+			Code:    &codeExp,
+			Message: &messages.ErrEquipmentNotFound,
+		}
 		assert.Equal(t, wantErr, err)
 	})
 }

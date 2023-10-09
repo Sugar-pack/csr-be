@@ -12,6 +12,7 @@ import (
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/swagger/models"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/swagger/restapi/operations"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/swagger/restapi/operations/active_areas"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/messages"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/repositories"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/utils"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/pkg/domain"
@@ -42,17 +43,17 @@ func (area ActiveArea) GetActiveAreasFunc(repository domain.ActiveAreaRepository
 		orderColumn := utils.GetValueByPointerOrDefaultValue(a.OrderColumn, order.FieldID)
 		total, err := repository.TotalActiveAreas(ctx)
 		if err != nil {
-			area.logger.Error("failed to query total active areas", zap.Error(err))
+			area.logger.Error(messages.ErrQueryTotalAreas, zap.Error(err))
 			return active_areas.NewGetAllActiveAreasDefault(http.StatusInternalServerError).
-				WithPayload(buildErrorPayload(err))
+				WithPayload(buildInternalErrorPayload(messages.ErrQueryTotalAreas, err.Error()))
 		}
 		var e []*ent.ActiveArea
 		if total > 0 {
 			e, err = repository.AllActiveAreas(ctx, int(limit), int(offset), orderBy, orderColumn)
 			if err != nil {
-				area.logger.Error("failed to query active areas", zap.Error(err))
+				area.logger.Error(messages.ErrQueryAreas, zap.Error(err))
 				return active_areas.NewGetAllActiveAreasDefault(http.StatusInternalServerError).
-					WithPayload(buildErrorPayload(err))
+					WithPayload(buildInternalErrorPayload(messages.ErrQueryAreas, err.Error()))
 			}
 		}
 		totalAreas := int64(total)

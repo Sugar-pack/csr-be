@@ -658,56 +658,6 @@ func (s *EquipmentSuite) TestEquipmentRepository_UnblockEquipment() {
 	require.NoError(t, tx.Commit())
 }
 
-func Test_checkDates(t *testing.T) {
-	start := time.Now()
-	end := time.Now().Add(time.Hour * 24)
-	var blankTime time.Time
-	type args struct {
-		start *time.Time
-		end   *time.Time
-	}
-	tests := []struct {
-		name    string
-		args    args
-		want    *time.Time
-		want1   *time.Time
-		wantErr bool
-	}{
-		{
-			name:    "When correct time",
-			args:    args{start: &start, end: &end},
-			want:    &start,
-			want1:   &end,
-			wantErr: false,
-		},
-		{
-			name:    "When end date becomes earlier thar start date",
-			args:    args{start: &end, end: &start},
-			want:    nil,
-			want1:   nil,
-			wantErr: true,
-		},
-		{
-			name:    "When default time",
-			args:    args{start: &blankTime, end: &blankTime},
-			want:    &blankTime,
-			want1:   &blankTime,
-			wantErr: false,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got, got1, err := checkDates(tt.args.start, tt.args.end)
-			require.Equal(t, tt.want, got)
-			require.Equal(t, tt.want1, got1)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("checkDates() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-		})
-	}
-}
-
 func Test_truncateHours(t *testing.T) {
 	date := time.Now()
 	type args struct {

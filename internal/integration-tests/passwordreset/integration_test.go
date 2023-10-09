@@ -11,6 +11,7 @@ import (
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/swagger/client/password_reset"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/swagger/models"
 	utils "git.epam.com/epm-lstr/epm-lstr-lc/be/internal/integration-tests/common"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/messages"
 )
 
 func TestIntegration_PasswordReset(t *testing.T) {
@@ -36,7 +37,7 @@ func TestIntegration_PasswordReset(t *testing.T) {
 		require.NoError(t, err)
 
 		want := &password_reset.SendLinkByLoginOK{
-			Payload: models.PasswordResetResponse("Check your email for a reset link"),
+			Payload: models.PasswordResetResponse("check your email for a reset link"),
 		}
 		assert.Equal(t, want, got)
 	})
@@ -51,8 +52,10 @@ func TestIntegration_PasswordReset(t *testing.T) {
 		require.Error(t, err)
 
 		errExp := password_reset.NewSendLinkByLoginDefault(http.StatusBadRequest)
-		errExp.Payload = &models.Error{
-			Data: &models.ErrorData{Message: "Login is required"},
+		codeExp := int32(http.StatusBadRequest)
+		errExp.Payload = &models.SwaggerError{
+			Code:    &codeExp,
+			Message: &messages.ErrLoginRequired,
 		}
 		assert.Equal(t, errExp, err)
 	})
@@ -67,7 +70,7 @@ func TestIntegration_PasswordReset(t *testing.T) {
 		require.NoError(t, err)
 
 		want := &password_reset.SendLinkByLoginOK{
-			Payload: models.PasswordResetResponse("Check your email for a reset link"),
+			Payload: models.PasswordResetResponse("check your email for a reset link"),
 		}
 		assert.Equal(t, want, got)
 	})

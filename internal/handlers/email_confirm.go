@@ -3,8 +3,10 @@ package handlers
 import (
 	"net/http"
 
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/swagger/models"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/swagger/restapi/operations"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/swagger/restapi/operations/email_confirm"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/messages"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/pkg/domain"
 	"github.com/go-openapi/runtime/middleware"
 	"go.uber.org/zap"
@@ -33,11 +35,12 @@ func (e emailConfirmHandler) VerifyEmailConfirmTokenFunc() email_confirm.VerifyE
 		token := s.Token
 		err := e.emailConfirm.VerifyTokenAndChangeEmail(ctx, token)
 		if err != nil {
-			e.logger.Error("Failed to verify email confirmation token", zap.Error(err))
+			e.logger.Error(messages.ErrEmailConfirm, zap.Error(err))
 			return email_confirm.NewVerifyEmailConfirmTokenDefault(http.StatusInternalServerError).
-				WithPayload(buildStringPayload("Failed to verify email confirmation token. Please try again later"))
+				WithPayload(buildInternalErrorPayload(messages.ErrEmailConfirm, err.Error()))
 		}
 
-		return email_confirm.NewVerifyEmailConfirmTokenOK().WithPayload("You have successfully confirmed new email")
+		return email_confirm.NewVerifyEmailConfirmTokenOK().WithPayload(
+			models.EmailConfirmResponse(messages.MsgEmailConfirmed))
 	}
 }

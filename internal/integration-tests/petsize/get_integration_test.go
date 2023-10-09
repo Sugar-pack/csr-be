@@ -83,7 +83,7 @@ func TestIntegration_DeletePetSize(t *testing.T) {
 	res, err := client.PetSize.DeletePetSize(params, utils.AuthInfoFunc(token))
 	require.NoError(t, err)
 
-	assert.Equal(t, "Pet size deleted", res.GetPayload())
+	assert.Equal(t, "pet size deleted", res.GetPayload())
 }
 
 func getSizeIDByName(ctx context.Context, client *client.Be, token *string, petSizeName string) (*int64, error) {

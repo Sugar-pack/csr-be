@@ -22,11 +22,11 @@ import (
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/pkg/domain"
 )
 
-type OrderAccessDenied struct {
+type OrderValidationError struct {
 	Err error
 }
 
-func (r OrderAccessDenied) Error() string {
+func (r OrderValidationError) Error() string {
 	return r.Err.Error()
 }
 
@@ -46,18 +46,9 @@ func getDates(start *strfmt.DateTime, end *strfmt.DateTime, maxSeconds int) (*ti
 	rentStart := time.Time(*start)
 	rentEnd := time.Time(*end)
 
-	if rentStart.After(rentEnd) {
-		return nil, nil, errors.New("start date should be before end date")
-	}
-
-	diff := rentEnd.Sub(rentStart)
-	days := diff.Hours() / 24
-	if days < 1 {
-		return nil, nil, errors.New("small rent period")
-	}
-
-	if int(diff.Seconds()) > maxSeconds {
-		return nil, nil, errors.New("too big reservation period")
+	if int(rentEnd.Sub(rentStart).Seconds()) > maxSeconds {
+		// This kind of validation cannot be performed on handler's layer
+		return nil, nil, OrderValidationError{Err: errors.New("too big reservation period")}
 	}
 
 	return &rentStart, &rentEnd, nil
@@ -65,7 +56,8 @@ func getDates(start *strfmt.DateTime, end *strfmt.DateTime, maxSeconds int) (*ti
 
 func getQuantity(quantity int, maxQuantity int) (*int, error) {
 	if quantity > maxQuantity {
-		return nil, fmt.Errorf("quantity limit exceeded: %d allowed", maxQuantity)
+		// This kind of validation cannot be performed on handler's layer
+		return nil, OrderValidationError{Err: fmt.Errorf("quantity limit exceeded: %d allowed", maxQuantity)}
 	}
 
 	return &quantity, nil
@@ -224,7 +216,7 @@ func (r *orderRepository) Update(ctx context.Context, id int, data *models.Order
 	}
 
 	if owner.ID != userId {
-		return nil, OrderAccessDenied{Err: errors.New("permission denied")}
+		return nil, OrderValidationError{Err: errors.New("permission denied")}
 	}
 
 	equipment, err := foundOrder.QueryEquipments().First(ctx)

@@ -3,7 +3,6 @@ package handlers
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"math"
 	"net/http"
 	"net/http/httptest"
@@ -151,14 +150,14 @@ func (s *orderTestSuite) TestOrder_ListUserOrders_WrongStatus() {
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
 
-	var response models.Error
+	var response models.SwaggerError
 	err := json.Unmarshal(responseRecorder.Body.Bytes(), &response)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	require.Equal(t, http.StatusBadRequest, responseRecorder.Code)
-	require.Equal(t, fmt.Sprintf("Invalid order status '%v'", st), response.Data.Message)
+	require.Equal(t, "can't get orders", *response.Message)
 }
 
 func (s *orderTestSuite) TestOrder_ListUserOrders_MapErr() {
@@ -832,7 +831,7 @@ func (s *orderTestSuite) TestOrder_CreateOrder_NoAvailableEquipments() {
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	require.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
+	require.Equal(t, http.StatusConflict, responseRecorder.Code)
 	responseOrder := models.Order{}
 	err := json.Unmarshal(responseRecorder.Body.Bytes(), &responseOrder)
 	if err != nil {
