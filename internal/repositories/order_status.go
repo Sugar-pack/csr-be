@@ -96,7 +96,7 @@ func (r *orderStatusRepository) UpdateStatus(ctx context.Context, userID int, st
 	}
 	_, err = tx.OrderStatus.Create().
 		SetComment(*status.Comment).
-		SetCurrentDate(time.Time(*status.CreatedAt)).
+		SetCurrentDate(time.Now()).
 		SetOrder(receivedOrder).
 		SetOrderStatusName(statusName).
 		SetUsers(receivedUser).Save(ctx)
@@ -139,7 +139,7 @@ func (r *orderStatusRepository) GetOrderCurrentStatus(ctx context.Context, order
 		WithOrder(func(query *ent.OrderQuery) {
 			query.WithUsers()
 		}).
-		Order(ent.Desc(orderstatus.FieldCurrentDate)).First(ctx)
+		Order(ent.Desc(orderstatus.FieldID)).First(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("status history error, failed to get statuses: %s", err)
 	}
