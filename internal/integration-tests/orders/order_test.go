@@ -14,6 +14,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/swagger/client/subcategories"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/messages"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/pkg/domain"
 
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/ent/order"
@@ -91,7 +92,11 @@ func TestIntegration_CreateOrder(t *testing.T) {
 		require.Error(t, gotErr)
 
 		wantErr := orders.NewCreateOrderDefault(http.StatusUnauthorized)
-		wantErr.Payload = &models.Error{Data: nil}
+		codeExp := int32(http.StatusUnauthorized)
+		wantErr.Payload = &models.SwaggerError{
+			Code:    &codeExp,
+			Message: &messages.ErrInvalidToken,
+		}
 		assert.Equal(t, wantErr, gotErr)
 	})
 
@@ -110,8 +115,12 @@ func TestIntegration_CreateOrder(t *testing.T) {
 		_, gotErr := client.Orders.CreateOrder(params, auth)
 		require.Error(t, gotErr)
 
-		wantErr := orders.NewCreateOrderDefault(http.StatusInternalServerError)
-		wantErr.Payload = &models.Error{Data: &models.ErrorData{Message: "start date should be before end date"}}
+		wantErr := orders.NewCreateOrderDefault(http.StatusBadRequest)
+		codeExp := int32(http.StatusBadRequest)
+		wantErr.Payload = &models.SwaggerError{
+			Code:    &codeExp,
+			Message: &messages.ErrStartDateAfterEnd,
+		}
 		assert.Equal(t, wantErr, gotErr)
 	})
 
@@ -130,8 +139,12 @@ func TestIntegration_CreateOrder(t *testing.T) {
 		_, gotErr := client.Orders.CreateOrder(params, auth)
 		require.Error(t, gotErr)
 
-		wantErr := orders.NewCreateOrderDefault(http.StatusInternalServerError)
-		wantErr.Payload = &models.Error{Data: &models.ErrorData{Message: "small rent period"}}
+		wantErr := orders.NewCreateOrderDefault(http.StatusBadRequest)
+		codeExp := int32(http.StatusBadRequest)
+		wantErr.Payload = &models.SwaggerError{
+			Code:    &codeExp,
+			Message: &messages.ErrSmallRentPeriod,
+		}
 		assert.Equal(t, wantErr, gotErr)
 	})
 
@@ -151,7 +164,12 @@ func TestIntegration_CreateOrder(t *testing.T) {
 		require.Error(t, gotErr)
 
 		wantErr := orders.NewCreateOrderDefault(http.StatusInternalServerError)
-		wantErr.Payload = &models.Error{Data: &models.ErrorData{Message: "too big reservation period"}}
+		codeExp := int32(http.StatusInternalServerError)
+		wantErr.Payload = &models.SwaggerError{
+			Code:    &codeExp,
+			Message: &messages.ErrMapOrder,
+			Details: "too big reservation period",
+		}
 		assert.Equal(t, wantErr, gotErr)
 	})
 
@@ -169,7 +187,12 @@ func TestIntegration_CreateOrder(t *testing.T) {
 		require.Error(t, gotErr)
 
 		wantErr := orders.NewCreateOrderDefault(http.StatusUnprocessableEntity)
-		wantErr.Payload = &models.Error{Data: nil}
+		msgExp := "equipment_id in body is required"
+		codeExp := int32(602)
+		wantErr.Payload = &models.SwaggerError{
+			Code:    &codeExp,
+			Message: &msgExp,
+		}
 		assert.Equal(t, wantErr, gotErr)
 	})
 
@@ -306,7 +329,11 @@ func TestIntegration_GetUserOrders(t *testing.T) {
 		require.Error(t, gotErr)
 
 		wantErr := orders.NewGetUserOrdersDefault(http.StatusUnauthorized)
-		wantErr.Payload = &models.Error{Data: nil}
+		codeExp := int32(http.StatusUnauthorized)
+		wantErr.Payload = &models.SwaggerError{
+			Code:    &codeExp,
+			Message: &messages.ErrInvalidToken,
+		}
 		assert.Equal(t, wantErr, gotErr)
 	})
 
@@ -326,7 +353,12 @@ func TestIntegration_GetUserOrders(t *testing.T) {
 		require.Error(t, gotErr)
 
 		wantErr := orders.NewGetUserOrdersDefault(http.StatusUnprocessableEntity)
-		wantErr.Payload = &models.Error{Data: nil}
+		msgExp := "order_column in query should be one of [id rent_start]"
+		codeExp := int32(606)
+		wantErr.Payload = &models.SwaggerError{
+			Code:    &codeExp,
+			Message: &msgExp,
+		}
 		assert.Equal(t, wantErr, gotErr)
 	})
 

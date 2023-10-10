@@ -16,6 +16,7 @@ import (
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/swagger/models"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/swagger/restapi/operations"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/swagger/restapi/operations/orders"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/messages"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/repositories"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/utils"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/pkg/domain"
@@ -221,30 +222,32 @@ func (o Order) ListUserOrdersFunc(repository domain.OrderRepository) orders.GetU
 			_, ok := domain.AllOrderStatuses[*p.Status]
 			if !ok {
 				return orders.NewGetUserOrdersDefault(http.StatusBadRequest).
-					WithPayload(buildStringPayload(fmt.Sprintf("Invalid order status '%v'", *p.Status)))
+					WithPayload(buildBadRequestErrorPayload(messages.ErrQueryOrders, fmt.Sprintf("invalid order status '%v'", *p.Status)))
 			}
 		}
 
 		total, err := repository.OrdersTotal(ctx, &userID)
 		if err != nil {
-			o.logger.Error("Error while getting total of all user's orders", zap.Error(err))
+			o.logger.Error(messages.ErrQueryTotalOrders, zap.Error(err))
 			return orders.NewGetUserOrdersDefault(http.StatusInternalServerError).
-				WithPayload(buildErrorPayload(err))
+				WithPayload(buildBadRequestErrorPayload(messages.ErrQueryTotalOrders, err.Error()))
 		}
 
 		var items []*ent.Order
 		if total > 0 {
 			items, err = repository.List(ctx, &userID, orderFilter)
 			if err != nil {
-				o.logger.Error("list items failed", zap.Error(err))
-				return orders.NewGetUserOrdersDefault(http.StatusInternalServerError).WithPayload(buildErrorPayload(err))
+				o.logger.Error(messages.ErrQueryOrders, zap.Error(err))
+				return orders.NewGetUserOrdersDefault(http.StatusInternalServerError).
+					WithPayload(buildBadRequestErrorPayload(messages.ErrQueryOrders, err.Error()))
 			}
 		}
 
 		mappedOrders, err := mapUserOrdersToResponse(items, o.logger)
 		if err != nil {
-			o.logger.Error("map orders to response failed", zap.Error(err))
-			return orders.NewGetUserOrdersDefault(http.StatusInternalServerError).WithPayload(buildErrorPayload(err))
+			o.logger.Error(messages.ErrMapOrder, zap.Error(err))
+			return orders.NewGetUserOrdersDefault(http.StatusInternalServerError).
+				WithPayload(buildInternalErrorPayload(messages.ErrMapOrder, err.Error()))
 		}
 		totalOrders := int64(total)
 		listOrders := &models.UserOrdersList{
@@ -276,7 +279,7 @@ func (o Order) ListAllOrdersFunc(repository domain.OrderRepository) orders.GetAl
 			_, ok := domain.AllOrderStatuses[*p.Status]
 			if !ok {
 				return orders.NewGetAllOrdersDefault(http.StatusBadRequest).
-					WithPayload(buildStringPayload(fmt.Sprintf("Invalid order status '%v'", *p.Status)))
+					WithPayload(buildBadRequestErrorPayload(messages.ErrQueryOrders, fmt.Sprintf("invalid order status '%v'", *p.Status)))
 			}
 			orderFilter.Status = p.Status
 		}
@@ -288,24 +291,26 @@ func (o Order) ListAllOrdersFunc(repository domain.OrderRepository) orders.GetAl
 
 		total, err := repository.OrdersTotal(ctx, nil)
 		if err != nil {
-			o.logger.Error("Error while getting total of all orders", zap.Error(err))
+			o.logger.Error(messages.ErrQueryTotalOrders, zap.Error(err))
 			return orders.NewGetAllOrdersDefault(http.StatusInternalServerError).
-				WithPayload(buildErrorPayload(err))
+				WithPayload(buildInternalErrorPayload(messages.ErrQueryTotalOrders, err.Error()))
 		}
 
 		var items []*ent.Order
 		if total > 0 {
 			items, err = repository.List(ctx, nil, orderFilter)
 			if err != nil {
-				o.logger.Error("list items failed", zap.Error(err))
-				return orders.NewGetAllOrdersDefault(http.StatusInternalServerError).WithPayload(buildErrorPayload(err))
+				o.logger.Error(messages.ErrQueryOrders, zap.Error(err))
+				return orders.NewGetAllOrdersDefault(http.StatusInternalServerError).
+					WithPayload(buildInternalErrorPayload(messages.ErrQueryOrders, err.Error()))
 			}
 		}
 
 		mappedOrders, err := mapOrdersToResponse(items, o.logger)
 		if err != nil {
-			o.logger.Error("map orders to response failed", zap.Error(err))
-			return orders.NewGetAllOrdersDefault(http.StatusInternalServerError).WithPayload(buildErrorPayload(err))
+			o.logger.Error(messages.ErrMapOrder, zap.Error(err))
+			return orders.NewGetAllOrdersDefault(http.StatusInternalServerError).
+				WithPayload(buildInternalErrorPayload(messages.ErrMapOrder, err.Error()))
 		}
 		totalOrders := int64(total)
 		listOrders := &models.OrdersList{
@@ -329,20 +334,35 @@ func (o Order) CreateOrderFunc(
 		isEquipmentAvailable, err := eqStatusRepo.HasStatusByPeriod(ctx, domain.EquipmentStatusAvailable, id,
 			time.Time(*p.Data.RentStart), time.Time(*p.Data.RentEnd))
 		if err != nil {
-			o.logger.Error("error while checking if equipment is available for period", zap.Error(err))
-			return orders.NewCreateOrderDefault(http.StatusInternalServerError).WithPayload(buildErrorPayload(err))
+			o.logger.Error(messages.ErrCheckEqStatusFailed, zap.Error(err))
+			return orders.NewCreateOrderDefault(http.StatusInternalServerError).
+				WithPayload(buildInternalErrorPayload(messages.ErrCheckEqStatusFailed, err.Error()))
 		}
 
 		if !isEquipmentAvailable {
-			o.logger.Warn("equipment is not free")
-			return orders.NewCreateOrderDefault(http.StatusInternalServerError).
-				WithPayload(buildStringPayload("requested equipment is not free"))
+			o.logger.Warn(messages.ErrEquipmentIsNotFree)
+			return orders.NewCreateOrderDefault(http.StatusConflict).
+				WithPayload(buildConflictErrorPayload(messages.ErrEquipmentIsNotFree, ""))
+		}
+
+		rentStart := time.Time(*p.Data.RentStart)
+		rentEnd := time.Time(*p.Data.RentEnd)
+
+		if rentStart.After(rentEnd) {
+			return orders.NewCreateOrderDefault(http.StatusBadRequest).
+				WithPayload(buildBadRequestErrorPayload(messages.ErrStartDateAfterEnd, ""))
+		}
+
+		if rentEnd.Sub(rentStart).Hours() < 24 {
+			return orders.NewCreateOrderDefault(http.StatusBadRequest).
+				WithPayload(buildBadRequestErrorPayload(messages.ErrSmallRentPeriod, ""))
 		}
 
 		order, err := orderRepo.Create(ctx, p.Data, userID, []int{id})
 		if err != nil {
-			o.logger.Error("map orders to response failed", zap.Error(err))
-			return orders.NewCreateOrderDefault(http.StatusInternalServerError).WithPayload(buildErrorPayload(err))
+			o.logger.Error(messages.ErrMapOrder, zap.Error(err))
+			return orders.NewCreateOrderDefault(http.StatusInternalServerError).
+				WithPayload(buildInternalErrorPayload(messages.ErrMapOrder, err.Error()))
 		}
 
 		equipmentBookedStartDate := strfmt.DateTime(time.Time(*p.Data.RentStart).AddDate(0, 0, -1))
@@ -355,15 +375,16 @@ func (o Order) CreateOrderFunc(
 			StatusName:  &domain.EquipmentStatusBooked,
 			OrderID:     int64(order.ID),
 		}); err != nil {
-			o.logger.Error("error while creating equipment status", zap.Error(err))
-			return orders.NewGetUserOrdersDefault(http.StatusInternalServerError).
-				WithPayload(buildErrorPayload(err))
+			o.logger.Error(messages.ErrCreateEqStatus, zap.Error(err))
+			return orders.NewGetAllOrdersDefault(http.StatusInternalServerError).
+				WithPayload(buildInternalErrorPayload(messages.ErrCreateEqStatus, err.Error()))
 		}
 
 		mappedOrder, err := mapUserOrder(order, o.logger)
 		if err != nil {
-			o.logger.Error("failed to map order", zap.Error(err))
-			return orders.NewGetUserOrdersDefault(http.StatusInternalServerError).WithPayload(buildErrorPayload(err))
+			o.logger.Error(messages.ErrMapOrder, zap.Error(err))
+			return orders.NewGetAllOrdersDefault(http.StatusInternalServerError).
+				WithPayload(buildInternalErrorPayload(messages.ErrMapOrder, err.Error()))
 		}
 
 		return orders.NewCreateOrderCreated().WithPayload(mappedOrder)
@@ -378,14 +399,16 @@ func (o Order) UpdateOrderFunc(repository domain.OrderRepository) orders.UpdateO
 
 		order, err := repository.Update(ctx, orderID, p.Data, userID)
 		if err != nil {
-			o.logger.Error("update order failed", zap.Error(err))
-			return orders.NewUpdateOrderDefault(http.StatusInternalServerError).WithPayload(buildErrorPayload(err))
+			o.logger.Error(messages.ErrUpdateOrder, zap.Error(err))
+			return orders.NewUpdateOrderDefault(http.StatusInternalServerError).
+				WithPayload(buildInternalErrorPayload(messages.ErrUpdateOrder, err.Error()))
 		}
 
 		mappedOrder, err := mapUserOrder(order, o.logger)
 		if err != nil {
-			o.logger.Error("failed to map order", zap.Error(err))
-			return orders.NewUpdateOrderDefault(http.StatusInternalServerError).WithPayload(buildErrorPayload(err))
+			o.logger.Error(messages.ErrMapOrder, zap.Error(err))
+			return orders.NewUpdateOrderDefault(http.StatusInternalServerError).
+				WithPayload(buildInternalErrorPayload(messages.ErrMapOrder, err.Error()))
 		}
 
 		return orders.NewUpdateOrderOK().WithPayload(mappedOrder)

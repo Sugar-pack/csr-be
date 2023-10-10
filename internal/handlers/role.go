@@ -9,6 +9,7 @@ import (
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/swagger/models"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/swagger/restapi/operations"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/swagger/restapi/operations/roles"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/messages"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/repositories"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/pkg/domain"
 )
@@ -35,9 +36,9 @@ func (r Role) GetRolesFunc(repository domain.RoleRepository) roles.GetRolesHandl
 		ctx := s.HTTPRequest.Context()
 		e, err := repository.GetRoles(ctx)
 		if err != nil {
-			r.logger.Error("query orders failed")
+			r.logger.Error(messages.ErrQueryRoles)
 			return roles.NewGetRolesDefault(http.StatusInternalServerError).
-				WithPayload(buildStringPayload("cant get all roles"))
+				WithPayload(buildInternalErrorPayload(messages.ErrQueryRoles, ""))
 		}
 		listRoles := models.ListRoles{}
 		for _, element := range e {

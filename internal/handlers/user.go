@@ -15,6 +15,7 @@ import (
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/swagger/models"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/swagger/restapi/operations"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/swagger/restapi/operations/users"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/messages"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/repositories"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/utils"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/pkg/domain"
@@ -62,7 +63,7 @@ func (c User) LoginUserFunc(service domain.TokenManager) users.LoginHandlerFunc 
 			if isInternalErr {
 				return users.NewLoginDefault(http.StatusInternalServerError)
 			}
-			return users.NewLoginUnauthorized().WithPayload("Invalid login or password")
+			return users.NewLoginUnauthorized().WithPayload(messages.ErrInvalidLoginOrPass)
 		}
 
 		return users.NewLoginOK().WithPayload(&models.TokenPair{
@@ -83,7 +84,7 @@ func (c User) LogoutUserFunc(tokenManager domain.TokenManager) users.LogoutHandl
 		if err != nil {
 			return users.NewLogoutDefault(http.StatusInternalServerError)
 		}
-		return users.NewLogoutOK().WithPayload("Successfully logged out")
+		return users.NewLogoutOK().WithPayload(messages.MsgLogoutSuccessful)
 	}
 }
 
@@ -93,11 +94,11 @@ func (c User) PostUserFunc(repository domain.UserRepository, regConfirmService d
 		createdUser, err := repository.CreateUser(ctx, p.Data)
 		if err != nil {
 			if ent.IsConstraintError(err) {
-				return users.NewPostUserDefault(http.StatusExpectationFailed).WithPayload(
-					buildErrorPayload(errors.New("login is already used")),
-				)
+				return users.NewPostUserDefault(http.StatusExpectationFailed).
+					WithPayload(buildExFailedErrorPayload(messages.ErrLoginInUse, ""))
 			}
-			return users.NewPostUserDefault(http.StatusInternalServerError).WithPayload(buildErrorPayload(err))
+			return users.NewPostUserDefault(http.StatusInternalServerError).
+				WithPayload(buildInternalErrorPayload(messages.ErrCreateUser, err.Error()))
 		}
 
 		id := int64(createdUser.ID)
@@ -122,14 +123,14 @@ func (c User) Refresh(manager domain.TokenManager) users.RefreshHandlerFunc {
 		refreshToken := *p.RefreshToken.RefreshToken
 		newAccess, NewRefresh, isValid, err := manager.RefreshToken(ctx, refreshToken)
 		if isValid {
-			c.logger.Info("token invalid", zap.String("token", refreshToken))
+			c.logger.Info(messages.ErrInvalidToken, zap.String("token", refreshToken))
 			return users.NewRefreshDefault(http.StatusBadRequest).
-				WithPayload(buildStringPayload("token invalid"))
+				WithPayload(buildBadRequestErrorPayload(messages.ErrInvalidToken, ""))
 		}
 		if err != nil {
-			c.logger.Error("Error while refreshing token", zap.Error(err))
+			c.logger.Error(messages.ErrTokenRefresh, zap.Error(err))
 			return users.NewRefreshDefault(http.StatusInternalServerError).
-				WithPayload(buildStringPayload("Error while refreshing token"))
+				WithPayload(buildInternalErrorPayload(messages.ErrTokenRefresh, err.Error()))
 		}
 		return users.NewRefreshOK().WithPayload(&models.TokenPair{
 			AccessToken:  &newAccess,
@@ -145,17 +146,16 @@ func (c User) GetUserFunc(repository domain.UserRepository) users.GetCurrentUser
 
 		user, err := repository.GetUserByID(ctx, userID)
 		if err != nil {
-			c.logger.Error("get user by id error", zap.Error(err))
-			return users.NewGetCurrentUserDefault(http.StatusInternalServerError).WithPayload(&models.Error{Data: &models.ErrorData{
-				Message: "cant find user by id",
-			}})
+			c.logger.Error(messages.ErrUserNotFound, zap.Error(err))
+			return users.NewGetCurrentUserDefault(http.StatusInternalServerError).
+				WithPayload(buildInternalErrorPayload(messages.ErrUserNotFound, ""))
 		}
 
 		result, err := mapUserInfo(user)
 		if err != nil {
-			c.logger.Error("map user error", zap.Error(err))
+			c.logger.Error(messages.ErrMapUser, zap.Error(err))
 			return users.NewGetCurrentUserDefault(http.StatusInternalServerError).
-				WithPayload(buildStringPayload("map user error"))
+				WithPayload(buildInternalErrorPayload(messages.ErrMapUser, err.Error()))
 		}
 
 		return users.NewGetCurrentUserOK().WithPayload(result)
@@ -169,9 +169,9 @@ func (c User) PatchUserFunc(repository domain.UserRepository) users.PatchUserHan
 
 		err := repository.UpdateUserByID(ctx, userID, p.UserPatch)
 		if err != nil {
-			c.logger.Error("get user by id error", zap.Error(err))
+			c.logger.Error(messages.ErrUpdateUser, zap.Error(err))
 			return users.NewPatchUserDefault(http.StatusInternalServerError).
-				WithPayload(buildStringPayload("cant update user"))
+				WithPayload(buildInternalErrorPayload(messages.ErrUpdateUser, err.Error()))
 		}
 		return users.NewPatchUserNoContent()
 	}
@@ -184,17 +184,18 @@ func (c User) AssignRoleToUserFunc(repository domain.UserRepository) users.Assig
 		userId := int(p.UserID)
 		if p.Data.RoleID == nil {
 			return users.NewAssignRoleToUserDefault(http.StatusBadRequest).
-				WithPayload(buildStringPayload("role id is required"))
+				WithPayload(buildInternalErrorPayload(messages.ErrRoleRequired, ""))
 		}
 		roleId := int(*p.Data.RoleID)
 
 		err := repository.SetUserRole(ctx, userId, roleId)
 		if err != nil {
-			c.logger.Error("set user role error", zap.Error(err))
-			return users.NewAssignRoleToUserDefault(http.StatusInternalServerError).WithPayload(buildErrorPayload(err))
+			c.logger.Error(messages.ErrSetUserRole, zap.Error(err))
+			return users.NewAssignRoleToUserDefault(http.StatusInternalServerError).
+				WithPayload(buildInternalErrorPayload(messages.ErrSetUserRole, err.Error()))
 		}
 
-		return users.NewAssignRoleToUserOK().WithPayload("role assigned")
+		return users.NewAssignRoleToUserOK().WithPayload(messages.MsgRoleAssigned)
 	}
 }
 
@@ -205,14 +206,14 @@ func (c User) GetUserById(repository domain.UserRepository) users.GetUserHandler
 		foundUser, err := repository.GetUserByID(ctx, id)
 		if err != nil {
 			return users.NewGetUserDefault(http.StatusInternalServerError).
-				WithPayload(buildStringPayload("cant find user by id"))
+				WithPayload(buildInternalErrorPayload(messages.ErrUserNotFound, ""))
 		}
 
 		userToResponse, err := mapUserInfo(foundUser)
 		if err != nil {
-			c.logger.Error("map user error", zap.Error(err))
+			c.logger.Error(messages.ErrMapUser, zap.Error(err))
 			return users.NewGetUserDefault(http.StatusInternalServerError).
-				WithPayload(buildStringPayload("map user error"))
+				WithPayload(buildInternalErrorPayload(messages.ErrMapUser, err.Error()))
 		}
 
 		return users.NewGetUserOK().WithPayload(userToResponse)
@@ -228,17 +229,17 @@ func (c User) GetUsersList(repository domain.UserRepository) users.GetAllUsersHa
 		orderColumn := utils.GetValueByPointerOrDefaultValue(p.OrderColumn, user.FieldID)
 		total, err := repository.UsersListTotal(ctx)
 		if err != nil {
-			c.logger.Error("failed get user total amount", zap.Error(err))
+			c.logger.Error(messages.ErrQueryTotalUsers, zap.Error(err))
 			return users.NewGetAllUsersDefault(http.StatusInternalServerError).
-				WithPayload(buildStringPayload("failed to get user total amount"))
+				WithPayload(buildInternalErrorPayload(messages.ErrQueryTotalUsers, err.Error()))
 		}
 		var allUsers []*ent.User
 		if total > 0 {
 			allUsers, err = repository.UserList(ctx, int(limit), int(offset), orderBy, orderColumn)
 			if err != nil {
-				c.logger.Error("failed get user list", zap.Error(err))
+				c.logger.Error(messages.ErrQueryUsers, zap.Error(err))
 				return users.NewGetAllUsersDefault(http.StatusInternalServerError).
-					WithPayload(buildStringPayload("failed to get user list"))
+					WithPayload(buildInternalErrorPayload(messages.ErrQueryUsers, err.Error()))
 			}
 		}
 
@@ -246,9 +247,9 @@ func (c User) GetUsersList(repository domain.UserRepository) users.GetAllUsersHa
 		for i, element := range allUsers {
 			userToResponse, errMap := mapUserInfo(element)
 			if errMap != nil {
-				c.logger.Error("map user error", zap.Error(errMap))
+				c.logger.Error(messages.ErrMapUser, zap.Error(errMap))
 				return users.NewGetAllUsersDefault(http.StatusInternalServerError).
-					WithPayload(buildStringPayload("map user error"))
+					WithPayload(buildInternalErrorPayload(messages.ErrMapUser, errMap.Error()))
 			}
 			usersToResponse[i] = userToResponse
 		}
@@ -269,9 +270,9 @@ func (c User) DeleteCurrentUser(repository domain.UserRepository) users.DeleteCu
 
 		err := repository.Delete(ctx, userID)
 		if err != nil {
-			c.logger.Error("error during deleting user", zap.Error(err))
+			c.logger.Error(messages.ErrDeleteUser, zap.Error(err))
 			return users.NewDeleteCurrentUserDefault(http.StatusInternalServerError).
-				WithPayload(buildStringPayload("can't delete user"))
+				WithPayload(buildInternalErrorPayload(messages.ErrDeleteUser, err.Error()))
 		}
 
 		return users.NewDeleteCurrentUserOK()
@@ -289,26 +290,26 @@ func (c User) DeleteUser(repo domain.UserRepository) users.DeleteUserHandlerFunc
 			c.logger.Error(fmt.Sprintf("retrieving user by ID %d", userID), zap.Error(err))
 			if ent.IsNotFound(err) {
 				return users.NewDeleteUserNotFound().
-					WithPayload(buildStringPayload("User not found"))
+					WithPayload(buildNotFoundErrorPayload(messages.ErrUserNotFound, ""))
 			}
 			return users.NewDeleteUserDefault(http.StatusInternalServerError).
-				WithPayload(buildStringPayload("Unexpected error"))
+				WithPayload(buildInternalErrorPayload(messages.ErrDeleteUser, err.Error()))
 		}
 
 		if !user.IsReadonly {
-			c.logger.Error("User must be readonly for deletion", zap.Int("userID", userID))
+			c.logger.Error(messages.ErrDeleteUserNotRO, zap.Int("userID", userID))
 			return users.NewDeleteUserDefault(http.StatusForbidden).
-				WithPayload(buildStringPayload("User must be readonly for deletion"))
+				WithPayload(buildForbiddenErrorPayload(messages.ErrDeleteUserNotRO, ""))
 		}
 
 		if err := repo.Delete(ctx, userID); err != nil {
 			c.logger.Error("deleting user", zap.Error(err))
 			if ent.IsNotFound(err) {
 				return users.NewDeleteUserNotFound().
-					WithPayload(buildStringPayload("User not found"))
+					WithPayload(buildNotFoundErrorPayload(messages.ErrUserNotFound, ""))
 			}
 			return users.NewDeleteUserDefault(http.StatusInternalServerError).
-				WithPayload(buildStringPayload("Unexpected error"))
+				WithPayload(buildInternalErrorPayload(messages.ErrDeleteUser, err.Error()))
 		}
 
 		c.logger.Info("User deleted successfully", zap.Int("userID", userID), zap.Int("deletedByUserID", deletedByUserID))
@@ -322,32 +323,32 @@ func (c User) ChangePassword(repo domain.UserRepository) users.ChangePasswordHan
 		userID := int(principal.ID)
 
 		if p.PasswordPatch == nil {
-			c.logger.Error("password patch is nil", zap.Any("principal", principal))
+			c.logger.Error(messages.ErrPasswordPatchEmpty, zap.Any("principal", principal))
 			return users.NewChangePasswordDefault(http.StatusBadRequest).
-				WithPayload(buildStringPayload("Password patch is nil"))
+				WithPayload(buildBadRequestErrorPayload(messages.ErrPasswordPatchEmpty, ""))
 		}
 		//TODO: add validation for password or ask frontend to do it
 		if p.PasswordPatch.OldPassword == p.PasswordPatch.NewPassword {
 			c.logger.Error("old and new passwords are the same", zap.Any("principal", principal))
 			return users.NewChangePasswordDefault(http.StatusBadRequest).
-				WithPayload(buildStringPayload("Old and new passwords are the same"))
+				WithPayload(buildBadRequestErrorPayload(messages.ErrPasswordsAreSame, ""))
 		}
 		requestedUser, err := repo.GetUserByID(ctx, userID)
 		if err != nil {
 			c.logger.Error("getting user failed", zap.Error(err))
 			return users.NewChangePasswordDefault(http.StatusInternalServerError).
-				WithPayload(buildStringPayload("Can't get user by id"))
+				WithPayload(buildInternalErrorPayload(messages.ErrUserPasswordChange, err.Error()))
 		}
 		expectedPasswordHash := requestedUser.Password
 		if err = bcrypt.CompareHashAndPassword([]byte(expectedPasswordHash), []byte(p.PasswordPatch.OldPassword)); err != nil {
-			c.logger.Error("wrong password", zap.Error(err))
+			c.logger.Error(messages.ErrWrongPassword, zap.Error(err))
 			return users.NewChangePasswordDefault(http.StatusForbidden).
-				WithPayload(buildStringPayload("Wrong password"))
+				WithPayload(buildForbiddenErrorPayload(messages.ErrWrongPassword, ""))
 		}
 		if err = repo.ChangePasswordByLogin(ctx, requestedUser.Login, p.PasswordPatch.NewPassword); err != nil {
 			c.logger.Error("error while changing password", zap.Error(err))
 			return users.NewChangePasswordDefault(http.StatusInternalServerError).
-				WithPayload(buildStringPayload("Error while changing password"))
+				WithPayload(buildInternalErrorPayload(messages.ErrUserPasswordChange, err.Error()))
 		}
 		return users.NewChangePasswordNoContent()
 	}
@@ -361,13 +362,13 @@ func (c User) UpdateReadonlyAccess(repo domain.UserRepository) users.UpdateReado
 		isReadonly := p.Body.IsReadonly
 
 		if err := repo.SetIsReadonly(ctx, userID, isReadonly); err != nil {
-			c.logger.Error("error while updating readonly access", zap.Error(err))
+			c.logger.Error(messages.ErrUpdateROAccess, zap.Error(err))
 			if ent.IsNotFound(err) {
 				return users.NewUpdateReadonlyAccessNotFound().
-					WithPayload(buildStringPayload("User not found"))
+					WithPayload(buildNotFoundErrorPayload(messages.ErrUserNotFound, ""))
 			}
 			return users.NewUpdateReadonlyAccessDefault(http.StatusInternalServerError).
-				WithPayload(buildStringPayload("Unexpected error"))
+				WithPayload(buildInternalErrorPayload(messages.ErrUpdateROAccess, err.Error()))
 		}
 
 		if isReadonly {
@@ -387,23 +388,23 @@ func (c User) ChangeEmail(repo domain.UserRepository,
 		userID := int(principal.ID)
 
 		if p.EmailPatch == nil {
-			c.logger.Error("email patch is nil", zap.Any("principal", principal))
+			c.logger.Error(messages.ErrEmailPatchEmpty, zap.Any("principal", principal))
 			return users.NewChangeEmailDefault(http.StatusBadRequest).
-				WithPayload(buildStringPayload("Email patch is nil"))
+				WithPayload(buildBadRequestErrorPayload(messages.ErrEmailPatchEmpty, ""))
 		}
 
 		requestedUser, err := repo.GetUserByID(ctx, userID)
 		if err != nil {
 			c.logger.Error("getting user for changing email failed", zap.Error(err))
 			return users.NewChangeEmailDefault(http.StatusInternalServerError).
-				WithPayload(buildStringPayload("Can't get user by id"))
+				WithPayload(buildInternalErrorPayload(messages.ErrChangeEmail, err.Error()))
 		}
 
 		err = changeEmailService.SendEmailConfirmationLink(ctx, requestedUser.Login, p.EmailPatch.NewEmail)
 		if err != nil {
 			c.logger.Error("error while sending link for confirmation new email", zap.Error(err))
 			return users.NewChangeEmailDefault(http.StatusInternalServerError).
-				WithPayload(buildStringPayload("Can't send link for confirmation new email"))
+				WithPayload(buildInternalErrorPayload(messages.ErrNewEmailConfirmation, err.Error()))
 		}
 
 		return users.NewChangeEmailNoContent()

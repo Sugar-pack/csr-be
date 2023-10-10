@@ -2,12 +2,14 @@ package user
 
 import (
 	"context"
+	"net/http"
 	"testing"
 	"time"
 
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/swagger/client/users"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/swagger/models"
 	utils "git.epam.com/epm-lstr/epm-lstr-lc/be/internal/integration-tests/common"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/messages"
 
 	_ "github.com/jackc/pgx/v4/stdlib"
 	"github.com/stretchr/testify/assert"
@@ -79,9 +81,11 @@ func TestIntegration_Refresh(t *testing.T) {
 		require.Error(t, gotErr)
 
 		wantErr := users.NewRefreshDefault(400)
-		wantErr.Payload = &models.Error{Data: &models.ErrorData{
-			Message: "token invalid",
-		}}
+		codeExp := int32(http.StatusBadRequest)
+		wantErr.Payload = &models.SwaggerError{
+			Code:    &codeExp,
+			Message: &messages.ErrInvalidToken,
+		}
 		assert.Equal(t, wantErr, gotErr)
 	})
 }

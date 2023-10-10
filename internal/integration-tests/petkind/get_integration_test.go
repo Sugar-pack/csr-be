@@ -122,5 +122,5 @@ func TestIntegration_DeletePetKind(t *testing.T) {
 	kind, err := client.PetKind.DeletePetKind(params, utils.AuthInfoFunc(token))
 	require.NoError(t, err)
 
-	assert.Equal(t, kind.GetPayload(), "Pet kind deleted")
+	assert.Equal(t, kind.GetPayload(), "pet kind deleted")
 }
