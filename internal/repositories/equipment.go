@@ -510,6 +510,17 @@ func (r *equipmentRepository) BlockEquipment(
 		return err
 	}
 
+	// Get last EqupmentStatus for Equipment according to some criteria
+	equipmentStatus, err := tx.EquipmentStatus.
+		Query().
+		Where(equipmentstatus.HasEquipmentsWith(equipment.ID(id))).
+		Where(equipmentstatus.HasEquipmentStatusNameWith(equipmentstatusname.ID(eqStatusNotAvailable.ID))).
+		Order(ent.Asc(equipmentstatus.FieldEndDate)).
+		Only(ctx)
+	if err != nil {
+		return err
+	}
+
 	start, end, err := checkDates(&startDate, &endDate)
 	if err != nil {
 		return err
@@ -521,17 +532,22 @@ func (r *equipmentRepository) BlockEquipment(
 		return err
 	}
 
-	// Create a new EquipmentStatus and set startDate, endDate, Equipment and EquipmentStatusName
-	_, err = tx.EquipmentStatus.Create().
-		SetCreatedAt(time.Now()).
-		SetEndDate(*end).
-		SetStartDate(*start).
-		SetEquipments(eqToBlock).
-		SetEquipmentStatusName(eqStatusNotAvailable).
-		SetUpdatedAt(time.Now()).
-		Save(ctx)
-	if err != nil {
-		return err
+	// Update an existed EquipmentStatus or create an new one and set startDate, endDate,
+	// Equipment and EquipmentStatusName
+	if equipmentStatus != nil {
+		equipmentStatus.Update().SetEndDate(*end).SetStartDate(*start).Save(ctx)
+	} else {
+		_, err = tx.EquipmentStatus.Create().
+			SetCreatedAt(time.Now()).
+			SetEndDate(*end).
+			SetStartDate(*start).
+			SetEquipments(eqToBlock).
+			SetEquipmentStatusName(eqStatusNotAvailable).
+			SetUpdatedAt(time.Now()).
+			Save(ctx)
+		if err != nil {
+			return err
+		}
 	}
 
 	// Get OrderStatusName form DB
@@ -589,7 +605,7 @@ func (r *equipmentRepository) UnblockEquipment(ctx context.Context, id int) erro
 		return err
 	}
 
-	// Get EquipmentStatusNames form DB
+	// Get EquipmentStatusNames from DB
 	eqStatusNotAvailable, err := tx.EquipmentStatusName.
 		Query().
 		Where(equipmentstatusname.Name(domain.EquipmentStatusNotAvailable)).
