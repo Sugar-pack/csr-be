@@ -501,27 +501,22 @@ func (r *equipmentRepository) BlockEquipment(
 		return err
 	}
 
-	// Get EquipmentStatusName form DB
-	eqStatusNotAvailable, err := tx.EquipmentStatusName.
-		Query().
-		Where(equipmentstatusname.Name(domain.EquipmentStatusNotAvailable)).
-		Only(ctx)
-	if err != nil {
-		return err
-	}
-
-	// Get last EqupmentStatus for Equipment according to some criteria
-	equipmentStatus, err := tx.EquipmentStatus.
+	// Get last EqupmentStatus for current Equipment
+	currentEqStatus, err := tx.EquipmentStatus.
 		Query().
 		Where(equipmentstatus.HasEquipmentsWith(equipment.ID(id))).
-		Where(equipmentstatus.HasEquipmentStatusNameWith(equipmentstatusname.ID(eqStatusNotAvailable.ID))).
+		WithEquipmentStatusName().
 		Order(ent.Asc(equipmentstatus.FieldEndDate)).
 		Only(ctx)
 	if err != nil {
 		return err
 	}
 
-	start, end, err := checkDates(&startDate, &endDate)
+	// Get EquipmentStatusName from DB
+	eqStatusNotAvailable, err := tx.EquipmentStatusName.
+		Query().
+		Where(equipmentstatusname.Name(domain.EquipmentStatusNotAvailable)).
+		Only(ctx)
 	if err != nil {
 		return err
 	}
@@ -532,15 +527,19 @@ func (r *equipmentRepository) BlockEquipment(
 		return err
 	}
 
-	// Update an existed EquipmentStatus or create an new one and set startDate, endDate,
-	// Equipment and EquipmentStatusName
-	if equipmentStatus != nil {
-		equipmentStatus.Update().SetEndDate(*end).SetStartDate(*start).Save(ctx)
+	// Check if current EqupmentStatus has specific EquipmentStatusName.
+	// Consequently, if the record exist update it, otherwise create a new EquipmentStatus.
+	if currentEqStatus.Edges.EquipmentStatusName.Name == domain.EquipmentStatusNotAvailable {
+		currentEqStatus.
+			Update().
+			SetStartDate(startDate).
+			SetEndDate(endDate).
+			Save(ctx)
 	} else {
 		_, err = tx.EquipmentStatus.Create().
 			SetCreatedAt(time.Now()).
-			SetEndDate(*end).
-			SetStartDate(*start).
+			SetEndDate(startDate).
+			SetStartDate(endDate).
 			SetEquipments(eqToBlock).
 			SetEquipmentStatusName(eqStatusNotAvailable).
 			SetUpdatedAt(time.Now()).
@@ -561,8 +560,8 @@ func (r *equipmentRepository) BlockEquipment(
 
 	// Find all Orders which have OrderStatusName booked and start from startDate and later
 	orderIDs, err := eqToBlock.QueryOrder().
-		Where(order.RentStartGTE(*start), order.RentStartLTE(*end)). // rentStart must be in range of startDate..endDate
-		Where(order.RentEndGTE(*start)).                             // rentEnd must be equal or greater than startDate
+		Where(order.RentStartGTE(startDate), order.RentStartLTE(endDate)). // rentStart must be in range of startDate..endDate
+		Where(order.RentEndGTE(startDate)).                                // rentEnd must be equal or greater than startDate
 		Where(order.HasCurrentStatusWith(orderstatusname.StatusIn(
 			domain.OrderStatusPrepared,
 			domain.OrderStatusApproved))).
@@ -571,26 +570,30 @@ func (r *equipmentRepository) BlockEquipment(
 		return err
 	}
 
-	// Set a new OrderStatusName for these Orders
-	_, err = tx.Order.Update().Where(order.IDIn(orderIDs...)).SetCurrentStatus(orStatusBlocked).Save(ctx)
-	if err != nil {
-		return err
+	// Do action only if we found some Orders according to DB request above.
+	if len(orderIDs) > 0 {
+		// Set a new OrderStatusName for these Orders
+		_, err = tx.Order.Update().Where(order.IDIn(orderIDs...)).SetCurrentStatus(orStatusBlocked).Save(ctx)
+		if err != nil {
+			return err
+		}
+
+		// Create new OrderStatuses for orders
+		oss := make([]*ent.OrderStatusCreate, len(orderIDs))
+		for i, order := range orderIDs {
+			oss[i] = tx.OrderStatus.Create().
+				SetComment("").
+				SetCurrentDate(time.Now()).
+				SetOrderID(order).
+				SetUsersID(userID).
+				SetOrderStatusName(orStatusBlocked)
+		}
+		_, err = tx.OrderStatus.CreateBulk(oss...).Save(ctx)
+		if err != nil {
+			return err
+		}
 	}
 
-	// Create new OrderStatuses for orders
-	oss := make([]*ent.OrderStatusCreate, len(orderIDs))
-	for i, order := range orderIDs {
-		oss[i] = tx.OrderStatus.Create().
-			SetComment("").
-			SetCurrentDate(time.Now()).
-			SetOrderID(order).
-			SetUsersID(userID).
-			SetOrderStatusName(orStatusBlocked)
-	}
-	_, err = tx.OrderStatus.CreateBulk(oss...).Save(ctx)
-	if err != nil {
-		return err
-	}
 	return err
 }
 
@@ -605,7 +608,7 @@ func (r *equipmentRepository) UnblockEquipment(ctx context.Context, id int) erro
 		return err
 	}
 
-	// Get EquipmentStatusNames from DB
+	// Get EquipmentStatusNames form DB
 	eqStatusNotAvailable, err := tx.EquipmentStatusName.
 		Query().
 		Where(equipmentstatusname.Name(domain.EquipmentStatusNotAvailable)).
@@ -651,17 +654,6 @@ func (r *equipmentRepository) UnblockEquipment(ctx context.Context, id int) erro
 
 	}
 	return err
-}
-
-func checkDates(start *time.Time, end *time.Time) (*time.Time, *time.Time, error) {
-	startDate := time.Time(*start)
-	endDate := time.Time(*end)
-
-	if startDate.After(endDate) {
-		return nil, nil, errors.New("start date should be before end date")
-	}
-
-	return &startDate, &endDate, nil
 }
 
 // Set EquipmentStatus EndDate back in time to give access for the unblocked equipment again
