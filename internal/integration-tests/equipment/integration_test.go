@@ -505,7 +505,7 @@ func TestIntegration_BlockEquipment(t *testing.T) {
 
 	ctx := context.Background()
 	client := utils.SetupClient()
-	startDate, endDate := strfmt.DateTime(time.Now()), strfmt.DateTime(time.Now().AddDate(0, 0, 10))
+	startDate, endDate := strfmt.DateTime(time.Now().AddDate(0, 0, 1)), strfmt.DateTime(time.Now().AddDate(0, 0, 10))
 
 	tokens := utils.AdminUserLogin(t)
 	auth := utils.AuthInfoFunc(tokens.GetPayload().AccessToken)
@@ -514,12 +514,12 @@ func TestIntegration_BlockEquipment(t *testing.T) {
 	eq, err := createEquipment(ctx, client, auth, model)
 	require.NoError(t, err)
 
-	orStartDate, orEndDate := time.Now().AddDate(0, 0, 1), time.Now().AddDate(0, 0, 2)
+	orStartDate, orEndDate := time.Now().AddDate(0, 0, 2), time.Now().AddDate(0, 0, 3)
 	firstOrderID, err := createOrder(ctx, client, auth, eq.Payload.ID, orStartDate, orEndDate)
 	require.NoError(t, err)
 	require.NotNil(t, firstOrderID)
 
-	orStartDate, orEndDate = time.Now().AddDate(0, 0, 3), time.Now().AddDate(0, 0, 4)
+	orStartDate, orEndDate = time.Now().AddDate(0, 0, 4), time.Now().AddDate(0, 0, 5)
 	secondOrderID, err := createOrder(ctx, client, auth, eq.Payload.ID, orStartDate, orEndDate)
 	require.NoError(t, err)
 	require.NotNil(t, secondOrderID)

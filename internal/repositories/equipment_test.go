@@ -562,7 +562,7 @@ func (s *EquipmentSuite) TestEquipmentRepository_BlockEquipment() {
 	tx, err := s.client.Tx(ctx)
 	require.NoError(t, err)
 
-	blockStartDate := time.Time(strfmt.DateTime(time.Now().AddDate(0, 0, 0)))
+	blockStartDate := time.Time(strfmt.DateTime(time.Now().AddDate(0, 0, 1)))
 	blockEndDate := time.Time(strfmt.DateTime(time.Now().AddDate(0, 0, 5)))
 	eqToBlock, err := tx.Equipment.Query().WithCurrentStatus().First(ctx)
 	require.NoError(t, err)

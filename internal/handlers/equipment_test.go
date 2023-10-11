@@ -1110,7 +1110,7 @@ func (s *EquipmentTestSuite) TestEquipment_BlockEquipmentFunc_RepoNotFoundErr() 
 
 	handlerFunc := s.equipment.BlockEquipmentFunc(s.equipmentRepo)
 	userID, equipmentID := 1, 1
-	startDate, endDate := time.Now(), time.Now().Add(time.Hour*24)
+	startDate, endDate := time.Now().Add(time.Hour*24), time.Now().Add(time.Hour*48)
 	params := equipment.BlockEquipmentParams{
 		HTTPRequest: request.WithContext(ctx),
 		EquipmentID: int64(equipmentID),
@@ -1146,7 +1146,7 @@ func (s *EquipmentTestSuite) TestEquipment_BlockEquipmentFunc_OK() {
 
 	handlerFunc := s.equipment.BlockEquipmentFunc(s.equipmentRepo)
 	userID, equipmentID := 1, 1
-	startDate, endDate := time.Now(), time.Now().Add(time.Hour*24)
+	startDate, endDate := time.Now().Add(time.Hour*24), time.Now().Add(time.Hour*48)
 	params := equipment.BlockEquipmentParams{
 		HTTPRequest: request.WithContext(ctx),
 		EquipmentID: int64(equipmentID),
