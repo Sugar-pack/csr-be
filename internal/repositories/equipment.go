@@ -519,8 +519,8 @@ func (r *equipmentRepository) BlockEquipment(
 	// Create a new EquipmentStatus and set startDate, endDate, Equipment and EquipmentStatusName
 	_, err = tx.EquipmentStatus.Create().
 		SetCreatedAt(time.Now()).
-		SetEndDate(startDate).
-		SetStartDate(endDate).
+		SetEndDate(endDate).
+		SetStartDate(startDate).
 		SetEquipments(eqToBlock).
 		SetEquipmentStatusName(eqStatusNotAvailable).
 		SetUpdatedAt(time.Now()).
