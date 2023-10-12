@@ -59,8 +59,9 @@ var (
 	ErrFindEquipment              = "error while finding equipment"
 	ErrEquipmentBlockForbidden    = "you don't have rights to block the equipment"
 	ErrEquipmentUnblockForbidden  = "you don't have rights to unblock the equipment"
-	ErrStartDateAfterEnd          = "start date should be before end date"
-	ErrStartDateBeforeCurrentDate = "Start date or end date must be after current date"
+	ErrStartDateAfterEnd          = "start date must be before end date"
+	ErrStartDateBeforeCurrentDate = "Start date must be after current date"
+	ErrEndDateBeforeCurrentDate   = "End date must be after current date"
 	MsgEquipmentDeleted           = "equipment deleted"
 
 	// Order Status

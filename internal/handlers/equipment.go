@@ -318,15 +318,22 @@ func (c Equipment) BlockEquipmentFunc(repository domain.EquipmentRepository) equ
 		startDate := time.Time(s.Data.StartDate)
 		endDate := time.Time(s.Data.EndDate)
 		currentDate := time.Now()
-
-		if startDate.Before(currentDate) || endDate.Before(currentDate) {
-			return equipment.NewBlockEquipmentDefault(http.StatusBadRequest).
-				WithPayload(buildBadRequestErrorPayload(messages.ErrStartDateBeforeCurrentDate, ""))
-		}
+		eqStatusBlocked := true
 
 		if startDate.After(endDate) {
 			return equipment.NewBlockEquipmentDefault(http.StatusBadRequest).
 				WithPayload(buildBadRequestErrorPayload(messages.ErrStartDateAfterEnd, ""))
+		}
+
+		if endDate.Before(currentDate) {
+			return equipment.NewBlockEquipmentDefault(http.StatusBadRequest).
+				WithPayload(buildBadRequestErrorPayload(messages.ErrEndDateBeforeCurrentDate, ""))
+
+		}
+
+		if !eqStatusBlocked && startDate.Before(currentDate) {
+			return equipment.NewBlockEquipmentDefault(http.StatusBadRequest).
+				WithPayload(buildBadRequestErrorPayload(messages.ErrStartDateBeforeCurrentDate, ""))
 		}
 
 		err := repository.BlockEquipment(ctx, int(s.EquipmentID), startDate, endDate, userID)
