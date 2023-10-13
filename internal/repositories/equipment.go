@@ -504,10 +504,12 @@ func (r *equipmentRepository) BlockEquipment(
 	// Get last EqupmentStatus for current Equipment
 	currentEqStatus, err := tx.EquipmentStatus.
 		Query().
-		Where(equipmentstatus.HasEquipmentsWith(equipment.ID(id))).
+		QueryEquipments().
+		Where(equipment.IDEQ(id)).
+		QueryEquipmentStatus().
 		WithEquipmentStatusName().
 		Order(ent.Asc(equipmentstatus.FieldEndDate)).
-		Only(ctx)
+		First(ctx)
 	if err != nil {
 		return err
 	}
@@ -528,8 +530,8 @@ func (r *equipmentRepository) BlockEquipment(
 	}
 
 	// Check if current EqupmentStatus has specific EquipmentStatusName.
-	// Consequently, if the record exist update it, otherwise create a new EquipmentStatus.
-	if currentEqStatus.Edges.EquipmentStatusName.Name == domain.EquipmentStatusNotAvailable {
+	// if the record exist update it, otherwise create a new EquipmentStatus.
+	if currentEqStatus != nil && currentEqStatus.Edges.EquipmentStatusName.Name == domain.EquipmentStatusNotAvailable {
 		currentEqStatus.
 			Update().
 			SetStartDate(startDate).
@@ -538,8 +540,8 @@ func (r *equipmentRepository) BlockEquipment(
 	} else {
 		_, err = tx.EquipmentStatus.Create().
 			SetCreatedAt(time.Now()).
-			SetEndDate(startDate).
-			SetStartDate(endDate).
+			SetEndDate(endDate).
+			SetStartDate(startDate).
 			SetEquipments(eqToBlock).
 			SetEquipmentStatusName(eqStatusNotAvailable).
 			SetUpdatedAt(time.Now()).
@@ -593,7 +595,6 @@ func (r *equipmentRepository) BlockEquipment(
 			return err
 		}
 	}
-
 	return err
 }
 

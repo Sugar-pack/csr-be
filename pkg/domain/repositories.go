@@ -62,6 +62,7 @@ type EquipmentStatusRepository interface {
 	GetOrderAndUserByEquipmentStatusID(ctx context.Context, id int) (*ent.Order, *ent.User, error)
 	GetEquipmentStatusByID(ctx context.Context, equipmentStatusID int) (*ent.EquipmentStatus, error)
 	GetUnavailableEquipmentStatusByEquipmentID(ctx context.Context, equipmentID int) ([]*ent.EquipmentStatus, error)
+	GetLastEquipmentStatusByEquipmentID(ctx context.Context, equipmentID int) (*ent.EquipmentStatus, error)
 }
 
 type EquipmentStatusNameRepository interface {

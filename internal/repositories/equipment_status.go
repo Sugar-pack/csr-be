@@ -185,3 +185,19 @@ func (r *equipmentStatusRepository) Update(ctx context.Context, data *models.Equ
 	equipmentStatus.SetUpdatedAt(time.Now())
 	return equipmentStatus.Save(ctx)
 }
+
+// GetLastEquipmentStatusByEquipmentID - returns last equipment status for equpment by column EndDate.
+func (r *equipmentStatusRepository) GetLastEquipmentStatusByEquipmentID(ctx context.Context, equipmentID int) (*ent.EquipmentStatus, error) {
+	tx, err := middlewares.TxFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return tx.EquipmentStatus.
+		Query().
+		QueryEquipments().
+		Where(equipment.IDEQ(equipmentID)).
+		QueryEquipmentStatus().
+		WithEquipmentStatusName().
+		Order(ent.Asc(equipmentstatus.FieldEndDate)).
+		First(ctx)
+}
