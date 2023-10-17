@@ -126,7 +126,7 @@ paths:
           required: false
           description: limit of items in page
           type: integer
-          default: 10
+          default: 0
         - name: offset
           in: query
           required: false

@@ -2,6 +2,7 @@ package repositories
 
 import (
 	"context"
+	"fmt"
 	"math"
 	"testing"
 
@@ -37,41 +38,13 @@ func (s *UserSuite) SetupTest() {
 	s.client = client
 
 	s.users = make(map[int]*ent.User)
-	s.users[1] = &ent.User{
-		Login:    "user_1",
-		Email:    "user_1@mail.com",
-		Password: "password",
-		Name:     "user1",
-	}
-	s.users[2] = &ent.User{
-		Login:    "user_2",
-		Email:    "user_2@mail.com",
-		Password: "password",
-		Name:     "user2",
-	}
-	s.users[3] = &ent.User{
-		Login:    "user_3",
-		Email:    "user_3@mail.com",
-		Password: "password",
-		Name:     "user3",
-	}
-	s.users[4] = &ent.User{
-		Login:    "user_4",
-		Email:    "user_4@mail.com",
-		Password: "password",
-		Name:     "user4",
-	}
-	s.users[5] = &ent.User{
-		Login:    "user_5",
-		Email:    "user_5@mail.com",
-		Password: "password",
-		Name:     "user5",
-	}
-	s.users[6] = &ent.User{
-		Login:    "user_6",
-		Email:    "user_6@mail.com",
-		Password: "password",
-		Name:     "user6",
+	for i := 1; i <= 12; i++ {
+		s.users[i] = &ent.User{
+			Login:    fmt.Sprintf("user_%d", i),
+			Email:    fmt.Sprintf("user_%d@mail.com", i),
+			Password: "password",
+			Name:     fmt.Sprintf("user%d", i),
+		}
 	}
 
 	_, err := s.client.User.Delete().Exec(s.ctx)

@@ -5,3 +5,4 @@ coverage.out
 csr
 report.txt
 .rdbgrc.breakpoints
+.tool-versions
