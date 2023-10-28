@@ -2,6 +2,7 @@ package repositories
 
 import (
 	"context"
+	"fmt"
 	"math"
 	"testing"
 	"time"
@@ -113,21 +114,12 @@ func (s *EquipmentSuite) SetupTest() {
 	}
 
 	s.equipments = make(map[int]*ent.Equipment)
-	s.equipments[1] = &ent.Equipment{
-		Name:  "test 1",
-		Title: "equipment 1",
-	}
-	s.equipments[2] = &ent.Equipment{
-		Name:  "equipment 2",
-		Title: "equipment 2",
-	}
-	s.equipments[3] = &ent.Equipment{
-		Name:  "test 3",
-		Title: "equipment 3",
-	}
-	s.equipments[4] = &ent.Equipment{
-		Name:  "equipment 4",
-		Title: "equipment 4",
+	for i := 1; i <= 4; i++ {
+		s.equipments[i] = &ent.Equipment{
+			Name:  fmt.Sprintf("test %d", i),
+			Title: fmt.Sprintf("equipment %d", i),
+		}
+
 	}
 	s.equipments[5] = &ent.Equipment{
 		Name:        "test 5",
@@ -169,6 +161,26 @@ func (s *EquipmentSuite) SetupTest() {
 			t.Fatal(errCreate)
 		}
 		s.equipments[i].ID = eq.ID
+	}
+
+	_, err = s.client.EquipmentStatus.Delete().Exec(s.ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	eq, err := s.client.Equipment.Query().First(s.ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = s.client.EquipmentStatus.Create().
+		SetEquipments(eq).
+		SetEquipmentStatusName(availStatus).
+		SetStartDate(time.Now()).
+		SetEndDate(time.Now().AddDate(0, 0, 1)).
+		Save(s.ctx)
+	if err != nil {
+		t.Fatal(err)
 	}
 }
 
