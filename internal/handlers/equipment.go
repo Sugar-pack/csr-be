@@ -309,6 +309,12 @@ func (c Equipment) BlockEquipmentFunc(repository domain.EquipmentRepository, eqS
 		userID := int(principal.ID)
 		role := principal.Role
 		lastEqStatus, err := eqStatusRepo.GetLastEquipmentStatusByEquipmentID(ctx, int(s.EquipmentID))
+		if err != nil {
+			c.logger.Error(messages.ErrGetLastEqStatus, zap.Error(err))
+			return equipment.
+				NewBlockEquipmentDefault(http.StatusForbidden).
+				WithPayload(buildForbiddenErrorPayload(messages.ErrEquipmentBlockForbidden, ""))
+		}
 
 		if role != roles.Manager {
 			c.logger.Warn("User have no right to block the equipment", zap.Any("principal", principal))

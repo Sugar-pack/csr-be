@@ -42,6 +42,7 @@ var (
 	ErrGetEqStatusByID          = "can't find equipment status by provided id"
 	ErrOrderAndUserByEqStatusID = "can't receive order and user data during checking equipment status"
 	ErrUpdateEqStatus           = "can't update equipment status"
+	ErrGetLastEqStatus          = "can't get last equipment status"
 
 	// Equipment
 
@@ -59,7 +60,7 @@ var (
 	ErrFindEquipment              = "error while finding equipment"
 	ErrEquipmentBlockForbidden    = "you don't have rights to block the equipment"
 	ErrEquipmentUnblockForbidden  = "you don't have rights to unblock the equipment"
-	ErrStartDateAfterEnd          = "start date must be before end date"
+	ErrStartDateAfterEnd          = "Start date must be before end date"
 	ErrStartDateBeforeCurrentDate = "Start date must be after current date"
 	ErrEndDateBeforeCurrentDate   = "End date must be after current date"
 	MsgEquipmentDeleted           = "equipment deleted"
