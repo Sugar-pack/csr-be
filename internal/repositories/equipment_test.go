@@ -2,7 +2,6 @@ package repositories
 
 import (
 	"context"
-	"fmt"
 	"math"
 	"testing"
 	"time"
@@ -114,12 +113,21 @@ func (s *EquipmentSuite) SetupTest() {
 	}
 
 	s.equipments = make(map[int]*ent.Equipment)
-	for i := 1; i <= 4; i++ {
-		s.equipments[i] = &ent.Equipment{
-			Name:  fmt.Sprintf("test %d", i),
-			Title: fmt.Sprintf("equipment %d", i),
-		}
-
+	s.equipments[1] = &ent.Equipment{
+		Name:  "test 1",
+		Title: "equipment 1",
+	}
+	s.equipments[2] = &ent.Equipment{
+		Name:  "equipment 2",
+		Title: "equipment 2",
+	}
+	s.equipments[3] = &ent.Equipment{
+		Name:  "test 3",
+		Title: "equipment 3",
+	}
+	s.equipments[4] = &ent.Equipment{
+		Name:  "equipment 4",
+		Title: "equipment 4",
 	}
 	s.equipments[5] = &ent.Equipment{
 		Name:        "test 5",
