@@ -15,19 +15,9 @@
             box-sizing: border-box !important
         ;
         }
-        .email-masthead {
-            padding: 25px 0;
-            text-align: left;
-            background-color: #FFFFFF; /* This sets the background color to white */
-        }
 
-        .email-body_inner{
+        .email-body_inner {
             background-color: #F2F7F9;
-        }
-
-        .email-logo {
-            max-height: 100px;
-            margin-right: 425px;
         }
 
         @media only screen and (max-width: 600px) {
@@ -55,24 +45,27 @@
             <table class="email-content" width="100%" cellpadding="0" cellspacing="0">
                 <tbody>
                 <tr>
-                    <td class="email-masthead" style="padding:25px 0;text-align:center">
-                        <a class="email-masthead_name" target="_blank">
-                            <img src="img/full-logo.svg" class="email-logo" alt="logo"/>
-                        </a>
-                    </td>
-                </tr>
-                <tr>
-                    <td class="email-body" width="100%" style="width:100%;margin:0;padding:0;background-color:#FFF; border-radius: 10px;">
-                        <table class="email-body_inner" align="center" width="570" cellpadding="0" cellspacing="0" style="border-radius: 10px;">
+                    <td class="email-body" width="100%"
+                        style="width:100%;margin:0;padding:0;background-color:#FFF; border-radius: 10px;">
+                        <table align="center" width="570" cellpadding="0" cellspacing="0" style="text-align: left;padding-bottom: 40px;">
+                            <tr>
+                                <td style="padding-top: 30px;">
+                                    <img src="img/full-logo.svg"
+                                         style="width: 100px; height: 65px; vertical-align: middle; display: inline-block;"
+                                         alt="footer logo">
+                                </td>
+                            </tr>
+                        </table>
+                        <table class="email-body_inner" align="center" width="570" cellpadding="0" cellspacing="0"
+                               style="border-radius: 10px;">
                             <tbody>
                             <tr>
                                 <td class="content-cell" style="padding:35px 35px 0 35px">
                                     <p style="margin-top:0;font-size:16px;color:#656565;line-height:1.5em">Вы получили
-                                        это электронное
-                                        письмо, потому что зарегистрировали учетную запись в сервисе Лёнькин Кот.</p>
+                                        это электронное письмо, потому что зарегистрировали учетную запись в сервисе
+                                        Лёнькин Кот.</p>
                                     <p style="margin-top:0;font-size:16px;color:#656565;line-height:1.5em">Нажмите
-                                        кнопку ниже для
-                                        подтверждения регистрации:</p>
+                                        кнопку ниже для подтверждения регистрации:</p>
                                     <table class="body-action" align="center" width="100%" cellpadding="0"
                                            cellspacing="0"
                                            style="width:100%;margin:30px auto;padding:0;text-align:center">
@@ -80,7 +73,7 @@
                                         <tr>
                                             <td align="center">
                                                 <a href="{{.Link}}" class="button"
-                                                   style="display:inline-block;border-radius:16px;font-size:16px;line-height:45px;text-align:center;text-decoration:none;color:#ffffff;background-color:#005F75;width:240px"
+                                                   style="display:inline-block;border-radius:16px;font-size:20px;line-height:45px;text-align:center;text-decoration:none;color:#ffffff;background-color:#005F75;width:240px"
                                                    target="_blank">Подтвердить</a>
                                             </td>
                                         </tr>
@@ -96,10 +89,10 @@
                                         <tr>
                                             <td>
                                                 <p class="sub"
-                                                   style="margin-top:0;font-size:12px;color:#656565;line-height:1.5em">
+                                                   style="margin-top:0;font-size:14px;color:#656565;line-height:1.5em">
                                                     Если кнопка “Подтвердить” не работает, пожалуйста скопируйте
                                                     следующую ссылку в браузер.</p>
-                                                <p class="sub" style="margin-top:0;font-size:12px;line-height:1.5em"><a
+                                                <p class="sub" style="margin-top:0;font-size:14px;line-height:1.5em"><a
                                                             href="{{.Link}}"
                                                             style="color:#005F75;text-decoration:underline">{{.Link}}</a>
                                                 </p>
@@ -113,7 +106,7 @@
                         </table>
                         <table align="center" width="570" cellpadding="0" cellspacing="0" style="text-align: right;">
                             <tr>
-                                <td style="padding-top: 30px;">
+                                <td style="padding-top: 40px;">
                                     <img src="img/mask-group.png"
                                          style="width: 77px; height: 84px; vertical-align: middle; display: inline-block;"
                                          alt="footer logo">
@@ -129,9 +122,8 @@
                             <tr>
                                 <td class="content-cell" style="padding:35px;text-align:center">
                                     <p class="sub center"
-                                       style="margin-top:0;line-height:1.5em;color:#656565;font-size:12px">
-                                        Copyright © 2023 Lyonkin Kot. All rights reserved.
-                                    </p>
+                                       style="margin-top:0;line-height:1.5em;color:#656565;font-size:14px">Copyright ©
+                                        2023 Lyonkin Kot. All rights reserved.</p>
                                 </td>
                             </tr>
                             </tbody>
