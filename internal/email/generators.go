@@ -21,8 +21,8 @@ type RegistrationConfirmData struct {
 	Link string
 }
 
-func GenerateRegistrationConfirmMessage(userName, websiteUrl, token string) (string, error) {
-	tmpl, err := template.ParseFiles("templates/registration-confirm/index.html")
+func GenerateRegistrationConfirmMessage(_, websiteUrl, token, htmlTemplatePath string) (string, error) {
+	tmpl, err := template.ParseFiles(htmlTemplatePath)
 	if err != nil {
 		return "", err
 	}
