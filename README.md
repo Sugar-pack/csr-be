@@ -51,7 +51,7 @@ Before starting, you need to install git (https://git-scm.com/downloads) and doc
    ```
 1. Run the build container (pull updates and build):
     ```shell
-    make build_project
+    make rebuild_project
     ```
 2. Run the build container:
     ```shell
