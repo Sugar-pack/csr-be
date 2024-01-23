@@ -3,6 +3,7 @@ package handlers
 import (
 	"net/http"
 
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/ent"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/swagger/models"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/swagger/restapi/operations"
 	eqPeriods "git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/swagger/restapi/operations/equipment"
@@ -50,18 +51,31 @@ func (c EquipmentPeriods) GetEquipmentUnavailableDatesFunc(
 				WithPayload(buildInternalErrorPayload(messages.ErrGetUnavailableEqStatus, err.Error()))
 		}
 
-		var result []*models.EquipmentUnavailabilityPeriods
-
-		for _, value := range equipmentStatuses {
-			var unavPeriod models.EquipmentUnavailabilityPeriods
-			unavPeriod.StartDate = (*strfmt.DateTime)(&value.StartDate)
-			unavPeriod.EndDate = (*strfmt.DateTime)(&value.EndDate)
-
-			result = append(result, &unavPeriod)
-		}
+		result := mapUnavailabilityPeriods(equipmentStatuses)
 
 		return eqPeriods.NewGetUnavailabilityPeriodsByEquipmentIDOK().WithPayload(
 			&models.EquipmentUnavailabilityPeriodsResponse{Items: result},
 		)
 	}
+}
+
+func mapUnavailabilityPeriods(equipmentStatuses []*ent.EquipmentStatus) []*models.EquipmentUnavailabilityPeriods {
+	var result []*models.EquipmentUnavailabilityPeriods
+
+	for _, value := range equipmentStatuses {
+		result = append(result, mapUnavailabilityPeriod(value))
+	}
+
+	return result
+}
+
+func mapUnavailabilityPeriod(equipmentStatus *ent.EquipmentStatus) *models.EquipmentUnavailabilityPeriods {
+	if equipmentStatus == nil {
+		return nil
+	}
+
+	var res models.EquipmentUnavailabilityPeriods
+	res.StartDate = (*strfmt.DateTime)(&equipmentStatus.StartDate)
+	res.EndDate = (*strfmt.DateTime)(&equipmentStatus.EndDate)
+	return &res
 }

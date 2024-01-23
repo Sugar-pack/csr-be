@@ -215,7 +215,6 @@ func TestIntegration_GetEquipment(t *testing.T) {
 
 	t.Run("Get Equipment", func(t *testing.T) {
 		params := equipment.NewGetEquipmentParamsWithContext(ctx)
-		require.NoError(t, err)
 
 		params.EquipmentID = *created.Payload.ID
 		res, err := client.Equipment.GetEquipment(params, auth)
@@ -670,6 +669,66 @@ func TestIntegration_BlockEquipment(t *testing.T) {
 			Message: &messages.ErrStartDateAfterEnd,
 		}
 		assert.Equal(t, wantErr, err)
+	})
+}
+
+func TestIntegration_GetEquipments_WithBlockingPeriods(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping integration test")
+	}
+
+	ctx := context.Background()
+	client := utils.SetupClient()
+
+	tokens := utils.ManagerUserLogin(t)
+
+	auth := utils.AuthInfoFunc(tokens.GetPayload().AccessToken)
+
+	// Create 2 block periods for equipment with ID 1
+	id := int64(1)
+	blockParams := equipment.NewBlockEquipmentParamsWithContext(ctx).WithEquipmentID(id)
+	startDate1 := strfmt.DateTime(strfmt.DateTime(time.Now()))
+	endDate1 := strfmt.DateTime(time.Now().AddDate(0, 0, 10))
+	blockParams.Data = &models.ChangeEquipmentStatusToBlockedRequest{
+		StartDate: startDate1,
+		EndDate:   endDate1,
+	}
+	_, err := client.Equipment.BlockEquipment(blockParams, auth)
+	require.NoError(t, err)
+	startDate2 := strfmt.DateTime(strfmt.DateTime(time.Now().AddDate(0, 1, 0)))
+	endDate2 := strfmt.DateTime(time.Now().AddDate(0, 1, 10))
+	blockParams.Data = &models.ChangeEquipmentStatusToBlockedRequest{
+		StartDate: startDate2,
+		EndDate:   endDate2,
+	}
+	_, err = client.Equipment.BlockEquipment(blockParams, auth)
+	require.NoError(t, err)
+
+	t.Run("Get All Equipment", func(t *testing.T) {
+		params := equipment.NewGetAllEquipmentParamsWithContext(ctx)
+		res, err := client.Equipment.GetAllEquipment(params, auth)
+		require.NoError(t, err)
+		for _, eq := range res.Payload.Items {
+			if *eq.ID == id {
+				require.Equal(t, 2, len(eq.BlockingPeriods))
+			}
+		}
+	})
+
+	t.Run("Get Equipment by ID with block periods", func(t *testing.T) {
+		params := equipment.NewGetEquipmentParamsWithContext(ctx)
+		params.EquipmentID = id
+		res, err := client.Equipment.GetEquipment(params, auth)
+		require.NoError(t, err)
+		require.Equal(t, 2, len(res.Payload.BlockingPeriods))
+	})
+
+	t.Run("Get Equipment by ID without block periods", func(t *testing.T) {
+		params := equipment.NewGetEquipmentParamsWithContext(ctx)
+		params.EquipmentID = id + 1
+		res, err := client.Equipment.GetEquipment(params, auth)
+		require.NoError(t, err)
+		require.Nil(t, res.Payload.BlockingPeriods)
 	})
 }
 

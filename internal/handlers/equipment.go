@@ -90,6 +90,7 @@ func (c Equipment) GetEquipmentFunc(repository domain.EquipmentRepository) equip
 			return equipment.NewGetEquipmentDefault(http.StatusInternalServerError).
 				WithPayload(buildInternalErrorPayload(messages.ErrMapEquipment, err.Error()))
 		}
+		returnEq.BlockingPeriods = mapUnavailabilityPeriods(eq.Edges.EquipmentStatus)
 		return equipment.NewGetEquipmentOK().WithPayload(returnEq)
 	}
 }
@@ -169,6 +170,7 @@ func (c Equipment) ListEquipmentFunc(repository domain.EquipmentRepository) equi
 				return equipment.NewGetAllEquipmentDefault(http.StatusInternalServerError).
 					WithPayload(buildInternalErrorPayload(messages.ErrMapEquipment, errMap.Error()))
 			}
+			tmpEq.BlockingPeriods = mapUnavailabilityPeriods(eq.Edges.EquipmentStatus)
 			listEquipment.Items[i] = tmpEq
 		}
 		return equipment.NewGetAllEquipmentOK().WithPayload(listEquipment)
