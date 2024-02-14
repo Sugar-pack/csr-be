@@ -311,11 +311,11 @@ func (c Equipment) BlockEquipmentFunc(repository domain.EquipmentRepository, eqS
 		userID := int(principal.ID)
 		role := principal.Role
 		lastEqStatus, err := eqStatusRepo.GetLastEquipmentStatusByEquipmentID(ctx, int(s.EquipmentID))
-		if err != nil {
+		if err != nil && !ent.IsNotFound(err) {
 			c.logger.Error(messages.ErrGetLastEqStatus, zap.Error(err))
 			return equipment.
-				NewBlockEquipmentDefault(http.StatusForbidden).
-				WithPayload(buildForbiddenErrorPayload(messages.ErrEquipmentBlockForbidden, ""))
+				NewBlockEquipmentDefault(http.StatusInternalServerError).
+				WithPayload(buildInternalErrorPayload(messages.ErrEquipmentBlock, ""))
 		}
 
 		if role != roles.Manager {
@@ -382,7 +382,7 @@ func (c Equipment) UnblockEquipmentFunc(repository domain.EquipmentRepository) e
 			}
 			c.logger.Error(messages.ErrEquipmentUnblock, zap.Error(err))
 			return equipment.NewUnblockEquipmentDefault(http.StatusInternalServerError).
-				WithPayload(buildInternalErrorPayload(messages.ErrEquipmentUnblock, err.Error()))
+				WithPayload(buildInternalErrorPayload(messages.ErrEquipmentIsNotBlocked, err.Error()))
 		}
 		return equipment.NewUnblockEquipmentNoContent()
 	}

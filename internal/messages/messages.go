@@ -43,6 +43,7 @@ var (
 	ErrOrderAndUserByEqStatusID = "can't receive order and user data during checking equipment status"
 	ErrUpdateEqStatus           = "can't update equipment status"
 	ErrGetLastEqStatus          = "can't get last equipment status"
+	ErrEquipmentIsNotBlocked    = "equipment is not blocked"
 
 	// Equipment
 

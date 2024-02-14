@@ -673,7 +673,7 @@ func (s *EquipmentSuite) TestEquipmentRepository_UnblockEquipment() {
 	require.NoError(t, err)
 	require.NotNil(t, eqUnblocked)
 
-	require.NotEmpty(t, eqUnblocked.Edges.EquipmentStatus)
+	require.Empty(t, eqUnblocked.Edges.EquipmentStatus)
 	require.NotEqual(t, eqToUnblock.Edges.CurrentStatus.Name, eqUnblocked.Edges.CurrentStatus.Name)
 	require.NoError(t, tx.Commit())
 }

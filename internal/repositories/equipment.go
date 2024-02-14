@@ -525,7 +525,7 @@ func (r *equipmentRepository) BlockEquipment(
 		WithEquipmentStatusName().
 		Order(ent.Asc(equipmentstatus.FieldEndDate)).
 		First(ctx)
-	if err != nil {
+	if err != nil && !ent.IsNotFound(err) {
 		return err
 	}
 
@@ -664,6 +664,10 @@ func (r *equipmentRepository) UnblockEquipment(ctx context.Context, id int) erro
 			SetEquipmentStatusName(eqStatusAvailable).
 			SetEndDate(truncateHours(&equipmentStatus.EndDate)).
 			Save(ctx)
+		if err != nil {
+			return err
+		}
+		err = tx.EquipmentStatus.DeleteOne(equipmentStatus).Exec(ctx)
 		if err != nil {
 			return err
 		}
