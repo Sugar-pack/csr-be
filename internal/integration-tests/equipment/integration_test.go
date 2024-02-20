@@ -569,6 +569,33 @@ func TestIntegration_BlockEquipment(t *testing.T) {
 		ok, err = checkOrderStatus(ctx, client, auth, secondOrderID, domain.OrderStatusRejected)
 		require.NoError(t, err)
 		require.True(t, ok)
+
+		unavailParams := equipment.NewGetUnavailabilityPeriodsByEquipmentIDParamsWithContext(ctx).WithEquipmentID(*eq.Payload.ID)
+
+		resp, err := client.Equipment.GetUnavailabilityPeriodsByEquipmentID(unavailParams, auth)
+		require.NoError(t, err)
+		require.True(t, resp.IsCode(http.StatusOK))
+
+		dsG, err := time.Parse(time.RFC3339Nano, startDate.String())
+		require.NoError(t, err)
+		deG, err := time.Parse(time.RFC3339Nano, endDate.String())
+		require.NoError(t, err)
+
+		valStartDate, err := time.Parse(time.RFC3339Nano, resp.Payload.Items[1].StartDate.String())
+		require.NoError(t, err)
+		valEndDate, err := time.Parse(time.RFC3339Nano, resp.Payload.Items[1].EndDate.String())
+		require.NoError(t, err)
+
+		require.Equal(t, true,
+			(valStartDate.Year() == dsG.Year()) &&
+				(valStartDate.Month() == dsG.Month()) &&
+				(valStartDate.Day() == dsG.Day()),
+		)
+		require.Equal(t, true,
+			(valEndDate.Year() == deG.Year()) &&
+				(valEndDate.Month() == deG.Month()) &&
+				(valEndDate.Day() == deG.Day()),
+		)
 	})
 
 	t.Run("Block Equipment is failed, equipment not found", func(t *testing.T) {
@@ -669,6 +696,49 @@ func TestIntegration_BlockEquipment(t *testing.T) {
 			Message: &messages.ErrStartDateAfterEnd,
 		}
 		assert.Equal(t, wantErr, err)
+	})
+
+	t.Run("Update Block Equipment period", func(t *testing.T) {
+		tokens := utils.ManagerUserLogin(t)
+		auth := utils.AuthInfoFunc(tokens.GetPayload().AccessToken)
+		updateStartDate, updateEndDate := time.Now().AddDate(0, 0, 3), time.Now().AddDate(0, 0, 14)
+
+		params := equipment.NewBlockEquipmentParamsWithContext(ctx).WithEquipmentID(*eq.Payload.ID)
+		params.Data = &models.ChangeEquipmentStatusToBlockedRequest{
+			StartDate: strfmt.DateTime(updateStartDate),
+			EndDate:   strfmt.DateTime(updateEndDate),
+		}
+
+		res, err := client.Equipment.BlockEquipment(params, auth)
+		require.NoError(t, err)
+		require.True(t, res.IsCode(http.StatusNoContent))
+
+		unavailParams := equipment.NewGetUnavailabilityPeriodsByEquipmentIDParamsWithContext(ctx).WithEquipmentID(*eq.Payload.ID)
+
+		resp, err := client.Equipment.GetUnavailabilityPeriodsByEquipmentID(unavailParams, auth)
+		require.NoError(t, err)
+		require.True(t, resp.IsCode(http.StatusOK))
+
+		dsG, err := time.Parse(time.RFC3339Nano, startDate.String())
+		require.NoError(t, err)
+		deG, err := time.Parse(time.RFC3339Nano, endDate.String())
+		require.NoError(t, err)
+
+		valStartDate, err := time.Parse(time.RFC3339Nano, resp.Payload.Items[1].StartDate.String())
+		require.NoError(t, err)
+		valEndDate, err := time.Parse(time.RFC3339Nano, resp.Payload.Items[1].EndDate.String())
+		require.NoError(t, err)
+
+		require.Equal(t, true,
+			(valStartDate.Year() == dsG.Year()) &&
+				(valStartDate.Month() == dsG.Month()) &&
+				(valStartDate.Day() == dsG.Day()),
+		)
+		require.Equal(t, true,
+			(valEndDate.Year() == deG.Year()) &&
+				(valEndDate.Month() == deG.Month()) &&
+				(valEndDate.Day() == deG.Day()),
+		)
 	})
 }
 
