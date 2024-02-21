@@ -170,6 +170,26 @@ func (s *EquipmentSuite) SetupTest() {
 		}
 		s.equipments[i].ID = eq.ID
 	}
+
+	_, err = s.client.EquipmentStatus.Delete().Exec(s.ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	eq, err := s.client.Equipment.Query().First(s.ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = s.client.EquipmentStatus.Create().
+		SetEquipments(eq).
+		SetEquipmentStatusName(availStatus).
+		SetStartDate(time.Now()).
+		SetEndDate(time.Now().AddDate(0, 0, 1)).
+		Save(s.ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
 }
 
 func (s *EquipmentSuite) TearDownSuite() {
@@ -562,7 +582,7 @@ func (s *EquipmentSuite) TestEquipmentRepository_BlockEquipment() {
 	tx, err := s.client.Tx(ctx)
 	require.NoError(t, err)
 
-	blockStartDate := time.Time(strfmt.DateTime(time.Now().AddDate(0, 0, 0)))
+	blockStartDate := time.Time(strfmt.DateTime(time.Now().AddDate(0, 0, 1)))
 	blockEndDate := time.Time(strfmt.DateTime(time.Now().AddDate(0, 0, 5)))
 	eqToBlock, err := tx.Equipment.Query().WithCurrentStatus().First(ctx)
 	require.NoError(t, err)
@@ -653,7 +673,7 @@ func (s *EquipmentSuite) TestEquipmentRepository_UnblockEquipment() {
 	require.NoError(t, err)
 	require.NotNil(t, eqUnblocked)
 
-	require.NotEmpty(t, eqUnblocked.Edges.EquipmentStatus)
+	require.Empty(t, eqUnblocked.Edges.EquipmentStatus)
 	require.NotEqual(t, eqToUnblock.Edges.CurrentStatus.Name, eqUnblocked.Edges.CurrentStatus.Name)
 	require.NoError(t, tx.Commit())
 }

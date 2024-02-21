@@ -504,7 +504,7 @@ func TestIntegration_BlockEquipment(t *testing.T) {
 
 	ctx := context.Background()
 	client := utils.SetupClient()
-	startDate, endDate := strfmt.DateTime(time.Now()), strfmt.DateTime(time.Now().AddDate(0, 0, 10))
+	startDate, endDate := strfmt.DateTime(time.Now().AddDate(0, 0, 1)), strfmt.DateTime(time.Now().AddDate(0, 0, 10))
 
 	tokens := utils.AdminUserLogin(t)
 	auth := utils.AuthInfoFunc(tokens.GetPayload().AccessToken)
@@ -513,12 +513,12 @@ func TestIntegration_BlockEquipment(t *testing.T) {
 	eq, err := createEquipment(ctx, client, auth, model)
 	require.NoError(t, err)
 
-	orStartDate, orEndDate := time.Now().AddDate(0, 0, 1), time.Now().AddDate(0, 0, 2)
+	orStartDate, orEndDate := time.Now().AddDate(0, 0, 2), time.Now().AddDate(0, 0, 3)
 	firstOrderID, err := createOrder(ctx, client, auth, eq.Payload.ID, orStartDate, orEndDate)
 	require.NoError(t, err)
 	require.NotNil(t, firstOrderID)
 
-	orStartDate, orEndDate = time.Now().AddDate(0, 0, 3), time.Now().AddDate(0, 0, 4)
+	orStartDate, orEndDate = time.Now().AddDate(0, 0, 4), time.Now().AddDate(0, 0, 5)
 	secondOrderID, err := createOrder(ctx, client, auth, eq.Payload.ID, orStartDate, orEndDate)
 	require.NoError(t, err)
 	require.NotNil(t, secondOrderID)
@@ -569,6 +569,33 @@ func TestIntegration_BlockEquipment(t *testing.T) {
 		ok, err = checkOrderStatus(ctx, client, auth, secondOrderID, domain.OrderStatusRejected)
 		require.NoError(t, err)
 		require.True(t, ok)
+
+		unavailParams := equipment.NewGetUnavailabilityPeriodsByEquipmentIDParamsWithContext(ctx).WithEquipmentID(*eq.Payload.ID)
+
+		resp, err := client.Equipment.GetUnavailabilityPeriodsByEquipmentID(unavailParams, auth)
+		require.NoError(t, err)
+		require.True(t, resp.IsCode(http.StatusOK))
+
+		dsG, err := time.Parse(time.RFC3339Nano, startDate.String())
+		require.NoError(t, err)
+		deG, err := time.Parse(time.RFC3339Nano, endDate.String())
+		require.NoError(t, err)
+
+		valStartDate, err := time.Parse(time.RFC3339Nano, resp.Payload.Items[1].StartDate.String())
+		require.NoError(t, err)
+		valEndDate, err := time.Parse(time.RFC3339Nano, resp.Payload.Items[1].EndDate.String())
+		require.NoError(t, err)
+
+		require.Equal(t, true,
+			(valStartDate.Year() == dsG.Year()) &&
+				(valStartDate.Month() == dsG.Month()) &&
+				(valStartDate.Day() == dsG.Day()),
+		)
+		require.Equal(t, true,
+			(valEndDate.Year() == deG.Year()) &&
+				(valEndDate.Month() == deG.Month()) &&
+				(valEndDate.Day() == deG.Day()),
+		)
 	})
 
 	t.Run("Block Equipment is failed, equipment not found", func(t *testing.T) {
@@ -670,6 +697,49 @@ func TestIntegration_BlockEquipment(t *testing.T) {
 		}
 		assert.Equal(t, wantErr, err)
 	})
+
+	t.Run("Update Block Equipment period", func(t *testing.T) {
+		tokens := utils.ManagerUserLogin(t)
+		auth := utils.AuthInfoFunc(tokens.GetPayload().AccessToken)
+		updateStartDate, updateEndDate := time.Now().AddDate(0, 0, 3), time.Now().AddDate(0, 0, 14)
+
+		params := equipment.NewBlockEquipmentParamsWithContext(ctx).WithEquipmentID(*eq.Payload.ID)
+		params.Data = &models.ChangeEquipmentStatusToBlockedRequest{
+			StartDate: strfmt.DateTime(updateStartDate),
+			EndDate:   strfmt.DateTime(updateEndDate),
+		}
+
+		res, err := client.Equipment.BlockEquipment(params, auth)
+		require.NoError(t, err)
+		require.True(t, res.IsCode(http.StatusNoContent))
+
+		unavailParams := equipment.NewGetUnavailabilityPeriodsByEquipmentIDParamsWithContext(ctx).WithEquipmentID(*eq.Payload.ID)
+
+		resp, err := client.Equipment.GetUnavailabilityPeriodsByEquipmentID(unavailParams, auth)
+		require.NoError(t, err)
+		require.True(t, resp.IsCode(http.StatusOK))
+
+		dsG, err := time.Parse(time.RFC3339Nano, startDate.String())
+		require.NoError(t, err)
+		deG, err := time.Parse(time.RFC3339Nano, endDate.String())
+		require.NoError(t, err)
+
+		valStartDate, err := time.Parse(time.RFC3339Nano, resp.Payload.Items[1].StartDate.String())
+		require.NoError(t, err)
+		valEndDate, err := time.Parse(time.RFC3339Nano, resp.Payload.Items[1].EndDate.String())
+		require.NoError(t, err)
+
+		require.Equal(t, true,
+			(valStartDate.Year() == dsG.Year()) &&
+				(valStartDate.Month() == dsG.Month()) &&
+				(valStartDate.Day() == dsG.Day()),
+		)
+		require.Equal(t, true,
+			(valEndDate.Year() == deG.Year()) &&
+				(valEndDate.Month() == deG.Month()) &&
+				(valEndDate.Day() == deG.Day()),
+		)
+	})
 }
 
 func TestIntegration_GetEquipments_WithBlockingPeriods(t *testing.T) {
@@ -684,16 +754,20 @@ func TestIntegration_GetEquipments_WithBlockingPeriods(t *testing.T) {
 
 	auth := utils.AuthInfoFunc(tokens.GetPayload().AccessToken)
 
-	// Create 2 block periods for equipment with ID 1
-	id := int64(1)
-	blockParams := equipment.NewBlockEquipmentParamsWithContext(ctx).WithEquipmentID(id)
-	startDate1 := strfmt.DateTime(strfmt.DateTime(time.Now()))
-	endDate1 := strfmt.DateTime(time.Now().AddDate(0, 0, 10))
+	model, err := setParameters(ctx, client, auth)
+	require.NoError(t, err)
+	equip, err := createEquipment(ctx, client, auth, model)
+	require.NotNil(t, equip)
+	require.NoError(t, err)
+
+	blockParams := equipment.NewBlockEquipmentParamsWithContext(ctx).WithEquipmentID(*equip.Payload.ID)
+	startDate1 := strfmt.DateTime(strfmt.DateTime(time.Now().AddDate(0, 0, 1)))
+	endDate1 := strfmt.DateTime(time.Now().AddDate(0, 0, 11))
 	blockParams.Data = &models.ChangeEquipmentStatusToBlockedRequest{
 		StartDate: startDate1,
 		EndDate:   endDate1,
 	}
-	_, err := client.Equipment.BlockEquipment(blockParams, auth)
+	_, err = client.Equipment.BlockEquipment(blockParams, auth)
 	require.NoError(t, err)
 	startDate2 := strfmt.DateTime(strfmt.DateTime(time.Now().AddDate(0, 1, 0)))
 	endDate2 := strfmt.DateTime(time.Now().AddDate(0, 1, 10))
@@ -709,89 +783,18 @@ func TestIntegration_GetEquipments_WithBlockingPeriods(t *testing.T) {
 		res, err := client.Equipment.GetAllEquipment(params, auth)
 		require.NoError(t, err)
 		for _, eq := range res.Payload.Items {
-			if *eq.ID == id {
-				require.Equal(t, 2, len(eq.BlockingPeriods))
+			if *eq.ID == *equip.Payload.ID {
+				require.Equal(t, 1, len(eq.BlockingPeriods))
 			}
 		}
 	})
 
 	t.Run("Get Equipment by ID with block periods", func(t *testing.T) {
 		params := equipment.NewGetEquipmentParamsWithContext(ctx)
-		params.EquipmentID = id
+		params.EquipmentID = *equip.Payload.ID
 		res, err := client.Equipment.GetEquipment(params, auth)
 		require.NoError(t, err)
-		require.Equal(t, 2, len(res.Payload.BlockingPeriods))
-	})
-
-	t.Run("Get Equipment by ID without block periods", func(t *testing.T) {
-		params := equipment.NewGetEquipmentParamsWithContext(ctx)
-		params.EquipmentID = id + 1
-		res, err := client.Equipment.GetEquipment(params, auth)
-		require.NoError(t, err)
-		require.Nil(t, res.Payload.BlockingPeriods)
-	})
-}
-
-func TestIntegration_DeleteEquipment(t *testing.T) {
-	if testing.Short() {
-		t.Skip("skipping integration test")
-	}
-
-	ctx := context.Background()
-	client := utils.SetupClient()
-
-	tokens := utils.AdminUserLogin(t)
-
-	auth := utils.AuthInfoFunc(tokens.GetPayload().AccessToken)
-
-	t.Run("Delete All Equipment", func(t *testing.T) {
-		beforeEq, err := client.Equipment.GetAllEquipment(equipment.NewGetAllEquipmentParamsWithContext(ctx), auth)
-		require.NoError(t, err)
-		assert.NotZero(t, len(beforeEq.Payload.Items))
-
-		params := equipment.NewDeleteEquipmentParamsWithContext(ctx)
-		for _, item := range beforeEq.Payload.Items {
-			params.WithEquipmentID(*item.ID)
-			_, err = client.Equipment.DeleteEquipment(params, auth)
-			require.NoError(t, err)
-		}
-
-		afterEq, err := client.Equipment.GetAllEquipment(equipment.NewGetAllEquipmentParamsWithContext(ctx), auth)
-		require.NoError(t, err)
-		assert.Zero(t, len(afterEq.Payload.Items))
-	})
-
-	t.Run("Delete Equipment failed: zero equipments, delete failed", func(t *testing.T) {
-		params := equipment.NewDeleteEquipmentParamsWithContext(ctx)
-		params.WithEquipmentID(int64(1))
-		_, gotErr := client.Equipment.DeleteEquipment(params, auth)
-		require.Error(t, gotErr)
-
-		wantErr := equipment.NewDeleteEquipmentDefault(500)
-		codeExp := int32(http.StatusInternalServerError)
-		wantErr.Payload = &models.SwaggerError{
-			Code:    &codeExp,
-			Message: &messages.ErrDeleteEquipment,
-			Details: "ent: equipment not found",
-		}
-		assert.Equal(t, wantErr, gotErr)
-	})
-
-	t.Run("Delete Equipment failed: auth failed", func(t *testing.T) {
-		params := equipment.NewDeleteEquipmentParamsWithContext(ctx)
-		params.WithEquipmentID(int64(1))
-		token := utils.TokenNotExist
-
-		_, gotErr := client.Equipment.DeleteEquipment(params, utils.AuthInfoFunc(&token))
-		require.Error(t, gotErr)
-
-		wantErr := equipment.NewDeleteEquipmentDefault(http.StatusUnauthorized)
-		codeExp := int32(http.StatusUnauthorized)
-		wantErr.Payload = &models.SwaggerError{
-			Code:    &codeExp,
-			Message: &messages.ErrInvalidToken,
-		}
-		assert.Equal(t, wantErr, gotErr)
+		require.Equal(t, 1, len(res.Payload.BlockingPeriods))
 	})
 }
 
@@ -850,7 +853,7 @@ func TestIntegration_UnblockEquipment(t *testing.T) {
 		token := utils.ManagerUserLogin(t)
 		auth := utils.AuthInfoFunc(token.GetPayload().AccessToken)
 
-		startDate, endDate := strfmt.DateTime(time.Now()), strfmt.DateTime(time.Now().AddDate(0, 0, 10))
+		startDate, endDate := strfmt.DateTime(time.Now().AddDate(0, 0, 1)), strfmt.DateTime(time.Now().AddDate(0, 0, 11))
 		blockParams := equipment.NewBlockEquipmentParamsWithContext(ctx).WithEquipmentID(*eq.Payload.ID)
 		blockParams.Data = &models.ChangeEquipmentStatusToBlockedRequest{
 			StartDate: strfmt.DateTime(startDate),
@@ -895,6 +898,72 @@ func TestIntegration_UnblockEquipment(t *testing.T) {
 			Message: &messages.ErrEquipmentNotFound,
 		}
 		assert.Equal(t, wantErr, err)
+	})
+}
+
+func TestIntegration_DeleteEquipment(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping integration test")
+	}
+
+	ctx := context.Background()
+	client := utils.SetupClient()
+
+	tokens := utils.AdminUserLogin(t)
+
+	auth := utils.AuthInfoFunc(tokens.GetPayload().AccessToken)
+
+	model, err := setParameters(ctx, client, auth)
+	require.NoError(t, err)
+	eq, err := createEquipment(ctx, client, auth, model)
+	require.NotNil(t, eq)
+	require.NoError(t, err)
+
+	t.Run("Delete All Equipment", func(t *testing.T) {
+		beforeEq, err := client.Equipment.GetAllEquipment(equipment.NewGetAllEquipmentParamsWithContext(ctx), auth)
+		require.NoError(t, err)
+		assert.NotZero(t, len(beforeEq.Payload.Items))
+
+		params := equipment.NewDeleteEquipmentParamsWithContext(ctx)
+		for _, item := range beforeEq.Payload.Items {
+			params.WithEquipmentID(*item.ID)
+			resp, err := client.Equipment.DeleteEquipment(params, auth)
+			require.True(t, resp.IsCode(http.StatusOK))
+			require.NoError(t, err)
+		}
+	})
+
+	t.Run("Delete Equipment failed: zero equipments, delete failed", func(t *testing.T) {
+		params := equipment.NewDeleteEquipmentParamsWithContext(ctx)
+		params.WithEquipmentID(int64(1))
+		_, gotErr := client.Equipment.DeleteEquipment(params, auth)
+		require.Error(t, gotErr)
+
+		wantErr := equipment.NewDeleteEquipmentDefault(500)
+		codeExp := int32(http.StatusInternalServerError)
+		wantErr.Payload = &models.SwaggerError{
+			Code:    &codeExp,
+			Message: &messages.ErrDeleteEquipment,
+			Details: "ent: equipment not found",
+		}
+		assert.Equal(t, wantErr, gotErr)
+	})
+
+	t.Run("Delete Equipment failed: auth failed", func(t *testing.T) {
+		params := equipment.NewDeleteEquipmentParamsWithContext(ctx)
+		params.WithEquipmentID(int64(1))
+		token := utils.TokenNotExist
+
+		_, gotErr := client.Equipment.DeleteEquipment(params, utils.AuthInfoFunc(&token))
+		require.Error(t, gotErr)
+
+		wantErr := equipment.NewDeleteEquipmentDefault(http.StatusUnauthorized)
+		codeExp := int32(http.StatusUnauthorized)
+		wantErr.Payload = &models.SwaggerError{
+			Code:    &codeExp,
+			Message: &messages.ErrInvalidToken,
+		}
+		assert.Equal(t, wantErr, gotErr)
 	})
 }
 

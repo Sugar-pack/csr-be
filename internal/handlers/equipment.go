@@ -24,6 +24,7 @@ import (
 func SetEquipmentHandler(logger *zap.Logger, api *operations.BeAPI) {
 	eqRepo := repositories.NewEquipmentRepository()
 	eqStatusNameRepo := repositories.NewEquipmentStatusNameRepository()
+	eqStatusRepo := repositories.NewEquipmentStatusRepository()
 	equipmentHandler := NewEquipment(logger)
 	api.EquipmentCreateNewEquipmentHandler = equipmentHandler.PostEquipmentFunc(eqRepo, eqStatusNameRepo)
 	api.EquipmentGetEquipmentHandler = equipmentHandler.GetEquipmentFunc(eqRepo)
@@ -32,7 +33,7 @@ func SetEquipmentHandler(logger *zap.Logger, api *operations.BeAPI) {
 	api.EquipmentEditEquipmentHandler = equipmentHandler.EditEquipmentFunc(eqRepo)
 	api.EquipmentFindEquipmentHandler = equipmentHandler.FindEquipmentFunc(eqRepo)
 	api.EquipmentArchiveEquipmentHandler = equipmentHandler.ArchiveEquipmentFunc(eqRepo)
-	api.EquipmentBlockEquipmentHandler = equipmentHandler.BlockEquipmentFunc(eqRepo)
+	api.EquipmentBlockEquipmentHandler = equipmentHandler.BlockEquipmentFunc(eqRepo, eqStatusRepo)
 	api.EquipmentUnblockEquipmentHandler = equipmentHandler.UnblockEquipmentFunc(eqRepo)
 }
 
@@ -304,11 +305,18 @@ func mapEquipmentResponse(eq *ent.Equipment) (*models.EquipmentResponse, error) 
 	}, nil
 }
 
-func (c Equipment) BlockEquipmentFunc(repository domain.EquipmentRepository) equipment.BlockEquipmentHandlerFunc {
+func (c Equipment) BlockEquipmentFunc(repository domain.EquipmentRepository, eqStatusRepo domain.EquipmentStatusRepository) equipment.BlockEquipmentHandlerFunc {
 	return func(s equipment.BlockEquipmentParams, principal *models.Principal) middleware.Responder {
 		ctx := s.HTTPRequest.Context()
 		userID := int(principal.ID)
 		role := principal.Role
+		lastEqStatus, err := eqStatusRepo.GetLastEquipmentStatusByEquipmentID(ctx, int(s.EquipmentID))
+		if err != nil && !ent.IsNotFound(err) {
+			c.logger.Error(messages.ErrGetLastEqStatus, zap.Error(err))
+			return equipment.
+				NewBlockEquipmentDefault(http.StatusInternalServerError).
+				WithPayload(buildInternalErrorPayload(messages.ErrEquipmentBlock, ""))
+		}
 
 		if role != roles.Manager {
 			c.logger.Warn("User have no right to block the equipment", zap.Any("principal", principal))
@@ -319,12 +327,27 @@ func (c Equipment) BlockEquipmentFunc(repository domain.EquipmentRepository) equ
 
 		startDate := time.Time(s.Data.StartDate)
 		endDate := time.Time(s.Data.EndDate)
+		currentDate := time.Now()
+		isEqStatusBlocked := lastEqStatus != nil &&
+			lastEqStatus.Edges.EquipmentStatusName.Name == domain.EquipmentStatusNotAvailable
+
 		if startDate.After(endDate) {
 			return equipment.NewBlockEquipmentDefault(http.StatusBadRequest).
 				WithPayload(buildBadRequestErrorPayload(messages.ErrStartDateAfterEnd, ""))
 		}
 
-		err := repository.BlockEquipment(ctx, int(s.EquipmentID), startDate, endDate, userID)
+		if endDate.Before(currentDate) {
+			return equipment.NewBlockEquipmentDefault(http.StatusBadRequest).
+				WithPayload(buildBadRequestErrorPayload(messages.ErrEndDateBeforeCurrentDate, ""))
+
+		}
+
+		if !isEqStatusBlocked && startDate.Before(currentDate) {
+			return equipment.NewBlockEquipmentDefault(http.StatusBadRequest).
+				WithPayload(buildBadRequestErrorPayload(messages.ErrStartDateBeforeCurrentDate, ""))
+		}
+
+		err = repository.BlockEquipment(ctx, int(s.EquipmentID), startDate, endDate, userID)
 		if err != nil {
 			if ent.IsNotFound(err) {
 				return equipment.NewBlockEquipmentNotFound().
@@ -334,6 +357,7 @@ func (c Equipment) BlockEquipmentFunc(repository domain.EquipmentRepository) equ
 			return equipment.NewBlockEquipmentDefault(http.StatusInternalServerError).
 				WithPayload(buildInternalErrorPayload(messages.ErrEquipmentBlock, err.Error()))
 		}
+
 		return equipment.NewBlockEquipmentNoContent()
 	}
 }
@@ -358,7 +382,7 @@ func (c Equipment) UnblockEquipmentFunc(repository domain.EquipmentRepository) e
 			}
 			c.logger.Error(messages.ErrEquipmentUnblock, zap.Error(err))
 			return equipment.NewUnblockEquipmentDefault(http.StatusInternalServerError).
-				WithPayload(buildInternalErrorPayload(messages.ErrEquipmentUnblock, err.Error()))
+				WithPayload(buildInternalErrorPayload(messages.ErrEquipmentIsNotBlocked, err.Error()))
 		}
 		return equipment.NewUnblockEquipmentNoContent()
 	}

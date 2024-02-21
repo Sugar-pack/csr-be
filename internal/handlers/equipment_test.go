@@ -57,10 +57,11 @@ func TestSetEquipmentHandler(t *testing.T) {
 
 type EquipmentTestSuite struct {
 	suite.Suite
-	logger        *zap.Logger
-	equipmentRepo *mocks.EquipmentRepository
-	statusRepo    *mocks.EquipmentStatusNameRepository
-	equipment     *Equipment
+	logger              *zap.Logger
+	equipmentRepo       *mocks.EquipmentRepository
+	statusRepo          *mocks.EquipmentStatusNameRepository
+	equipmentStatusRepo *mocks.EquipmentStatusRepository
+	equipment           *Equipment
 }
 
 func InvalidEquipment(t *testing.T) *ent.Equipment {
@@ -94,6 +95,7 @@ func (s *EquipmentTestSuite) SetupTest() {
 	s.logger = zap.NewNop()
 	s.equipmentRepo = &mocks.EquipmentRepository{}
 	s.statusRepo = &mocks.EquipmentStatusNameRepository{}
+	s.equipmentStatusRepo = &mocks.EquipmentStatusRepository{}
 	s.equipment = NewEquipment(s.logger)
 }
 
@@ -1108,9 +1110,9 @@ func (s *EquipmentTestSuite) TestEquipment_BlockEquipmentFunc_RepoNotFoundErr() 
 	request := http.Request{}
 	ctx := context.Background()
 
-	handlerFunc := s.equipment.BlockEquipmentFunc(s.equipmentRepo)
+	handlerFunc := s.equipment.BlockEquipmentFunc(s.equipmentRepo, s.equipmentStatusRepo)
 	userID, equipmentID := 1, 1
-	startDate, endDate := time.Now(), time.Now().Add(time.Hour*24)
+	startDate, endDate := time.Now().Add(time.Hour*24), time.Now().Add(time.Hour*48)
 	params := equipment.BlockEquipmentParams{
 		HTTPRequest: request.WithContext(ctx),
 		EquipmentID: int64(equipmentID),
@@ -1122,6 +1124,7 @@ func (s *EquipmentTestSuite) TestEquipment_BlockEquipmentFunc_RepoNotFoundErr() 
 	err := &ent.NotFoundError{}
 
 	s.equipmentRepo.On("BlockEquipment", ctx, equipmentID, startDate, endDate, userID).Return(err)
+	s.equipmentStatusRepo.On("GetLastEquipmentStatusByEquipmentID", ctx, equipmentID).Return(nil, err)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	principal := &models.Principal{ID: int64(userID), Role: roles.Manager}
@@ -1144,9 +1147,9 @@ func (s *EquipmentTestSuite) TestEquipment_BlockEquipmentFunc_OK() {
 	request := http.Request{}
 	ctx := context.Background()
 
-	handlerFunc := s.equipment.BlockEquipmentFunc(s.equipmentRepo)
+	handlerFunc := s.equipment.BlockEquipmentFunc(s.equipmentRepo, s.equipmentStatusRepo)
 	userID, equipmentID := 1, 1
-	startDate, endDate := time.Now(), time.Now().Add(time.Hour*24)
+	startDate, endDate := time.Now().Add(time.Hour*24), time.Now().Add(time.Hour*48)
 	params := equipment.BlockEquipmentParams{
 		HTTPRequest: request.WithContext(ctx),
 		EquipmentID: int64(equipmentID),
@@ -1156,7 +1159,10 @@ func (s *EquipmentTestSuite) TestEquipment_BlockEquipmentFunc_OK() {
 		},
 	}
 
+	err := &ent.NotFoundError{}
+
 	s.equipmentRepo.On("BlockEquipment", ctx, equipmentID, startDate, endDate, userID).Return(nil)
+	s.equipmentStatusRepo.On("GetLastEquipmentStatusByEquipmentID", ctx, equipmentID).Return(nil, err)
 	principal := &models.Principal{ID: int64(userID), Role: roles.Manager}
 	resp := handlerFunc(params, principal)
 	responseRecorder := httptest.NewRecorder()
