@@ -21,12 +21,12 @@ type AppConfig struct {
 }
 
 type DB struct {
-	Host          string `validate:"required"`
-	Port          string
-	User          string `validate:"required"`
-	Password      string
-	Database      string `validate:"required"`
-	EntMigrations bool
+	Host     string `validate:"required"`
+	Port     string
+	User     string `validate:"required"`
+	Password string
+	Database string `validate:"required"`
+	ShowSql  bool
 }
 
 func (db DB) GetConnectionString() string {
@@ -48,18 +48,19 @@ func (db DB) GetConnectionString() string {
 }
 
 type Email struct {
-	ServerHost        string `validate:"required"`
-	ServerPort        string `validate:"required"`
-	Password          string `validate:"required"`
-	SenderFromAddress string `validate:"required"`
-	SenderFromName    string `validate:"required"`
-	SenderWebsiteUrl  string `validate:"required"`
-	IsSendRequired    bool
+	ServerHost            string        `validate:"required"`
+	ServerPort            string        `validate:"required"`
+	Password              string        `validate:"required"`
+	SenderFromAddress     string        `validate:"required"`
+	SenderFromName        string        `validate:"required"`
+	SenderWebsiteUrl      string        `validate:"required"`
+	ConfirmLinkExpiration time.Duration `validate:"required"`
+	IsSendRequired        bool
 }
 
 type Password struct {
-	ResetExpirationMinutes time.Duration `validate:"required"`
-	Length                 int           `validate:"required,gte=8"`
+	ResetLinkExpiration time.Duration `validate:"required"`
+	Length              int           `validate:"required,gte=8"`
 }
 
 type Server struct {
@@ -105,11 +106,12 @@ func getDefaultConfig() *AppConfig {
 			Password: "password",
 		},
 		Password: Password{
-			Length:                 8,
-			ResetExpirationMinutes: 15 * time.Minute,
+			Length:              8,
+			ResetLinkExpiration: 15 * time.Minute,
 		},
 		Email: Email{
-			SenderWebsiteUrl: "https://csr.golangforall.com/",
+			SenderWebsiteUrl:      "https://csr.golangforall.com/",
+			ConfirmLinkExpiration: 15 * time.Minute,
 		},
 		Server: Server{
 			Host: "127.0.0.1",

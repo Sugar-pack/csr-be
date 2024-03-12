@@ -22,10 +22,12 @@ generate/mocks: clean/mocks
 	mockery --all --case snake --dir ./pkg/domain --output ./internal/generated/mocks
 
 clean/swagger:
-	cd ./internal/generated/swagger && rm -rfv '!("gethandlers.go")'
+	cd ./internal/generated/swagger && rm -rfv client models || true
+	rm -vf ./internal/generated/swagger/restapi/*.go
+	cd ./internal/generated/swagger/restapi/operations && find . ! -name 'gethandlers.go' -type f -exec rm -fv {} +
 
 generate/swagger: clean/swagger
-	swagger generate server -f ./swagger.yaml -s ./internal/generated/swagger/restapi -m ./internal/generated/swagger/models --exclude-main
+	swagger generate server -P models.Principal -f ./swagger.yaml -s ./internal/generated/swagger/restapi -m ./internal/generated/swagger/models --exclude-main
 	swagger generate client -c ./internal/generated/swagger/client -f ./swagger.yaml -m ./internal/generated/swagger/models
 
 clean/ent:
@@ -52,7 +54,7 @@ coverage:
 	go tool cover -func=coverage.out
 
 coverage_total:
-	go tool cover -func=coverage.out | tail -n1 | awk '{print $3}' | grep -Eo '\d+(.\d+)?'
+	go tool cover -func=coverage.out | tail -n1 | awk '{print $3}' | grep -Eo '[0-9]+(\.[0-9]+)?'
 
 int-test:
 	DOCKER_BUILDKIT=1  docker build -f ./int-test-infra/Dockerfile.int-test --network host --no-cache -t csr:int-test --target run .

@@ -18,6 +18,11 @@ func GenerateGetPasswordReset(userName, password string) (string, error) {
 func GenerateRegistrationConfirmMessage(userName, websiteUrl, token string) (string, error) {
 	return generateHtml(generateRegistrationConfirmMessage(userName, websiteUrl, token))
 }
+
+func GenerateEmailConfirmMessage(userName, websiteUrl, token string) (string, error) {
+	return generateHtml(generateEmailConfirmMessage(userName, websiteUrl, token))
+}
+
 func generateSendLinkReset(userName, websiteUrl, token string) hermes.Email {
 	return hermes.Email{
 		Body: hermes.Body{
@@ -79,6 +84,31 @@ func generateRegistrationConfirmMessage(userName, websiteUrl, token string) herm
 			},
 			Outros: []string{
 				"Если вы не регистрировались, никаких дальнейших действий с вашей стороны не требуется.",
+			},
+			Signature: "Спасибо",
+		},
+	}
+}
+
+func generateEmailConfirmMessage(userName, websiteUrl, token string) hermes.Email {
+	return hermes.Email{
+		Body: hermes.Body{
+			Name: userName,
+			Intros: []string{
+				"Вы получили это электронное письмо, потому что изменили адрес электронной почты в сервисе Лёнькин Кот.",
+			},
+			Actions: []hermes.Action{
+				{
+					Instructions: "Нажмите кнопку ниже для подтверждения нового адреса электронной почты:",
+					Button: hermes.Button{
+						Color: "#DC4D2F",
+						Text:  "Подтвердить",
+						Link:  fmt.Sprintf("%sapi/v1/email_confirm/%s", websiteUrl, token),
+					},
+				},
+			},
+			Outros: []string{
+				"Если вы не изменяли адрес электронной почты, никаких дальнейших действий с вашей стороны не требуется.",
 			},
 			Signature: "Спасибо",
 		},

@@ -30,12 +30,13 @@ func (User) Fields() []ent.Field {
 				dialect.Postgres: "timestamp",
 			}),
 		field.String("phone").Optional().Nillable(),
-		field.Bool("is_blocked").Default(false),
+		field.Bool("is_readonly").Default(false),
 		field.Enum("type").Values("person", "organization").Default("person"),
 		field.String("org_name").Optional().Nillable(),
 		field.String("website").Optional().Nillable(),
 		field.String("vk").Optional().Nillable(),
-		field.Bool("is_confirmed").Default(false),
+		field.Bool("is_registration_confirmed").Default(false),
+		field.Bool("is_deleted").Default(false),
 	}
 }
 
@@ -50,5 +51,6 @@ func (User) Edges() []ent.Edge {
 		edge.To("order_status", OrderStatus.Type),
 		edge.To("password_reset", PasswordReset.Type),
 		edge.To("registration_confirm", RegistrationConfirm.Type),
+		edge.To("email_confirm", EmailConfirm.Type),
 	}
 }

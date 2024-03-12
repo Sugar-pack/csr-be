@@ -125,7 +125,12 @@ func (r *equipmentStatusRepository) GetUnavailableEquipmentStatusByEquipmentID(
 
 	return tx.EquipmentStatus.Query().
 		Where(equipmentstatus.HasEquipmentsWith(equipment.IDEQ(equipmentID))).
-		Where(equipmentstatus.HasEquipmentStatusNameWith(equipmentstatusname.IDEQ(4))).
+		Where(
+			equipmentstatus.Or(
+				equipmentstatus.HasEquipmentStatusNameWith(equipmentstatusname.NameEQ(domain.EquipmentStatusBooked)),
+				equipmentstatus.HasEquipmentStatusNameWith(equipmentstatusname.NameEQ(domain.EquipmentStatusInUse)),
+				equipmentstatus.HasEquipmentStatusNameWith(equipmentstatusname.NameEQ(domain.EquipmentStatusNotAvailable)),
+			)).
 		Where(equipmentstatus.EndDateGTE(time.Now())).
 		All(ctx)
 }
@@ -179,4 +184,20 @@ func (r *equipmentStatusRepository) Update(ctx context.Context, data *models.Equ
 	}
 	equipmentStatus.SetUpdatedAt(time.Now())
 	return equipmentStatus.Save(ctx)
+}
+
+// GetLastEquipmentStatusByEquipmentID - returns last equipment status for equpment by column EndDate.
+func (r *equipmentStatusRepository) GetLastEquipmentStatusByEquipmentID(ctx context.Context, equipmentID int) (*ent.EquipmentStatus, error) {
+	tx, err := middlewares.TxFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return tx.EquipmentStatus.
+		Query().
+		QueryEquipments().
+		Where(equipment.IDEQ(equipmentID)).
+		QueryEquipmentStatus().
+		WithEquipmentStatusName().
+		Order(ent.Asc(equipmentstatus.FieldEndDate)).
+		First(ctx)
 }

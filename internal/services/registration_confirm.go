@@ -50,7 +50,7 @@ func (rc *registrationConfirm) SendConfirmationLink(ctx context.Context, login s
 		rc.logger.Error("Error while getting user by login", zap.String("login", login), zap.Error(err))
 		return err
 	}
-	if user.IsConfirmed {
+	if user.IsRegistrationConfirmed {
 		err = ErrRegistrationAlreadyConfirmed
 		rc.logger.Error("Error registration is already confirmed", zap.String("login", login), zap.Error(err))
 		return err

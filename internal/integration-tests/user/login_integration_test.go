@@ -61,7 +61,7 @@ func TestIntegration_Login(t *testing.T) {
 		require.Equal(t, ok, true)
 
 		wantErr := users.NewLoginUnauthorized()
-		wantErr.Payload = "Invalid login or password"
+		wantErr.Payload = "invalid login or password"
 
 		assert.Equal(t, wantErr, gotErr)
 	})
@@ -84,7 +84,7 @@ func TestIntegration_Login(t *testing.T) {
 		require.Equal(t, ok, true)
 
 		wantErr := users.NewLoginUnauthorized()
-		wantErr.Payload = "Invalid login or password"
+		wantErr.Payload = "invalid login or password"
 
 		assert.Equal(t, wantErr, gotErr)
 	})
@@ -103,8 +103,12 @@ func TestIntegration_Login(t *testing.T) {
 		require.Equal(t, ok, true)
 
 		wantErr := users.NewLoginDefault(422)
-		wantErr.Payload = &models.Error{Data: nil}
-
+		msgExp := "login in body is required"
+		codeExp := int32(602)
+		wantErr.Payload = &models.SwaggerError{
+			Code:    &codeExp,
+			Message: &msgExp,
+		}
 		assert.Equal(t, wantErr, gotErr)
 	})
 }

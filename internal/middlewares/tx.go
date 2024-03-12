@@ -2,12 +2,11 @@ package middlewares
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"net/http"
 
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/ent"
-	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/swagger/models"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/utils"
 )
 
 type contextKey string
@@ -34,13 +33,7 @@ func Tx(cln *ent.Client) func(next http.Handler) http.Handler {
 			ctx := r.Context()
 			tx, err = cln.Tx(ctx)
 			if err != nil {
-				writeResponse(w, http.StatusInternalServerError, &models.Error{
-					Data: &models.ErrorData{
-						// TODO: add correlation id
-						CorrelationID: "",
-						Message:       "Error initiating transaction",
-					},
-				})
+				utils.WriteErrorResponse(w, http.StatusInternalServerError, "Error initiating transaction")
 				return
 			}
 			defer func() {
@@ -61,16 +54,4 @@ func Tx(cln *ent.Client) func(next http.Handler) http.Handler {
 			}
 		})
 	}
-}
-
-func writeResponse(w http.ResponseWriter, code int, v interface{}) {
-	w.Header().Set("Content-Type", "application/json")
-	b, err := json.Marshal(v)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(`{"data":{"message":"Internal server error"}}`))
-		return
-	}
-	w.WriteHeader(code)
-	w.Write(b)
 }

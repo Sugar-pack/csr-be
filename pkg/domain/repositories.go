@@ -13,10 +13,6 @@ type ActiveAreaRepository interface {
 	TotalActiveAreas(ctx context.Context) (int, error)
 }
 
-type BlockerRepository interface {
-	SetIsBlockedUser(ctx context.Context, userId int, isBlocked bool) error
-}
-
 type Filter struct {
 	Limit, Offset        int
 	OrderBy, OrderColumn string
@@ -25,6 +21,12 @@ type Filter struct {
 type CategoryFilter struct {
 	Filter
 	HasEquipments bool
+}
+
+type OrderFilter struct {
+	Filter
+	Status      *string
+	EquipmentID *int
 }
 
 type CategoryRepository interface {
@@ -47,6 +49,9 @@ type EquipmentRepository interface {
 	UpdateEquipmentByID(ctx context.Context, id int, eq *models.Equipment) (*ent.Equipment, error)
 	AllEquipmentsTotal(ctx context.Context) (int, error)
 	EquipmentsByFilterTotal(ctx context.Context, filter models.EquipmentFilter) (int, error)
+	ArchiveEquipment(ctx context.Context, id int) error
+	BlockEquipment(ctx context.Context, id int, startDate, endDate time.Time, userID int) error
+	UnblockEquipment(ctx context.Context, id int) error
 }
 
 type EquipmentStatusRepository interface {
@@ -57,6 +62,7 @@ type EquipmentStatusRepository interface {
 	GetOrderAndUserByEquipmentStatusID(ctx context.Context, id int) (*ent.Order, *ent.User, error)
 	GetEquipmentStatusByID(ctx context.Context, equipmentStatusID int) (*ent.EquipmentStatus, error)
 	GetUnavailableEquipmentStatusByEquipmentID(ctx context.Context, equipmentID int) ([]*ent.EquipmentStatus, error)
+	GetLastEquipmentStatusByEquipmentID(ctx context.Context, equipmentID int) (*ent.EquipmentStatus, error)
 }
 
 type EquipmentStatusNameRepository interface {
@@ -68,8 +74,8 @@ type EquipmentStatusNameRepository interface {
 }
 
 type OrderRepository interface {
-	List(ctx context.Context, ownerId, limit, offset int, orderBy, orderColumn string) ([]*ent.Order, error)
-	OrdersTotal(ctx context.Context, ownerId int) (int, error)
+	List(ctx context.Context, ownerId *int, filter OrderFilter) ([]*ent.Order, error)
+	OrdersTotal(ctx context.Context, ownerId *int) (int, error)
 	Create(ctx context.Context, data *models.OrderCreateRequest, ownerId int, equipmentIDs []int) (*ent.Order, error)
 	Update(ctx context.Context, id int, data *models.OrderUpdateRequest, ownerId int) (*ent.Order, error)
 }
@@ -97,6 +103,12 @@ type OrderStatusNameRepository interface {
 type PasswordResetRepository interface {
 	CreateToken(ctx context.Context, token string, ttl time.Time, userID int) error
 	GetToken(ctx context.Context, token string) (*ent.PasswordReset, error)
+	DeleteToken(ctx context.Context, token string) error
+}
+
+type EmailConfirmRepository interface {
+	CreateToken(ctx context.Context, token string, ttl time.Time, userID int, email string) error
+	GetToken(ctx context.Context, token string) (*ent.EmailConfirm, error)
 	DeleteToken(ctx context.Context, token string) error
 }
 
@@ -149,12 +161,14 @@ type UserRepository interface {
 	SetUserRole(ctx context.Context, userId int, roleId int) error
 	UserByLogin(ctx context.Context, login string) (*ent.User, error)
 	ChangePasswordByLogin(ctx context.Context, login string, password string) error
+	ChangeEmailByLogin(ctx context.Context, login string, email string) error
 	CreateUser(ctx context.Context, data *models.UserRegister) (*ent.User, error)
 	GetUserByLogin(ctx context.Context, login string) (*ent.User, error)
 	GetUserByID(ctx context.Context, id int) (*ent.User, error)
 	UpdateUserByID(ctx context.Context, id int, patch *models.PatchUserRequest) error
 	UserList(ctx context.Context, limit, offset int, orderBy, orderColumn string) ([]*ent.User, error)
-	Delete(ctx context.Context, id int) error
+	Delete(ctx context.Context, userId int) error
 	UsersListTotal(ctx context.Context) (int, error)
 	ConfirmRegistration(ctx context.Context, login string) error
+	SetIsReadonly(ctx context.Context, id int, isReadonly bool) error
 }

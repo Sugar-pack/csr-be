@@ -11,6 +11,7 @@ import (
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/swagger/client/active_areas"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/swagger/models"
 	utils "git.epam.com/epm-lstr/epm-lstr-lc/be/internal/integration-tests/common"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/messages"
 )
 
 func TestIntegration_GetActiveAreas(t *testing.T) {
@@ -39,8 +40,11 @@ func TestIntegration_GetActiveAreas(t *testing.T) {
 		require.Error(t, err)
 
 		errExp := active_areas.NewGetAllActiveAreasDefault(http.StatusUnauthorized)
-		errExp.Payload = &models.Error{
-			Data: nil,
+		msgExp := "unauthenticated for invalid credentials"
+		codeExp := int32(http.StatusUnauthorized)
+		errExp.Payload = &models.SwaggerError{
+			Code:    &codeExp,
+			Message: &msgExp,
 		}
 		assert.Equal(t, errExp, err)
 	})
@@ -53,8 +57,10 @@ func TestIntegration_GetActiveAreas(t *testing.T) {
 		require.Error(t, err)
 
 		errExp := active_areas.NewGetAllActiveAreasDefault(http.StatusUnauthorized)
-		errExp.Payload = &models.Error{
-			Data: nil,
+		codeExp := int32(http.StatusUnauthorized)
+		errExp.Payload = &models.SwaggerError{
+			Code:    &codeExp,
+			Message: &messages.ErrInvalidToken,
 		}
 		assert.Equal(t, errExp, err)
 	})

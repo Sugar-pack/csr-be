@@ -11,7 +11,6 @@ import (
 
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/config"
 	internalDB "git.epam.com/epm-lstr/epm-lstr-lc/be/internal/db"
-	entMigrate "git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/ent/migrate"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/logger"
 )
 
@@ -29,15 +28,9 @@ func main() {
 		lg.Fatal("fail to setup app config", zap.Error(err))
 	}
 
-	entClient, db, err := internalDB.GetDB(conf.DB.GetConnectionString())
+	entClient, db, err := internalDB.GetDB(conf.DB)
 	if err != nil {
 		lg.Fatal("failed to db connection", zap.Error(err))
-	}
-
-	if conf.DB.EntMigrations {
-		if err := entClient.Schema.Create(ctx, entMigrate.WithDropIndex(true)); err != nil {
-			lg.Fatal("failed creating schema resources", zap.Error(err))
-		}
 	}
 
 	if err := internalDB.ApplyMigrations(db); err != nil {

@@ -4,7 +4,7 @@
     "port": "5432",
     "user": "csr",
     "database": "csr",
-    "ent_migrations": true
+    "showSql": false
   },
   "JWTSecretKey": 123,
   "email": {
@@ -13,11 +13,12 @@
     "password": "any",
     "senderFromAddress": "any",
     "senderFromName": "any",
+    "confirmLinkExpiration": "15m",
     "isSendRequired": false
   },
   "password": {
     "length": 8,
-    "resetExpirationMinutes": 15
+    "resetLinkExpiration": "15m"
   },
   "orderStatusOverdueTimeCheckDuration": "4h",
   "server": {
@@ -27,7 +28,7 @@
     {
       "role": {
         "slug": "user",
-        "isEmailConfirmed": false,
+        "isRegistrationConfirmed": false,
         "isPersonalDataConfirmed": false
       },
       "allowedEndpoints": {
@@ -39,8 +40,9 @@
     {
       "role": {
         "slug": "user",
-        "isEmailConfirmed": true,
-        "isPersonalDataConfirmed": false
+        "isRegistrationConfirmed": true,
+        "isPersonalDataConfirmed": false,
+        "isReadonly": false
       },
       "allowedEndpoints": {
         "GET": [
@@ -63,15 +65,23 @@
         ],
         "PATCH": [
           "/v1/users/me",
+          "/v1/users/me/email",
           "/v1/users/me/password"
+        ],
+        "POST": [
+          "/equipment/search"
+        ],
+        "DELETE": [
+          "/v1/users/me"
         ]
       }
     },
     {
       "role": {
         "slug": "user",
-        "isEmailConfirmed": true,
-        "isPersonalDataConfirmed": true
+        "isRegistrationConfirmed": true,
+        "isPersonalDataConfirmed": true,
+        "isReadonly": false
       },
       "allowedEndpoints": {
         "GET": [
@@ -96,10 +106,73 @@
         ],
         "PATCH": [
           "/v1/users/me",
+          "/v1/users/me/email",
           "/v1/users/me/password"
         ],
         "POST": [
-          "/v1/orders"
+          "/v1/orders",
+          "/equipment/search"
+        ],
+        "DELETE": [
+          "/v1/users/me"
+        ]
+      }
+    },
+    {
+      "role": {
+        "slug": "user",
+        "isRegistrationConfirmed": true,
+        "isPersonalDataConfirmed": false,
+        "isReadonly": true
+      },
+      "allowedEndpoints": {
+        "GET": [
+          "/v1/users/me",
+          "/v1/active_areas",
+          "/pet_size",
+          "/pet_size/{petSizeId}",
+          "/pet_kind/{petKindId}",
+          "/pet_kind",
+          "/equipmentstatus/repaired/{equipmentstatusId}",
+          "/equipment/status_names",
+          "/equipment/statuses/{statusId}",
+          "/equipment/photos/{photoId}",
+          "/equipment/categories/subcategories/{subcategoryId}",
+          "/equipment/categories/{categoryId}/subcategories",
+          "/equipment/categories",
+          "/equipment/categories/{categoryId}",
+          "/equipment",
+          "/equipment/{equipmentId}"
+        ]
+      }
+    },
+    {
+      "role": {
+        "slug": "user",
+        "isRegistrationConfirmed": true,
+        "isPersonalDataConfirmed": true,
+        "isReadonly": true
+      },
+      "allowedEndpoints": {
+        "GET": [
+          "/v1/users/me",
+          "/v1/active_areas",
+          "/pet_size",
+          "/pet_size/{petSizeId}",
+          "/pet_kind/{petKindId}",
+          "/pet_kind",
+          "/equipmentstatus/repaired/{equipmentstatusId}",
+          "/equipment/status_names",
+          "/equipment/statuses/{statusId}",
+          "/equipment/photos/{photoId}",
+          "/equipment/categories/subcategories/{subcategoryId}",
+          "/equipment/categories/{categoryId}/subcategories",
+          "/equipment/categories",
+          "/equipment/categories/{categoryId}",
+          "/equipment",
+          "/equipment/{equipmentId}",
+          "/v1/order_statuses/{orderId}",
+          "/v1/status_names"
         ]
       }
     }

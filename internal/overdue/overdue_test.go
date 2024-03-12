@@ -79,6 +79,7 @@ func (s *CheckupTestSuite) TestCheckup_Success_PartialUpdate() {
 			modelExpected := models.NewOrderStatus{
 				CreatedAt: &date,
 				OrderID:   &id,
+				Comment:   &domain.OrderStatusOverdue,
 				Status:    &domain.OrderStatusOverdue,
 			}
 			s.orderStatusRepo.On("UpdateStatus", mock.Anything, order.Edges.Users.ID, modelExpected).Return(nil)
@@ -205,6 +206,7 @@ func (s *CheckupTestSuite) TestCheckup_OrderStatus_RepoErr() {
 			modelExpected := models.NewOrderStatus{
 				CreatedAt: &date,
 				OrderID:   &id,
+				Comment:   &domain.OrderStatusOverdue,
 				Status:    &domain.OrderStatusOverdue,
 			}
 			s.orderStatusRepo.On("UpdateStatus", mock.Anything, order.Edges.Users.ID, modelExpected).Return(nil)
@@ -260,6 +262,7 @@ func (s *CheckupTestSuite) TestCheckup_EquipmentsStatuses_RepoErr() {
 		modelExpected := models.NewOrderStatus{
 			CreatedAt: &date,
 			OrderID:   &id,
+			Comment:   &domain.OrderStatusOverdue,
 			Status:    &domain.OrderStatusOverdue,
 		}
 		s.orderStatusRepo.On("UpdateStatus", mock.Anything, order.Edges.Users.ID, modelExpected).Return(nil)
@@ -317,6 +320,7 @@ func (s *CheckupTestSuite) TestCheckup_EquipmentsStatuses_UpdateRepoErr() {
 		modelExpected := models.NewOrderStatus{
 			CreatedAt: &date,
 			OrderID:   &id,
+			Comment:   &domain.OrderStatusOverdue,
 			Status:    &domain.OrderStatusOverdue,
 		}
 		s.orderStatusRepo.On("UpdateStatus", mock.Anything, order.Edges.Users.ID, modelExpected).Return(nil)

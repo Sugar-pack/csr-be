@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"errors"
+	"fmt"
 	"math"
 	"net/http"
 	"time"
@@ -10,13 +11,12 @@ import (
 	"github.com/go-openapi/strfmt"
 	"go.uber.org/zap"
 
-	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/authentication"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/ent"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/ent/order"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/swagger/models"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/swagger/restapi/operations"
-	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/swagger/restapi/operations/equipment"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/swagger/restapi/operations/orders"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/messages"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/repositories"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/utils"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/pkg/domain"
@@ -28,9 +28,10 @@ func SetOrderHandler(logger *zap.Logger, api *operations.BeAPI) {
 	equipmentRepo := repositories.NewEquipmentRepository()
 	ordersHandler := NewOrder(logger)
 
-	api.OrdersGetAllOrdersHandler = ordersHandler.ListOrderFunc(orderRepo)
+	api.OrdersGetUserOrdersHandler = ordersHandler.ListUserOrdersFunc(orderRepo)
 	api.OrdersCreateOrderHandler = ordersHandler.CreateOrderFunc(orderRepo, eqStatusRepo, equipmentRepo)
 	api.OrdersUpdateOrderHandler = ordersHandler.UpdateOrderFunc(orderRepo)
+	api.OrdersGetAllOrdersHandler = ordersHandler.ListAllOrdersFunc(orderRepo)
 }
 
 type Order struct {
@@ -43,7 +44,7 @@ func NewOrder(logger *zap.Logger) *Order {
 	}
 }
 
-func mapOrder(o *ent.Order, log *zap.Logger) (*models.Order, error) {
+func mapUserOrder(o *ent.Order, log *zap.Logger) (*models.UserOrder, error) {
 	if o == nil {
 		log.Warn("order is nil")
 		return nil, errors.New("order is nil")
@@ -144,7 +145,7 @@ func mapOrder(o *ent.Order, log *zap.Logger) (*models.Order, error) {
 		statusToOrder = mappedStatus
 	}
 
-	return &models.Order{
+	return &models.UserOrder{
 		Description: &o.Description,
 		Equipments:  orderEquipments,
 		ID:          &id,
@@ -160,10 +161,10 @@ func mapOrder(o *ent.Order, log *zap.Logger) (*models.Order, error) {
 	}, nil
 }
 
-func mapOrdersToResponse(entOrders []*ent.Order, log *zap.Logger) ([]*models.Order, error) {
-	modelOrders := make([]*models.Order, len(entOrders))
+func mapUserOrdersToResponse(entOrders []*ent.Order, log *zap.Logger) ([]*models.UserOrder, error) {
+	modelOrders := make([]*models.UserOrder, len(entOrders))
 	for i, o := range entOrders {
-		order, err := mapOrder(o, log)
+		order, err := mapUserOrder(o, log)
 		if err != nil {
 			log.Error("failed to map order", zap.Error(err))
 			return nil, err
@@ -174,46 +175,145 @@ func mapOrdersToResponse(entOrders []*ent.Order, log *zap.Logger) ([]*models.Ord
 	return modelOrders, nil
 }
 
-func (o Order) ListOrderFunc(repository domain.OrderRepository) orders.GetAllOrdersHandlerFunc {
-	return func(p orders.GetAllOrdersParams, access interface{}) middleware.Responder {
+func mapOrdersToResponse(entOrders []*ent.Order, log *zap.Logger) ([]*models.Order, error) {
+	modelOrders := make([]*models.Order, len(entOrders))
+	for i, o := range entOrders {
+		uo, err := mapUserOrder(o, log)
+		if err != nil {
+			log.Error("failed to map order", zap.Error(err))
+			return nil, err
+		}
+		user := mapUserInfoWoRole(o.Edges.Users)
+		mo := &models.Order{
+			Description: uo.Description,
+			Equipments:  uo.Equipments,
+			ID:          uo.ID,
+			IsFirst:     uo.IsFirst,
+			LastStatus:  uo.LastStatus,
+			Quantity:    uo.Quantity,
+			RentEnd:     uo.RentEnd,
+			RentStart:   uo.RentStart,
+			User:        user,
+		}
+		modelOrders[i] = mo
+	}
+	return modelOrders, nil
+}
+
+func (o Order) ListUserOrdersFunc(repository domain.OrderRepository) orders.GetUserOrdersHandlerFunc {
+	return func(p orders.GetUserOrdersParams, principal *models.Principal) middleware.Responder {
+		ctx := p.HTTPRequest.Context()
+		userID := int(principal.ID)
+		limit := utils.GetValueByPointerOrDefaultValue(p.Limit, math.MaxInt)
+		offset := utils.GetValueByPointerOrDefaultValue(p.Offset, 0)
+		orderBy := utils.GetValueByPointerOrDefaultValue(p.OrderBy, utils.AscOrder)
+		orderColumn := utils.GetValueByPointerOrDefaultValue(p.OrderColumn, order.FieldID)
+
+		orderFilter := domain.OrderFilter{
+			Filter: domain.Filter{
+				Limit:       int(limit),
+				Offset:      int(offset),
+				OrderBy:     orderBy,
+				OrderColumn: orderColumn,
+			},
+			Status: p.Status,
+		}
+		if p.Status != nil {
+			_, ok := domain.AllOrderStatuses[*p.Status]
+			if !ok {
+				return orders.NewGetUserOrdersDefault(http.StatusBadRequest).
+					WithPayload(buildBadRequestErrorPayload(messages.ErrQueryOrders, fmt.Sprintf("invalid order status '%v'", *p.Status)))
+			}
+		}
+
+		total, err := repository.OrdersTotal(ctx, &userID)
+		if err != nil {
+			o.logger.Error(messages.ErrQueryTotalOrders, zap.Error(err))
+			return orders.NewGetUserOrdersDefault(http.StatusInternalServerError).
+				WithPayload(buildBadRequestErrorPayload(messages.ErrQueryTotalOrders, err.Error()))
+		}
+
+		var items []*ent.Order
+		if total > 0 {
+			items, err = repository.List(ctx, &userID, orderFilter)
+			if err != nil {
+				o.logger.Error(messages.ErrQueryOrders, zap.Error(err))
+				return orders.NewGetUserOrdersDefault(http.StatusInternalServerError).
+					WithPayload(buildBadRequestErrorPayload(messages.ErrQueryOrders, err.Error()))
+			}
+		}
+
+		mappedOrders, err := mapUserOrdersToResponse(items, o.logger)
+		if err != nil {
+			o.logger.Error(messages.ErrMapOrder, zap.Error(err))
+			return orders.NewGetUserOrdersDefault(http.StatusInternalServerError).
+				WithPayload(buildInternalErrorPayload(messages.ErrMapOrder, err.Error()))
+		}
+		totalOrders := int64(total)
+		listOrders := &models.UserOrdersList{
+			Items: mappedOrders,
+			Total: &totalOrders,
+		}
+		return orders.NewGetUserOrdersOK().WithPayload(listOrders)
+	}
+}
+
+func (o Order) ListAllOrdersFunc(repository domain.OrderRepository) orders.GetAllOrdersHandlerFunc {
+	return func(p orders.GetAllOrdersParams, _ *models.Principal) middleware.Responder {
 		ctx := p.HTTPRequest.Context()
 		limit := utils.GetValueByPointerOrDefaultValue(p.Limit, math.MaxInt)
 		offset := utils.GetValueByPointerOrDefaultValue(p.Offset, 0)
 		orderBy := utils.GetValueByPointerOrDefaultValue(p.OrderBy, utils.AscOrder)
 		orderColumn := utils.GetValueByPointerOrDefaultValue(p.OrderColumn, order.FieldID)
 
-		ownerId, err := authentication.GetUserId(access)
-		if err != nil {
-			o.logger.Error("get user id failed", zap.Error(err))
-			status := http.StatusInternalServerError
-			if errors.Is(err, repositories.OrderAccessDenied{}) {
-				status = http.StatusForbidden
-			}
-			return orders.NewGetAllOrdersDefault(status).WithPayload(buildErrorPayload(err))
+		orderFilter := domain.OrderFilter{
+			Filter: domain.Filter{
+				Limit:       int(limit),
+				Offset:      int(offset),
+				OrderBy:     orderBy,
+				OrderColumn: orderColumn,
+			},
 		}
-		total, err := repository.OrdersTotal(ctx, ownerId)
+
+		if p.Status != nil {
+			_, ok := domain.AllOrderStatuses[*p.Status]
+			if !ok {
+				return orders.NewGetAllOrdersDefault(http.StatusBadRequest).
+					WithPayload(buildBadRequestErrorPayload(messages.ErrQueryOrders, fmt.Sprintf("invalid order status '%v'", *p.Status)))
+			}
+			orderFilter.Status = p.Status
+		}
+
+		if p.EquipmentID != nil {
+			eid := int(*p.EquipmentID)
+			orderFilter.EquipmentID = &eid
+		}
+
+		total, err := repository.OrdersTotal(ctx, nil)
 		if err != nil {
-			o.logger.Error("Error while getting total of all user's orders", zap.Error(err))
-			return equipment.NewGetAllEquipmentDefault(http.StatusInternalServerError).
-				WithPayload(buildErrorPayload(err))
+			o.logger.Error(messages.ErrQueryTotalOrders, zap.Error(err))
+			return orders.NewGetAllOrdersDefault(http.StatusInternalServerError).
+				WithPayload(buildInternalErrorPayload(messages.ErrQueryTotalOrders, err.Error()))
 		}
 
 		var items []*ent.Order
 		if total > 0 {
-			items, err = repository.List(ctx, ownerId, int(limit), int(offset), orderBy, orderColumn)
+			items, err = repository.List(ctx, nil, orderFilter)
 			if err != nil {
-				o.logger.Error("list items failed", zap.Error(err))
-				return orders.NewGetAllOrdersDefault(http.StatusInternalServerError).WithPayload(buildErrorPayload(err))
+				o.logger.Error(messages.ErrQueryOrders, zap.Error(err))
+				return orders.NewGetAllOrdersDefault(http.StatusInternalServerError).
+					WithPayload(buildInternalErrorPayload(messages.ErrQueryOrders, err.Error()))
 			}
 		}
 
 		mappedOrders, err := mapOrdersToResponse(items, o.logger)
 		if err != nil {
-			o.logger.Error("map orders to response failed", zap.Error(err))
-			return orders.NewGetAllOrdersDefault(http.StatusInternalServerError).WithPayload(buildErrorPayload(err))
+			o.logger.Error(messages.ErrMapOrder, zap.Error(err))
+			return orders.NewGetAllOrdersDefault(http.StatusInternalServerError).
+				WithPayload(buildInternalErrorPayload(messages.ErrMapOrder, err.Error()))
 		}
 		totalOrders := int64(total)
-		listOrders := &models.OrderList{
+		listOrders := &models.OrdersList{
 			Items: mappedOrders,
 			Total: &totalOrders,
 		}
@@ -226,53 +326,65 @@ func (o Order) CreateOrderFunc(
 	eqStatusRepo domain.EquipmentStatusRepository,
 	equipmentRepo domain.EquipmentRepository,
 ) orders.CreateOrderHandlerFunc {
-	return func(p orders.CreateOrderParams, access interface{}) middleware.Responder {
+	return func(p orders.CreateOrderParams, principal *models.Principal) middleware.Responder {
 		ctx := p.HTTPRequest.Context()
-		ownerId, err := authentication.GetUserId(access)
-		if err != nil {
-			o.logger.Error("get user ID failed", zap.Error(err))
-			return orders.NewCreateOrderDefault(http.StatusInternalServerError).WithPayload(buildErrorPayload(err))
-		}
+		userID := int(principal.ID)
 
 		id := int(*p.Data.EquipmentID)
 		isEquipmentAvailable, err := eqStatusRepo.HasStatusByPeriod(ctx, domain.EquipmentStatusAvailable, id,
 			time.Time(*p.Data.RentStart), time.Time(*p.Data.RentEnd))
 		if err != nil {
-			o.logger.Error("error while checking if equipment is available for period", zap.Error(err))
-			return orders.NewCreateOrderDefault(http.StatusInternalServerError).WithPayload(buildErrorPayload(err))
+			o.logger.Error(messages.ErrCheckEqStatusFailed, zap.Error(err))
+			return orders.NewCreateOrderDefault(http.StatusInternalServerError).
+				WithPayload(buildInternalErrorPayload(messages.ErrCheckEqStatusFailed, err.Error()))
 		}
 
 		if !isEquipmentAvailable {
-			o.logger.Warn("equipment is not free")
-			return orders.NewCreateOrderDefault(http.StatusInternalServerError).
-				WithPayload(buildStringPayload("requested equipment is not free"))
+			o.logger.Warn(messages.ErrEquipmentIsNotFree)
+			return orders.NewCreateOrderDefault(http.StatusConflict).
+				WithPayload(buildConflictErrorPayload(messages.ErrEquipmentIsNotFree, ""))
 		}
 
-		order, err := orderRepo.Create(ctx, p.Data, ownerId, []int{id})
+		rentStart := time.Time(*p.Data.RentStart)
+		rentEnd := time.Time(*p.Data.RentEnd)
+
+		if rentStart.After(rentEnd) {
+			return orders.NewCreateOrderDefault(http.StatusBadRequest).
+				WithPayload(buildBadRequestErrorPayload(messages.ErrStartDateAfterEnd, ""))
+		}
+
+		if rentEnd.Sub(rentStart).Hours() < 24 {
+			return orders.NewCreateOrderDefault(http.StatusBadRequest).
+				WithPayload(buildBadRequestErrorPayload(messages.ErrSmallRentPeriod, ""))
+		}
+
+		order, err := orderRepo.Create(ctx, p.Data, userID, []int{id})
 		if err != nil {
-			o.logger.Error("map orders to response failed", zap.Error(err))
-			return orders.NewCreateOrderDefault(http.StatusInternalServerError).WithPayload(buildErrorPayload(err))
+			o.logger.Error(messages.ErrMapOrder, zap.Error(err))
+			return orders.NewCreateOrderDefault(http.StatusInternalServerError).
+				WithPayload(buildInternalErrorPayload(messages.ErrMapOrder, err.Error()))
 		}
 
-		endDate := time.Time(*p.Data.RentEnd).AddDate(0, 0, 1)
-		equipmentBookedEndDate := strfmt.DateTime(endDate)
+		equipmentBookedStartDate := strfmt.DateTime(time.Time(*p.Data.RentStart).AddDate(0, 0, -1))
+		equipmentBookedEndDate := strfmt.DateTime(time.Time(*p.Data.RentEnd).AddDate(0, 0, 1))
 		eqID := int64(id)
 		if _, err = eqStatusRepo.Create(ctx, &models.NewEquipmentStatus{
-			EndDate:     &equipmentBookedEndDate,
 			EquipmentID: &eqID,
-			StartDate:   p.Data.RentStart,
+			StartDate:   &equipmentBookedStartDate,
+			EndDate:     &equipmentBookedEndDate,
 			StatusName:  &domain.EquipmentStatusBooked,
 			OrderID:     int64(order.ID),
 		}); err != nil {
-			o.logger.Error("error while creating equipment status", zap.Error(err))
+			o.logger.Error(messages.ErrCreateEqStatus, zap.Error(err))
 			return orders.NewGetAllOrdersDefault(http.StatusInternalServerError).
-				WithPayload(buildErrorPayload(err))
+				WithPayload(buildInternalErrorPayload(messages.ErrCreateEqStatus, err.Error()))
 		}
 
-		mappedOrder, err := mapOrder(order, o.logger)
+		mappedOrder, err := mapUserOrder(order, o.logger)
 		if err != nil {
-			o.logger.Error("failed to map order", zap.Error(err))
-			return orders.NewGetAllOrdersDefault(http.StatusInternalServerError).WithPayload(buildErrorPayload(err))
+			o.logger.Error(messages.ErrMapOrder, zap.Error(err))
+			return orders.NewGetAllOrdersDefault(http.StatusInternalServerError).
+				WithPayload(buildInternalErrorPayload(messages.ErrMapOrder, err.Error()))
 		}
 
 		return orders.NewCreateOrderCreated().WithPayload(mappedOrder)
@@ -280,26 +392,23 @@ func (o Order) CreateOrderFunc(
 }
 
 func (o Order) UpdateOrderFunc(repository domain.OrderRepository) orders.UpdateOrderHandlerFunc {
-	return func(p orders.UpdateOrderParams, access interface{}) middleware.Responder {
+	return func(p orders.UpdateOrderParams, principal *models.Principal) middleware.Responder {
 		ctx := p.HTTPRequest.Context()
-
-		ownerId, err := authentication.GetUserId(access)
-		if err != nil {
-			o.logger.Error("get userID failed", zap.Error(err))
-			return orders.NewGetAllOrdersDefault(http.StatusInternalServerError).WithPayload(buildErrorPayload(err))
-		}
-
+		userID := int(principal.ID)
 		orderID := int(p.OrderID)
-		order, err := repository.Update(ctx, orderID, p.Data, ownerId)
+
+		order, err := repository.Update(ctx, orderID, p.Data, userID)
 		if err != nil {
-			o.logger.Error("update order failed", zap.Error(err))
-			return orders.NewUpdateOrderDefault(http.StatusInternalServerError).WithPayload(buildErrorPayload(err))
+			o.logger.Error(messages.ErrUpdateOrder, zap.Error(err))
+			return orders.NewUpdateOrderDefault(http.StatusInternalServerError).
+				WithPayload(buildInternalErrorPayload(messages.ErrUpdateOrder, err.Error()))
 		}
 
-		mappedOrder, err := mapOrder(order, o.logger)
+		mappedOrder, err := mapUserOrder(order, o.logger)
 		if err != nil {
-			o.logger.Error("failed to map order", zap.Error(err))
-			return orders.NewUpdateOrderDefault(http.StatusInternalServerError).WithPayload(buildErrorPayload(err))
+			o.logger.Error(messages.ErrMapOrder, zap.Error(err))
+			return orders.NewUpdateOrderDefault(http.StatusInternalServerError).
+				WithPayload(buildInternalErrorPayload(messages.ErrMapOrder, err.Error()))
 		}
 
 		return orders.NewUpdateOrderOK().WithPayload(mappedOrder)

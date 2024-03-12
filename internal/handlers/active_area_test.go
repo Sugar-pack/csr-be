@@ -95,8 +95,7 @@ func (s *ActiveAreaTestSuite) TestActiveArea_GetActiveAreasFunc_RepoErr() {
 	err := errors.New("some error")
 	s.repository.On("TotalActiveAreas", ctx).Return(0, err)
 
-	access := "dummy access"
-	resp := handlerFunc(data, access)
+	resp := handlerFunc(data, nil)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
@@ -126,8 +125,7 @@ func (s *ActiveAreaTestSuite) TestActiveArea_GetActiveAreasFunc_LimitGreaterThan
 	s.repository.On("AllActiveAreas", ctx, int(limit), int(offset), orderBy, orderColumn).
 		Return(s.areas, nil)
 
-	access := "dummy access"
-	resp := handlerFunc(data, access)
+	resp := handlerFunc(data, nil)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
@@ -165,8 +163,7 @@ func (s *ActiveAreaTestSuite) TestActiveArea_GetActiveAreasFunc_LimitLessThanTot
 	s.repository.On("AllActiveAreas", ctx, int(limit), int(offset), orderBy, orderColumn).
 		Return(s.areas[:limit], nil)
 
-	access := "dummy access"
-	resp := handlerFunc(data, access)
+	resp := handlerFunc(data, nil)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
@@ -205,8 +202,7 @@ func (s *ActiveAreaTestSuite) TestActiveArea_GetActiveAreasFunc_SecondPage() {
 	s.repository.On("AllActiveAreas", ctx, int(limit), int(offset), orderBy, orderColumn).
 		Return(s.areas[offset:], nil)
 
-	access := "dummy access"
-	resp := handlerFunc(data, access)
+	resp := handlerFunc(data, nil)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
@@ -240,8 +236,7 @@ func (s *ActiveAreaTestSuite) TestActiveArea_GetActiveAreasFunc_EmptyPaginationP
 	s.repository.On("TotalActiveAreas", ctx).Return(5, nil)
 	s.repository.On("AllActiveAreas", ctx, limit, offset, orderBy, orderColumn).Return(s.areas, nil)
 
-	access := "dummy access"
-	resp := handlerFunc(data, access)
+	resp := handlerFunc(data, nil)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
@@ -279,8 +274,7 @@ func (s *ActiveAreaTestSuite) TestActiveArea_GetActiveAreasFunc_SeveralPages() {
 	s.repository.On("AllActiveAreas", ctx, int(limit), int(offset), orderBy, orderColumn).
 		Return(s.areas[:limit], nil)
 
-	access := "dummy access"
-	resp := handlerFunc(data, access)
+	resp := handlerFunc(data, nil)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
@@ -300,7 +294,7 @@ func (s *ActiveAreaTestSuite) TestActiveArea_GetActiveAreasFunc_SeveralPages() {
 	s.repository.On("AllActiveAreas", ctx, int(limit), int(offset), orderBy, orderColumn).
 		Return(s.areas[offset:], nil)
 
-	resp = handlerFunc(data, access)
+	resp = handlerFunc(data, nil)
 	responseRecorder = httptest.NewRecorder()
 	producer = runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)

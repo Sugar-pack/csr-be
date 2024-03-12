@@ -9,6 +9,7 @@ import (
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/swagger/client/users"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/swagger/models"
 	utils "git.epam.com/epm-lstr/epm-lstr-lc/be/internal/integration-tests/common"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/messages"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -28,7 +29,7 @@ func TestIntegration_GetCurrentUser(t *testing.T) {
 	ctx := context.Background()
 	client := utils.SetupClient()
 
-	l, p, id := utils.AdminLoginPassword(t)
+	l, p, id := utils.CreateLoginPassword(t, 1)
 
 	testLogin = l
 	testPassword = p
@@ -55,8 +56,10 @@ func TestIntegration_GetCurrentUser(t *testing.T) {
 		_, err = client.Users.GetCurrentUser(params, authInfo)
 
 		errExp := users.NewGetCurrentUserDefault(http.StatusUnauthorized)
-		errExp.Payload = &models.Error{
-			Data: nil,
+		codeExp := int32(http.StatusUnauthorized)
+		errExp.Payload = &models.SwaggerError{
+			Code:    &codeExp,
+			Message: &messages.ErrInvalidToken,
 		}
 		assert.Equal(t, errExp, err)
 	})
@@ -69,8 +72,11 @@ func TestIntegration_GetCurrentUser(t *testing.T) {
 		assert.Error(t, err)
 
 		errExp := users.NewGetCurrentUserDefault(401)
-		errExp.Payload = &models.Error{
-			Data: nil,
+		msgExp := "unauthenticated for invalid credentials"
+		codeExp := int32(http.StatusUnauthorized)
+		errExp.Payload = &models.SwaggerError{
+			Code:    &codeExp,
+			Message: &msgExp,
 		}
 		assert.Equal(t, errExp, err)
 	})
@@ -104,8 +110,11 @@ func TestIntegration_GetAllUsers(t *testing.T) {
 		assert.Error(t, err)
 
 		errExp := users.NewGetAllUsersDefault(401)
-		errExp.Payload = &models.Error{
-			Data: nil,
+		msgExp := "unauthenticated for invalid credentials"
+		codeExp := int32(http.StatusUnauthorized)
+		errExp.Payload = &models.SwaggerError{
+			Code:    &codeExp,
+			Message: &msgExp,
 		}
 		assert.Equal(t, errExp, err)
 	})
@@ -118,8 +127,10 @@ func TestIntegration_GetAllUsers(t *testing.T) {
 		_, err := client.Users.GetAllUsers(params, authInfo)
 
 		errExp := users.NewGetAllUsersDefault(http.StatusUnauthorized)
-		errExp.Payload = &models.Error{
-			Data: nil,
+		codeExp := int32(http.StatusUnauthorized)
+		errExp.Payload = &models.SwaggerError{
+			Code:    &codeExp,
+			Message: &messages.ErrInvalidToken,
 		}
 		assert.Equal(t, errExp, err)
 	})

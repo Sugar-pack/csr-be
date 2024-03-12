@@ -38,11 +38,11 @@ func (s *orderStatusTestSuite) SetupTest() {
 	s.client = client
 
 	s.statusNameMap = map[int]string{ // list of statuses. copy of sql migration
-		1: "in review",
-		2: "approved",
-		3: "in progress",
-		4: "rejected",
-		5: "closed",
+		1: domain.OrderStatusInReview,
+		2: domain.OrderStatusApproved,
+		3: domain.OrderStatusInProgress,
+		4: domain.OrderStatusRejected,
+		5: domain.OrderStatusClosed,
 	}
 
 	_, err := s.client.OrderStatusName.Delete().Exec(s.ctx) // clean up

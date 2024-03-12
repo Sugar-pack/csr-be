@@ -117,6 +117,7 @@ func updateStatusToOverdue(ctx context.Context, logger *zap.Logger, rentEnd time
 	model := models.NewOrderStatus{
 		CreatedAt: &nextDay,
 		OrderID:   &orderID,
+		Comment:   &domain.OrderStatusOverdue,
 		Status:    &domain.OrderStatusOverdue,
 	}
 	err := orderStatusRepo.UpdateStatus(ctx, userID, model)

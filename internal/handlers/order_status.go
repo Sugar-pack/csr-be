@@ -12,13 +12,14 @@ import (
 	"github.com/go-openapi/strfmt"
 	"go.uber.org/zap"
 
-	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/authentication"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/ent"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/ent/order"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/swagger/models"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/swagger/restapi/operations"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/swagger/restapi/operations/orders"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/messages"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/repositories"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/roles"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/utils"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/pkg/domain"
 )
@@ -49,30 +50,28 @@ func NewOrderStatus(logger *zap.Logger) *OrderStatus {
 }
 
 func (h *OrderStatus) OrderStatusesHistory(repository domain.OrderStatusRepository) orders.GetFullOrderHistoryHandlerFunc {
-	return func(p orders.GetFullOrderHistoryParams, access interface{}) middleware.Responder {
+	return func(p orders.GetFullOrderHistoryParams, principal *models.Principal) middleware.Responder {
 		h.logger.Info("ListOrderStatus begin")
 		ctx := p.HTTPRequest.Context()
+		userID := int(principal.ID)
+		role := principal.Role
 		orderID := int(p.OrderID)
 
 		history, err := repository.StatusHistory(ctx, orderID)
 		if err != nil {
 			h.logger.Error("ListOrderStatus error", zap.Error(err))
-			return orders.NewGetFullOrderHistoryDefault(http.StatusInternalServerError).WithPayload(buildErrorPayload(err))
+			return orders.NewGetFullOrderHistoryDefault(http.StatusInternalServerError).
+				WithPayload(buildInternalErrorPayload(messages.ErrQueryOrderHistory, err.Error()))
 		}
-		haveRight, err := rightForHistory(access, history)
-		if err != nil {
-			h.logger.Error("error while getting authorization", zap.Error(err))
-			return orders.NewAddNewOrderStatusDefault(http.StatusInternalServerError).
-				WithPayload(&models.Error{Data: &models.ErrorData{Message: "Can't get authorization"}})
-		}
-		if !haveRight {
-			h.logger.Warn("User have no right to get order history", zap.Any("access", access))
+
+		if !canUserAccessOrderHistory(userID, role, history) {
+			h.logger.Warn("User have no right to get order history", zap.Any("principal", principal))
 			return orders.NewGetFullOrderHistoryDefault(http.StatusForbidden).
-				WithPayload(&models.Error{Data: &models.ErrorData{Message: "You don't have rights to see this order"}})
+				WithPayload(buildForbiddenErrorPayload(messages.ErrQueryOrderHistoryForbidden, ""))
 		}
 		if len(history) == 0 {
-			h.logger.Info("No order with such id", zap.Int("order_id", orderID))
-			return orders.NewGetFullOrderHistoryNotFound().WithPayload("No order with such id")
+			h.logger.Info(messages.ErrOrderNotFound, zap.Int("order_id", orderID))
+			return orders.NewGetFullOrderHistoryNotFound().WithPayload(messages.ErrOrderNotFound)
 		}
 		result := make([]*models.OrderStatus, len(history))
 		for index, status := range history {
@@ -80,7 +79,8 @@ func (h *OrderStatus) OrderStatusesHistory(repository domain.OrderStatusReposito
 			if mapErr != nil {
 				h.logger.Error("ListOrderStatus error", zap.Error(mapErr))
 
-				return orders.NewGetFullOrderHistoryDefault(http.StatusInternalServerError).WithPayload(buildErrorPayload(mapErr))
+				return orders.NewGetFullOrderHistoryDefault(http.StatusInternalServerError).
+					WithPayload(buildInternalErrorPayload(messages.ErrQueryOrderHistory, mapErr.Error()))
 			}
 			result[index] = tmpStatus
 		}
@@ -96,15 +96,29 @@ func MapStatus(orderID int64, status *ent.OrderStatus) (*models.OrderStatus, err
 	}
 	createdAt := strfmt.DateTime(status.CurrentDate)
 	statusID := int64(status.ID)
+	var statusName string
 	if status.Edges.OrderStatusName == nil {
-		return nil, errors.New("status name is nil")
+		orderStatusName, err := status.QueryOrderStatusName().Only(context.Background())
+		if err != nil {
+			return nil, err
+		}
+		statusName = orderStatusName.Status
+	} else {
+		statusName = status.Edges.OrderStatusName.Status
 	}
-	statusName := status.Edges.OrderStatusName.Status
+	var userID int64
+	var userName string
 	if status.Edges.Users == nil {
-		return nil, errors.New("user is nil")
+		user, err := status.QueryUsers().Only(context.Background())
+		if err != nil {
+			return nil, err
+		}
+		userID = int64(user.ID)
+		userName = user.Login
+	} else {
+		userID = int64(status.Edges.Users.ID)
+		userName = status.Edges.Users.Login
 	}
-	userID := int64(status.Edges.Users.ID)
-	userName := status.Edges.Users.Login
 	user := models.UserEmbeddable{
 		ID:   &userID,
 		Name: &userName,
@@ -120,81 +134,51 @@ func MapStatus(orderID int64, status *ent.OrderStatus) (*models.OrderStatus, err
 	return &tmpStatus, nil
 }
 
-func rightForHistory(access interface{}, history []*ent.OrderStatus) (bool, error) {
-	ok, err := orderStatusAccessRights(access)
-	if err != nil {
-		return false, err
-	}
-	if ok {
-		return true, nil
+func canUserAccessOrderHistory(userID int, role string, history []*ent.OrderStatus) bool {
+	if role == roles.Admin || role == roles.Manager || role == roles.Operator {
+		return true
 	}
 
-	ownerID, err := authentication.GetUserId(access)
-	if err != nil {
-		return false, err
-	}
 	for _, status := range history {
-		if status.Edges.Users == nil {
-			return false, nil
-		}
-		if status.Edges.Users.ID == ownerID {
-			return true, nil
+		if status.Edges.Users != nil && status.Edges.Users.ID == userID {
+			return true
 		}
 	}
-	return false, nil
+
+	return false
 }
 
-func (h *OrderStatus) AddNewStatusToOrder(orderStatusRepo domain.OrderStatusRepository,
-	equipmentStatusRepo domain.EquipmentStatusRepository) orders.AddNewOrderStatusHandlerFunc {
-	return func(params orders.AddNewOrderStatusParams, access interface{}) middleware.Responder {
+func (h *OrderStatus) AddNewStatusToOrder(
+	orderStatusRepo domain.OrderStatusRepository,
+	equipmentStatusRepo domain.EquipmentStatusRepository,
+) orders.AddNewOrderStatusHandlerFunc {
+	return func(params orders.AddNewOrderStatusParams, principal *models.Principal) middleware.Responder {
 		h.logger.Info("AddNewStatusToOrder begin")
 		ctx := params.HTTPRequest.Context()
-
-		userID, err := authentication.GetUserId(access)
-		if err != nil {
-			h.logger.Error("AddNewStatusToOrder error", zap.Error(err))
-			return orders.NewAddNewOrderStatusDefault(http.StatusInternalServerError).
-				WithPayload(buildStringPayload("Can't get authorization"))
-		}
+		userID := int(principal.ID)
+		userRole := principal.Role
 
 		newOrderStatus := params.Data.Status
 		if newOrderStatus == nil {
-			h.logger.Error("Status is empty")
+			h.logger.Error(messages.ErrOrderStatusEmpty)
 			return orders.NewAddNewOrderStatusDefault(http.StatusBadRequest).
-				WithPayload(buildStringPayload("Status is empty"))
+				WithPayload(buildBadRequestErrorPayload(messages.ErrOrderStatusEmpty, ""))
 		}
 
 		currentOrderStatus, err := orderStatusRepo.GetOrderCurrentStatus(ctx, int(*params.Data.OrderID))
 		if err != nil {
-			h.logger.Error("getting order current status failed", zap.Error(err))
+			h.logger.Error(messages.ErrGetOrderStatus, zap.Error(err))
 			return orders.NewAddNewOrderStatusDefault(http.StatusInternalServerError).
-				WithPayload(buildStringPayload("Can't get order current status"))
+				WithPayload(buildInternalErrorPayload(messages.ErrGetOrderStatus, err.Error()))
 		}
 
-		ownerCanCancelOrder := ownerCanCancelOrder(*newOrderStatus, currentOrderStatus, userID)
+		canUserCancelOrder := canUserCancelOrder(userID, currentOrderStatus, *newOrderStatus)
+		canRoleChangeStatus := canRoleChangeStatus(userRole, currentOrderStatus, *newOrderStatus)
 
-		ok, err := orderStatusAccessRights(access)
-		if err != nil {
-			h.logger.Error("error while getting authorization", zap.Error(err))
-			return orders.NewAddNewOrderStatusDefault(http.StatusInternalServerError).
-				WithPayload(&models.Error{Data: &models.ErrorData{Message: "Can't get authorization"}})
-		}
-		if !ok && !(ownerCanCancelOrder) {
-			h.logger.Error("User have no right to create order status", zap.Any("access", access))
+		if !canUserCancelOrder && !canRoleChangeStatus {
+			h.logger.Error("User does not have the right to create an order status", zap.Any("principal", principal))
 			return orders.NewAddNewOrderStatusDefault(http.StatusForbidden).
-				WithPayload(&models.Error{Data: &models.ErrorData{Message: "You don't have rights to add new status"}})
-		}
-
-		haveRight, role, err := rightForStatusCreation(access, currentOrderStatus.Edges.OrderStatusName.Status, *newOrderStatus)
-		if err != nil {
-			h.logger.Error("error while getting authorization", zap.Error(err))
-			return orders.NewAddNewOrderStatusDefault(http.StatusInternalServerError).
-				WithPayload(&models.Error{Data: &models.ErrorData{Message: "Can't get authorization"}})
-		}
-		if !haveRight && !(ownerCanCancelOrder) {
-			h.logger.Error("User have no right to create order status", zap.Any("access", access))
-			return orders.NewAddNewOrderStatusDefault(http.StatusForbidden).
-				WithPayload(&models.Error{Data: &models.ErrorData{Message: "You don't have rights to add new status"}})
+				WithPayload(buildForbiddenErrorPayload(messages.ErrCreateOrderStatusForbidden, ""))
 		}
 
 		orderID := currentOrderStatus.Edges.Order.ID
@@ -202,20 +186,20 @@ func (h *OrderStatus) AddNewStatusToOrder(orderStatusRepo domain.OrderStatusRepo
 		if err != nil {
 			h.logger.Error("GetEquipmentStatusByOrder error", zap.Error(err))
 			return orders.NewAddNewOrderStatusDefault(http.StatusInternalServerError).
-				WithPayload(buildStringPayload("can't get equipment status"))
+				WithPayload(buildInternalErrorPayload(messages.ErrGetEqStatus, err.Error()))
 		}
 
 		err = checkEqStatusRequirements(*newOrderStatus, h.logger, orderEquipmentStatuses)
 		if err != nil {
 			return orders.NewAddNewOrderStatusDefault(http.StatusInternalServerError).
-				WithPayload(buildErrorPayload(err))
+				WithPayload(buildInternalErrorPayload(messages.ErrUpdateOrderStatus, err.Error()))
 		}
 
 		err = orderStatusRepo.UpdateStatus(ctx, userID, *params.Data)
 		if err != nil {
-			h.logger.Error("Update order status error", zap.Error(err))
+			h.logger.Error(messages.ErrUpdateOrderStatus, zap.Error(err))
 			return orders.NewAddNewOrderStatusDefault(http.StatusInternalServerError).
-				WithPayload(buildStringPayload("Can't update status"))
+				WithPayload(buildInternalErrorPayload(messages.ErrUpdateOrderStatus, err.Error()))
 		}
 
 		switch *newOrderStatus {
@@ -226,9 +210,9 @@ func (h *OrderStatus) AddNewStatusToOrder(orderStatusRepo domain.OrderStatusRepo
 			}
 			err = UpdateEqStatuses(ctx, equipmentStatusRepo, orderEquipmentStatuses, model)
 			if err != nil {
-				h.logger.Error("Update equipment status error", zap.Error(err))
+				h.logger.Error(messages.ErrUpdateEqStatus, zap.Error(err))
 				return orders.NewAddNewOrderStatusDefault(http.StatusInternalServerError).
-					WithPayload(buildStringPayload("Can't update equipment status"))
+					WithPayload(buildInternalErrorPayload(messages.ErrUpdateEqStatus, err.Error()))
 			}
 
 		case domain.OrderStatusInProgress:
@@ -238,9 +222,9 @@ func (h *OrderStatus) AddNewStatusToOrder(orderStatusRepo domain.OrderStatusRepo
 			}
 			err = UpdateEqStatuses(ctx, equipmentStatusRepo, orderEquipmentStatuses, model)
 			if err != nil {
-				h.logger.Error("Update equipment status error", zap.Error(err))
+				h.logger.Error(messages.ErrUpdateEqStatus, zap.Error(err))
 				return orders.NewAddNewOrderStatusDefault(http.StatusInternalServerError).
-					WithPayload(buildStringPayload("Can't update equipment status"))
+					WithPayload(buildInternalErrorPayload(messages.ErrUpdateEqStatus, err.Error()))
 			}
 
 		case domain.OrderStatusClosed:
@@ -260,8 +244,9 @@ func (h *OrderStatus) AddNewStatusToOrder(orderStatusRepo domain.OrderStatusRepo
 			}
 
 			if currentOrderStatus.Edges.OrderStatusName.Status == domain.OrderStatusApproved ||
+				currentOrderStatus.Edges.OrderStatusName.Status == domain.OrderStatusBlocked ||
 				currentOrderStatus.Edges.OrderStatusName.Status == domain.OrderStatusPrepared &&
-					role == authentication.ManagerSlug {
+					userRole == roles.Manager {
 				if len(orderEquipmentStatuses) != 0 {
 					addOneDayToCurrentEndDate := strfmt.DateTime(
 						time.Time(orderEquipmentStatuses[0].EndDate).AddDate(0, 0, 1),
@@ -272,40 +257,29 @@ func (h *OrderStatus) AddNewStatusToOrder(orderStatusRepo domain.OrderStatusRepo
 
 			err = UpdateEqStatuses(ctx, equipmentStatusRepo, orderEquipmentStatuses, model)
 			if err != nil {
-				h.logger.Error("Update equipment status error", zap.Error(err))
+				h.logger.Error(messages.ErrUpdateEqStatus, zap.Error(err))
 				return orders.NewAddNewOrderStatusDefault(http.StatusInternalServerError).
-					WithPayload(buildStringPayload("Can't update equipment status"))
+					WithPayload(buildInternalErrorPayload(messages.ErrUpdateEqStatus, err.Error()))
 			}
 		}
 
-		return orders.NewAddNewOrderStatusOK().WithPayload("all ok")
+		return orders.NewAddNewOrderStatusOK().WithPayload(messages.MsgAllOk)
 	}
 }
 
 func (h *OrderStatus) GetOrdersByStatus(repository domain.OrderRepositoryWithFilter) orders.GetOrdersByStatusHandlerFunc {
-	return func(params orders.GetOrdersByStatusParams, access interface{}) middleware.Responder {
+	return func(params orders.GetOrdersByStatusParams, principal *models.Principal) middleware.Responder {
 		ctx := params.HTTPRequest.Context()
 		limit := utils.GetValueByPointerOrDefaultValue(params.Limit, math.MaxInt)
 		offset := utils.GetValueByPointerOrDefaultValue(params.Offset, 0)
 		orderBy := utils.GetValueByPointerOrDefaultValue(params.OrderBy, utils.AscOrder)
 		orderColumn := utils.GetValueByPointerOrDefaultValue(params.OrderColumn, order.FieldID)
 
-		haveRight, err := orderStatusAccessRights(access)
-		if err != nil {
-			h.logger.Error("error while getting authorization", zap.Error(err))
-			return orders.NewAddNewOrderStatusDefault(http.StatusInternalServerError).
-				WithPayload(&models.Error{Data: &models.ErrorData{Message: "Can't get authorization"}})
-		}
-		if !haveRight {
-			h.logger.Warn("User have no right to get orders by status", zap.Any("access", access))
-			return orders.NewGetOrdersByStatusDefault(http.StatusForbidden).
-				WithPayload(&models.Error{Data: &models.ErrorData{Message: "You don't have rights to get orders by status"}})
-		}
 		total, err := repository.OrdersByStatusTotal(ctx, params.Status)
 		if err != nil {
 			h.logger.Error("GetOrdersByStatus error", zap.Error(err))
 			return orders.NewGetOrdersByStatusDefault(http.StatusInternalServerError).
-				WithPayload(buildStringPayload(fmt.Sprintf("Can't get total count of orders by status. error: %s", err.Error())))
+				WithPayload(buildInternalErrorPayload(messages.ErrQueryTotalOrdersByStatus, err.Error()))
 		}
 
 		var ordersByStatus []*ent.Order
@@ -314,22 +288,22 @@ func (h *OrderStatus) GetOrdersByStatus(repository domain.OrderRepositoryWithFil
 			if err != nil {
 				h.logger.Error("GetOrdersByStatus error", zap.Error(err))
 				return orders.NewGetOrdersByStatusDefault(http.StatusInternalServerError).
-					WithPayload(buildStringPayload(fmt.Sprintf("Can't get orders by status. error: %s", err.Error())))
+					WithPayload(buildInternalErrorPayload(messages.ErrQueryOrdersByStatus, err.Error()))
 			}
 		}
-		ordersResult := make([]*models.Order, len(ordersByStatus))
+		ordersResult := make([]*models.UserOrder, len(ordersByStatus))
 		for index, order := range ordersByStatus {
-			tmpOrder, errMap := mapOrder(order, h.logger)
+			tmpOrder, errMap := mapUserOrder(order, h.logger)
 			if errMap != nil {
 				h.logger.Error("GetOrdersByStatus error", zap.Error(errMap))
 				return orders.NewGetOrdersByStatusDefault(http.StatusInternalServerError).
-					WithPayload(&models.Error{Data: &models.ErrorData{Message: "Can't map order"}})
+					WithPayload(buildInternalErrorPayload(messages.ErrMapOrder, errMap.Error()))
 			}
 			ordersResult[index] = tmpOrder
 		}
 
 		totalOrders := int64(total)
-		listOrders := &models.OrderList{
+		listOrders := &models.UserOrdersList{
 			Items: ordersResult,
 			Total: &totalOrders,
 		}
@@ -338,30 +312,19 @@ func (h *OrderStatus) GetOrdersByStatus(repository domain.OrderRepositoryWithFil
 }
 
 func (h *OrderStatus) GetOrdersByPeriodAndStatus(repository domain.OrderRepositoryWithFilter) orders.GetOrdersByDateAndStatusHandlerFunc {
-	return func(params orders.GetOrdersByDateAndStatusParams, access interface{}) middleware.Responder {
+	return func(params orders.GetOrdersByDateAndStatusParams, _ *models.Principal) middleware.Responder {
 		ctx := params.HTTPRequest.Context()
 		limit := utils.GetValueByPointerOrDefaultValue(params.Limit, math.MaxInt)
 		offset := utils.GetValueByPointerOrDefaultValue(params.Offset, 0)
 		orderBy := utils.GetValueByPointerOrDefaultValue(params.OrderBy, utils.AscOrder)
 		orderColumn := utils.GetValueByPointerOrDefaultValue(params.OrderColumn, order.FieldID)
 
-		haveRight, err := orderStatusAccessRights(access)
-		if err != nil {
-			h.logger.Error("error while getting authorization", zap.Error(err))
-			return orders.NewAddNewOrderStatusDefault(http.StatusInternalServerError).
-				WithPayload(&models.Error{Data: &models.ErrorData{Message: "Can't get authorization"}})
-		}
-		if !haveRight {
-			h.logger.Warn("User have no right to get orders by period and status", zap.Any("access", access))
-			return orders.NewGetOrdersByDateAndStatusDefault(http.StatusForbidden).
-				WithPayload(buildStringPayload("You don't have rights to get orders by period and status"))
-		}
 		total, err := repository.OrdersByPeriodAndStatusTotal(ctx,
 			time.Time(params.FromDate), time.Time(params.ToDate), params.StatusName)
 		if err != nil {
 			h.logger.Error("GetOrdersByPeriodAndStatus error", zap.Error(err))
 			return orders.NewGetOrdersByDateAndStatusDefault(http.StatusInternalServerError).
-				WithPayload(buildStringPayload("Can't get total amount of orders by period and status"))
+				WithPayload(buildInternalErrorPayload(messages.ErrQueryTotalOrdersByPeriodAndStatus, err.Error()))
 		}
 
 		var ordersByPeriodAndStatus []*ent.Order
@@ -372,22 +335,22 @@ func (h *OrderStatus) GetOrdersByPeriodAndStatus(repository domain.OrderReposito
 			if err != nil {
 				h.logger.Error("GetOrdersByPeriodAndStatus error", zap.Error(err))
 				return orders.NewGetOrdersByDateAndStatusDefault(http.StatusInternalServerError).
-					WithPayload(buildStringPayload("Can't get orders by period and status"))
+					WithPayload(buildInternalErrorPayload(messages.ErrQueryOrdersByPeriodAndStatus, err.Error()))
 			}
 		}
-		ordersResult := make([]*models.Order, len(ordersByPeriodAndStatus))
+		ordersResult := make([]*models.UserOrder, len(ordersByPeriodAndStatus))
 		for index, order := range ordersByPeriodAndStatus {
-			tmpOrder, errMap := mapOrder(order, h.logger)
+			tmpOrder, errMap := mapUserOrder(order, h.logger)
 			if errMap != nil {
 				h.logger.Error("GetOrdersByPeriodAndStatus error", zap.Error(errMap))
 				return orders.NewGetOrdersByDateAndStatusDefault(http.StatusInternalServerError).
-					WithPayload(buildStringPayload("Can't map order"))
+					WithPayload(buildInternalErrorPayload(messages.ErrMapOrder, errMap.Error()))
 			}
 			ordersResult[index] = tmpOrder
 		}
 
 		totalOrders := int64(total)
-		listOrders := &models.OrderList{
+		listOrders := &models.UserOrdersList{
 			Items: ordersResult,
 			Total: &totalOrders,
 		}
@@ -397,22 +360,22 @@ func (h *OrderStatus) GetOrdersByPeriodAndStatus(repository domain.OrderReposito
 }
 
 func (h *OrderStatus) GetAllStatusNames(repository domain.OrderStatusNameRepository) orders.GetAllStatusNamesHandlerFunc {
-	return func(params orders.GetAllStatusNamesParams, access interface{}) middleware.Responder {
+	return func(params orders.GetAllStatusNamesParams, principal *models.Principal) middleware.Responder {
 		h.logger.Info("GetAllStatusNames begin")
 		ctx := params.HTTPRequest.Context()
 		statusNames, err := repository.ListOfOrderStatusNames(ctx)
 		if err != nil {
 			h.logger.Error("GetAllStatusNames error", zap.Error(err))
 			return orders.NewGetAllStatusNamesDefault(http.StatusInternalServerError).
-				WithPayload(&models.Error{Data: &models.ErrorData{Message: "Can't get all status names"}})
+				WithPayload(buildInternalErrorPayload(messages.ErrQueryStatusNames, err.Error()))
 		}
 		statusNamesResult := make([]*models.OrderStatusName, len(statusNames))
 		for index, statusName := range statusNames {
 			tmpStatusName, errMap := MapOrderStatusName(statusName)
 			if errMap != nil {
-				h.logger.Error("Cant map ent order status name to model order status name", zap.Error(errMap))
+				h.logger.Error(messages.ErrMapOrderStatus, zap.Error(errMap))
 				return orders.NewGetAllStatusNamesDefault(http.StatusInternalServerError).
-					WithPayload(&models.Error{Data: &models.ErrorData{Message: "Can't map order status name"}})
+					WithPayload(buildInternalErrorPayload(messages.ErrMapOrderStatus, errMap.Error()))
 			}
 			statusNamesResult[index] = tmpStatusName
 		}
@@ -469,100 +432,56 @@ func MapOrderStatusName(status *ent.OrderStatusName) (*models.OrderStatusName, e
 	}, nil
 }
 
-func orderStatusAccessRights(access interface{}) (bool, error) {
-	isAdmin, err := authentication.IsAdmin(access)
-	if err != nil {
-		return false, err
-	}
-	isManager, err := authentication.IsManager(access)
-	if err != nil {
-		return false, err
-	}
-	isOperator, err := authentication.IsOperator(access)
-	if err != nil {
-		return false, err
-	}
-	return isAdmin || isManager || isOperator, nil
-}
-
-func rightForStatusCreation(access interface{}, currentStatus, newStatus string) (bool, string, error) {
-	isAdmin, err := authentication.IsAdmin(access)
-	if err != nil {
-		return false, "", err
-	}
-	isManager, err := authentication.IsManager(access)
-	if err != nil {
-		return false, "", err
-	}
-	isOperator, err := authentication.IsOperator(access)
-	if err != nil {
-		return false, "", err
-	}
-
-	switch currentStatus {
+func canRoleChangeStatus(role string, currentStatus *ent.OrderStatus, newStatus string) bool {
+	switch currentStatus.Edges.OrderStatusName.Status {
 	case domain.OrderStatusInReview:
-		if newStatus == domain.OrderStatusApproved || newStatus == domain.OrderStatusRejected {
-			return isManager, authentication.ManagerSlug, nil
-		}
-		return false, "", nil
+		return (newStatus == domain.OrderStatusApproved || newStatus == domain.OrderStatusRejected) &&
+			role == roles.Manager
 
 	case domain.OrderStatusApproved:
-		if newStatus == domain.OrderStatusPrepared {
-			return isOperator, authentication.OperatorSlug, nil
+		switch newStatus {
+		case domain.OrderStatusPrepared:
+			return role == roles.Operator || role == roles.Admin
+		case domain.OrderStatusClosed:
+			return role == roles.Manager
 		}
-
-		if newStatus == domain.OrderStatusClosed {
-			return isManager, authentication.ManagerSlug, nil
-		}
-		return false, "", nil
 
 	case domain.OrderStatusPrepared:
-		if newStatus == domain.OrderStatusInProgress {
-			return isOperator, authentication.OperatorSlug, nil
+		switch newStatus {
+		case domain.OrderStatusInProgress:
+			return role == roles.Operator
+		case domain.OrderStatusClosed:
+			return role == roles.Manager || role == roles.Operator
 		}
-
-		if newStatus == domain.OrderStatusClosed {
-			if isManager {
-				return true, authentication.ManagerSlug, nil
-			}
-			if isOperator {
-				return true, authentication.OperatorSlug, nil
-			}
-		}
-		return false, "", nil
 
 	case domain.OrderStatusInProgress, domain.OrderStatusOverdue:
 		if newStatus == domain.OrderStatusClosed {
-			if isManager {
-				return true, authentication.ManagerSlug, nil
-			}
-
-			if isOperator {
-				return true, authentication.OperatorSlug, nil
-			}
+			return role == roles.Manager || role == roles.Operator
 		}
-		return false, "", nil
 
-	default:
-		return isAdmin || isManager || isOperator, "", nil
+	case domain.OrderStatusBlocked:
+		if newStatus == domain.OrderStatusClosed {
+			return role == roles.Manager
+		}
+
 	}
+
+	return role == roles.Admin ||
+		role == roles.Manager ||
+		role == roles.Operator
 }
 
-func ownerCanCancelOrder(newOrderStatus string, currentOrderStatus *ent.OrderStatus, userID int) bool {
-	if userID != currentOrderStatus.Edges.Order.Edges.Users.ID {
+func canUserCancelOrder(userID int, currentStatus *ent.OrderStatus, newStatus string) bool {
+	if userID != currentStatus.Edges.Order.Edges.Users.ID {
 		return false
 	}
 
-	if newOrderStatus != domain.OrderStatusClosed {
-		return false
+	allowedStatus := map[string]bool{
+		domain.OrderStatusApproved: true,
+		domain.OrderStatusInReview: true,
+		domain.OrderStatusPrepared: true,
 	}
 
-	switch currentOrderStatus.Edges.OrderStatusName.Status {
-	case
-		domain.OrderStatusApproved,
-		domain.OrderStatusInReview,
-		domain.OrderStatusPrepared:
-		return true
-	}
-	return false
+	return newStatus == domain.OrderStatusClosed &&
+		allowedStatus[currentStatus.Edges.OrderStatusName.Status]
 }

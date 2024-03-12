@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -8,9 +9,11 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/go-openapi/loads"
 	"github.com/go-openapi/runtime"
+	"github.com/go-openapi/strfmt"
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
@@ -23,6 +26,8 @@ import (
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/swagger/restapi"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/swagger/restapi/operations"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/swagger/restapi/operations/equipment"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/roles"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/pkg/domain"
 )
 
 func TestSetEquipmentHandler(t *testing.T) {
@@ -45,14 +50,18 @@ func TestSetEquipmentHandler(t *testing.T) {
 	require.NotEmpty(t, api.EquipmentDeleteEquipmentHandler)
 	require.NotEmpty(t, api.EquipmentGetAllEquipmentHandler)
 	require.NotEmpty(t, api.EquipmentFindEquipmentHandler)
+	require.NotEmpty(t, api.EquipmentArchiveEquipmentHandler)
+	require.NotEmpty(t, api.EquipmentBlockEquipmentHandler)
+	require.NotEmpty(t, api.EquipmentUnblockEquipmentHandler)
 }
 
 type EquipmentTestSuite struct {
 	suite.Suite
-	logger        *zap.Logger
-	equipmentRepo *mocks.EquipmentRepository
-	statusRepo    *mocks.EquipmentStatusNameRepository
-	equipment     *Equipment
+	logger              *zap.Logger
+	equipmentRepo       *mocks.EquipmentRepository
+	statusRepo          *mocks.EquipmentStatusNameRepository
+	equipmentStatusRepo *mocks.EquipmentStatusRepository
+	equipment           *Equipment
 }
 
 func InvalidEquipment(t *testing.T) *ent.Equipment {
@@ -86,7 +95,76 @@ func (s *EquipmentTestSuite) SetupTest() {
 	s.logger = zap.NewNop()
 	s.equipmentRepo = &mocks.EquipmentRepository{}
 	s.statusRepo = &mocks.EquipmentStatusNameRepository{}
+	s.equipmentStatusRepo = &mocks.EquipmentStatusRepository{}
 	s.equipment = NewEquipment(s.logger)
+}
+
+func (s *EquipmentTestSuite) TestEquipment_ArchiveEquipmentFunc_RepoNotFoundErr() {
+	t := s.T()
+	request := http.Request{}
+	ctx := context.Background()
+
+	handlerFunc := s.equipment.ArchiveEquipmentFunc(s.equipmentRepo)
+	id := 1
+	data := equipment.ArchiveEquipmentParams{
+		HTTPRequest: request.WithContext(ctx),
+		EquipmentID: int64(id),
+	}
+	err := &ent.NotFoundError{}
+
+	s.equipmentRepo.On("ArchiveEquipment", ctx, id).Return(err)
+
+	resp := handlerFunc(data, nil)
+	responseRecorder := httptest.NewRecorder()
+	producer := runtime.JSONProducer()
+	resp.WriteResponse(responseRecorder, producer)
+	require.Equal(t, http.StatusNotFound, responseRecorder.Code)
+	s.equipmentRepo.AssertExpectations(t)
+}
+
+func (s *EquipmentTestSuite) TestEquipment_ArchiveEquipmentFunc_RepoErr() {
+	t := s.T()
+	request := http.Request{}
+	ctx := context.Background()
+
+	handlerFunc := s.equipment.ArchiveEquipmentFunc(s.equipmentRepo)
+	id := 1
+	data := equipment.ArchiveEquipmentParams{
+		HTTPRequest: request.WithContext(ctx),
+		EquipmentID: int64(id),
+	}
+	err := errors.New("some error")
+
+	s.equipmentRepo.On("ArchiveEquipment", ctx, id).Return(err)
+
+	resp := handlerFunc(data, nil)
+	responseRecorder := httptest.NewRecorder()
+	producer := runtime.JSONProducer()
+	resp.WriteResponse(responseRecorder, producer)
+	require.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
+	s.equipmentRepo.AssertExpectations(t)
+}
+
+func (s *EquipmentTestSuite) TestEquipment_ArchiveEquipmentFunc_Ok() {
+	t := s.T()
+	request := http.Request{}
+	ctx := context.Background()
+
+	handlerFunc := s.equipment.ArchiveEquipmentFunc(s.equipmentRepo)
+	id := 1
+	data := equipment.ArchiveEquipmentParams{
+		HTTPRequest: request.WithContext(ctx),
+		EquipmentID: int64(id),
+	}
+
+	s.equipmentRepo.On("ArchiveEquipment", ctx, id).Return(nil)
+
+	resp := handlerFunc(data, nil)
+	responseRecorder := httptest.NewRecorder()
+	producer := runtime.JSONProducer()
+	resp.WriteResponse(responseRecorder, producer)
+	require.Equal(t, http.StatusNoContent, responseRecorder.Code)
+	s.equipmentRepo.AssertExpectations(t)
 }
 
 func (s *EquipmentTestSuite) TestEquipment_PostEquipmentFunc_RepoErr() {
@@ -105,11 +183,10 @@ func (s *EquipmentTestSuite) TestEquipment_PostEquipmentFunc_RepoErr() {
 	}
 	err := errors.New("test error")
 
-	s.statusRepo.On("GetByName", ctx, "available").Return(statusToAdd, nil)
+	s.statusRepo.On("GetByName", ctx, domain.EquipmentStatusAvailable).Return(statusToAdd, nil)
 	s.equipmentRepo.On("CreateEquipment", ctx, equipmentToAdd, statusToAdd).Return(nil, err)
 
-	access := "dummy access"
-	resp := handlerFunc(data, access)
+	resp := handlerFunc(data, nil)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
@@ -132,10 +209,9 @@ func (s *EquipmentTestSuite) TestEquipment_PostEquipmentFunc_RepoStatusErr() {
 	}
 	err := errors.New("test error")
 
-	s.statusRepo.On("GetByName", ctx, "available").Return(nil, err)
+	s.statusRepo.On("GetByName", ctx, domain.EquipmentStatusAvailable).Return(nil, err)
 
-	access := "dummy access"
-	resp := handlerFunc(data, access)
+	resp := handlerFunc(data, nil)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
@@ -159,11 +235,10 @@ func (s *EquipmentTestSuite) TestEquipment_PostEquipmentFunc_MapErr() {
 	statusToAdd := ValidStatus(t)
 	equipmentToReturn := InvalidEquipment(t)
 
-	s.statusRepo.On("GetByName", ctx, "available").Return(statusToAdd, nil)
+	s.statusRepo.On("GetByName", ctx, domain.EquipmentStatusAvailable).Return(statusToAdd, nil)
 	s.equipmentRepo.On("CreateEquipment", ctx, equipmentToAdd, statusToAdd).Return(equipmentToReturn, nil)
 
-	access := "dummy access"
-	resp := handlerFunc(data, access)
+	resp := handlerFunc(data, nil)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
@@ -187,11 +262,10 @@ func (s *EquipmentTestSuite) TestEquipment_PostEquipmentFunc_OK() {
 	statusToAdd := ValidStatus(t)
 	equipmentToReturn := ValidEquipment(t, 1)
 
-	s.statusRepo.On("GetByName", ctx, "available").Return(statusToAdd, nil)
+	s.statusRepo.On("GetByName", ctx, domain.EquipmentStatusAvailable).Return(statusToAdd, nil)
 	s.equipmentRepo.On("CreateEquipment", ctx, equipmentToAdd, statusToAdd).Return(equipmentToReturn, nil)
 
-	access := "dummy access"
-	resp := handlerFunc(data, access)
+	resp := handlerFunc(data, nil)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
@@ -221,8 +295,7 @@ func (s *EquipmentTestSuite) TestEquipment_GetEquipmentFunc_RepoErr() {
 
 	s.equipmentRepo.On("EquipmentByID", ctx, int(equipmentId)).Return(nil, err)
 
-	access := "dummy access"
-	resp := handlerFunc(data, access)
+	resp := handlerFunc(data, nil)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
@@ -245,8 +318,7 @@ func (s *EquipmentTestSuite) TestEquipment_GetEquipmentFunc_MapErr() {
 
 	s.equipmentRepo.On("EquipmentByID", ctx, int(equipmentId)).Return(equipmentToReturn, nil)
 
-	access := "dummy access"
-	resp := handlerFunc(data, access)
+	resp := handlerFunc(data, nil)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
@@ -269,8 +341,7 @@ func (s *EquipmentTestSuite) TestEquipment_GetEquipmentFunc_OK() {
 
 	s.equipmentRepo.On("EquipmentByID", ctx, int(equipmentId)).Return(equipmentToReturn, nil)
 
-	access := "dummy access"
-	resp := handlerFunc(data, access)
+	resp := handlerFunc(data, nil)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
@@ -302,8 +373,7 @@ func (s *EquipmentTestSuite) TestEquipment_DeleteEquipmentFunc_RepoErr() {
 	s.equipmentRepo.On("EquipmentByID", ctx, int(equipmentId)).Return(equipmentToReturn, nil)
 	s.equipmentRepo.On("DeleteEquipmentByID", ctx, int(equipmentId)).Return(err)
 
-	access := "dummy access"
-	resp := handlerFunc(data, access)
+	resp := handlerFunc(data, nil)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
@@ -328,8 +398,7 @@ func (s *EquipmentTestSuite) TestEquipment_DeleteEquipmentFunc_OK() {
 	s.equipmentRepo.On("DeleteEquipmentByID", ctx, int(equipmentId)).Return(nil)
 	s.equipmentRepo.On("DeleteEquipmentPhoto", ctx, equipmentToReturn.Edges.Photo.ID).Return(nil)
 
-	access := "dummy access"
-	resp := handlerFunc(data, access)
+	resp := handlerFunc(data, nil)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
@@ -349,8 +418,7 @@ func (s *EquipmentTestSuite) TestEquipment_ListEquipmentFunc_RepoErr() {
 	err := errors.New("test error")
 	s.equipmentRepo.On("AllEquipmentsTotal", ctx).Return(0, err)
 
-	access := "dummy access"
-	resp := handlerFunc(data, access)
+	resp := handlerFunc(data, nil)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
@@ -369,8 +437,7 @@ func (s *EquipmentTestSuite) TestEquipment_ListEquipmentFunc_NotFound() {
 	}
 	s.equipmentRepo.On("AllEquipmentsTotal", ctx).Return(0, nil)
 
-	access := "dummy access"
-	resp := handlerFunc(data, access)
+	resp := handlerFunc(data, nil)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
@@ -404,8 +471,7 @@ func (s *EquipmentTestSuite) TestEquipment_ListEquipmentFunc_MapErr() {
 	s.equipmentRepo.On("AllEquipmentsTotal", ctx).Return(1, nil)
 	s.equipmentRepo.On("AllEquipments", ctx, limit, offset, orderBy, orderColumn).Return(equipmentToReturn, nil)
 
-	access := "dummy access"
-	resp := handlerFunc(data, access)
+	resp := handlerFunc(data, nil)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
@@ -431,8 +497,7 @@ func (s *EquipmentTestSuite) TestEquipment_ListEquipmentFunc_EmptyPaginationPara
 	s.equipmentRepo.On("AllEquipmentsTotal", ctx).Return(1, nil)
 	s.equipmentRepo.On("AllEquipments", ctx, limit, offset, orderBy, orderColumn).Return(equipmentToReturn, nil)
 
-	access := "dummy access"
-	resp := handlerFunc(data, access)
+	resp := handlerFunc(data, nil)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
@@ -470,8 +535,7 @@ func (s *EquipmentTestSuite) TestEquipment_ListEquipmentFunc_LimitGreaterThanTot
 	s.equipmentRepo.On("AllEquipmentsTotal", ctx).Return(1, nil)
 	s.equipmentRepo.On("AllEquipments", ctx, int(limit), int(offset), orderBy, orderColumn).Return(equipmentToReturn, nil)
 
-	access := "dummy access"
-	resp := handlerFunc(data, access)
+	resp := handlerFunc(data, nil)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
@@ -515,8 +579,7 @@ func (s *EquipmentTestSuite) TestEquipment_ListEquipmentFunc_LimitLessThanTotal(
 	s.equipmentRepo.On("AllEquipments", ctx, int(limit), int(offset), orderBy, orderColumn).
 		Return(equipmentToReturn[:limit], nil)
 
-	access := "dummy access"
-	resp := handlerFunc(data, access)
+	resp := handlerFunc(data, nil)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
@@ -564,8 +627,7 @@ func (s *EquipmentTestSuite) TestEquipment_ListEquipmentFunc_SecondPage() {
 	s.equipmentRepo.On("AllEquipments", ctx, int(limit), int(offset), orderBy, orderColumn).
 		Return(equipmentToReturn[offset:], nil)
 
-	access := "dummy access"
-	resp := handlerFunc(data, access)
+	resp := handlerFunc(data, nil)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
@@ -613,8 +675,7 @@ func (s *EquipmentTestSuite) TestEquipment_ListEquipmentFunc_SeveralPages() {
 	s.equipmentRepo.On("AllEquipments", ctx, int(limit), int(offset), orderBy, orderColumn).
 		Return(equipmentToReturn[:limit], nil)
 
-	access := "dummy access"
-	resp := handlerFunc(data, access)
+	resp := handlerFunc(data, nil)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
@@ -637,7 +698,7 @@ func (s *EquipmentTestSuite) TestEquipment_ListEquipmentFunc_SeveralPages() {
 	s.equipmentRepo.On("AllEquipmentsTotal", ctx).Return(5, nil)
 	s.equipmentRepo.On("AllEquipments", ctx, int(limit), int(offset), orderBy, orderColumn).
 		Return(equipmentToReturn[offset:], nil)
-	resp = handlerFunc(data, access)
+	resp = handlerFunc(data, nil)
 	responseRecorder = httptest.NewRecorder()
 	producer = runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
@@ -677,8 +738,7 @@ func (s *EquipmentTestSuite) TestEquipment_FindEquipmentFunc_RepoErr() {
 
 	s.equipmentRepo.On("EquipmentsByFilterTotal", ctx, equipmentFilter).Return(0, err)
 
-	access := "dummy access"
-	resp := handlerFunc(data, access)
+	resp := handlerFunc(data, nil)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
@@ -702,8 +762,7 @@ func (s *EquipmentTestSuite) TestEquipment_FindEquipmentFunc_NoResult() {
 
 	s.equipmentRepo.On("EquipmentsByFilterTotal", ctx, equipmentFilter).Return(0, nil)
 
-	access := "dummy access"
-	resp := handlerFunc(data, access)
+	resp := handlerFunc(data, nil)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
@@ -743,8 +802,7 @@ func (s *EquipmentTestSuite) TestEquipment_FindEquipmentFunc_MapErr() {
 	s.equipmentRepo.On("EquipmentsByFilter", ctx, equipmentFilter, limit, offset, orderBy, orderColumn).
 		Return(equipmentToReturn, nil)
 
-	access := "dummy access"
-	resp := handlerFunc(data, access)
+	resp := handlerFunc(data, nil)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
@@ -780,8 +838,7 @@ func (s *EquipmentTestSuite) TestEquipment_FindEquipmentFunc_EmptyPaginationPara
 	s.equipmentRepo.On("EquipmentsByFilter", ctx, equipmentFilter, limit, offset, orderBy, orderColumn).
 		Return(equipmentToReturn[:2], nil)
 
-	access := "dummy access"
-	resp := handlerFunc(data, access)
+	resp := handlerFunc(data, nil)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
@@ -832,8 +889,7 @@ func (s *EquipmentTestSuite) TestEquipment_FindEquipmentFunc_LimitGreaterThanTot
 	s.equipmentRepo.On("EquipmentsByFilter", ctx, equipmentFilter, int(limit), int(offset), orderBy, orderColumn).
 		Return(equipmentToReturn[:2], nil)
 
-	access := "dummy access"
-	resp := handlerFunc(data, access)
+	resp := handlerFunc(data, nil)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
@@ -883,8 +939,7 @@ func (s *EquipmentTestSuite) TestEquipment_FindEquipmentFunc_LimitLessThanTotal(
 	s.equipmentRepo.On("EquipmentsByFilter", ctx, equipmentFilter, int(limit), int(offset), orderBy, orderColumn).
 		Return(equipmentToReturn[:2], nil)
 
-	access := "dummy access"
-	resp := handlerFunc(data, access)
+	resp := handlerFunc(data, nil)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
@@ -935,8 +990,7 @@ func (s *EquipmentTestSuite) TestEquipment_FindEquipmentFunc_SecondPage() {
 	s.equipmentRepo.On("EquipmentsByFilter", ctx, equipmentFilter, int(limit), int(offset), orderBy, orderColumn).
 		Return(equipmentToReturn[offset:], nil)
 
-	access := "dummy access"
-	resp := handlerFunc(data, access)
+	resp := handlerFunc(data, nil)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
@@ -977,8 +1031,7 @@ func (s *EquipmentTestSuite) TestEquipment_EditEquipmentFunc_RepoErr() {
 	s.equipmentRepo.On("UpdateEquipmentByID", ctx, int(equipmentId), equipmentUpdate).
 		Return(nil, err)
 
-	access := "dummy access"
-	resp := handlerFunc(data, access)
+	resp := handlerFunc(data, nil)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
@@ -1007,8 +1060,7 @@ func (s *EquipmentTestSuite) TestEquipment_EditEquipmentFunc_MapErr() {
 	s.equipmentRepo.On("UpdateEquipmentByID", ctx, int(equipmentId), equipmentUpdate).
 		Return(equipmentToReturn, nil)
 
-	access := "dummy access"
-	resp := handlerFunc(data, access)
+	resp := handlerFunc(data, nil)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
@@ -1037,8 +1089,7 @@ func (s *EquipmentTestSuite) TestEquipment_EditEquipmentFunc_OK() {
 	s.equipmentRepo.On("UpdateEquipmentByID", ctx, int(equipmentId), equipmentUpdate).
 		Return(equipmentToReturn, nil)
 
-	access := "dummy access"
-	resp := handlerFunc(data, access)
+	resp := handlerFunc(data, nil)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
@@ -1052,6 +1103,143 @@ func (s *EquipmentTestSuite) TestEquipment_EditEquipmentFunc_OK() {
 	require.Equal(t, equipmentToReturn.Name, *responseEquipment.Name)
 
 	s.equipmentRepo.AssertExpectations(t)
+}
+
+func (s *EquipmentTestSuite) TestEquipment_BlockEquipmentFunc_RepoNotFoundErr() {
+	t := s.T()
+	request := http.Request{}
+	ctx := context.Background()
+
+	handlerFunc := s.equipment.BlockEquipmentFunc(s.equipmentRepo, s.equipmentStatusRepo)
+	userID, equipmentID := 1, 1
+	startDate, endDate := time.Now().Add(time.Hour*24), time.Now().Add(time.Hour*48)
+	params := equipment.BlockEquipmentParams{
+		HTTPRequest: request.WithContext(ctx),
+		EquipmentID: int64(equipmentID),
+		Data: &models.ChangeEquipmentStatusToBlockedRequest{
+			StartDate: strfmt.DateTime(startDate),
+			EndDate:   strfmt.DateTime(endDate),
+		},
+	}
+	err := &ent.NotFoundError{}
+
+	s.equipmentRepo.On("BlockEquipment", ctx, equipmentID, startDate, endDate, userID).Return(err)
+	s.equipmentStatusRepo.On("GetLastEquipmentStatusByEquipmentID", ctx, equipmentID).Return(nil, err)
+	responseRecorder := httptest.NewRecorder()
+	producer := runtime.JSONProducer()
+	principal := &models.Principal{ID: int64(userID), Role: roles.Manager}
+	resp := handlerFunc(params, principal)
+	resp.WriteResponse(responseRecorder, producer)
+	require.Equal(t, http.StatusNotFound, responseRecorder.Code)
+	s.equipmentRepo.AssertExpectations(t)
+
+	responseRecorder = httptest.NewRecorder()
+	producer = runtime.JSONProducer()
+	principal = &models.Principal{ID: int64(userID), Role: roles.Admin}
+	resp = handlerFunc(params, principal)
+	resp.WriteResponse(responseRecorder, producer)
+	require.Equal(t, http.StatusForbidden, responseRecorder.Code)
+	s.equipmentRepo.AssertExpectations(t)
+}
+
+func (s *EquipmentTestSuite) TestEquipment_BlockEquipmentFunc_OK() {
+	t := s.T()
+	request := http.Request{}
+	ctx := context.Background()
+
+	handlerFunc := s.equipment.BlockEquipmentFunc(s.equipmentRepo, s.equipmentStatusRepo)
+	userID, equipmentID := 1, 1
+	startDate, endDate := time.Now().Add(time.Hour*24), time.Now().Add(time.Hour*48)
+	params := equipment.BlockEquipmentParams{
+		HTTPRequest: request.WithContext(ctx),
+		EquipmentID: int64(equipmentID),
+		Data: &models.ChangeEquipmentStatusToBlockedRequest{
+			StartDate: strfmt.DateTime(startDate),
+			EndDate:   strfmt.DateTime(endDate),
+		},
+	}
+
+	err := &ent.NotFoundError{}
+
+	s.equipmentRepo.On("BlockEquipment", ctx, equipmentID, startDate, endDate, userID).Return(nil)
+	s.equipmentStatusRepo.On("GetLastEquipmentStatusByEquipmentID", ctx, equipmentID).Return(nil, err)
+	principal := &models.Principal{ID: int64(userID), Role: roles.Manager}
+	resp := handlerFunc(params, principal)
+	responseRecorder := httptest.NewRecorder()
+	producer := runtime.JSONProducer()
+	resp.WriteResponse(responseRecorder, producer)
+	require.Equal(t, http.StatusNoContent, responseRecorder.Code)
+	s.equipmentRepo.AssertExpectations(t)
+
+	principal = &models.Principal{ID: int64(userID), Role: roles.Operator}
+	resp = handlerFunc(params, principal)
+	responseRecorder = httptest.NewRecorder()
+	producer = runtime.JSONProducer()
+	resp.WriteResponse(responseRecorder, producer)
+	require.Equal(t, http.StatusForbidden, responseRecorder.Code)
+	s.equipmentRepo.AssertExpectations(t)
+}
+
+func (s *EquipmentTestSuite) TestEquipment_UnblockEquipmentFunc_RepoNotFoundErr() {
+	t := s.T()
+	request := http.Request{}
+	ctx := context.Background()
+
+	handlerFunc := s.equipment.UnblockEquipmentFunc(s.equipmentRepo)
+	userID, equipmentID := 1, 1
+	params := equipment.UnblockEquipmentParams{
+		HTTPRequest: request.WithContext(ctx),
+		EquipmentID: int64(equipmentID),
+	}
+	err := &ent.NotFoundError{}
+	authRoles := []string{roles.Manager, roles.Operator, roles.Admin}
+	s.equipmentRepo.On("UnblockEquipment", ctx, equipmentID).Return(err)
+
+	for _, r := range authRoles {
+		httpStatus := http.StatusForbidden
+		if r == roles.Manager {
+			httpStatus = http.StatusNotFound
+		}
+
+		responseRecorder := httptest.NewRecorder()
+		producer := runtime.JSONProducer()
+		principal := &models.Principal{ID: int64(userID), Role: r}
+		resp := handlerFunc(params, principal)
+		resp.WriteResponse(responseRecorder, producer)
+		require.Equal(t, httpStatus, responseRecorder.Code)
+		s.equipmentRepo.AssertExpectations(t)
+	}
+}
+
+func (s *EquipmentTestSuite) TestEquipment_UnblockEquipmentFunc_OK() {
+	t := s.T()
+	request := http.Request{}
+	ctx := context.Background()
+
+	handlerFunc := s.equipment.UnblockEquipmentFunc(s.equipmentRepo)
+	userID, equipmentID := 1, 1
+	params := equipment.UnblockEquipmentParams{
+		HTTPRequest: request.WithContext(ctx),
+		EquipmentID: int64(equipmentID),
+	}
+
+	authRoles := []string{roles.Manager, roles.Operator, roles.Admin}
+	s.equipmentRepo.On("UnblockEquipment", ctx, equipmentID).Return(nil)
+
+	for _, r := range authRoles {
+		httpStatus := http.StatusForbidden
+		if r == roles.Manager {
+			httpStatus = http.StatusNoContent
+		}
+
+		principal := &models.Principal{ID: int64(userID), Role: r}
+		resp := handlerFunc(params, principal)
+		responseRecorder := httptest.NewRecorder()
+		producer := runtime.JSONProducer()
+		resp.WriteResponse(responseRecorder, producer)
+		require.Equal(t, httpStatus, responseRecorder.Code)
+		s.equipmentRepo.AssertExpectations(t)
+	}
 }
 
 func containsEquipment(t *testing.T, array []*ent.Equipment, item *models.EquipmentResponse) bool {

@@ -101,3 +101,27 @@ func (c *sender) SendRegistrationConfirmLink(email string, userName string, toke
 
 	return err
 }
+
+func (c *sender) SendEmailConfirmationLink(email string, userName string, token string) error {
+	if !c.isRequiredToSend {
+		return nil
+	}
+
+	text, err := GenerateEmailConfirmMessage(userName, c.websiteUrl, token)
+	if err != nil {
+		return fmt.Errorf("cant generate message for new email confirmation  %w", err)
+	}
+	sendData := &domain.SendData{
+		FromName: c.senderName,
+		FromAddr: c.senderEmail,
+		Subject:  "Email confirmation",
+		ToAddr:   email,
+		Text:     text,
+	}
+	err = c.client.Send(sendData)
+	if err != nil {
+		return fmt.Errorf("cant send email %w", err)
+	}
+
+	return err
+}

@@ -9,7 +9,6 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/authentication"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/ent"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/swagger/models"
 	eqStatus "git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/swagger/restapi/operations/equipment_status"
@@ -143,13 +142,8 @@ func (s *EquipmentStatusTestSuite) Test_Put_EquipmentStatusInRepairFunc_OK() {
 		s.equipmentStatusRepository, s.orderStatusRepository,
 	)
 
-	access := authentication.Auth{
-		Role: &authentication.Role{
-			Slug: authentication.ManagerSlug,
-		},
-	}
-
-	resp := handlerFunc(data, access)
+	principal := &models.Principal{}
+	resp := handlerFunc(data, principal)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
@@ -186,18 +180,6 @@ func (s *EquipmentStatusTestSuite) Test_Put_EquipmentStatusInRepairFunc_OK() {
 		t, eqStatusResponseModel.Edges.EquipmentStatusName.Name,
 		*actualEquipmentStatusResponse.Data.StatusName,
 	)
-
-	// authentication successfully works only for manager, for operator should return 403 error
-	access = authentication.Auth{
-		Role: &authentication.Role{
-			Slug: authentication.OperatorSlug,
-		},
-	}
-	resp = handlerFunc(data, access)
-	responseRecorder = httptest.NewRecorder()
-	producer = runtime.JSONProducer()
-	resp.WriteResponse(responseRecorder, producer)
-	require.Equal(t, http.StatusForbidden, responseRecorder.Code)
 }
 
 func (s *EquipmentStatusTestSuite) Test_Get_EquipmentStatusCheckDates_OK() {
@@ -268,13 +250,8 @@ func (s *EquipmentStatusTestSuite) Test_Get_EquipmentStatusCheckDates_OK() {
 		s.equipmentStatusRepository,
 	)
 
-	access := authentication.Auth{
-		Role: &authentication.Role{
-			Slug: authentication.ManagerSlug,
-		},
-	}
-
-	resp := handlerFunc(data, access)
+	principal := &models.Principal{}
+	resp := handlerFunc(data, principal)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
@@ -318,7 +295,7 @@ func (s *EquipmentStatusTestSuite) Test_Get_EquipmentStatusCheckDates_OK() {
 	newStartDate := startDate.AddDate(0, 0, 20)
 	data.Name.EndDate = (*strfmt.DateTime)(&newEndDate)
 	data.Name.StartDate = (*strfmt.DateTime)(&newStartDate)
-	resp = handlerFunc(data, access)
+	resp = handlerFunc(data, principal)
 	responseRecorder = httptest.NewRecorder()
 	producer = runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
@@ -339,7 +316,7 @@ func (s *EquipmentStatusTestSuite) Test_Get_EquipmentStatusCheckDates_OK() {
 	data.Name.EndDate = (*strfmt.DateTime)(&newEndDate)
 	data.Name.StartDate = (*strfmt.DateTime)(&newStartDate)
 
-	resp = handlerFunc(data, access)
+	resp = handlerFunc(data, principal)
 	responseRecorder = httptest.NewRecorder()
 	producer = runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
@@ -359,7 +336,7 @@ func (s *EquipmentStatusTestSuite) Test_Get_EquipmentStatusCheckDates_OK() {
 	data.Name.EndDate = (*strfmt.DateTime)(&newEndDate)
 	data.Name.StartDate = (*strfmt.DateTime)(&newStartDate)
 
-	resp = handlerFunc(data, access)
+	resp = handlerFunc(data, principal)
 	responseRecorder = httptest.NewRecorder()
 	producer = runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
@@ -379,7 +356,7 @@ func (s *EquipmentStatusTestSuite) Test_Get_EquipmentStatusCheckDates_OK() {
 	data.Name.EndDate = (*strfmt.DateTime)(&newEndDate)
 	data.Name.StartDate = (*strfmt.DateTime)(&newStartDate)
 
-	resp = handlerFunc(data, access)
+	resp = handlerFunc(data, principal)
 	responseRecorder = httptest.NewRecorder()
 	producer = runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
@@ -399,7 +376,7 @@ func (s *EquipmentStatusTestSuite) Test_Get_EquipmentStatusCheckDates_OK() {
 	data.Name.EndDate = (*strfmt.DateTime)(&newEndDate)
 	data.Name.StartDate = (*strfmt.DateTime)(&newStartDate)
 
-	resp = handlerFunc(data, access)
+	resp = handlerFunc(data, principal)
 	responseRecorder = httptest.NewRecorder()
 	producer = runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
@@ -419,7 +396,7 @@ func (s *EquipmentStatusTestSuite) Test_Get_EquipmentStatusCheckDates_OK() {
 	data.Name.EndDate = (*strfmt.DateTime)(&newEndDate)
 	data.Name.StartDate = (*strfmt.DateTime)(&newStartDate)
 
-	resp = handlerFunc(data, access)
+	resp = handlerFunc(data, principal)
 	responseRecorder = httptest.NewRecorder()
 	producer = runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
@@ -432,18 +409,6 @@ func (s *EquipmentStatusTestSuite) Test_Get_EquipmentStatusCheckDates_OK() {
 		t.Errorf("unable to unmarshal response body: %v", err)
 	}
 	require.NotEmpty(t, actualEquipmentStatusResponse)
-
-	// authentication successfully works only for manager, for operator should return 403 error
-	access = authentication.Auth{
-		Role: &authentication.Role{
-			Slug: authentication.OperatorSlug,
-		},
-	}
-	resp = handlerFunc(data, access)
-	responseRecorder = httptest.NewRecorder()
-	producer = runtime.JSONProducer()
-	resp.WriteResponse(responseRecorder, producer)
-	require.Equal(t, http.StatusForbidden, responseRecorder.Code)
 }
 
 func (s *EquipmentStatusTestSuite) Test_Delete_EquipmentStatusFromRepairFunc_OK() {
@@ -496,13 +461,8 @@ func (s *EquipmentStatusTestSuite) Test_Delete_EquipmentStatusFromRepairFunc_OK(
 		s.equipmentStatusRepository, s.orderStatusRepository,
 	)
 
-	access := authentication.Auth{
-		Role: &authentication.Role{
-			Slug: authentication.ManagerSlug,
-		},
-	}
-
-	resp := handlerFunc(data, access)
+	principal := &models.Principal{}
+	resp := handlerFunc(data, principal)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
@@ -539,18 +499,6 @@ func (s *EquipmentStatusTestSuite) Test_Delete_EquipmentStatusFromRepairFunc_OK(
 		t, eqStatusResponseModel.Edges.EquipmentStatusName.Name,
 		*actualEquipmentStatusResponse.Data.StatusName,
 	)
-
-	// authentication successfully works only for manager, for operator should return 403 error
-	access = authentication.Auth{
-		Role: &authentication.Role{
-			Slug: authentication.OperatorSlug,
-		},
-	}
-	resp = handlerFunc(data, access)
-	responseRecorder = httptest.NewRecorder()
-	producer = runtime.JSONProducer()
-	resp.WriteResponse(responseRecorder, producer)
-	require.Equal(t, http.StatusForbidden, responseRecorder.Code)
 }
 
 func (s *EquipmentStatusTestSuite) Test_Patch_EquipmentStatusEditDatesFunc_OK() {
@@ -604,13 +552,8 @@ func (s *EquipmentStatusTestSuite) Test_Patch_EquipmentStatusEditDatesFunc_OK() 
 		s.equipmentStatusRepository,
 	)
 
-	access := authentication.Auth{
-		Role: &authentication.Role{
-			Slug: authentication.ManagerSlug,
-		},
-	}
-
-	resp := handlerFunc(data, access)
+	principal := &models.Principal{}
+	resp := handlerFunc(data, principal)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
@@ -643,16 +586,4 @@ func (s *EquipmentStatusTestSuite) Test_Patch_EquipmentStatusEditDatesFunc_OK() 
 		t, updatedEqStatus.Edges.EquipmentStatusName.Name,
 		*actualEquipmentStatusResponse.Data.StatusName,
 	)
-
-	// authentication successfully works only for manager, for operator should return 403 error
-	access = authentication.Auth{
-		Role: &authentication.Role{
-			Slug: authentication.OperatorSlug,
-		},
-	}
-	resp = handlerFunc(data, access)
-	responseRecorder = httptest.NewRecorder()
-	producer = runtime.JSONProducer()
-	resp.WriteResponse(responseRecorder, producer)
-	require.Equal(t, http.StatusForbidden, responseRecorder.Code)
 }

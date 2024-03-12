@@ -64,21 +64,11 @@ func (s *orderFilterTestSuite) SetupTest() {
 		t.Fatal(err)
 	}
 	s.statusesNames = []*ent.OrderStatusName{
-		{
-			Status: "in review",
-		},
-		{
-			Status: "approved",
-		},
-		{
-			Status: "in progress",
-		},
-		{
-			Status: "rejected",
-		},
-		{
-			Status: "closed",
-		},
+		{Status: domain.OrderStatusInReview},
+		{Status: domain.OrderStatusApproved},
+		{Status: domain.OrderStatusInProgress},
+		{Status: domain.OrderStatusRejected},
+		{Status: domain.OrderStatusClosed},
 	}
 	for i, statusName := range s.statusesNames {
 		sName, err := s.client.OrderStatusName.Create().SetStatus(statusName.Status).Save(s.ctx)

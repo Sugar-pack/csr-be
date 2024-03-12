@@ -10,6 +10,8 @@ import (
 	"testing"
 	"time"
 
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/roles"
+
 	"github.com/go-openapi/loads"
 	"github.com/go-openapi/runtime"
 	"github.com/go-openapi/strfmt"
@@ -18,7 +20,6 @@ import (
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/zap"
 
-	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/authentication"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/ent"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/ent/enttest"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/ent/order"
@@ -198,7 +199,9 @@ func (s *OrderStatusTestSuite) TestOrderStatus_OrderStatusesHistory_RepoErr() {
 	t := s.T()
 	request := http.Request{}
 	ctx := request.Context()
-	access := "definitely not access"
+	principal := &models.Principal{
+		Role: roles.Admin,
+	}
 	handlerFunc := s.orderStatus.OrderStatusesHistory(s.orderStatusRepository)
 	orderID := int64(1)
 	data := orders.GetFullOrderHistoryParams{
@@ -208,29 +211,7 @@ func (s *OrderStatusTestSuite) TestOrderStatus_OrderStatusesHistory_RepoErr() {
 	err := errors.New("test error")
 	s.orderStatusRepository.On("StatusHistory", ctx, int(orderID)).Return(nil, err)
 
-	resp := handlerFunc(data, access)
-	responseRecorder := httptest.NewRecorder()
-	producer := runtime.JSONProducer()
-	resp.WriteResponse(responseRecorder, producer)
-	require.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
-	s.orderStatusRepository.AssertExpectations(t)
-}
-
-func (s *OrderStatusTestSuite) TestOrderStatus_OrderStatusesHistory_CantAccess() {
-	t := s.T()
-	request := http.Request{}
-	ctx := request.Context()
-	access := "definitely not access"
-	handlerFunc := s.orderStatus.OrderStatusesHistory(s.orderStatusRepository)
-	orderID := int64(1)
-	data := orders.GetFullOrderHistoryParams{
-		HTTPRequest: &request,
-		OrderID:     orderID,
-	}
-
-	s.orderStatusRepository.On("StatusHistory", ctx, int(orderID)).Return(nil, nil)
-
-	resp := handlerFunc(data, access)
+	resp := handlerFunc(data, principal)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
@@ -242,16 +223,7 @@ func (s *OrderStatusTestSuite) TestOrderStatus_OrderStatusesHistory_CantAccess_H
 	t := s.T()
 	request := http.Request{}
 	ctx := request.Context()
-	userID := 1
-	role := &authentication.Role{
-		Id:   userID,
-		Slug: authentication.UserSlug,
-	}
-	access := authentication.Auth{
-		Id:    userID,
-		Login: "login",
-		Role:  role,
-	}
+	principal := &models.Principal{Role: roles.User}
 	handlerFunc := s.orderStatus.OrderStatusesHistory(s.orderStatusRepository)
 	orderID := int64(1)
 	data := orders.GetFullOrderHistoryParams{
@@ -261,7 +233,7 @@ func (s *OrderStatusTestSuite) TestOrderStatus_OrderStatusesHistory_CantAccess_H
 
 	s.orderStatusRepository.On("StatusHistory", ctx, int(orderID)).Return(nil, nil)
 
-	resp := handlerFunc(data, access)
+	resp := handlerFunc(data, principal)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
@@ -273,17 +245,7 @@ func (s *OrderStatusTestSuite) TestOrderStatus_OrderStatusesHistory_EmptyHistory
 	t := s.T()
 	request := http.Request{}
 	ctx := request.Context()
-	userID := 1
-	login := "login"
-	role := &authentication.Role{
-		Id:   userID,
-		Slug: authentication.AdminSlug,
-	}
-	access := authentication.Auth{
-		Id:    userID,
-		Login: login,
-		Role:  role,
-	}
+	principal := &models.Principal{Role: roles.Admin}
 	handlerFunc := s.orderStatus.OrderStatusesHistory(s.orderStatusRepository)
 	orderID := int64(1)
 	data := orders.GetFullOrderHistoryParams{
@@ -293,7 +255,7 @@ func (s *OrderStatusTestSuite) TestOrderStatus_OrderStatusesHistory_EmptyHistory
 
 	s.orderStatusRepository.On("StatusHistory", ctx, int(orderID)).Return(nil, nil)
 
-	resp := handlerFunc(data, access)
+	resp := handlerFunc(data, principal)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
@@ -305,17 +267,7 @@ func (s *OrderStatusTestSuite) TestOrderStatus_OrderStatusesHistory_MapError() {
 	t := s.T()
 	request := http.Request{}
 	ctx := request.Context()
-	userID := 1
-	login := "login"
-	role := &authentication.Role{
-		Id:   userID,
-		Slug: authentication.AdminSlug,
-	}
-	access := authentication.Auth{
-		Id:    userID,
-		Login: login,
-		Role:  role,
-	}
+	principal := &models.Principal{Role: roles.Admin}
 	handlerFunc := s.orderStatus.OrderStatusesHistory(s.orderStatusRepository)
 	orderID := int64(1)
 	data := orders.GetFullOrderHistoryParams{
@@ -328,7 +280,7 @@ func (s *OrderStatusTestSuite) TestOrderStatus_OrderStatusesHistory_MapError() {
 	history[0] = nil
 	s.orderStatusRepository.On("StatusHistory", ctx, int(orderID)).Return(history, nil)
 
-	resp := handlerFunc(data, access)
+	resp := handlerFunc(data, principal)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
@@ -340,17 +292,7 @@ func (s *OrderStatusTestSuite) TestOrderStatus_OrderStatusesHistory_OK() {
 	t := s.T()
 	request := http.Request{}
 	ctx := request.Context()
-	userID := 1
-	login := "login"
-	role := &authentication.Role{
-		Id:   userID,
-		Slug: authentication.AdminSlug,
-	}
-	access := authentication.Auth{
-		Id:    userID,
-		Login: login,
-		Role:  role,
-	}
+	principal := &models.Principal{Role: roles.Admin}
 	handlerFunc := s.orderStatus.OrderStatusesHistory(s.orderStatusRepository)
 	orderID := int64(1)
 	data := orders.GetFullOrderHistoryParams{
@@ -377,7 +319,7 @@ func (s *OrderStatusTestSuite) TestOrderStatus_OrderStatusesHistory_OK() {
 	}
 	s.orderStatusRepository.On("StatusHistory", ctx, int(orderID)).Return(history, nil)
 
-	resp := handlerFunc(data, access)
+	resp := handlerFunc(data, principal)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
@@ -400,24 +342,14 @@ func (s *OrderStatusTestSuite) TestOrderStatus_OrderStatusesHistory_OK() {
 func (s *OrderStatusTestSuite) TestOrderStatus_AddNewStatusToOrder_EmptyData() {
 	t := s.T()
 	request := http.Request{}
-	userID := 1
-	login := "login"
-	role := &authentication.Role{
-		Id:   userID,
-		Slug: authentication.AdminSlug,
-	}
-	access := authentication.Auth{
-		Id:    userID,
-		Login: login,
-		Role:  role,
-	}
+	principal := &models.Principal{Role: roles.Admin}
 	handlerFunc := s.orderStatus.AddNewStatusToOrder(s.orderStatusRepository, s.equipmentStatusRepository)
 	data := orders.AddNewOrderStatusParams{
 		HTTPRequest: &request,
 		Data:        &models.NewOrderStatus{},
 	}
 
-	resp := handlerFunc(data, access)
+	resp := handlerFunc(data, principal)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
@@ -439,20 +371,11 @@ func (s *OrderStatusTestSuite) TestOrderStatus_AddNewStatusToOrder_NoAccess() {
 		domain.OrderStatusClosed,
 		domain.OrderStatusRejected,
 		domain.OrderStatusInProgress,
+		domain.OrderStatusBlocked,
 	}
 
 	for _, testStatus := range testsStatus {
-		userID := 1
-		login := "login"
-		role := &authentication.Role{
-			Id:   userID,
-			Slug: authentication.UserSlug,
-		}
-		access := authentication.Auth{
-			Id:    userID,
-			Login: login,
-			Role:  role,
-		}
+		principal := &models.Principal{Role: roles.User}
 
 		data := &models.NewOrderStatus{
 			Comment:   &statusComment,
@@ -471,7 +394,7 @@ func (s *OrderStatusTestSuite) TestOrderStatus_AddNewStatusToOrder_NoAccess() {
 			HTTPRequest: &request,
 			Data:        data,
 		}
-		resp := handlerFunc(params, access)
+		resp := handlerFunc(params, principal)
 		responseRecorder := httptest.NewRecorder()
 		producer := runtime.JSONProducer()
 		resp.WriteResponse(responseRecorder, producer)
@@ -483,17 +406,7 @@ func (s *OrderStatusTestSuite) TestOrderStatus_AddNewStatusToOrder_RepoError() {
 	t := s.T()
 	request := http.Request{}
 	ctx := request.Context()
-	userID := 1
-	login := "login"
-	role := &authentication.Role{
-		Id:   userID,
-		Slug: authentication.AdminSlug,
-	}
-	access := authentication.Auth{
-		Id:    userID,
-		Login: login,
-		Role:  role,
-	}
+	principal := &models.Principal{Role: roles.Admin}
 	statusComment := "test comment"
 	now := strfmt.DateTime(time.Now())
 	orderID := int64(1)
@@ -513,7 +426,7 @@ func (s *OrderStatusTestSuite) TestOrderStatus_AddNewStatusToOrder_RepoError() {
 	err := errors.New("error")
 	s.orderStatusRepository.On("GetOrderCurrentStatus", ctx, int(*data.OrderID)).Return(nil, err)
 
-	resp := handlerFunc(params, access)
+	resp := handlerFunc(params, principal)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
@@ -526,15 +439,9 @@ func (s *OrderStatusTestSuite) TestOrderStatus_AddNewStatusToOrder_InReviewToApp
 	request := http.Request{}
 	ctx := request.Context()
 	userID := 1
-	login := "login"
-	role := &authentication.Role{
-		Id:   userID,
-		Slug: authentication.ManagerSlug,
-	}
-	access := authentication.Auth{
-		Id:    userID,
-		Login: login,
-		Role:  role,
+	principal := &models.Principal{
+		ID:   int64(userID),
+		Role: roles.Manager,
 	}
 	handlerFunc := s.orderStatus.AddNewStatusToOrder(s.orderStatusRepository, s.equipmentStatusRepository)
 	statusComment := "test comment"
@@ -552,6 +459,10 @@ func (s *OrderStatusTestSuite) TestOrderStatus_AddNewStatusToOrder_InReviewToApp
 		Data:        data,
 	}
 	existingOrder := orderWithEdges(t, 1)
+
+	existingOrder.Edges.OrderStatus[0].Edges.OrderStatusName = &ent.OrderStatusName{
+		Status: domain.OrderStatusInReview,
+	}
 	s.orderStatusRepository.On("GetOrderCurrentStatus", ctx, int(*data.OrderID)).
 		Return(existingOrder.Edges.OrderStatus[0], nil)
 	s.equipmentStatusRepository.On("GetEquipmentsStatusesByOrder", ctx,
@@ -559,7 +470,7 @@ func (s *OrderStatusTestSuite) TestOrderStatus_AddNewStatusToOrder_InReviewToApp
 		Return(existingOrder.Edges.EquipmentStatus, nil)
 	s.orderStatusRepository.On("UpdateStatus", ctx, userID, *data).Return(nil)
 
-	resp := handlerFunc(params, access)
+	resp := handlerFunc(params, principal)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
@@ -572,15 +483,9 @@ func (s *OrderStatusTestSuite) TestOrderStatus_AddNewStatusToOrder_InReviewToRej
 	request := http.Request{}
 	ctx := request.Context()
 	userID := 1
-	login := "login"
-	role := &authentication.Role{
-		Id:   userID,
-		Slug: authentication.ManagerSlug,
-	}
-	access := authentication.Auth{
-		Id:    userID,
-		Login: login,
-		Role:  role,
+	principal := &models.Principal{
+		ID:   int64(userID),
+		Role: roles.Manager,
 	}
 	handlerFunc := s.orderStatus.AddNewStatusToOrder(s.orderStatusRepository, s.equipmentStatusRepository)
 	statusComment := "test comment"
@@ -609,7 +514,7 @@ func (s *OrderStatusTestSuite) TestOrderStatus_AddNewStatusToOrder_InReviewToRej
 		StatusName: &domain.EquipmentStatusAvailable,
 		ID:         &equipmentID,
 	}).Return(nil, nil)
-	resp := handlerFunc(params, access)
+	resp := handlerFunc(params, principal)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
@@ -622,15 +527,9 @@ func (s *OrderStatusTestSuite) TestOrderStatus_AddNewStatusToOrder_OperatorInPro
 	request := http.Request{}
 	ctx := request.Context()
 	userID := 1
-	login := "login"
-	role := &authentication.Role{
-		Id:   userID,
-		Slug: authentication.OperatorSlug,
-	}
-	access := authentication.Auth{
-		Id:    userID,
-		Login: login,
-		Role:  role,
+	principal := &models.Principal{
+		ID:   int64(userID),
+		Role: roles.Operator,
 	}
 	handlerFunc := s.orderStatus.AddNewStatusToOrder(s.orderStatusRepository, s.equipmentStatusRepository)
 	statusComment := "test comment"
@@ -672,7 +571,7 @@ func (s *OrderStatusTestSuite) TestOrderStatus_AddNewStatusToOrder_OperatorInPro
 		EndDate:    &addOneDayToCurrentEndDate,
 	}).Return(nil, nil)
 
-	resp := handlerFunc(params, access)
+	resp := handlerFunc(params, principal)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
@@ -685,15 +584,9 @@ func (s *OrderStatusTestSuite) TestOrderStatus_AddNewStatusToOrder_OperatorOverd
 	request := http.Request{}
 	ctx := request.Context()
 	userID := 1
-	login := "login"
-	role := &authentication.Role{
-		Id:   userID,
-		Slug: authentication.OperatorSlug,
-	}
-	access := authentication.Auth{
-		Id:    userID,
-		Login: login,
-		Role:  role,
+	principal := &models.Principal{
+		ID:   int64(userID),
+		Role: roles.Operator,
 	}
 	handlerFunc := s.orderStatus.AddNewStatusToOrder(s.orderStatusRepository, s.equipmentStatusRepository)
 	statusComment := "test comment"
@@ -735,7 +628,7 @@ func (s *OrderStatusTestSuite) TestOrderStatus_AddNewStatusToOrder_OperatorOverd
 		EndDate:    &addOneDayToCurrentEndDate,
 	}).Return(nil, nil)
 
-	resp := handlerFunc(params, access)
+	resp := handlerFunc(params, principal)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
@@ -748,15 +641,9 @@ func (s *OrderStatusTestSuite) TestOrderStatus_AddNewStatusToOrder_OperatorAppro
 	request := http.Request{}
 	ctx := request.Context()
 	userID := 1
-	login := "login"
-	role := &authentication.Role{
-		Id:   userID,
-		Slug: authentication.OperatorSlug,
-	}
-	access := authentication.Auth{
-		Id:    userID,
-		Login: login,
-		Role:  role,
+	principal := &models.Principal{
+		ID:   int64(userID),
+		Role: roles.Operator,
 	}
 	handlerFunc := s.orderStatus.AddNewStatusToOrder(s.orderStatusRepository, s.equipmentStatusRepository)
 	statusComment := "test comment"
@@ -775,6 +662,11 @@ func (s *OrderStatusTestSuite) TestOrderStatus_AddNewStatusToOrder_OperatorAppro
 	}
 	existingOrder := orderWithEdges(t, 1)
 	existingOrder.Edges.EquipmentStatus[0].Edges.EquipmentStatusName.Name = domain.EquipmentStatusBooked
+
+	existingOrder.Edges.OrderStatus[0].Edges.OrderStatusName = &ent.OrderStatusName{
+		Status: domain.OrderStatusApproved,
+	}
+
 	s.orderStatusRepository.On("GetOrderCurrentStatus", ctx, int(*data.OrderID)).
 		Return(existingOrder.Edges.OrderStatus[0], nil)
 	s.equipmentStatusRepository.On("GetEquipmentsStatusesByOrder", ctx,
@@ -782,7 +674,53 @@ func (s *OrderStatusTestSuite) TestOrderStatus_AddNewStatusToOrder_OperatorAppro
 		Return(existingOrder.Edges.EquipmentStatus, nil)
 	s.orderStatusRepository.On("UpdateStatus", ctx, userID, *data).Return(nil)
 
-	resp := handlerFunc(params, access)
+	resp := handlerFunc(params, principal)
+	responseRecorder := httptest.NewRecorder()
+	producer := runtime.JSONProducer()
+	resp.WriteResponse(responseRecorder, producer)
+	require.Equal(t, http.StatusOK, responseRecorder.Code)
+	s.orderStatusRepository.AssertExpectations(t)
+}
+
+func (s *OrderStatusTestSuite) TestOrderStatus_AddNewStatusToOrder_AdminApprovedToPreparedOK() {
+	t := s.T()
+	request := http.Request{}
+	ctx := request.Context()
+	userID := 1
+	principal := &models.Principal{
+		ID:   int64(userID),
+		Role: roles.Admin,
+	}
+	handlerFunc := s.orderStatus.AddNewStatusToOrder(s.orderStatusRepository, s.equipmentStatusRepository)
+	statusComment := "test comment"
+	now := strfmt.DateTime(time.Now())
+	orderID := int64(1)
+	statusID := domain.OrderStatusPrepared
+	data := &models.NewOrderStatus{
+		Comment:   &statusComment,
+		CreatedAt: &now,
+		OrderID:   &orderID,
+		Status:    &statusID,
+	}
+	params := orders.AddNewOrderStatusParams{
+		HTTPRequest: &request,
+		Data:        data,
+	}
+	existingOrder := orderWithEdges(t, 1)
+	existingOrder.Edges.EquipmentStatus[0].Edges.EquipmentStatusName.Name = domain.EquipmentStatusBooked
+
+	existingOrder.Edges.OrderStatus[0].Edges.OrderStatusName = &ent.OrderStatusName{
+		Status: domain.OrderStatusApproved,
+	}
+
+	s.orderStatusRepository.On("GetOrderCurrentStatus", ctx, int(*data.OrderID)).
+		Return(existingOrder.Edges.OrderStatus[0], nil)
+	s.equipmentStatusRepository.On("GetEquipmentsStatusesByOrder", ctx,
+		existingOrder.ID).
+		Return(existingOrder.Edges.EquipmentStatus, nil)
+	s.orderStatusRepository.On("UpdateStatus", ctx, userID, *data).Return(nil)
+
+	resp := handlerFunc(params, principal)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
@@ -795,15 +733,9 @@ func (s *OrderStatusTestSuite) TestOrderStatus_AddNewStatusToOrder_ManagerInProg
 	request := http.Request{}
 	ctx := request.Context()
 	userID := 1
-	login := "login"
-	role := &authentication.Role{
-		Id:   userID,
-		Slug: authentication.ManagerSlug,
-	}
-	access := authentication.Auth{
-		Id:    userID,
-		Login: login,
-		Role:  role,
+	principal := &models.Principal{
+		ID:   int64(userID),
+		Role: roles.Manager,
 	}
 	handlerFunc := s.orderStatus.AddNewStatusToOrder(s.orderStatusRepository, s.equipmentStatusRepository)
 	statusComment := "test comment"
@@ -845,7 +777,64 @@ func (s *OrderStatusTestSuite) TestOrderStatus_AddNewStatusToOrder_ManagerInProg
 		EndDate:    &addOneDayToCurrentEndDate,
 	}).Return(nil, nil)
 
-	resp := handlerFunc(params, access)
+	resp := handlerFunc(params, principal)
+	responseRecorder := httptest.NewRecorder()
+	producer := runtime.JSONProducer()
+	resp.WriteResponse(responseRecorder, producer)
+	require.Equal(t, http.StatusOK, responseRecorder.Code)
+	s.orderStatusRepository.AssertExpectations(t)
+}
+
+func (s *OrderStatusTestSuite) TestOrderStatus_AddNewStatusToOrder_ManagerBlockedToClosedOK() {
+	t := s.T()
+	request := http.Request{}
+	ctx := request.Context()
+	userID := 1
+	principal := &models.Principal{
+		ID:   int64(userID),
+		Role: roles.Manager,
+	}
+	handlerFunc := s.orderStatus.AddNewStatusToOrder(s.orderStatusRepository, s.equipmentStatusRepository)
+	statusComment := "test comment"
+	now := strfmt.DateTime(time.Now())
+	orderID := int64(1)
+	statusID := domain.OrderStatusClosed
+	data := &models.NewOrderStatus{
+		Comment:   &statusComment,
+		CreatedAt: &now,
+		OrderID:   &orderID,
+		Status:    &statusID,
+	}
+	params := orders.AddNewOrderStatusParams{
+		HTTPRequest: &request,
+		Data:        data,
+	}
+	existingOrder := orderWithEdges(t, 1)
+	equipmentID := int64(existingOrder.Edges.Equipments[0].ID)
+
+	existingOrder.Edges.EquipmentStatus[0].EndDate = time.Time(now)
+	existingOrder.Edges.OrderStatus[0].ID = 8
+	existingOrder.Edges.OrderStatus[0].Edges.OrderStatusName = &ent.OrderStatusName{
+		Status: domain.OrderStatusBlocked,
+	}
+
+	s.orderStatusRepository.On("GetOrderCurrentStatus", ctx, int(*data.OrderID)).
+		Return(existingOrder.Edges.OrderStatus[0], nil)
+	s.equipmentStatusRepository.On("GetEquipmentsStatusesByOrder", ctx,
+		existingOrder.ID).
+		Return(existingOrder.Edges.EquipmentStatus, nil)
+	s.orderStatusRepository.On("UpdateStatus", ctx, userID, *data).Return(nil)
+
+	addOneDayToCurrentEndDate := strfmt.DateTime(
+		existingOrder.Edges.EquipmentStatus[0].EndDate.AddDate(0, 0, 1),
+	)
+	s.equipmentStatusRepository.On("Update", ctx, &models.EquipmentStatus{
+		StatusName: &domain.EquipmentStatusAvailable,
+		ID:         &equipmentID,
+		EndDate:    &addOneDayToCurrentEndDate,
+	}).Return(nil, nil)
+
+	resp := handlerFunc(params, principal)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
@@ -858,15 +847,9 @@ func (s *OrderStatusTestSuite) TestOrderStatus_AddNewStatusToOrder_ManagerOverdu
 	request := http.Request{}
 	ctx := request.Context()
 	userID := 1
-	login := "login"
-	role := &authentication.Role{
-		Id:   userID,
-		Slug: authentication.ManagerSlug,
-	}
-	access := authentication.Auth{
-		Id:    userID,
-		Login: login,
-		Role:  role,
+	principal := &models.Principal{
+		ID:   int64(userID),
+		Role: roles.Manager,
 	}
 	handlerFunc := s.orderStatus.AddNewStatusToOrder(s.orderStatusRepository, s.equipmentStatusRepository)
 	statusComment := "test comment"
@@ -908,7 +891,7 @@ func (s *OrderStatusTestSuite) TestOrderStatus_AddNewStatusToOrder_ManagerOverdu
 		EndDate:    &addOneDayToCurrentEndDate,
 	}).Return(nil, nil)
 
-	resp := handlerFunc(params, access)
+	resp := handlerFunc(params, principal)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
@@ -921,15 +904,9 @@ func (s *OrderStatusTestSuite) TestOrderStatus_AddNewStatusToOrder_ManagerPrepar
 	request := http.Request{}
 	ctx := request.Context()
 	userID := 1
-	login := "login"
-	role := &authentication.Role{
-		Id:   userID,
-		Slug: authentication.ManagerSlug,
-	}
-	access := authentication.Auth{
-		Id:    userID,
-		Login: login,
-		Role:  role,
+	principal := &models.Principal{
+		ID:   int64(userID),
+		Role: roles.Manager,
 	}
 	handlerFunc := s.orderStatus.AddNewStatusToOrder(s.orderStatusRepository, s.equipmentStatusRepository)
 	statusComment := "test comment"
@@ -971,7 +948,7 @@ func (s *OrderStatusTestSuite) TestOrderStatus_AddNewStatusToOrder_ManagerPrepar
 		EndDate:    &addOneDayToCurrentEndDate,
 	}).Return(nil, nil)
 
-	resp := handlerFunc(params, access)
+	resp := handlerFunc(params, principal)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
@@ -984,15 +961,9 @@ func (s *OrderStatusTestSuite) TestOrderStatus_AddNewStatusToOrder_ManagerApprov
 	request := http.Request{}
 	ctx := request.Context()
 	userID := 1
-	login := "login"
-	role := &authentication.Role{
-		Id:   userID,
-		Slug: authentication.ManagerSlug,
-	}
-	access := authentication.Auth{
-		Id:    userID,
-		Login: login,
-		Role:  role,
+	principal := &models.Principal{
+		ID:   int64(userID),
+		Role: roles.Manager,
 	}
 	handlerFunc := s.orderStatus.AddNewStatusToOrder(s.orderStatusRepository, s.equipmentStatusRepository)
 	statusComment := "test comment"
@@ -1034,7 +1005,7 @@ func (s *OrderStatusTestSuite) TestOrderStatus_AddNewStatusToOrder_ManagerApprov
 		EndDate:    &addOneDayToCurrentEndDate,
 	}).Return(nil, nil)
 
-	resp := handlerFunc(params, access)
+	resp := handlerFunc(params, principal)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
@@ -1047,15 +1018,9 @@ func (s *OrderStatusTestSuite) TestOrderStatus_AddNewStatusToOrder_ApprovedToPre
 	request := http.Request{}
 	ctx := request.Context()
 	userID := 1
-	login := "login"
-	role := &authentication.Role{
-		Id:   userID,
-		Slug: authentication.OperatorSlug,
-	}
-	access := authentication.Auth{
-		Id:    userID,
-		Login: login,
-		Role:  role,
+	principal := &models.Principal{
+		ID:   int64(userID),
+		Role: roles.Operator,
 	}
 	handlerFunc := s.orderStatus.AddNewStatusToOrder(s.orderStatusRepository, s.equipmentStatusRepository)
 	statusComment := "test comment"
@@ -1080,16 +1045,17 @@ func (s *OrderStatusTestSuite) TestOrderStatus_AddNewStatusToOrder_ApprovedToPre
 		existingOrder.ID).
 		Return(existingOrder.Edges.EquipmentStatus, nil)
 
-	resp := handlerFunc(params, access)
+	resp := handlerFunc(params, principal)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	response := models.Error{}
+	response := models.SwaggerError{}
 	err := json.Unmarshal(responseRecorder.Body.Bytes(), &response)
 	require.NoError(t, err)
 	require.NotEmpty(t, response)
-	require.NotEmpty(t, response.Data)
-	require.Contains(t, response.Data.Message, "equipment IDs don't have correspondent status: [1]")
+	require.NotEmpty(t, response.Message)
+	require.Contains(t, *response.Message, "can't update status")
+	require.Contains(t, response.Details, "equipment IDs don't have correspondent status: [1]")
 	require.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
 	s.orderStatusRepository.AssertExpectations(t)
 }
@@ -1099,15 +1065,9 @@ func (s *OrderStatusTestSuite) TestOrderStatus_AddNewStatusToOrder_PreparedToByO
 	request := http.Request{}
 	ctx := request.Context()
 	userID := 1
-	login := "login"
-	role := &authentication.Role{
-		Id:   userID,
-		Slug: authentication.OperatorSlug,
-	}
-	access := authentication.Auth{
-		Id:    userID,
-		Login: login,
-		Role:  role,
+	principal := &models.Principal{
+		ID:   int64(userID),
+		Role: roles.Operator,
 	}
 	handlerFunc := s.orderStatus.AddNewStatusToOrder(s.orderStatusRepository, s.equipmentStatusRepository)
 	statusComment := "test comment"
@@ -1153,7 +1113,7 @@ func (s *OrderStatusTestSuite) TestOrderStatus_AddNewStatusToOrder_PreparedToByO
 			ID:         &eqStatusID,
 		}).Return(nil, nil)
 
-		resp := handlerFunc(params, access)
+		resp := handlerFunc(params, principal)
 		responseRecorder := httptest.NewRecorder()
 		producer := runtime.JSONProducer()
 		resp.WriteResponse(responseRecorder, producer)
@@ -1162,106 +1122,14 @@ func (s *OrderStatusTestSuite) TestOrderStatus_AddNewStatusToOrder_PreparedToByO
 	}
 }
 
-func (s *OrderStatusTestSuite) TestOrderStatus_AddNewStatusToOrder_AccessErr() {
-	t := s.T()
-	request := http.Request{}
-	access := "dummy access"
-	handlerFunc := s.orderStatus.AddNewStatusToOrder(s.orderStatusRepository, s.equipmentStatusRepository)
-	statusComment := "test comment"
-	now := strfmt.DateTime(time.Now())
-	orderID := int64(1)
-	statusID := domain.OrderStatusPrepared
-	data := &models.NewOrderStatus{
-		Comment:   &statusComment,
-		CreatedAt: &now,
-		OrderID:   &orderID,
-		Status:    &statusID,
-	}
-	params := orders.AddNewOrderStatusParams{
-		HTTPRequest: &request,
-		Data:        data,
-	}
-
-	resp := handlerFunc(params, access)
-	responseRecorder := httptest.NewRecorder()
-	producer := runtime.JSONProducer()
-	resp.WriteResponse(responseRecorder, producer)
-	response := models.Error{}
-	err := json.Unmarshal(responseRecorder.Body.Bytes(), &response)
-	require.NoError(t, err)
-	require.NotEmpty(t, response)
-	require.NotEmpty(t, response.Data)
-	require.Contains(t, response.Data.Message, "Can't get authorization")
-	require.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
-	s.orderStatusRepository.AssertExpectations(t)
-}
-
-func (s *OrderStatusTestSuite) TestOrderStatus_GetOrdersByStatus_NoAccess() {
-	t := s.T()
-	request := http.Request{}
-	userID := 1
-	login := "login"
-	role := &authentication.Role{
-		Id:   userID,
-		Slug: "not admin",
-	}
-	access := authentication.Auth{
-		Id:    userID,
-		Login: login,
-		Role:  role,
-	}
-	handlerFunc := s.orderStatus.GetOrdersByStatus(s.orderFilterRepository)
-	statusName := "status"
-	params := orders.GetOrdersByStatusParams{
-		HTTPRequest: &request,
-		Status:      statusName,
-	}
-
-	resp := handlerFunc(params, access)
-	responseRecorder := httptest.NewRecorder()
-	producer := runtime.JSONProducer()
-	resp.WriteResponse(responseRecorder, producer)
-	require.Equal(t, http.StatusForbidden, responseRecorder.Code)
-}
-
-func (s *OrderStatusTestSuite) TestOrderStatus_GetOrdersByStatus_AccessErr() {
-	t := s.T()
-	request := http.Request{}
-	access := "dummy access"
-	handlerFunc := s.orderStatus.GetOrdersByStatus(s.orderFilterRepository)
-	statusName := "status"
-	params := orders.GetOrdersByStatusParams{
-		HTTPRequest: &request,
-		Status:      statusName,
-	}
-
-	resp := handlerFunc(params, access)
-	responseRecorder := httptest.NewRecorder()
-	producer := runtime.JSONProducer()
-	resp.WriteResponse(responseRecorder, producer)
-	response := models.Error{}
-	err := json.Unmarshal(responseRecorder.Body.Bytes(), &response)
-	require.NoError(t, err)
-	require.NotEmpty(t, response)
-	require.NotEmpty(t, response.Data)
-	require.Contains(t, response.Data.Message, "Can't get authorization")
-	require.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
-}
-
 func (s *OrderStatusTestSuite) TestOrderStatus_GetOrdersByStatus_RepoErr() {
 	t := s.T()
 	request := http.Request{}
 	ctx := request.Context()
 	userID := 1
-	login := "login"
-	role := &authentication.Role{
-		Id:   userID,
-		Slug: authentication.AdminSlug,
-	}
-	access := authentication.Auth{
-		Id:    userID,
-		Login: login,
-		Role:  role,
+	principal := &models.Principal{
+		ID:   int64(userID),
+		Role: roles.Admin,
 	}
 	handlerFunc := s.orderStatus.GetOrdersByStatus(s.orderFilterRepository)
 	statusName := "status"
@@ -1273,7 +1141,7 @@ func (s *OrderStatusTestSuite) TestOrderStatus_GetOrdersByStatus_RepoErr() {
 	err := errors.New("error")
 	s.orderFilterRepository.On("OrdersByStatusTotal", ctx, statusName).Return(0, err)
 
-	resp := handlerFunc(params, access)
+	resp := handlerFunc(params, principal)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
@@ -1285,15 +1153,9 @@ func (s *OrderStatusTestSuite) TestOrderStatus_GetOrdersByStatus_EmptyResult() {
 	request := http.Request{}
 	ctx := request.Context()
 	userID := 1
-	login := "login"
-	role := &authentication.Role{
-		Id:   userID,
-		Slug: authentication.AdminSlug,
-	}
-	access := authentication.Auth{
-		Id:    userID,
-		Login: login,
-		Role:  role,
+	principal := &models.Principal{
+		ID:   int64(userID),
+		Role: roles.Admin,
 	}
 	handlerFunc := s.orderStatus.GetOrdersByStatus(s.orderFilterRepository)
 	statusName := "status"
@@ -1305,13 +1167,13 @@ func (s *OrderStatusTestSuite) TestOrderStatus_GetOrdersByStatus_EmptyResult() {
 	s.orderFilterRepository.On("OrdersByStatusTotal", ctx, statusName).
 		Return(0, nil)
 
-	resp := handlerFunc(params, access)
+	resp := handlerFunc(params, principal)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
 	require.Equal(t, http.StatusOK, responseRecorder.Code)
 
-	responseOrders := models.OrderList{}
+	responseOrders := models.UserOrdersList{}
 	err := json.Unmarshal(responseRecorder.Body.Bytes(), &responseOrders)
 	if err != nil {
 		t.Fatal(err)
@@ -1325,15 +1187,9 @@ func (s *OrderStatusTestSuite) TestOrderStatus_GetOrdersByStatus_MapErr() {
 	request := http.Request{}
 	ctx := request.Context()
 	userID := 1
-	login := "login"
-	role := &authentication.Role{
-		Id:   userID,
-		Slug: authentication.AdminSlug,
-	}
-	access := authentication.Auth{
-		Id:    userID,
-		Login: login,
-		Role:  role,
+	principal := &models.Principal{
+		ID:   int64(userID),
+		Role: roles.Admin,
 	}
 	handlerFunc := s.orderStatus.GetOrdersByStatus(s.orderFilterRepository)
 	statusName := "status"
@@ -1353,7 +1209,7 @@ func (s *OrderStatusTestSuite) TestOrderStatus_GetOrdersByStatus_MapErr() {
 	s.orderFilterRepository.On("OrdersByStatus", ctx, statusName, limit, offset, orderBy, orderColumn).
 		Return(ordersToReturn, nil)
 
-	resp := handlerFunc(params, access)
+	resp := handlerFunc(params, principal)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
@@ -1366,15 +1222,9 @@ func (s *OrderStatusTestSuite) TestOrderStatus_GetOrdersByStatus_EmptyPagination
 	request := http.Request{}
 	ctx := request.Context()
 	userID := 1
-	login := "login"
-	role := &authentication.Role{
-		Id:   userID,
-		Slug: authentication.AdminSlug,
-	}
-	access := authentication.Auth{
-		Id:    userID,
-		Login: login,
-		Role:  role,
+	principal := &models.Principal{
+		ID:   int64(userID),
+		Role: roles.Admin,
 	}
 	handlerFunc := s.orderStatus.GetOrdersByStatus(s.orderFilterRepository)
 	statusName := "status"
@@ -1396,12 +1246,12 @@ func (s *OrderStatusTestSuite) TestOrderStatus_GetOrdersByStatus_EmptyPagination
 		ctx, statusName, limit, offset, orderBy, orderColumn).
 		Return(ordersToReturn, nil)
 
-	resp := handlerFunc(params, access)
+	resp := handlerFunc(params, principal)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
 	require.Equal(t, http.StatusOK, responseRecorder.Code)
-	responseOrders := models.OrderList{}
+	responseOrders := models.UserOrdersList{}
 	err := json.Unmarshal(responseRecorder.Body.Bytes(), &responseOrders)
 	if err != nil {
 		t.Fatal(err)
@@ -1419,15 +1269,9 @@ func (s *OrderStatusTestSuite) TestOrderStatus_GetOrdersByStatus_LimitGreaterTha
 	request := http.Request{}
 	ctx := request.Context()
 	userID := 1
-	login := "login"
-	role := &authentication.Role{
-		Id:   userID,
-		Slug: authentication.AdminSlug,
-	}
-	access := authentication.Auth{
-		Id:    userID,
-		Login: login,
-		Role:  role,
+	principal := &models.Principal{
+		ID:   int64(userID),
+		Role: roles.Admin,
 	}
 	handlerFunc := s.orderStatus.GetOrdersByStatus(s.orderFilterRepository)
 	statusName := "status"
@@ -1462,12 +1306,12 @@ func (s *OrderStatusTestSuite) TestOrderStatus_GetOrdersByStatus_LimitGreaterTha
 		ctx, statusName, int(limit), int(offset), orderBy, orderColumn).
 		Return(ordersByStatus, nil)
 
-	resp := handlerFunc(params, access)
+	resp := handlerFunc(params, principal)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
 	require.Equal(t, http.StatusOK, responseRecorder.Code)
-	responseOrders := models.OrderList{}
+	responseOrders := models.UserOrdersList{}
 	err := json.Unmarshal(responseRecorder.Body.Bytes(), &responseOrders)
 	if err != nil {
 		t.Fatal(err)
@@ -1485,15 +1329,9 @@ func (s *OrderStatusTestSuite) TestOrderStatus_GetOrdersByStatus_LimitLessThanTo
 	request := http.Request{}
 	ctx := request.Context()
 	userID := 1
-	login := "login"
-	role := &authentication.Role{
-		Id:   userID,
-		Slug: authentication.AdminSlug,
-	}
-	access := authentication.Auth{
-		Id:    userID,
-		Login: login,
-		Role:  role,
+	principal := &models.Principal{
+		ID:   int64(userID),
+		Role: roles.Admin,
 	}
 	handlerFunc := s.orderStatus.GetOrdersByStatus(s.orderFilterRepository)
 	statusName := "status"
@@ -1528,12 +1366,12 @@ func (s *OrderStatusTestSuite) TestOrderStatus_GetOrdersByStatus_LimitLessThanTo
 		ctx, statusName, int(limit), int(offset), orderBy, orderColumn).
 		Return(ordersByStatus[:limit], nil)
 
-	resp := handlerFunc(params, access)
+	resp := handlerFunc(params, principal)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
 	require.Equal(t, http.StatusOK, responseRecorder.Code)
-	responseOrders := models.OrderList{}
+	responseOrders := models.UserOrdersList{}
 	err := json.Unmarshal(responseRecorder.Body.Bytes(), &responseOrders)
 	if err != nil {
 		t.Fatal(err)
@@ -1552,15 +1390,9 @@ func (s *OrderStatusTestSuite) TestOrderStatus_GetOrdersByStatus_SecondPage() {
 	request := http.Request{}
 	ctx := request.Context()
 	userID := 1
-	login := "login"
-	role := &authentication.Role{
-		Id:   userID,
-		Slug: authentication.AdminSlug,
-	}
-	access := authentication.Auth{
-		Id:    userID,
-		Login: login,
-		Role:  role,
+	principal := &models.Principal{
+		ID:   int64(userID),
+		Role: roles.Admin,
 	}
 	handlerFunc := s.orderStatus.GetOrdersByStatus(s.orderFilterRepository)
 	statusName := "status"
@@ -1595,12 +1427,12 @@ func (s *OrderStatusTestSuite) TestOrderStatus_GetOrdersByStatus_SecondPage() {
 		ctx, statusName, int(limit), int(offset), orderBy, orderColumn).
 		Return(ordersByStatus[offset:], nil)
 
-	resp := handlerFunc(params, access)
+	resp := handlerFunc(params, principal)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
 	require.Equal(t, http.StatusOK, responseRecorder.Code)
-	responseOrders := models.OrderList{}
+	responseOrders := models.UserOrdersList{}
 	err := json.Unmarshal(responseRecorder.Body.Bytes(), &responseOrders)
 	if err != nil {
 		t.Fatal(err)
@@ -1620,15 +1452,9 @@ func (s *OrderStatusTestSuite) TestOrderStatus_GetOrdersByStatus_SeveralPages() 
 	request := http.Request{}
 	ctx := request.Context()
 	userID := 1
-	login := "login"
-	role := &authentication.Role{
-		Id:   userID,
-		Slug: authentication.AdminSlug,
-	}
-	access := authentication.Auth{
-		Id:    userID,
-		Login: login,
-		Role:  role,
+	principal := &models.Principal{
+		ID:   int64(userID),
+		Role: roles.Admin,
 	}
 	handlerFunc := s.orderStatus.GetOrdersByStatus(s.orderFilterRepository)
 	statusName := "status"
@@ -1663,12 +1489,12 @@ func (s *OrderStatusTestSuite) TestOrderStatus_GetOrdersByStatus_SeveralPages() 
 		ctx, statusName, int(limit), int(offset), orderBy, orderColumn).
 		Return(ordersByStatus[:limit], nil)
 
-	resp := handlerFunc(params, access)
+	resp := handlerFunc(params, principal)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
 	require.Equal(t, http.StatusOK, responseRecorder.Code)
-	firstPage := models.OrderList{}
+	firstPage := models.UserOrdersList{}
 	err := json.Unmarshal(responseRecorder.Body.Bytes(), &firstPage)
 	if err != nil {
 		t.Fatal(err)
@@ -1694,12 +1520,12 @@ func (s *OrderStatusTestSuite) TestOrderStatus_GetOrdersByStatus_SeveralPages() 
 		ctx, statusName, int(limit), int(offset), orderBy, orderColumn).
 		Return(ordersByStatus[offset:], nil)
 
-	resp = handlerFunc(params, access)
+	resp = handlerFunc(params, principal)
 	responseRecorder = httptest.NewRecorder()
 	producer = runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
 	require.Equal(t, http.StatusOK, responseRecorder.Code)
-	secondPage := models.OrderList{}
+	secondPage := models.UserOrdersList{}
 	err = json.Unmarshal(responseRecorder.Body.Bytes(), &secondPage)
 	if err != nil {
 		t.Fatal(err)
@@ -1716,26 +1542,20 @@ func (s *OrderStatusTestSuite) TestOrderStatus_GetOrdersByStatus_SeveralPages() 
 	s.orderFilterRepository.AssertExpectations(t)
 }
 
-func (s *OrderStatusTestSuite) TestOrderStatus_GetOrdersByPeriodAndStatus_NoAccess() {
+func (s *OrderStatusTestSuite) sTestOrderStatus_GetOrdersByPeriodAndStatus_NoAccess() {
 	t := s.T()
 	request := http.Request{}
 	userID := 1
-	login := "login"
-	role := &authentication.Role{
-		Id:   userID,
-		Slug: "definitely not admin",
-	}
-	access := authentication.Auth{
-		Id:    userID,
-		Login: login,
-		Role:  role,
+	principal := &models.Principal{
+		ID:   int64(userID),
+		Role: roles.User,
 	}
 	handlerFunc := s.orderStatus.GetOrdersByPeriodAndStatus(s.orderFilterRepository)
 	params := orders.GetOrdersByDateAndStatusParams{
 		HTTPRequest: &request,
 	}
 
-	resp := handlerFunc(params, access)
+	resp := handlerFunc(params, principal)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
@@ -1743,42 +1563,14 @@ func (s *OrderStatusTestSuite) TestOrderStatus_GetOrdersByPeriodAndStatus_NoAcce
 	s.orderFilterRepository.AssertExpectations(t)
 }
 
-func (s *OrderStatusTestSuite) TestOrderStatus_GetOrdersByPeriodAndStatus_AccessErr() {
-	t := s.T()
-	request := http.Request{}
-	access := "dummy access"
-	handlerFunc := s.orderStatus.GetOrdersByPeriodAndStatus(s.orderFilterRepository)
-	params := orders.GetOrdersByDateAndStatusParams{
-		HTTPRequest: &request,
-	}
-
-	resp := handlerFunc(params, access)
-	responseRecorder := httptest.NewRecorder()
-	producer := runtime.JSONProducer()
-	resp.WriteResponse(responseRecorder, producer)
-	response := models.Error{}
-	err := json.Unmarshal(responseRecorder.Body.Bytes(), &response)
-	require.NoError(t, err)
-	require.NotEmpty(t, response)
-	require.NotEmpty(t, response.Data)
-	require.Contains(t, response.Data.Message, "Can't get authorization")
-	require.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
-}
-
 func (s *OrderStatusTestSuite) TestOrderStatus_GetOrdersByPeriodAndStatus_RepoErr() {
 	t := s.T()
 	request := http.Request{}
 	ctx := request.Context()
 	userID := 1
-	login := "login"
-	role := &authentication.Role{
-		Id:   userID,
-		Slug: authentication.AdminSlug,
-	}
-	access := authentication.Auth{
-		Id:    userID,
-		Login: login,
-		Role:  role,
+	principal := &models.Principal{
+		ID:   int64(userID),
+		Role: roles.Admin,
 	}
 	handlerFunc := s.orderStatus.GetOrdersByPeriodAndStatus(s.orderFilterRepository)
 	status := "status"
@@ -1793,7 +1585,7 @@ func (s *OrderStatusTestSuite) TestOrderStatus_GetOrdersByPeriodAndStatus_RepoEr
 	s.orderFilterRepository.On("OrdersByPeriodAndStatusTotal", ctx, fromTime, toTime, status).
 		Return(0, errors.New("repo error"))
 
-	resp := handlerFunc(params, access)
+	resp := handlerFunc(params, principal)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
@@ -1806,15 +1598,9 @@ func (s *OrderStatusTestSuite) TestOrderStatus_GetOrdersByPeriodAndStatus_EmptyR
 	request := http.Request{}
 	ctx := request.Context()
 	userID := 1
-	login := "login"
-	role := &authentication.Role{
-		Id:   userID,
-		Slug: authentication.AdminSlug,
-	}
-	access := authentication.Auth{
-		Id:    userID,
-		Login: login,
-		Role:  role,
+	principal := &models.Principal{
+		ID:   int64(userID),
+		Role: roles.Admin,
 	}
 	handlerFunc := s.orderStatus.GetOrdersByPeriodAndStatus(s.orderFilterRepository)
 	status := "status"
@@ -1829,12 +1615,12 @@ func (s *OrderStatusTestSuite) TestOrderStatus_GetOrdersByPeriodAndStatus_EmptyR
 	s.orderFilterRepository.On("OrdersByPeriodAndStatusTotal", ctx, fromTime, toTime, status).
 		Return(0, nil)
 
-	resp := handlerFunc(params, access)
+	resp := handlerFunc(params, principal)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
 	require.Equal(t, http.StatusOK, responseRecorder.Code)
-	responseOrders := models.OrderList{}
+	responseOrders := models.UserOrdersList{}
 	err := json.Unmarshal(responseRecorder.Body.Bytes(), &responseOrders)
 	if err != nil {
 		t.Fatal(err)
@@ -1849,15 +1635,9 @@ func (s *OrderStatusTestSuite) TestOrderStatus_GetOrdersByPeriodAndStatus_MapErr
 	request := http.Request{}
 	ctx := request.Context()
 	userID := 1
-	login := "login"
-	role := &authentication.Role{
-		Id:   userID,
-		Slug: authentication.AdminSlug,
-	}
-	access := authentication.Auth{
-		Id:    userID,
-		Login: login,
-		Role:  role,
+	principal := &models.Principal{
+		ID:   int64(userID),
+		Role: roles.Admin,
 	}
 	handlerFunc := s.orderStatus.GetOrdersByPeriodAndStatus(s.orderFilterRepository)
 	status := "status"
@@ -1881,7 +1661,7 @@ func (s *OrderStatusTestSuite) TestOrderStatus_GetOrdersByPeriodAndStatus_MapErr
 		ctx, fromTime, toTime, status, limit, offset, orderBy, orderColumn).
 		Return(ordersToReturn, nil)
 
-	resp := handlerFunc(params, access)
+	resp := handlerFunc(params, principal)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
@@ -1894,15 +1674,9 @@ func (s *OrderStatusTestSuite) TestOrderStatus_GetOrdersByPeriodAndStatus_EmptyP
 	request := http.Request{}
 	ctx := request.Context()
 	userID := 1
-	login := "login"
-	role := &authentication.Role{
-		Id:   userID,
-		Slug: authentication.AdminSlug,
-	}
-	access := authentication.Auth{
-		Id:    userID,
-		Login: login,
-		Role:  role,
+	principal := &models.Principal{
+		ID:   int64(userID),
+		Role: roles.Admin,
 	}
 	handlerFunc := s.orderStatus.GetOrdersByPeriodAndStatus(s.orderFilterRepository)
 	status := "status"
@@ -1928,7 +1702,7 @@ func (s *OrderStatusTestSuite) TestOrderStatus_GetOrdersByPeriodAndStatus_EmptyP
 		ctx, fromTime, toTime, status, limit, offset, orderBy, orderColumn).
 		Return(ordersToReturn, nil)
 
-	resp := handlerFunc(params, access)
+	resp := handlerFunc(params, principal)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
@@ -1941,15 +1715,9 @@ func (s *OrderStatusTestSuite) TestOrderStatus_GetOrdersByPeriodAndStatus_LimitG
 	request := http.Request{}
 	ctx := request.Context()
 	userID := 1
-	login := "login"
-	role := &authentication.Role{
-		Id:   userID,
-		Slug: authentication.AdminSlug,
-	}
-	access := authentication.Auth{
-		Id:    userID,
-		Login: login,
-		Role:  role,
+	principal := &models.Principal{
+		ID:   int64(userID),
+		Role: roles.Admin,
 	}
 	handlerFunc := s.orderStatus.GetOrdersByPeriodAndStatus(s.orderFilterRepository)
 	statusName := "status"
@@ -1988,12 +1756,12 @@ func (s *OrderStatusTestSuite) TestOrderStatus_GetOrdersByPeriodAndStatus_LimitG
 		ctx, from, to, statusName, int(limit), int(offset), orderBy, orderColumn).
 		Return(ordersByStatus, nil)
 
-	resp := handlerFunc(params, access)
+	resp := handlerFunc(params, principal)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
 	require.Equal(t, http.StatusOK, responseRecorder.Code)
-	responseOrders := models.OrderList{}
+	responseOrders := models.UserOrdersList{}
 	err := json.Unmarshal(responseRecorder.Body.Bytes(), &responseOrders)
 	if err != nil {
 		t.Fatal(err)
@@ -2011,15 +1779,9 @@ func (s *OrderStatusTestSuite) TestOrderStatus_GetOrdersByPeriodAndStatus_LimitL
 	request := http.Request{}
 	ctx := request.Context()
 	userID := 1
-	login := "login"
-	role := &authentication.Role{
-		Id:   userID,
-		Slug: authentication.AdminSlug,
-	}
-	access := authentication.Auth{
-		Id:    userID,
-		Login: login,
-		Role:  role,
+	principal := &models.Principal{
+		ID:   int64(userID),
+		Role: roles.Admin,
 	}
 	handlerFunc := s.orderStatus.GetOrdersByPeriodAndStatus(s.orderFilterRepository)
 	statusName := "status"
@@ -2058,12 +1820,12 @@ func (s *OrderStatusTestSuite) TestOrderStatus_GetOrdersByPeriodAndStatus_LimitL
 		ctx, from, to, statusName, int(limit), int(offset), orderBy, orderColumn).
 		Return(ordersByStatus[:limit], nil)
 
-	resp := handlerFunc(params, access)
+	resp := handlerFunc(params, principal)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
 	require.Equal(t, http.StatusOK, responseRecorder.Code)
-	responseOrders := models.OrderList{}
+	responseOrders := models.UserOrdersList{}
 	err := json.Unmarshal(responseRecorder.Body.Bytes(), &responseOrders)
 	if err != nil {
 		t.Fatal(err)
@@ -2082,15 +1844,9 @@ func (s *OrderStatusTestSuite) TestOrderStatus_GetOrdersByPeriodAndStatus_Second
 	request := http.Request{}
 	ctx := request.Context()
 	userID := 1
-	login := "login"
-	role := &authentication.Role{
-		Id:   userID,
-		Slug: authentication.AdminSlug,
-	}
-	access := authentication.Auth{
-		Id:    userID,
-		Login: login,
-		Role:  role,
+	principal := &models.Principal{
+		ID:   int64(userID),
+		Role: roles.Admin,
 	}
 	handlerFunc := s.orderStatus.GetOrdersByPeriodAndStatus(s.orderFilterRepository)
 	statusName := "status"
@@ -2129,12 +1885,12 @@ func (s *OrderStatusTestSuite) TestOrderStatus_GetOrdersByPeriodAndStatus_Second
 		ctx, from, to, statusName, int(limit), int(offset), orderBy, orderColumn).
 		Return(ordersByStatus[offset:], nil)
 
-	resp := handlerFunc(params, access)
+	resp := handlerFunc(params, principal)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
 	require.Equal(t, http.StatusOK, responseRecorder.Code)
-	responseOrders := models.OrderList{}
+	responseOrders := models.UserOrdersList{}
 	err := json.Unmarshal(responseRecorder.Body.Bytes(), &responseOrders)
 	if err != nil {
 		t.Fatal(err)
@@ -2154,15 +1910,9 @@ func (s *OrderStatusTestSuite) TestOrderStatus_GetOrdersByPeriodAndStatus_Severa
 	request := http.Request{}
 	ctx := request.Context()
 	userID := 1
-	login := "login"
-	role := &authentication.Role{
-		Id:   userID,
-		Slug: authentication.AdminSlug,
-	}
-	access := authentication.Auth{
-		Id:    userID,
-		Login: login,
-		Role:  role,
+	principal := &models.Principal{
+		ID:   int64(userID),
+		Role: roles.Admin,
 	}
 	handlerFunc := s.orderStatus.GetOrdersByPeriodAndStatus(s.orderFilterRepository)
 	statusName := "status"
@@ -2201,12 +1951,12 @@ func (s *OrderStatusTestSuite) TestOrderStatus_GetOrdersByPeriodAndStatus_Severa
 		ctx, from, to, statusName, int(limit), int(offset), orderBy, orderColumn).
 		Return(ordersByStatus[:limit], nil)
 
-	resp := handlerFunc(params, access)
+	resp := handlerFunc(params, principal)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
 	require.Equal(t, http.StatusOK, responseRecorder.Code)
-	firstPage := models.OrderList{}
+	firstPage := models.UserOrdersList{}
 	err := json.Unmarshal(responseRecorder.Body.Bytes(), &firstPage)
 	if err != nil {
 		t.Fatal(err)
@@ -2234,12 +1984,12 @@ func (s *OrderStatusTestSuite) TestOrderStatus_GetOrdersByPeriodAndStatus_Severa
 		ctx, from, to, statusName, int(limit), int(offset), orderBy, orderColumn).
 		Return(ordersByStatus[offset:], nil)
 
-	resp = handlerFunc(params, access)
+	resp = handlerFunc(params, principal)
 	responseRecorder = httptest.NewRecorder()
 	producer = runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
 	require.Equal(t, http.StatusOK, responseRecorder.Code)
-	secondPage := models.OrderList{}
+	secondPage := models.UserOrdersList{}
 	err = json.Unmarshal(responseRecorder.Body.Bytes(), &secondPage)
 	if err != nil {
 		t.Fatal(err)
