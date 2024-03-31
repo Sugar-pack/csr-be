@@ -10,7 +10,6 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"entgo.io/ent/entc/integration/ent/user"
 	"github.com/go-openapi/loads"
 	"github.com/go-openapi/runtime"
 	"github.com/stretchr/testify/require"
@@ -19,6 +18,7 @@ import (
 
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/ent"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/ent/enttest"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/ent/user"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/mocks"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/swagger/models"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/swagger/restapi"
