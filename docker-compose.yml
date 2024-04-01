@@ -6,21 +6,38 @@ services:
     environment:
       - POSTGRES_USER=csr
       - POSTGRES_DB=csr
-      - POSTGRES_HOST_AUTH_METHOD=trust
+      - POSTGRES_PASSWORD=pass
+#      - POSTGRES_HOST_AUTH_METHOD=trust
     command: -p 5432
     ports:
       - "5432:5432"
-    networks:
-      - default
+
+
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U csr -p 5432" ]
       interval: 2s
       timeout: 1s
       retries: 5
-  csr:
-    build: .
+  csr-be:
+#    build: .
+    image: csr-be:local
     depends_on:
       - postgres
     ports:
       - "8080:8080"
     command: "go run ./cmd/swagger/"
+
+
+#  csr-fe:
+#    image: ng-docker-app:fixed
+#    #ng-docker-app:local1 #ng-docker-app:v1.0.0
+#    depends_on:
+#    - csr-be
+#    ports:
+#      - "8082:8080"
+
+networks:
+  default:
+    external: true
+      name: test
+
