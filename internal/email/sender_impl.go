@@ -7,21 +7,30 @@ import (
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/pkg/domain"
 )
 
+const (
+	defaultRegistrationConfirmPath = "templates/registration-confirm/index.html"
+)
+
 type sender struct {
-	websiteUrl       string
-	senderName       string
-	senderEmail      string
-	isRequiredToSend bool
-	client           domain.SMTPClient
+	websiteUrl              string
+	senderName              string
+	senderEmail             string
+	isRequiredToSend        bool
+	client                  domain.SMTPClient
+	RegistrationConfirmPath string
 }
 
 func NewSenderSmtp(config config.Email, client domain.SMTPClient) domain.Sender {
+	if config.RegistrationConfirmPath == "" {
+		config.RegistrationConfirmPath = defaultRegistrationConfirmPath
+	}
 	return &sender{
-		websiteUrl:       config.SenderWebsiteUrl,
-		senderName:       config.SenderFromName,
-		senderEmail:      config.SenderFromAddress,
-		isRequiredToSend: config.IsSendRequired,
-		client:           client,
+		websiteUrl:              config.SenderWebsiteUrl,
+		senderName:              config.SenderFromName,
+		senderEmail:             config.SenderFromAddress,
+		isRequiredToSend:        config.IsSendRequired,
+		client:                  client,
+		RegistrationConfirmPath: config.RegistrationConfirmPath,
 	}
 }
 
@@ -83,7 +92,7 @@ func (c *sender) SendRegistrationConfirmLink(email string, userName string, toke
 	if c.isRequiredToSend == false {
 		return nil
 	}
-	text, err := GenerateRegistrationConfirmMessage(userName, c.websiteUrl, token)
+	text, err := GenerateRegistrationConfirmMessage(userName, c.websiteUrl, token, c.RegistrationConfirmPath)
 	if err != nil {
 		return fmt.Errorf("cant generate email %w", err)
 	}

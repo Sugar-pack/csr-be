@@ -48,14 +48,15 @@ func (db DB) GetConnectionString() string {
 }
 
 type Email struct {
-	ServerHost            string        `validate:"required"`
-	ServerPort            string        `validate:"required"`
-	Password              string        `validate:"required"`
-	SenderFromAddress     string        `validate:"required"`
-	SenderFromName        string        `validate:"required"`
-	SenderWebsiteUrl      string        `validate:"required"`
-	ConfirmLinkExpiration time.Duration `validate:"required"`
-	IsSendRequired        bool
+	ServerHost              string        `validate:"required"`
+	ServerPort              string        `validate:"required"`
+	Password                string        `validate:"required"`
+	SenderFromAddress       string        `validate:"required"`
+	SenderFromName          string        `validate:"required"`
+	SenderWebsiteUrl        string        `validate:"required"`
+	ConfirmLinkExpiration   time.Duration `validate:"required"`
+	IsSendRequired          bool
+	RegistrationConfirmPath string
 }
 
 type Password struct {
