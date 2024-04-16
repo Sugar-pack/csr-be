@@ -1335,6 +1335,7 @@ func (s *UserTestSuite) TestUser_ChangeEmailFunc_OK() {
 	}
 
 	s.userRepository.On("GetUserByID", ctx, user.ID).Return(user, nil)
+	s.userRepository.On("UnConfirmRegistration", ctx, user.Login).Return(nil)
 	s.changeEmailService.On("SendEmailConfirmationLink", ctx, user.Login, testEmail).Return(nil)
 
 	resp := handlerFunc(data, principal)
@@ -1369,6 +1370,7 @@ func (s *UserTestSuite) TestUser_ChangeEmailFunc_Err() {
 	}
 
 	s.userRepository.On("GetUserByID", ctx, user.ID).Return(user, nil)
+	s.userRepository.On("UnConfirmRegistration", ctx, user.Login).Return(nil)
 	err := errors.New("unable to send email confirmation link")
 	s.changeEmailService.On("SendEmailConfirmationLink", ctx, user.Login, testEmail).Return(err)
 

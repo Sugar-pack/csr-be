@@ -66,9 +66,10 @@ func TestSenderImpl_SendRegistrationConfirmLink(t *testing.T) {
 	email := "2"
 
 	conf := config.Email{
-		SenderFromName:    "sender_from_name",
-		SenderFromAddress: "sender_from_name@gmail.com",
-		IsSendRequired:    true,
+		SenderFromName:          "sender_from_name",
+		SenderFromAddress:       "sender_from_name@gmail.com",
+		IsSendRequired:          true,
+		RegistrationConfirmPath: "../../templates/registration-confirm/index.html",
 	}
 
 	cl := mocks.NewSMTPClient(t)

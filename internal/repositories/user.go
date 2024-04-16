@@ -248,6 +248,18 @@ func (r *userRepository) ConfirmRegistration(ctx context.Context, login string) 
 	return nil
 }
 
+func (r *userRepository) UnConfirmRegistration(ctx context.Context, login string) error {
+	tx, err := middlewares.TxFromContext(ctx)
+	if err != nil {
+		return err
+	}
+	_, err = tx.User.Update().Where(user.LoginEQ(login)).SetIsRegistrationConfirmed(false).Save(ctx)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func (r *userRepository) Delete(ctx context.Context, userId int) error {
 	tx, err := middlewares.TxFromContext(ctx)
 	if err != nil {

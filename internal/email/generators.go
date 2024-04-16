@@ -1,7 +1,9 @@
 package email
 
 import (
+	"bytes"
 	"fmt"
+	"html/template"
 	"time"
 
 	"github.com/matcornic/hermes/v2"
@@ -15,8 +17,34 @@ func GenerateGetPasswordReset(userName, password string) (string, error) {
 	return generateHtml(generateGetPasswordReset(userName, password))
 }
 
-func GenerateRegistrationConfirmMessage(userName, websiteUrl, token string) (string, error) {
-	return generateHtml(generateRegistrationConfirmMessage(userName, websiteUrl, token))
+type RegistrationConfirmData struct {
+	Link string
+}
+
+func GenerateRegistrationConfirmMessage(_, websiteUrl, token, htmlTemplatePath string) (string, error) {
+	tmpl, err := template.ParseFiles(htmlTemplatePath)
+	if err != nil {
+		return "", err
+	}
+
+	// Create the registration confirmation URL
+	confirmationUrl := fmt.Sprintf("%sapi/registration_confirm/%s", websiteUrl, token)
+
+	// Prepare the data to insert into the template
+	data := RegistrationConfirmData{
+		Link: confirmationUrl,
+	}
+
+	// Create a buffer to store the output of the template execution
+	var tpl bytes.Buffer
+
+	// Execute the template and write the output to the buffer
+	if err := tmpl.Execute(&tpl, data); err != nil {
+		return "", err
+	}
+
+	// Convert the buffer contents to a string and return
+	return tpl.String(), nil
 }
 
 func GenerateEmailConfirmMessage(userName, websiteUrl, token string) (string, error) {
