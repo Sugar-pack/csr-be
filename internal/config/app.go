@@ -115,7 +115,7 @@ func getDefaultConfig() *AppConfig {
 			ConfirmLinkExpiration: 15 * time.Minute,
 		},
 		Server: Server{
-			Host: "127.0.0.1",
+			Host: "0.0.0.0",
 			Port: 8080,
 		},
 	}
