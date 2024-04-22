@@ -400,6 +400,13 @@ func (c User) ChangeEmail(repo domain.UserRepository,
 				WithPayload(buildInternalErrorPayload(messages.ErrChangeEmail, err.Error()))
 		}
 
+		err = repo.UnConfirmRegistration(ctx, requestedUser.Login)
+		if err != nil {
+			c.logger.Error("error while removing confirmation of registration", zap.Error(err))
+			return users.NewChangeEmailDefault(http.StatusInternalServerError).
+				WithPayload(buildInternalErrorPayload(messages.ErrNewEmailConfirmation, err.Error()))
+		}
+
 		err = changeEmailService.SendEmailConfirmationLink(ctx, requestedUser.Login, p.EmailPatch.NewEmail)
 		if err != nil {
 			c.logger.Error("error while sending link for confirmation new email", zap.Error(err))

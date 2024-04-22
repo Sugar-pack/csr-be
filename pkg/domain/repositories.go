@@ -170,5 +170,6 @@ type UserRepository interface {
 	Delete(ctx context.Context, userId int) error
 	UsersListTotal(ctx context.Context) (int, error)
 	ConfirmRegistration(ctx context.Context, login string) error
+	UnConfirmRegistration(ctx context.Context, login string) error
 	SetIsReadonly(ctx context.Context, id int, isReadonly bool) error
 }
