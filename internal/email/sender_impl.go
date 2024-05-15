@@ -21,16 +21,13 @@ type sender struct {
 }
 
 func NewSenderSmtp(config config.Email, client domain.SMTPClient) domain.Sender {
-	if config.RegistrationConfirmPath == "" {
-		config.RegistrationConfirmPath = defaultRegistrationConfirmPath
-	}
 	return &sender{
 		websiteUrl:              config.SenderWebsiteUrl,
 		senderName:              config.SenderFromName,
 		senderEmail:             config.SenderFromAddress,
 		isRequiredToSend:        config.IsSendRequired,
 		client:                  client,
-		RegistrationConfirmPath: config.RegistrationConfirmPath,
+		RegistrationConfirmPath: defaultRegistrationConfirmPath,
 	}
 }
 
