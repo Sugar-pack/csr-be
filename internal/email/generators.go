@@ -2,6 +2,7 @@ package email
 
 import (
 	"bytes"
+	"embed"
 	"fmt"
 	"html/template"
 	"time"
@@ -21,8 +22,11 @@ type RegistrationConfirmData struct {
 	Link string
 }
 
+//go:embed templates/registration-confirm/index.html
+var content embed.FS
+
 func GenerateRegistrationConfirmMessage(_, websiteUrl, token, htmlTemplatePath string) (string, error) {
-	tmpl, err := template.ParseFiles(htmlTemplatePath)
+	tmpl, err := template.ParseFS(content, htmlTemplatePath)
 	if err != nil {
 		return "", err
 	}
