@@ -648,27 +648,16 @@ func (r *equipmentRepository) UnblockEquipment(ctx context.Context, id int) erro
 		Query().
 		Where(equipmentstatus.HasEquipmentsWith(equipment.ID(eqToUnblock.ID))).
 		Where(equipmentstatus.HasEquipmentStatusNameWith(equipmentstatusname.ID(eqStatusNotAvailable.ID))).
-		Order(ent.Asc(equipmentstatus.FieldEndDate)).
-		First(ctx)
+		Only(ctx)
 	if err != nil {
 		return err
 	}
 
-	if equipmentStatus != nil {
-		_, err = equipmentStatus.
-			Update().
-			SetEquipmentStatusName(eqStatusAvailable).
-			SetEndDate(truncateHours(&equipmentStatus.EndDate)).
-			Save(ctx)
-		if err != nil {
-			return err
-		}
-		err = tx.EquipmentStatus.DeleteOne(equipmentStatus).Exec(ctx)
-		if err != nil {
-			return err
-		}
-
+	err = tx.EquipmentStatus.DeleteOne(equipmentStatus).Exec(ctx)
+	if err != nil {
+		return err
 	}
+
 	return err
 }
 
