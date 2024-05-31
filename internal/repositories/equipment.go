@@ -516,20 +516,7 @@ func (r *equipmentRepository) BlockEquipment(
 		return err
 	}
 
-	// Get last EqupmentStatus for current Equipment
-	currentEqStatus, err := tx.EquipmentStatus.
-		Query().
-		QueryEquipments().
-		Where(equipment.IDEQ(id)).
-		QueryEquipmentStatus().
-		WithEquipmentStatusName().
-		Order(ent.Asc(equipmentstatus.FieldEndDate)).
-		First(ctx)
-	if err != nil && !ent.IsNotFound(err) {
-		return err
-	}
-
-	// Get EquipmentStatusName from DB
+	// Get EquipmentStatusName for "not available" from DB.
 	eqStatusNotAvailable, err := tx.EquipmentStatusName.
 		Query().
 		Where(equipmentstatusname.Name(domain.EquipmentStatusNotAvailable)).
@@ -538,21 +525,27 @@ func (r *equipmentRepository) BlockEquipment(
 		return err
 	}
 
-	// Set a new EquipmentStatusName for current Equipment
-	_, err = eqToBlock.Update().SetCurrentStatus(eqStatusNotAvailable).Save(ctx)
-	if err != nil {
-		return err
-	}
+	// Get (if exists) EqupmentStatus for current Equipment.
+	// Note, that only one row with "not available" stauts may exist per single equipment id.
+	eqToBlockStatus, err := tx.EquipmentStatus.
+		Query().
+		QueryEquipments().
+		Where(equipment.IDEQ(id)).
+		QueryEquipmentStatus().
+		WithEquipmentStatusName().
+		Where(equipmentstatus.HasEquipmentStatusNameWith(equipmentstatusname.ID(eqStatusNotAvailable.ID))).
+		Only(ctx)
 
-	// Check if current EqupmentStatus has specific EquipmentStatusName.
-	// if the record exist update it, otherwise create a new EquipmentStatus.
-	if currentEqStatus != nil && currentEqStatus.Edges.EquipmentStatusName.Name == domain.EquipmentStatusNotAvailable {
-		currentEqStatus.
+	// Check if current EqupmentStatus has specific EquipmentStatusName - "not available".
+	// If the record exists - update it, otherwise create a new EquipmentStatus.
+	if eqToBlockStatus != nil {
+		eqToBlockStatus.
 			Update().
 			SetStartDate(startDate).
 			SetEndDate(endDate).
+			SetUpdatedAt(time.Now()).
 			Save(ctx)
-	} else {
+	} else if ent.IsNotFound(err) {
 		_, err = tx.EquipmentStatus.Create().
 			SetCreatedAt(time.Now()).
 			SetEndDate(endDate).
@@ -564,6 +557,9 @@ func (r *equipmentRepository) BlockEquipment(
 		if err != nil {
 			return err
 		}
+	} else {
+		// Means multiple "not available" (blocking) statuses exist per single equipment. Must never happen
+		return err
 	}
 
 	// Get OrderStatusName form DB
