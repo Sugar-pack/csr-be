@@ -44,8 +44,9 @@ func (s *OrderSuite) SetupTest() {
 	s.orderRepository = NewOrderRepository()
 	s.orderStatusRepository = NewOrderStatusRepository()
 
+	name := "user1"
 	s.user = &ent.User{
-		Login: "user1", Email: "user1@email.com", Password: "1234", Name: "user1",
+		Login: "user1", Email: "user1@email.com", Password: "1234", Name: &name,
 	}
 	_, err := s.client.User.Delete().Exec(s.ctx)
 	if err != nil {
@@ -53,7 +54,7 @@ func (s *OrderSuite) SetupTest() {
 	}
 	u, err := s.client.User.Create().
 		SetLogin(s.user.Login).SetEmail(s.user.Email).
-		SetPassword(s.user.Password).SetName(s.user.Name).
+		SetPassword(s.user.Password).SetName(*s.user.Name).
 		Save(s.ctx)
 	if err != nil {
 		t.Fatal(err)
