@@ -34,6 +34,10 @@
       "allowedEndpoints": {
         "GET": [
           "/v1/users/me"
+        ],
+        "PATCH": [
+          "/v1/users/me/password",
+          "/v1/users/me/email"
         ]
       }
     },
