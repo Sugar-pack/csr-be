@@ -1487,9 +1487,10 @@ func (s *UserTestSuite) TestUser_UpdateReadonlyAccess_InternalError() {
 
 func validUser(t *testing.T, id int) *ent.User {
 	t.Helper()
+	name := fmt.Sprintf("User%d", id)
 	return &ent.User{
 		ID:    id,
-		Name:  fmt.Sprintf("User%d", id),
+		Name:  &name,
 		Login: fmt.Sprintf("user_%d", id),
 		Email: fmt.Sprintf("user_%d@mail.com", id),
 		Edges: ent.UserEdges{

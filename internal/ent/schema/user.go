@@ -18,7 +18,7 @@ func (User) Fields() []ent.Field {
 		field.String("login").Unique(),
 		field.String("email").NotEmpty(),
 		field.String("password").NotEmpty(),
-		field.String("name").NotEmpty(),
+		field.String("name").Optional().Nillable(),
 		field.String("surname").Optional().Nillable(),
 		field.String("patronymic").Optional().Nillable(),
 		field.String("passport_series").Optional().Nillable(),

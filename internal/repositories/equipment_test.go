@@ -54,8 +54,9 @@ func (s *EquipmentSuite) SetupTest() {
 		t.Fatal(err)
 	}
 
+	name := "admin"
 	s.user = &ent.User{
-		Login: "admin", Email: "admin@email.com", Password: "12345", Name: "admin",
+		Login: "admin", Email: "admin@email.com", Password: "12345", Name: &name,
 	}
 	_, err = s.client.User.Delete().Exec(s.ctx)
 	if err != nil {
@@ -63,7 +64,7 @@ func (s *EquipmentSuite) SetupTest() {
 	}
 	u, err := s.client.User.Create().
 		SetLogin(s.user.Login).SetEmail(s.user.Email).
-		SetPassword(s.user.Password).SetName(s.user.Name).
+		SetPassword(s.user.Password).SetName(*s.user.Name).
 		Save(s.ctx)
 	if err != nil {
 		t.Fatal(err)
