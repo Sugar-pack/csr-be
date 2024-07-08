@@ -29,11 +29,14 @@
       "role": {
         "slug": "user",
         "isRegistrationConfirmed": false,
-        "isPersonalDataConfirmed": false
+        "isPersonalDataConfirmed": false,
+        "isReadonly": false
       },
       "allowedEndpoints": {
         "GET": [
-          "/v1/users/me"
+          "/v1/users/me",
+          "/v1/status_names",
+          "/equipment/status_names"
         ],
         "PATCH": [
           "/v1/users/me/password",
@@ -52,6 +55,7 @@
         "GET": [
           "/v1/users/me",
           "/v1/active_areas",
+          "/v1/status_names",
           "/pet_size",
           "/pet_size/{petSizeId}",
           "/pet_kind/{petKindId}",
