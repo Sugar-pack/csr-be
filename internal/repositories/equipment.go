@@ -3,6 +3,7 @@ package repositories
 import (
 	"context"
 	"errors"
+	"fmt"
 	"time"
 
 	"entgo.io/ent/dialect/sql"
@@ -516,6 +517,7 @@ func (r *equipmentRepository) BlockEquipment(
 		return err
 	}
 
+	timeNow := time.Now()
 	// Get EquipmentStatusName for "not available" from DB.
 	eqStatusNotAvailable, err := tx.EquipmentStatusName.
 		Query().
@@ -525,8 +527,8 @@ func (r *equipmentRepository) BlockEquipment(
 		return err
 	}
 
-	// Get (if exists) EqupmentStatus for current Equipment.
-	// Note, that only one row with "not available" stauts may exist per single equipment id.
+	// Get (if exists) EquipmentStatus for current Equipment.
+	// Note, that only one row with "not available" status may exist per single equipment id.
 	eqToBlockStatus, err := tx.EquipmentStatus.
 		Query().
 		QueryEquipments().
@@ -543,16 +545,16 @@ func (r *equipmentRepository) BlockEquipment(
 			Update().
 			SetStartDate(startDate).
 			SetEndDate(endDate).
-			SetUpdatedAt(time.Now()).
+			SetUpdatedAt(timeNow).
 			Save(ctx)
 	} else if ent.IsNotFound(err) {
 		_, err = tx.EquipmentStatus.Create().
-			SetCreatedAt(time.Now()).
+			SetCreatedAt(timeNow).
 			SetEndDate(endDate).
 			SetStartDate(startDate).
 			SetEquipments(eqToBlock).
 			SetEquipmentStatusName(eqStatusNotAvailable).
-			SetUpdatedAt(time.Now()).
+			SetUpdatedAt(timeNow).
 			Save(ctx)
 		if err != nil {
 			return err
