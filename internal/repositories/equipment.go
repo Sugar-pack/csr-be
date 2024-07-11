@@ -559,7 +559,7 @@ func (r *equipmentRepository) BlockEquipment(
 		}
 	} else {
 		// Means multiple "not available" (blocking) statuses exist per single equipment. Must never happen
-		return err
+		return fmt.Errorf("multiple statuses not available for blocking period: %w", err)
 	}
 
 	// Get OrderStatusName form DB
