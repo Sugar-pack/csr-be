@@ -39,11 +39,12 @@ func (s *UserSuite) SetupTest() {
 
 	s.users = make(map[int]*ent.User)
 	for i := 1; i <= 12; i++ {
+		name := fmt.Sprintf("user%d", i)
 		s.users[i] = &ent.User{
 			Login:    fmt.Sprintf("user_%d", i),
 			Email:    fmt.Sprintf("user_%d@mail.com", i),
 			Password: "password",
-			Name:     fmt.Sprintf("user%d", i),
+			Name:     &name,
 		}
 	}
 
@@ -53,7 +54,7 @@ func (s *UserSuite) SetupTest() {
 	}
 	for i, value := range s.users {
 		user, errCreate := s.client.User.Create().
-			SetName(value.Name).
+			SetName(*value.Name).
 			SetLogin(value.Login).
 			SetPassword(value.Password).
 			SetEmail(value.Email).
@@ -240,8 +241,8 @@ func (s *UserSuite) TestUserRepository_UserList_OrderByNameDesc() {
 	prevUserName := "zzzzzzzzzzzzzzzzzzzzz"
 	for _, value := range users {
 		require.True(t, mapContainsUser(t, value, s.users))
-		require.LessOrEqual(t, value.Name, prevUserName)
-		prevUserName = value.Name
+		require.LessOrEqual(t, *value.Name, prevUserName)
+		prevUserName = *value.Name
 	}
 }
 
@@ -286,8 +287,8 @@ func (s *UserSuite) TestUserRepository_UserList_OrderByNameAsc() {
 	prevUserName := ""
 	for _, value := range users {
 		require.True(t, mapContainsUser(t, value, s.users))
-		require.GreaterOrEqual(t, value.Name, prevUserName)
-		prevUserName = value.Name
+		require.GreaterOrEqual(t, *value.Name, prevUserName)
+		prevUserName = *value.Name
 	}
 }
 
@@ -431,7 +432,7 @@ func (s *UserSuite) TestUserRepository_DeleteUser_OK() {
 func mapContainsUser(t *testing.T, eq *ent.User, m map[int]*ent.User) bool {
 	t.Helper()
 	for _, v := range m {
-		if eq.Name == v.Name && eq.ID == v.ID && eq.Login == v.Login && eq.Email == v.Email {
+		if *eq.Name == *v.Name && eq.ID == v.ID && eq.Login == v.Login && eq.Email == v.Email {
 			return true
 		}
 	}

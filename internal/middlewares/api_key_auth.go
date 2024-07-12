@@ -66,7 +66,7 @@ func createPrincipal(user *ent.User) *models.Principal {
 
 func isPersonalDataConfirmed(user *ent.User) bool {
 	return user != nil &&
-		user.Name != "" &&
+		user.Name != nil && *user.Name != "" &&
 		user.Surname != nil && *user.Surname != "" &&
 		user.Phone != nil && *user.Phone != ""
 }

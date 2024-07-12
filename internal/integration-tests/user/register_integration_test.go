@@ -33,9 +33,7 @@ func TestIntegration_RegisterUser(t *testing.T) {
 		Login:       &l,
 		Password:    &p,
 		Type:        &userType,
-		// not provided in documentation, but also required
-		// todo: update documentation
-		Name: gofakeit.Name(),
+		Name:        gofakeit.Name(),
 		// not provided in documentation, but also required
 		// todo: update documentation
 		Email: strfmt.Email(gofakeit.Email()),
@@ -47,7 +45,7 @@ func TestIntegration_RegisterUser(t *testing.T) {
 	params.SetHTTPClient(http.DefaultClient)
 
 	t.Run("user person register ok", func(t *testing.T) {
-		// login, password, type required, name and email also
+		// login, password, type required
 		user, err := c.Users.PostUser(params)
 		require.NoError(t, err)
 
@@ -78,9 +76,7 @@ func TestIntegration_RegisterUser(t *testing.T) {
 			Login:       &l,
 			Password:    &p,
 			Type:        &userType,
-			// not provided in documentation, but also required
-			// todo: update documentation
-			Name: gofakeit.Name(),
+			Name:        gofakeit.Name(),
 			// not provided in documentation, but also required
 			// todo: update documentation
 			Email: strfmt.Email(gofakeit.Email()),
@@ -105,9 +101,7 @@ func TestIntegration_RegisterUser(t *testing.T) {
 			Login:       &l,
 			Password:    &p,
 			Type:        &userType,
-			// not provided in documentation, but also required
-			// todo: update documentation
-			Name: gofakeit.Name(),
+			Name:        gofakeit.Name(),
 			// not provided in documentation, but also required
 			// todo: update documentation
 			Email: strfmt.Email(gofakeit.Email()),
@@ -148,45 +142,36 @@ func TestIntegration_RegisterUser(t *testing.T) {
 		assert.Equal(t, errExp, err)
 	})
 
-	t.Run("name validation error", func(t *testing.T) {
+	t.Run("name absence is ok", func(t *testing.T) {
 		userType = "person"
+		l, p, err = utils.GenerateLoginAndPassword()
+		require.NoError(t, err)
 		data = &models.UserRegister{
 			ActiveAreas: []int64{3},
 			Login:       &l,
 			Password:    &p,
 			Type:        &userType,
-			Name:        "",
+			Name:        "d",
 			Email:       strfmt.Email(gofakeit.Email()),
 		}
 		params.SetData(data)
-
 		_, err := c.Users.PostUser(params)
-		require.Error(t, err)
-
-		errExp := users.NewPostUserDefault(http.StatusInternalServerError)
-		codeExp := int32(http.StatusInternalServerError)
-		errExp.Payload = &models.SwaggerError{
-			Code:    &codeExp,
-			Message: &messages.ErrCreateUser,
-			Details: "ent: validator failed for field \"User.name\": value is less than the required length",
-		}
-
-		assert.Equal(t, errExp, err)
+		require.NoError(t, err)
 	})
 
 	t.Run("email validation error", func(t *testing.T) {
-		empty := ""
+		userType = "person"
+		l, p, err = utils.GenerateLoginAndPassword()
+		require.NoError(t, err)
 		data = &models.UserRegister{
 			ActiveAreas: []int64{3},
 			Login:       &l,
 			Password:    &p,
 			Type:        &userType,
 			Name:        gofakeit.Name(),
-			Email:       strfmt.Email(empty),
+			Email:       strfmt.Email(""),
 		}
-
 		params.SetData(data)
-
 		_, err := c.Users.PostUser(params)
 		require.Error(t, err)
 
@@ -197,7 +182,6 @@ func TestIntegration_RegisterUser(t *testing.T) {
 			Message: &messages.ErrCreateUser,
 			Details: "ent: validator failed for field \"User.email\": value is less than the required length",
 		}
-
 		assert.Equal(t, errExp, err)
 	})
 
@@ -259,9 +243,7 @@ func TestIntegration_RegisterUser(t *testing.T) {
 			Login:       &l,
 			Password:    &p,
 			Type:        &userType,
-			// not provided in documentation, but also required
-			// todo: update documentation
-			Name: gofakeit.Name(),
+			Name:        gofakeit.Name(),
 			// not provided in documentation, but also required
 			// todo: update documentation
 			Email: strfmt.Email(gofakeit.Email()),

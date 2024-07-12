@@ -55,8 +55,9 @@ func (s *EquipmentSuite) SetupTest() {
 		t.Fatal(err)
 	}
 
+	name := "admin"
 	s.user = &ent.User{
-		Login: "admin", Email: "admin@email.com", Password: "12345", Name: "admin",
+		Login: "admin", Email: "admin@email.com", Password: "12345", Name: &name,
 	}
 	_, err = s.client.User.Delete().Exec(s.ctx)
 	if err != nil {
@@ -64,7 +65,7 @@ func (s *EquipmentSuite) SetupTest() {
 	}
 	u, err := s.client.User.Create().
 		SetLogin(s.user.Login).SetEmail(s.user.Email).
-		SetPassword(s.user.Password).SetName(s.user.Name).
+		SetPassword(s.user.Password).SetName(*s.user.Name).
 		Save(s.ctx)
 	if err != nil {
 		t.Fatal(err)
@@ -177,7 +178,7 @@ func (s *EquipmentSuite) SetupTest() {
 		t.Fatal(err)
 	}
 
-	eq, err := s.client.Equipment.Query().First(s.ctx)
+	eq, err := s.client.Equipment.Query().Where(equipment.Title("equipment 1")).Only(s.ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -193,7 +194,7 @@ func (s *EquipmentSuite) SetupTest() {
 	}
 }
 
-func (s *EquipmentSuite) TearDownSuite() {
+func (s *EquipmentSuite) TearDownTest() {
 	s.client.Close()
 }
 
@@ -582,10 +583,11 @@ func (s *EquipmentSuite) TestEquipmentRepository_BlockEquipment() {
 	ctx := s.ctx
 	tx, err := s.client.Tx(ctx)
 	require.NoError(t, err)
+	eqTitle := "equipment 2"
 
 	blockStartDate := time.Time(strfmt.DateTime(time.Now().AddDate(0, 0, 1)))
 	blockEndDate := time.Time(strfmt.DateTime(time.Now().AddDate(0, 0, 5)))
-	eqToBlock, err := tx.Equipment.Query().WithCurrentStatus().First(ctx)
+	eqToBlock, err := tx.Equipment.Query().WithCurrentStatus().Where(equipment.Title(eqTitle)).Only(ctx)
 	require.NoError(t, err)
 	require.Empty(t, eqToBlock.Edges.EquipmentStatus)
 	approvedStatus, err := tx.OrderStatusName.Create().SetStatus(domain.OrderStatusApproved).Save(ctx)
@@ -618,7 +620,7 @@ func (s *EquipmentSuite) TestEquipmentRepository_BlockEquipment() {
 	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
 	err = s.repository.BlockEquipment(ctx, eqToBlock.ID, blockStartDate, blockEndDate, s.user.ID)
 	require.NoError(t, err)
-	eqBlocked, err := tx.Equipment.Query().WithEquipmentStatus().WithCurrentStatus().First(ctx)
+	eqBlocked, err := tx.Equipment.Query().WithEquipmentStatus().WithCurrentStatus().Where(equipment.Title(eqTitle)).Only(ctx)
 	require.NoError(t, err)
 	orBlocked, err := tx.Order.Query().WithOrderStatus().WithCurrentStatus().First(ctx)
 	require.NoError(t, err)
@@ -653,7 +655,7 @@ func (s *EquipmentSuite) TestEquipmentRepository_UnblockEquipment() {
 		Create().
 		SetEquipments(s.equipments[5]).
 		SetEquipmentStatusName(eqStatusNotAvailable).
-		SetComment("test equpment status for equpment 5").
+		SetComment("test equipment status for equipment 5").
 		SetStartDate(time.Now()).
 		SetEndDate(time.Now().AddDate(0, 0, 1)).
 		Save(s.ctx)

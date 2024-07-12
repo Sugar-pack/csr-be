@@ -443,7 +443,7 @@ func mapUserInfoWoRole(user *ent.User) *models.UserInfo {
 		ID:                      &userID,
 		IsReadonly:              &user.IsReadonly,
 		Login:                   &user.Login,
-		Name:                    &user.Name,
+		Name:                    user.Name,
 		OrgName:                 user.OrgName,
 		PassportAuthority:       user.PassportAuthority,
 		PassportIssueDate:       &passportDate,
