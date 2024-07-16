@@ -28,6 +28,8 @@ import (
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/pkg/domain"
 )
 
+const subsetTestMaxSeconds = 3 * 60 // Maximum possible duration in seconds of a subset test (comparing equal timestamps brings difference due to the the processing time when creating offset with Now().AddDate())
+
 func TestIntegration_CreateEquipment(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping integration test")
@@ -501,10 +503,16 @@ func TestIntegration_BlockEquipment(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping integration test")
 	}
+	loc := time.UTC
+	utcTimeNow := time.Now().In(loc)
+
+	// In these number of days the blocking will start/end
+	const startNumDays = 1
+	const endNumDays = 10
 
 	ctx := context.Background()
 	client := utils.SetupClient()
-	startDate, endDate := strfmt.DateTime(time.Now().AddDate(0, 0, 1)), strfmt.DateTime(time.Now().AddDate(0, 0, 10))
+	startDate, endDate := strfmt.DateTime(utcTimeNow.AddDate(0, 0, startNumDays)), strfmt.DateTime(utcTimeNow.AddDate(0, 0, endNumDays))
 
 	tokens := utils.AdminUserLogin(t)
 	auth := utils.AuthInfoFunc(tokens.GetPayload().AccessToken)
@@ -513,12 +521,12 @@ func TestIntegration_BlockEquipment(t *testing.T) {
 	eq, err := createEquipment(ctx, client, auth, model)
 	require.NoError(t, err)
 
-	orStartDate, orEndDate := time.Now().AddDate(0, 0, 2), time.Now().AddDate(0, 0, 3)
+	orStartDate, orEndDate := utcTimeNow.AddDate(0, 0, 2), utcTimeNow.AddDate(0, 0, 3)
 	firstOrderID, err := createOrder(ctx, client, auth, eq.Payload.ID, orStartDate, orEndDate)
 	require.NoError(t, err)
 	require.NotNil(t, firstOrderID)
 
-	orStartDate, orEndDate = time.Now().AddDate(0, 0, 4), time.Now().AddDate(0, 0, 5)
+	orStartDate, orEndDate = utcTimeNow.AddDate(0, 0, 4), utcTimeNow.AddDate(0, 0, 5)
 	secondOrderID, err := createOrder(ctx, client, auth, eq.Payload.ID, orStartDate, orEndDate)
 	require.NoError(t, err)
 	require.NotNil(t, secondOrderID)
@@ -527,7 +535,7 @@ func TestIntegration_BlockEquipment(t *testing.T) {
 		tokens := utils.ManagerUserLogin(t)
 		auth := utils.AuthInfoFunc(tokens.GetPayload().AccessToken)
 
-		dt := strfmt.DateTime(time.Now())
+		dt := strfmt.DateTime(utcTimeNow)
 		firstOrderStatus := orders.NewAddNewOrderStatusParamsWithContext(ctx)
 		firstOrderStatus.Data = &models.NewOrderStatus{
 			OrderID:   firstOrderID,
@@ -552,8 +560,8 @@ func TestIntegration_BlockEquipment(t *testing.T) {
 
 		params := equipment.NewBlockEquipmentParamsWithContext(ctx).WithEquipmentID(*eq.Payload.ID)
 		params.Data = &models.ChangeEquipmentStatusToBlockedRequest{
-			StartDate: strfmt.DateTime(startDate),
-			EndDate:   strfmt.DateTime(endDate),
+			StartDate: startDate,
+			EndDate:   endDate,
 		}
 
 		res, err := client.Equipment.BlockEquipment(params, auth)
@@ -576,14 +584,14 @@ func TestIntegration_BlockEquipment(t *testing.T) {
 		require.NoError(t, err)
 		require.True(t, resp.IsCode(http.StatusOK))
 
-		dsG, err := time.Parse(time.RFC3339Nano, startDate.String())
+		dsG, err := time.ParseInLocation(time.RFC3339Nano, startDate.String(), loc)
 		require.NoError(t, err)
-		deG, err := time.Parse(time.RFC3339Nano, endDate.String())
+		deG, err := time.ParseInLocation(time.RFC3339Nano, endDate.String(), loc)
 		require.NoError(t, err)
 
-		valStartDate, err := time.Parse(time.RFC3339Nano, resp.Payload.Items[1].StartDate.String())
+		valStartDate, err := time.ParseInLocation(time.RFC3339Nano, resp.Payload.Items[1].StartDate.String(), loc)
 		require.NoError(t, err)
-		valEndDate, err := time.Parse(time.RFC3339Nano, resp.Payload.Items[1].EndDate.String())
+		valEndDate, err := time.ParseInLocation(time.RFC3339Nano, resp.Payload.Items[1].EndDate.String(), loc)
 		require.NoError(t, err)
 
 		require.Equal(t, true,
@@ -605,8 +613,8 @@ func TestIntegration_BlockEquipment(t *testing.T) {
 
 		params := equipment.NewBlockEquipmentParamsWithContext(ctx).WithEquipmentID(fakeID)
 		params.Data = &models.ChangeEquipmentStatusToBlockedRequest{
-			StartDate: strfmt.DateTime(startDate),
-			EndDate:   strfmt.DateTime(endDate),
+			StartDate: startDate,
+			EndDate:   endDate,
 		}
 
 		_, err := client.Equipment.BlockEquipment(params, auth)
@@ -626,8 +634,8 @@ func TestIntegration_BlockEquipment(t *testing.T) {
 		auth := utils.AuthInfoFunc(tokens.GetPayload().AccessToken)
 		params := equipment.NewBlockEquipmentParamsWithContext(ctx).WithEquipmentID(*eq.Payload.ID)
 		params.Data = &models.ChangeEquipmentStatusToBlockedRequest{
-			StartDate: strfmt.DateTime(startDate),
-			EndDate:   strfmt.DateTime(endDate),
+			StartDate: startDate,
+			EndDate:   endDate,
 		}
 
 		_, err = client.Equipment.BlockEquipment(params, auth)
@@ -647,8 +655,8 @@ func TestIntegration_BlockEquipment(t *testing.T) {
 		auth := utils.AuthInfoFunc(tokens.GetPayload().AccessToken)
 		params := equipment.NewBlockEquipmentParamsWithContext(ctx).WithEquipmentID(*eq.Payload.ID)
 		params.Data = &models.ChangeEquipmentStatusToBlockedRequest{
-			StartDate: strfmt.DateTime(startDate),
-			EndDate:   strfmt.DateTime(endDate),
+			StartDate: startDate,
+			EndDate:   endDate,
 		}
 
 		_, err = client.Equipment.BlockEquipment(params, auth)
@@ -668,8 +676,8 @@ func TestIntegration_BlockEquipment(t *testing.T) {
 		auth := utils.AuthInfoFunc(tokens.GetPayload().AccessToken)
 		params := equipment.NewBlockEquipmentParamsWithContext(ctx).WithEquipmentID(*eq.Payload.ID)
 		params.Data = &models.ChangeEquipmentStatusToBlockedRequest{
-			StartDate: strfmt.DateTime(startDate),
-			EndDate:   strfmt.DateTime(endDate),
+			StartDate: startDate,
+			EndDate:   endDate,
 		}
 
 		res, err := client.Equipment.BlockEquipment(params, auth)
@@ -682,8 +690,8 @@ func TestIntegration_BlockEquipment(t *testing.T) {
 		auth := utils.AuthInfoFunc(tokens.GetPayload().AccessToken)
 		params := equipment.NewBlockEquipmentParamsWithContext(ctx).WithEquipmentID(*eq.Payload.ID)
 		params.Data = &models.ChangeEquipmentStatusToBlockedRequest{
-			StartDate: strfmt.DateTime(endDate),
-			EndDate:   strfmt.DateTime(startDate),
+			StartDate: endDate,
+			EndDate:   startDate,
 		}
 
 		_, err := client.Equipment.BlockEquipment(params, auth)
@@ -701,7 +709,11 @@ func TestIntegration_BlockEquipment(t *testing.T) {
 	t.Run("Update Block Equipment period", func(t *testing.T) {
 		tokens := utils.ManagerUserLogin(t)
 		auth := utils.AuthInfoFunc(tokens.GetPayload().AccessToken)
-		updateStartDate, updateEndDate := time.Now().AddDate(0, 0, 3), time.Now().AddDate(0, 0, 14)
+
+		// Offset in days relatively the initial blocking period
+		const offsetStart = 2
+		const offsetEnd = 4
+		updateStartDate, updateEndDate := utcTimeNow.AddDate(0, 0, startNumDays+offsetStart), utcTimeNow.AddDate(0, 0, endNumDays+offsetEnd)
 
 		params := equipment.NewBlockEquipmentParamsWithContext(ctx).WithEquipmentID(*eq.Payload.ID)
 		params.Data = &models.ChangeEquipmentStatusToBlockedRequest{
@@ -719,26 +731,21 @@ func TestIntegration_BlockEquipment(t *testing.T) {
 		require.NoError(t, err)
 		require.True(t, resp.IsCode(http.StatusOK))
 
-		dsG, err := time.Parse(time.RFC3339Nano, startDate.String())
+		dsG, err := time.ParseInLocation(time.RFC3339Nano, startDate.String(), loc)
 		require.NoError(t, err)
-		deG, err := time.Parse(time.RFC3339Nano, endDate.String())
-		require.NoError(t, err)
-
-		valStartDate, err := time.Parse(time.RFC3339Nano, resp.Payload.Items[1].StartDate.String())
-		require.NoError(t, err)
-		valEndDate, err := time.Parse(time.RFC3339Nano, resp.Payload.Items[1].EndDate.String())
+		deG, err := time.ParseInLocation(time.RFC3339Nano, endDate.String(), loc)
 		require.NoError(t, err)
 
-		require.Equal(t, true,
-			(valStartDate.Year() == dsG.Year()) &&
-				(valStartDate.Month() == dsG.Month()) &&
-				(valStartDate.Day() == dsG.Day()),
-		)
-		require.Equal(t, true,
-			(valEndDate.Year() == deG.Year()) &&
-				(valEndDate.Month() == deG.Month()) &&
-				(valEndDate.Day() == deG.Day()),
-		)
+		valStartDate, err := time.ParseInLocation(time.RFC3339Nano, resp.Payload.Items[1].StartDate.String(), loc)
+		require.NoError(t, err)
+		valEndDate, err := time.ParseInLocation(time.RFC3339Nano, resp.Payload.Items[1].EndDate.String(), loc)
+		require.NoError(t, err)
+
+		hysteresis := offsetStart*24*time.Hour + subsetTestMaxSeconds*time.Second
+		assert.Equal(t, IsTimeEqualWithHysteresis(valStartDate, dsG, hysteresis), true)
+
+		hysteresis = offsetEnd*24*time.Hour + subsetTestMaxSeconds*time.Second
+		assert.Equal(t, IsTimeEqualWithHysteresis(valEndDate, deG, hysteresis), true)
 	})
 }
 
@@ -1110,4 +1117,49 @@ func getEquipmentStatus(ctx context.Context, client *client.Be, id int64, auth r
 		return 0, err
 	}
 	return *eq.Payload.Status, nil
+}
+
+func IsTimeEqualWithHysteresis(t1 time.Time, t2 time.Time, hyst time.Duration) bool {
+	diff := t1.Sub(t2).Abs()
+	return diff <= hyst
+}
+
+func TestIsTimeEqualWithHysteresis(t *testing.T) {
+	data := []struct {
+		t1       string
+		t2       string
+		hyst     string
+		layout   string
+		expected bool
+	}{
+		{"2006-01-02", "2006-01-03", "23h", time.DateOnly, false},
+		{"2006-01-02", "2006-01-03", "24h", time.DateOnly, true},
+		{"2006-01-02", "2006-01-03", "25h", time.DateOnly, true},
+
+		{"2006-01-31", "2006-02-01", "23h", time.DateOnly, false},
+		{"2006-01-31", "2006-02-01", "25h", time.DateOnly, true},
+
+		{"1999-05-25", "1999-05-25", "0", time.DateOnly, true},
+		{"1999-05-25", "1999-05-25", "4h", time.DateOnly, true},
+		{"1999-05-25", "1999-05-26", "24h", time.DateOnly, true},
+		{"1999-05-25", "1999-05-26", "23h", time.DateOnly, false},
+		{"1999-05-25", "1999-05-26", "1h", time.DateOnly, false},
+
+		{"2024-06-04T12:30:45+02:00", "2024-06-04T12:30:45-03:00", "4h59m", time.RFC3339, false},
+		{"2024-06-04T12:30:45+02:00", "2024-06-04T12:30:45-03:00", "5h00m", time.RFC3339, true},
+		{"2024-06-04T12:30:45+02:00", "2024-06-04T12:30:45-03:00", "5h40m", time.RFC3339, true},
+	}
+
+	for _, d := range data {
+		t1, err := time.Parse(d.layout, d.t1)
+		require.NoError(t, err)
+
+		t2, err := time.Parse(d.layout, d.t2)
+		require.NoError(t, err)
+
+		hyst, err := time.ParseDuration(d.hyst)
+		require.NoError(t, err)
+
+		assert.Equal(t, IsTimeEqualWithHysteresis(t1, t2, hyst), d.expected)
+	}
 }
