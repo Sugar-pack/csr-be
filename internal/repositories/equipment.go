@@ -527,6 +527,12 @@ func (r *equipmentRepository) BlockEquipment(
 		return err
 	}
 
+	// Set a new EquipmentStatusName for current Equipment (equipment.equipment_status_name_equipments)
+	_, err = eqToBlock.Update().SetCurrentStatus(eqStatusNotAvailable).Save(ctx)
+	if err != nil {
+		return err
+	}
+
 	// Get (if exists) EquipmentStatus for current Equipment.
 	// Note, that only one row with "not available" status may exist per single equipment id.
 	eqToBlockStatus, err := tx.EquipmentStatus.
@@ -538,7 +544,7 @@ func (r *equipmentRepository) BlockEquipment(
 		Where(equipmentstatus.HasEquipmentStatusNameWith(equipmentstatusname.ID(eqStatusNotAvailable.ID))).
 		Only(ctx)
 
-	// Check if current EqupmentStatus has specific EquipmentStatusName - "not available".
+	// Check if current EquipmentStatus has specific EquipmentStatusName - "not available".
 	// If the record exists - update it, otherwise create a new EquipmentStatus.
 	if eqToBlockStatus != nil {
 		eqToBlockStatus.
@@ -547,6 +553,9 @@ func (r *equipmentRepository) BlockEquipment(
 			SetEndDate(endDate).
 			SetUpdatedAt(timeNow).
 			Save(ctx)
+		if err != nil {
+			return err
+		}
 	} else if ent.IsNotFound(err) {
 		_, err = tx.EquipmentStatus.Create().
 			SetCreatedAt(timeNow).
@@ -645,7 +654,7 @@ func (r *equipmentRepository) UnblockEquipment(ctx context.Context, id int) erro
 		return err
 	}
 
-	// Get last EqupmentStatus for Equipment according to some criteria
+	// Get last EquipmentStatus for Equipment according to some criteria
 	equipmentStatus, err := tx.EquipmentStatus.
 		Query().
 		Where(equipmentstatus.HasEquipmentsWith(equipment.ID(eqToUnblock.ID))).
