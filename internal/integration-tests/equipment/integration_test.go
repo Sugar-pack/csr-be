@@ -504,7 +504,7 @@ func TestIntegration_BlockEquipment(t *testing.T) {
 		t.Skip("skipping integration test")
 	}
 	loc := time.UTC
-	utcTimeNow := time.Now().In(loc)
+	tm := time.Now().In(loc)
 
 	// In these number of days the blocking will start/end
 	const startNumDays = 1
@@ -512,7 +512,7 @@ func TestIntegration_BlockEquipment(t *testing.T) {
 
 	ctx := context.Background()
 	client := utils.SetupClient()
-	startDate, endDate := strfmt.DateTime(utcTimeNow.AddDate(0, 0, startNumDays)), strfmt.DateTime(utcTimeNow.AddDate(0, 0, endNumDays))
+	startDate, endDate := strfmt.DateTime(tm.AddDate(0, 0, startNumDays)), strfmt.DateTime(tm.AddDate(0, 0, endNumDays))
 
 	tokens := utils.AdminUserLogin(t)
 	auth := utils.AuthInfoFunc(tokens.GetPayload().AccessToken)
@@ -521,12 +521,13 @@ func TestIntegration_BlockEquipment(t *testing.T) {
 	eq, err := createEquipment(ctx, client, auth, model)
 	require.NoError(t, err)
 
-	orStartDate, orEndDate := utcTimeNow.AddDate(0, 0, 2), utcTimeNow.AddDate(0, 0, 3)
+	orStartDate, orEndDate := tm.AddDate(0, 0, 2), tm.AddDate(0, 0, 3)
 	firstOrderID, err := createOrder(ctx, client, auth, eq.Payload.ID, orStartDate, orEndDate)
 	require.NoError(t, err)
 	require.NotNil(t, firstOrderID)
 
-	orStartDate, orEndDate = utcTimeNow.AddDate(0, 0, 4), utcTimeNow.AddDate(0, 0, 5)
+	tm = tm.Add(time.Second) // Need to have more than exact 24-hour difference (look for the maintenanceTime)
+	orStartDate, orEndDate = tm.AddDate(0, 0, 4), tm.AddDate(0, 0, 5)
 	secondOrderID, err := createOrder(ctx, client, auth, eq.Payload.ID, orStartDate, orEndDate)
 	require.NoError(t, err)
 	require.NotNil(t, secondOrderID)
@@ -535,7 +536,7 @@ func TestIntegration_BlockEquipment(t *testing.T) {
 		tokens := utils.ManagerUserLogin(t)
 		auth := utils.AuthInfoFunc(tokens.GetPayload().AccessToken)
 
-		dt := strfmt.DateTime(utcTimeNow)
+		dt := strfmt.DateTime(tm)
 		firstOrderStatus := orders.NewAddNewOrderStatusParamsWithContext(ctx)
 		firstOrderStatus.Data = &models.NewOrderStatus{
 			OrderID:   firstOrderID,
@@ -713,7 +714,7 @@ func TestIntegration_BlockEquipment(t *testing.T) {
 		// Offset in days relatively the initial blocking period
 		const offsetStart = 2
 		const offsetEnd = 4
-		updateStartDate, updateEndDate := utcTimeNow.AddDate(0, 0, startNumDays+offsetStart), utcTimeNow.AddDate(0, 0, endNumDays+offsetEnd)
+		updateStartDate, updateEndDate := tm.AddDate(0, 0, startNumDays+offsetStart), tm.AddDate(0, 0, endNumDays+offsetEnd)
 
 		params := equipment.NewBlockEquipmentParamsWithContext(ctx).WithEquipmentID(*eq.Payload.ID)
 		params.Data = &models.ChangeEquipmentStatusToBlockedRequest{
