@@ -507,7 +507,7 @@ func TestIntegration_BlockEquipment(t *testing.T) {
 	tm := time.Now().In(loc)
 
 	// In these number of days the blocking will start/end
-        startNumDays := 1
+	startNumDays := 1
 	endNumDays := 10
 
 	ctx := context.Background()
@@ -712,8 +712,8 @@ func TestIntegration_BlockEquipment(t *testing.T) {
 		auth := utils.AuthInfoFunc(tokens.GetPayload().AccessToken)
 
 		// Offset in days relatively the initial blocking period
-                offsetStart := 2
-                offsetEnd := 4
+		offsetStart := 2
+		offsetEnd := 4
 		updateStartDate, updateEndDate := tm.AddDate(0, 0, startNumDays+offsetStart), tm.AddDate(0, 0, endNumDays+offsetEnd)
 
 		params := equipment.NewBlockEquipmentParamsWithContext(ctx).WithEquipmentID(*eq.Payload.ID)
@@ -742,10 +742,10 @@ func TestIntegration_BlockEquipment(t *testing.T) {
 		valEndDate, err := time.ParseInLocation(time.RFC3339Nano, resp.Payload.Items[1].EndDate.String(), loc)
 		require.NoError(t, err)
 
-		hysteresis := offsetStart*24*time.Hour + subsetTestMaxSeconds*time.Second
+		hysteresis := time.Duration(offsetStart)*24*time.Hour + subsetTestMaxSeconds*time.Second
 		assert.Equal(t, IsTimeEqualWithHysteresis(valStartDate, dsG, hysteresis), true)
 
-		hysteresis = offsetEnd*24*time.Hour + subsetTestMaxSeconds*time.Second
+		hysteresis = time.Duration(offsetEnd)*24*time.Hour + subsetTestMaxSeconds*time.Second
 		assert.Equal(t, IsTimeEqualWithHysteresis(valEndDate, deG, hysteresis), true)
 	})
 }
