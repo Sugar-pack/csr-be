@@ -15,6 +15,8 @@ import (
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/pkg/domain"
 )
 
+const maintenanceTime = time.Hour * 24 // Equipment must be maintained and sanitized after return
+
 type equipmentStatusRepository struct {
 }
 
@@ -146,7 +148,7 @@ func (r *equipmentStatusRepository) HasStatusByPeriod(ctx context.Context, statu
 		Where(equipment.IDEQ(eqID)).
 		QueryEquipmentStatus().
 		Where(equipmentstatus.And(
-			equipmentstatus.StartDateLTE(endDate.Add(time.Hour*24))),
+			equipmentstatus.StartDateLTE(endDate.Add(maintenanceTime))),
 			equipmentstatus.EndDateGTE(startDate)).
 		WithEquipmentStatusName().
 		All(ctx)

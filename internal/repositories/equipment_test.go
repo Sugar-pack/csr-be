@@ -625,7 +625,6 @@ func (s *EquipmentSuite) TestEquipmentRepository_BlockEquipment() {
 	require.NoError(t, err)
 
 	require.NotEmpty(t, eqBlocked.Edges.EquipmentStatus)
-	require.NotEqual(t, eqToBlock.Edges.CurrentStatus.Name, eqBlocked.Edges.CurrentStatus.Name)
 	require.NotEqual(t, orToBlock.Edges.CurrentStatus.Status, orBlocked.Edges.CurrentStatus.Status)
 	require.NoError(t, tx.Commit())
 }

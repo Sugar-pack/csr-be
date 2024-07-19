@@ -3,6 +3,7 @@ package repositories
 import (
 	"context"
 	"errors"
+	"fmt"
 	"time"
 
 	"entgo.io/ent/dialect/sql"
@@ -516,20 +517,8 @@ func (r *equipmentRepository) BlockEquipment(
 		return err
 	}
 
-	// Get last EqupmentStatus for current Equipment
-	currentEqStatus, err := tx.EquipmentStatus.
-		Query().
-		QueryEquipments().
-		Where(equipment.IDEQ(id)).
-		QueryEquipmentStatus().
-		WithEquipmentStatusName().
-		Order(ent.Asc(equipmentstatus.FieldEndDate)).
-		First(ctx)
-	if err != nil && !ent.IsNotFound(err) {
-		return err
-	}
-
-	// Get EquipmentStatusName from DB
+	timeNow := time.Now()
+	// Get EquipmentStatusName for "not available" from DB.
 	eqStatusNotAvailable, err := tx.EquipmentStatusName.
 		Query().
 		Where(equipmentstatusname.Name(domain.EquipmentStatusNotAvailable)).
@@ -538,32 +527,50 @@ func (r *equipmentRepository) BlockEquipment(
 		return err
 	}
 
-	// Set a new EquipmentStatusName for current Equipment
+	// Set a new EquipmentStatusName for current Equipment (equipment.equipment_status_name_equipments)
 	_, err = eqToBlock.Update().SetCurrentStatus(eqStatusNotAvailable).Save(ctx)
 	if err != nil {
 		return err
 	}
 
-	// Check if current EqupmentStatus has specific EquipmentStatusName.
-	// if the record exist update it, otherwise create a new EquipmentStatus.
-	if currentEqStatus != nil && currentEqStatus.Edges.EquipmentStatusName.Name == domain.EquipmentStatusNotAvailable {
-		currentEqStatus.
+	// Get (if exists) EquipmentStatus for current Equipment.
+	// Note, that only one row with "not available" status may exist per single equipment id.
+	eqToBlockStatus, err := tx.EquipmentStatus.
+		Query().
+		QueryEquipments().
+		Where(equipment.IDEQ(id)).
+		QueryEquipmentStatus().
+		WithEquipmentStatusName().
+		Where(equipmentstatus.HasEquipmentStatusNameWith(equipmentstatusname.ID(eqStatusNotAvailable.ID))).
+		Only(ctx)
+
+	// Check if current EquipmentStatus has specific EquipmentStatusName - "not available".
+	// If the record exists - update it, otherwise create a new EquipmentStatus.
+	if eqToBlockStatus != nil {
+		eqToBlockStatus.
 			Update().
 			SetStartDate(startDate).
 			SetEndDate(endDate).
-			Save(ctx)
-	} else {
-		_, err = tx.EquipmentStatus.Create().
-			SetCreatedAt(time.Now()).
-			SetEndDate(endDate).
-			SetStartDate(startDate).
-			SetEquipments(eqToBlock).
-			SetEquipmentStatusName(eqStatusNotAvailable).
-			SetUpdatedAt(time.Now()).
+			SetUpdatedAt(timeNow).
 			Save(ctx)
 		if err != nil {
 			return err
 		}
+	} else if ent.IsNotFound(err) {
+		_, err = tx.EquipmentStatus.Create().
+			SetCreatedAt(timeNow).
+			SetEndDate(endDate).
+			SetStartDate(startDate).
+			SetEquipments(eqToBlock).
+			SetEquipmentStatusName(eqStatusNotAvailable).
+			SetUpdatedAt(timeNow).
+			Save(ctx)
+		if err != nil {
+			return err
+		}
+	} else {
+		// Means multiple "not available" (blocking) statuses exist per single equipment. Must never happen
+		return fmt.Errorf("multiple statuses not available for blocking period: %w", err)
 	}
 
 	// Get OrderStatusName form DB
@@ -647,32 +654,21 @@ func (r *equipmentRepository) UnblockEquipment(ctx context.Context, id int) erro
 		return err
 	}
 
-	// Get last EqupmentStatus for Equipment according to some criteria
+	// Get last EquipmentStatus for Equipment according to some criteria
 	equipmentStatus, err := tx.EquipmentStatus.
 		Query().
 		Where(equipmentstatus.HasEquipmentsWith(equipment.ID(eqToUnblock.ID))).
 		Where(equipmentstatus.HasEquipmentStatusNameWith(equipmentstatusname.ID(eqStatusNotAvailable.ID))).
-		Order(ent.Asc(equipmentstatus.FieldEndDate)).
-		First(ctx)
+		Only(ctx)
 	if err != nil {
 		return err
 	}
 
-	if equipmentStatus != nil {
-		_, err = equipmentStatus.
-			Update().
-			SetEquipmentStatusName(eqStatusAvailable).
-			SetEndDate(truncateHours(&equipmentStatus.EndDate)).
-			Save(ctx)
-		if err != nil {
-			return err
-		}
-		err = tx.EquipmentStatus.DeleteOne(equipmentStatus).Exec(ctx)
-		if err != nil {
-			return err
-		}
-
+	err = tx.EquipmentStatus.DeleteOne(equipmentStatus).Exec(ctx)
+	if err != nil {
+		return err
 	}
+
 	return err
 }
 

@@ -8,3 +8,4 @@ report.txt
 .tool-versions
 playground
 vendor
+.DS_Store
