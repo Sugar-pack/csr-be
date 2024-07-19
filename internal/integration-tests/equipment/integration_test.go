@@ -712,8 +712,8 @@ func TestIntegration_BlockEquipment(t *testing.T) {
 		auth := utils.AuthInfoFunc(tokens.GetPayload().AccessToken)
 
 		// Offset in days relatively the initial blocking period
-		const offsetStart = 2
-		const offsetEnd = 4
+                offsetStart := 2
+                offsetEnd := 4
 		updateStartDate, updateEndDate := tm.AddDate(0, 0, startNumDays+offsetStart), tm.AddDate(0, 0, endNumDays+offsetEnd)
 
 		params := equipment.NewBlockEquipmentParamsWithContext(ctx).WithEquipmentID(*eq.Payload.ID)
