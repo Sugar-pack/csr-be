@@ -17,7 +17,7 @@ require (
 	github.com/golang-jwt/jwt/v4 v4.5.0
 	github.com/jackc/pgx/v4 v4.18.1
 	github.com/jessevdk/go-flags v1.5.0
-	github.com/mattn/go-sqlite3 v1.14.16
+	github.com/mattn/go-sqlite3 v1.14.19
 	github.com/rubenv/sql-migrate v1.3.1
 	github.com/spf13/viper v1.15.0
 	github.com/stretchr/testify v1.8.2
