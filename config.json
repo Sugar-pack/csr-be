@@ -37,10 +37,6 @@
           "/v1/users/me",
           "/v1/status_names",
           "/equipment/status_names"
-        ],
-        "PATCH": [
-          "/v1/users/me/password",
-          "/v1/users/me/email"
         ]
       }
     },
