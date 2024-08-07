@@ -2,7 +2,6 @@ version: '3'
 services:
   csr:
     image: csr:int-test
-    entrypoint: ls -lat
     container_name: csr
     ports:
       - "8089:8089"
