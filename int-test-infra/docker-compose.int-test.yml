@@ -1,7 +1,7 @@
 version: '3'
 services:
   csr:
-    image: csr:int-test
+    image: docker.io/library/csr:int-test
     container_name: csr
     ports:
       - "8089:8089"
