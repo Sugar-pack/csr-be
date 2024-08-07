@@ -1,7 +1,8 @@
 version: '3'
 services:
   csr:
-    image: docker.io/library/csr:int-test
+    image: csr:int-test
+    entrypoint: ls -lat
     container_name: csr
     ports:
       - "8089:8089"
