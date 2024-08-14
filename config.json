@@ -34,9 +34,9 @@
       },
       "allowedEndpoints": {
         "GET": [
+          "/equipment/status_names",
           "/v1/users/me",
-          "/v1/status_names",
-          "/equipment/status_names"
+          "/v1/status_names"
         ]
       }
     },
@@ -49,73 +49,76 @@
       },
       "allowedEndpoints": {
         "GET": [
-          "/v1/users/me",
-          "/v1/active_areas",
-          "/v1/status_names",
-          "/pet_size",
-          "/pet_size/{petSizeId}",
-          "/pet_kind/{petKindId}",
-          "/pet_kind",
-          "/equipmentstatus/repaired/{equipmentstatusId}",
-          "/equipment/status_names",
-          "/equipment/statuses/{statusId}",
-          "/equipment/photos/{photoId}",
-          "/equipment/categories/subcategories/{subcategoryId}",
-          "/equipment/categories/{categoryId}/subcategories",
-          "/equipment/categories",
-          "/equipment/categories/{categoryId}",
-          "/equipment",
-          "/equipment/{equipmentId}"
-        ],
-        "PATCH": [
-          "/v1/users/me",
-          "/v1/users/me/email",
-          "/v1/users/me/password"
-        ],
-        "POST": [
-          "/equipment/search"
-        ],
-        "DELETE": [
-          "/v1/users/me"
-        ]
-      }
-    },
-    {
-      "role": {
-        "slug": "user",
-        "isRegistrationConfirmed": true,
-        "isPersonalDataConfirmed": true,
-        "isReadonly": false
-      },
-      "allowedEndpoints": {
-        "GET": [
-          "/v1/users/me",
-          "/v1/active_areas",
-          "/pet_size",
-          "/pet_size/{petSizeId}",
-          "/pet_kind/{petKindId}",
-          "/pet_kind",
-          "/equipmentstatus/repaired/{equipmentstatusId}",
-          "/equipment/status_names",
-          "/equipment/statuses/{statusId}",
-          "/equipment/photos/{photoId}",
-          "/equipment/categories/subcategories/{subcategoryId}",
-          "/equipment/categories/{categoryId}/subcategories",
-          "/equipment/categories",
-          "/equipment/categories/{categoryId}",
           "/equipment",
           "/equipment/{equipmentId}",
+          "/equipment/categories",
+          "/equipment/categories/{categoryId}",
+          "/equipment/categories/{categoryId}/subcategories",
+          "/equipment/categories/subcategories/{subcategoryId}",
+          "/equipment/status_names",
+          "/equipment/statuses/{statusId}",
+          "/equipment/photos/{photoId}",
+          "/equipmentstatus/repaired/{equipmentstatusId}",
+          "/pet_kind",
+          "/pet_kind/{petKindId}",
+          "/pet_size",
+          "/pet_size/{petSizeId}",
+          "/v1/active_areas",
           "/v1/order_statuses/{orderId}",
-          "/v1/status_names"
-        ],
-        "PATCH": [
-          "/v1/users/me",
-          "/v1/users/me/email",
-          "/v1/users/me/password"
-        ],
-        "POST": [
           "/v1/orders",
+          "/v1/status_names",
+          "/v1/users/me"
+        ],
+        "PATCH": [
+          "/v1/users/me",
+          "/v1/users/me/email",
+          "/v1/users/me/password"
+        ],
+        "POST": [
           "/equipment/search"
+        ],
+        "DELETE": [
+          "/v1/users/me"
+        ]
+      }
+    },
+    {
+      "role": {
+        "slug": "user",
+        "isRegistrationConfirmed": true,
+        "isPersonalDataConfirmed": true,
+        "isReadonly": false
+      },
+      "allowedEndpoints": {
+        "GET": [
+          "/equipment",
+          "/equipment/{equipmentId}",
+          "/equipment/categories",
+          "/equipment/categories/{categoryId}",
+          "/equipment/categories/{categoryId}/subcategories",
+          "/equipment/categories/subcategories/{subcategoryId}",
+          "/equipment/status_names",
+          "/equipment/statuses/{statusId}",
+          "/equipment/photos/{photoId}",
+          "/equipmentstatus/repaired/{equipmentstatusId}",
+          "/pet_kind",
+          "/pet_kind/{petKindId}",
+          "/pet_size",
+          "/pet_size/{petSizeId}",
+          "/v1/active_areas",
+          "/v1/order_statuses/{orderId}",
+          "/v1/orders",
+          "/v1/status_names",
+          "/v1/users/me"
+        ],
+        "PATCH": [
+          "/v1/users/me",
+          "/v1/users/me/email",
+          "/v1/users/me/password"
+        ],
+        "POST": [
+          "/equipment/search",
+          "/v1/orders"
         ],
         "DELETE": [
           "/v1/users/me"
@@ -131,22 +134,22 @@
       },
       "allowedEndpoints": {
         "GET": [
-          "/v1/users/me",
-          "/v1/active_areas",
-          "/pet_size",
-          "/pet_size/{petSizeId}",
-          "/pet_kind/{petKindId}",
-          "/pet_kind",
-          "/equipmentstatus/repaired/{equipmentstatusId}",
+          "/equipment",
+          "/equipment/{equipmentId}",
+          "/equipment/categories",
+          "/equipment/categories/{categoryId}",
+          "/equipment/categories/{categoryId}/subcategories",
+          "/equipment/categories/subcategories/{subcategoryId}",
           "/equipment/status_names",
           "/equipment/statuses/{statusId}",
           "/equipment/photos/{photoId}",
-          "/equipment/categories/subcategories/{subcategoryId}",
-          "/equipment/categories/{categoryId}/subcategories",
-          "/equipment/categories",
-          "/equipment/categories/{categoryId}",
-          "/equipment",
-          "/equipment/{equipmentId}"
+          "/equipmentstatus/repaired/{equipmentstatusId}",
+          "/pet_kind",
+          "/pet_kind/{petKindId}",
+          "/pet_size",
+          "/pet_size/{petSizeId}",
+          "/v1/active_areas",
+          "/v1/users/me"
         ]
       }
     },
@@ -159,24 +162,24 @@
       },
       "allowedEndpoints": {
         "GET": [
-          "/v1/users/me",
-          "/v1/active_areas",
-          "/pet_size",
-          "/pet_size/{petSizeId}",
-          "/pet_kind/{petKindId}",
-          "/pet_kind",
+          "/equipment",
+          "/equipment/{equipmentId}",
+          "/equipment/categories",
+          "/equipment/categories/{categoryId}",
+          "/equipment/categories/{categoryId}/subcategories",
+          "/equipment/categories/subcategories/{subcategoryId}",
           "/equipmentstatus/repaired/{equipmentstatusId}",
           "/equipment/status_names",
           "/equipment/statuses/{statusId}",
           "/equipment/photos/{photoId}",
-          "/equipment/categories/subcategories/{subcategoryId}",
-          "/equipment/categories/{categoryId}/subcategories",
-          "/equipment/categories",
-          "/equipment/categories/{categoryId}",
-          "/equipment",
-          "/equipment/{equipmentId}",
+          "/pet_kind",
+          "/pet_kind/{petKindId}",
+          "/pet_size",
+          "/pet_size/{petSizeId}",
+          "/v1/active_areas",
           "/v1/order_statuses/{orderId}",
-          "/v1/status_names"
+          "/v1/status_names",
+          "/v1/users/me"
         ]
       }
     }
