@@ -37,7 +37,7 @@ func TestIntegration_PatchUpdate(t *testing.T) {
 		passportIssueDate := date
 		passportNumber := gofakeit.Digit()
 		passportSeries := gofakeit.Digit()
-		phone := gofakeit.Phone()
+		phoneNumber := gofakeit.Phone()
 		surname := gofakeit.LastName()
 		vk := gofakeit.URL()
 		website := gofakeit.URL()
@@ -48,7 +48,7 @@ func TestIntegration_PatchUpdate(t *testing.T) {
 			PassportIssueDate: strfmt.Date(date),
 			PassportNumber:    passportNumber,
 			PassportSeries:    passportSeries,
-			Phone:             phone,
+			PhoneNumber:       phoneNumber,
 			Surname:           surname,
 			Vk:                vk,
 			Website:           website,
@@ -65,7 +65,7 @@ func TestIntegration_PatchUpdate(t *testing.T) {
 		assert.Equal(t, passportIssueDate.String(), *user.GetPayload().PassportIssueDate)
 		assert.Equal(t, passportNumber, *user.GetPayload().PassportNumber)
 		assert.Equal(t, passportSeries, *user.GetPayload().PassportSeries)
-		assert.Equal(t, phone, *user.GetPayload().PhoneNumber)
+		assert.Equal(t, phoneNumber, *user.GetPayload().PhoneNumber)
 		assert.Equal(t, surname, *user.GetPayload().Surname)
 	})
 
@@ -135,7 +135,7 @@ func TestIntegration_PatchUpdate(t *testing.T) {
 			PassportIssueDate: strfmt.Date{},
 			PassportNumber:    "",
 			PassportSeries:    "",
-			Phone:             "",
+			PhoneNumber:       "",
 			Surname:           "",
 			Vk:                "",
 			Website:           "",

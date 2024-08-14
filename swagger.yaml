@@ -2158,7 +2158,7 @@ definitions:
       passport_issue_date:
         type: string
         format: date
-      phone:
+      phone_number:
         type: string
       org_name:
         type: string
