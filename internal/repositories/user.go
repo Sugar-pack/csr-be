@@ -74,8 +74,8 @@ func (r *userRepository) UpdateUserByID(ctx context.Context, id int, patch *mode
 	if patch.PassportSeries != "" {
 		userUpdate.SetPassportSeries(patch.PassportSeries)
 	}
-	if patch.Phone != "" {
-		userUpdate.SetPhone(patch.Phone)
+	if patch.PhoneNumber != "" {
+		userUpdate.SetPhone(patch.PhoneNumber)
 	}
 	if patch.PassportNumber != "" {
 		//TODO: if user changes his passport data or name/surname,
