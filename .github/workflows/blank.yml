@@ -8,7 +8,7 @@ on:
 jobs:
   test:
     runs-on: ubuntu-22.04
-    container: golang:1.19-alpine
+    container: golang:1.22.5-alpine
     steps:
       - uses: actions/checkout@v3
       - name: Test
@@ -52,7 +52,7 @@ jobs:
           retention-days: 5
   build:
     runs-on: ubuntu-latest
-    container: golang:1.19-alpine
+    container: golang:1.22.5-alpine
     needs: [lint,test]
     steps:
       - uses: actions/checkout@v3

@@ -1,9 +1,9 @@
 module git.epam.com/epm-lstr/epm-lstr-lc/be
 
-go 1.19
+go 1.22
 
 require (
-	entgo.io/ent v0.11.8
+	entgo.io/ent v0.13.1
 	github.com/brianvoe/gofakeit/v6 v6.20.1
 	github.com/go-openapi/errors v0.20.3
 	github.com/go-openapi/loads v0.21.2
@@ -17,7 +17,7 @@ require (
 	github.com/golang-jwt/jwt/v4 v4.5.0
 	github.com/jackc/pgx/v4 v4.18.1
 	github.com/jessevdk/go-flags v1.5.0
-	github.com/mattn/go-sqlite3 v1.14.16
+	github.com/mattn/go-sqlite3 v1.14.19
 	github.com/rubenv/sql-migrate v1.3.1
 	github.com/spf13/viper v1.15.0
 	github.com/stretchr/testify v1.8.2
@@ -26,7 +26,7 @@ require (
 )
 
 require (
-	ariga.io/atlas v0.9.1-0.20230119145809-92243f7c55cb // indirect
+	ariga.io/atlas v0.19.1-0.20240203083654-5948b60a8e43 // indirect
 	github.com/Masterminds/goutils v1.1.1 // indirect
 	github.com/Masterminds/semver v1.5.0 // indirect
 	github.com/Masterminds/sprig v2.22.0+incompatible // indirect
@@ -86,8 +86,8 @@ require (
 	github.com/vanng822/go-premailer v1.20.1 // indirect
 	go.opentelemetry.io/otel v1.14.0 // indirect
 	go.opentelemetry.io/otel/trace v1.14.0 // indirect
-	golang.org/x/mod v0.8.0 // indirect
-	golang.org/x/sync v0.1.0 // indirect
+	golang.org/x/mod v0.15.0 // indirect
+	golang.org/x/sync v0.6.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
 	gopkg.in/go-playground/assert.v1 v1.2.1 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
@@ -104,7 +104,7 @@ require (
 require (
 	github.com/agext/levenshtein v1.2.3 // indirect
 	github.com/golang-migrate/migrate/v4 v4.15.2
-	github.com/google/go-cmp v0.5.9 // indirect
+	github.com/google/go-cmp v0.6.0 // indirect
 	github.com/hashicorp/hcl/v2 v2.16.1 // indirect
 	github.com/matcornic/hermes/v2 v2.1.0
 	github.com/mitchellh/go-wordwrap v1.0.1 // indirect
@@ -113,5 +113,5 @@ require (
 	go.uber.org/atomic v1.10.0 // indirect
 	go.uber.org/multierr v1.9.0 // indirect
 	golang.org/x/crypto v0.17.0
-	golang.org/x/sys v0.15.0 // indirect
+	golang.org/x/sys v0.17.0 // indirect
 )

@@ -6,7 +6,7 @@ packagesToTest=$$(go list ./... | grep -v generated)
 
 setup:
 	go install github.com/go-swagger/go-swagger/cmd/swagger@v0.30.4
-	go install entgo.io/ent/cmd/ent@v0.11.8
+	go install entgo.io/ent/cmd/ent@v0.13.1
 	go install github.com/vektra/mockery/v2@v2.20.2
 
 setup_alpine:

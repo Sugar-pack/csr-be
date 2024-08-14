@@ -4,7 +4,7 @@ This CSR backend API.
 
 ## How to run this code
 Checked from unix-compatible OS.
-Go 1.19.2 is the current version.
+Go 1.22.5 is the current version.
 
 1. Install all necessary tools
    ```bash
