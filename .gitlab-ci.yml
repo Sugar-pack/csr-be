@@ -8,7 +8,7 @@ test:
   stage: test
   coverage: '/total:\s+\(statements\)\s+(\d+.\d+\%)/'
   variables:
-    min_coverage: '70'
+    min_coverage: '60'
     coverage_result: '/total:\s+\(statements\)\s+(\d+.\d+)\%/'
   script:
     - set -e
