@@ -162,6 +162,7 @@ type UserRepository interface {
 	UserByLogin(ctx context.Context, login string) (*ent.User, error)
 	ChangePasswordByLogin(ctx context.Context, login string, password string) error
 	ChangeEmailByLogin(ctx context.Context, login string, email string) error
+	UpdateLogin(ctx context.Context, currLogin string, newLogin string) error
 	CreateUser(ctx context.Context, data *models.UserRegister) (*ent.User, error)
 	GetUserByLogin(ctx context.Context, login string) (*ent.User, error)
 	GetUserByID(ctx context.Context, id int) (*ent.User, error)

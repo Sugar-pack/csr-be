@@ -87,6 +87,13 @@ func (e *emailChange) VerifyTokenAndChangeEmail(ctx context.Context, tokenToVeri
 		return err
 	}
 
+	newLogin := token.Email
+	err = e.UpdateLogin(ctx, login, newLogin)
+	if err != nil {
+		e.logger.Error("Error while changing login", zap.String("login", login), zap.Error(err))
+		return err
+	}
+
 	errDelete := e.DeleteToken(ctx, tokenToVerify)
 	if errDelete != nil {
 		e.logger.Warn("Error while deleting token during changing email",
