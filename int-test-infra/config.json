@@ -20,7 +20,7 @@
     "length": 8,
     "resetExpirationMinutes": 15
   },
-  "orderStatusOverdueTimeCheckDuration": "4h",
+  "periodicCheckDuration": "4h",
   "server": {
     "host": "0.0.0.0",
     "port": 8089
