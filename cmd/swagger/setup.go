@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/utils/timer"
 	"time"
 
 	"github.com/go-openapi/loads"
@@ -27,6 +26,7 @@ import (
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/services"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/utils"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/pkg/domain"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/pkg/timer"
 )
 
 func SetupAPI(entClient *ent.Client, lg *zap.Logger, conf *config.AppConfig) (*restapi.Server, domain.OrderOverdueCheckup, error) {
