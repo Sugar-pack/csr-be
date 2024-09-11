@@ -11,13 +11,13 @@ import (
 )
 
 type AppConfig struct {
-	Password                Password
-	JWTSecretKey            string `validate:"required"`
-	Email                   Email
-	PeriodicalCheckDuration time.Duration `validate:"required"`
-	Server                  Server
-	DB                      DB
-	AccessBindings          []RoleEndpointBinding
+	Password              Password
+	JWTSecretKey          string `validate:"required"`
+	Email                 Email
+	PeriodicCheckDuration time.Duration `validate:"required"`
+	Server                Server
+	DB                    DB
+	AccessBindings        []RoleEndpointBinding
 }
 
 type DB struct {

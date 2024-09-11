@@ -41,9 +41,9 @@ func main() {
 		lg.Fatal("error setup swagger api", zap.Error(err))
 	}
 
-	go checker.PeriodicalCheckup(ctx, conf.PeriodicalCheckDuration, entClient, lg)
+	go checker.PeriodicalCheckup(ctx, conf.PeriodicCheckDuration, entClient, lg)
 
-	runUnblockPeriodically(ctx, entClient, conf.PeriodicalCheckDuration, lg)
+	runUnblockPeriodically(ctx, entClient, conf.PeriodicCheckDuration, lg)
 
 	// Swagger servers handles signals and gracefully shuts down by itself
 	if err := server.Serve(); err != nil {
