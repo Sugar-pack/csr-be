@@ -674,14 +674,16 @@ func (r *equipmentRepository) UnblockEquipment(ctx context.Context, id int) erro
 
 // UnblockAllExpiredEquipment unblocks all blocked equipment with expired blocking period. To be run periodically.
 // todo introduce this argument? /* Take into account that invoking duration affects the result */ offset time.Duration. And make `until := time.Now().Add(offset).UTC()`
-func (r *equipmentRepository) UnblockAllExpiredEquipment(ctx context.Context, client *ent.Client) (int, error) {
+func (r *equipmentRepository) UnblockAllExpiredEquipment(ctx context.Context, client *ent.Client) (numDeleted int, err error) {
 	tx, err := client.Tx(ctx)
 	if err != nil {
 		return 0, err
 	}
 
 	defer func() {
-		tx.Rollback()
+		if err != nil {
+			tx.Rollback()
+		}
 	}()
 
 	eqStatusAvailable, err := tx.EquipmentStatusName.
@@ -713,7 +715,7 @@ func (r *equipmentRepository) UnblockAllExpiredEquipment(ctx context.Context, cl
 	}
 
 	// Delete all equipmentStatuses for selected equipments which have expired date and "not available" status (there are other statuses, not only "not available")
-	numDeleted, err := tx.EquipmentStatus.
+	numDeleted, err = tx.EquipmentStatus.
 		Delete().
 		Where(equipmentstatus.HasEquipmentStatusNameWith(equipmentstatusname.NameEQ(domain.EquipmentStatusNotAvailable))).
 		Where(equipmentstatus.EndDateLTE(until)).
