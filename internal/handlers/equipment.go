@@ -4,6 +4,7 @@ import (
 	"errors"
 	"math"
 	"net/http"
+	"slices"
 	"time"
 
 	"github.com/go-openapi/runtime/middleware"
@@ -143,6 +144,9 @@ func (c Equipment) ListEquipmentFunc(repository domain.EquipmentRepository) equi
 		offset := utils.GetValueByPointerOrDefaultValue(s.Offset, 0)
 		orderBy := utils.GetValueByPointerOrDefaultValue(s.OrderBy, utils.AscOrder)
 		orderColumn := utils.GetValueByPointerOrDefaultValue(s.OrderColumn, order.FieldID)
+
+		// TODO remove this redundant step. There is no need in checking total if we can simple do len() on return slice
+		// also there is a double database query actions that can be done in a single one
 		total, err := repository.AllEquipmentsTotal(ctx)
 		if err != nil {
 			c.logger.Error(messages.ErrQueryTotalEquipments, zap.Error(err))
@@ -158,6 +162,7 @@ func (c Equipment) ListEquipmentFunc(repository domain.EquipmentRepository) equi
 					WithPayload(buildInternalErrorPayload(messages.ErrQueryEquipments, err.Error()))
 			}
 		}
+		slices.SortFunc(equipments, SSS)
 		totalEquipments := int64(total)
 		listEquipment := &models.ListEquipment{
 			Items: make([]*models.EquipmentResponse, len(equipments)),
@@ -176,6 +181,19 @@ func (c Equipment) ListEquipmentFunc(repository domain.EquipmentRepository) equi
 		return equipment.NewGetAllEquipmentOK().WithPayload(listEquipment)
 	}
 }
+
+// func SSS[T any](a, b T) int {
+// 	switch a.(type) {
+// 	case ent.Equipment:
+
+// 	}
+// 	if a.(ent.Equipment).Name < b.Name {
+// 		return 1
+// 	} else if a.Name > b.Name {
+// 		return -1
+// 	}
+// 	return 0
+// }
 
 func (c Equipment) EditEquipmentFunc(repository domain.EquipmentRepository) equipment.EditEquipmentHandlerFunc {
 	return func(s equipment.EditEquipmentParams, _ *models.Principal) middleware.Responder {
