@@ -681,9 +681,7 @@ func (r *equipmentRepository) UnblockAllExpiredEquipment(ctx context.Context, cl
 	}
 
 	defer func() {
-		if err != nil {
-			tx.Rollback()
-		}
+		tx.Rollback()
 	}()
 
 	eqStatusAvailable, err := tx.EquipmentStatusName.
