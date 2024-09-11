@@ -52,6 +52,7 @@ type EquipmentRepository interface {
 	ArchiveEquipment(ctx context.Context, id int) error
 	BlockEquipment(ctx context.Context, id int, startDate, endDate time.Time, userID int) error
 	UnblockEquipment(ctx context.Context, id int) error
+	UnblockAllExpiredEquipment(ctx context.Context, client *ent.Client) (int, error)
 }
 
 type EquipmentStatusRepository interface {

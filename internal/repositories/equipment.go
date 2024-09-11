@@ -654,7 +654,7 @@ func (r *equipmentRepository) UnblockEquipment(ctx context.Context, id int) erro
 		return err
 	}
 
-	// Get last EquipmentStatus for Equipment according to some criteria
+	// Get EquipmentStatus for Equipment according to criteria
 	equipmentStatus, err := tx.EquipmentStatus.
 		Query().
 		Where(equipmentstatus.HasEquipmentsWith(equipment.ID(eqToUnblock.ID))).
@@ -670,6 +670,67 @@ func (r *equipmentRepository) UnblockEquipment(ctx context.Context, id int) erro
 	}
 
 	return err
+}
+
+// UnblockAllExpiredEquipment unblocks all blocked equipment with expired blocking period. To be run periodically.
+// todo introduce this argument? /* Take into account that invoking duration affects the result */ offset time.Duration. And make `until := time.Now().Add(offset).UTC()`
+func (r *equipmentRepository) UnblockAllExpiredEquipment(ctx context.Context, client *ent.Client) (int, error) {
+	tx, err := client.Tx(ctx)
+	if err != nil {
+		return 0, err
+	}
+
+	defer func() {
+		if err != nil {
+			tx.Rollback()
+		}
+	}()
+
+	eqStatusAvailable, err := tx.EquipmentStatusName.
+		Query().
+		Where(equipmentstatusname.Name(domain.EquipmentStatusAvailable)).
+		Only(ctx)
+	if err != nil {
+		return 0, err
+	}
+
+	until := time.Now().UTC()
+	eqToUnblock, err := tx.Equipment.Query().
+		Where(
+			equipment.HasEquipmentStatusWith(
+				equipmentstatus.And(
+					equipmentstatus.HasEquipmentStatusNameWith(equipmentstatusname.NameEQ(domain.EquipmentStatusNotAvailable)),
+					equipmentstatus.EndDateLTE(until),
+				),
+			),
+		).
+		All(ctx)
+
+	// Change the "current status" to "available" for the selected equipment
+	for _, eq := range eqToUnblock {
+		_, err = tx.Equipment.UpdateOneID(eq.ID).SetCurrentStatus(eqStatusAvailable).Save(ctx)
+		if err != nil {
+			return 0, err
+		}
+	}
+
+	// Delete all equipmentStatuses for selected equipments which have expired date and "not available" status (there are other statuses, not only "not available")
+	numDeleted, err := tx.EquipmentStatus.
+		Delete().
+		Where(equipmentstatus.HasEquipmentStatusNameWith(equipmentstatusname.NameEQ(domain.EquipmentStatusNotAvailable))).
+		Where(equipmentstatus.EndDateLTE(until)).
+		Exec(ctx)
+	if err != nil {
+		return 0, err
+	}
+
+	if err := tx.Commit(); err != nil {
+		return 0, err
+	}
+
+	// Note that we do not process orders that were blocked due to equipment being blocked. These are handled manually.
+
+	return numDeleted, err
 }
 
 // Set EquipmentStatus EndDate back in time to give access for the unblocked equipment again

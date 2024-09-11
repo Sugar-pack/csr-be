@@ -2,16 +2,14 @@ package main
 
 import (
 	"context"
-	"os/signal"
-	"syscall"
-
-	_ "github.com/golang-migrate/migrate/v4/source/file"
-	_ "github.com/jackc/pgx/v4/stdlib"
-	"go.uber.org/zap"
-
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/config"
 	internalDB "git.epam.com/epm-lstr/epm-lstr-lc/be/internal/db"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/logger"
+	_ "github.com/golang-migrate/migrate/v4/source/file"
+	_ "github.com/jackc/pgx/v4/stdlib"
+	"go.uber.org/zap"
+	"os/signal"
+	"syscall"
 )
 
 func main() {
@@ -43,7 +41,9 @@ func main() {
 		lg.Fatal("error setup swagger api", zap.Error(err))
 	}
 
-	go checker.PeriodicalCheckup(ctx, conf.OrderStatusOverdueTimeCheckDuration, entClient, lg)
+	go checker.PeriodicalCheckup(ctx, conf.PeriodicalCheckDuration, entClient, lg)
+
+	runUnblockPeriodically(ctx, entClient, conf.PeriodicalCheckDuration, lg)
 
 	// Swagger servers handles signals and gracefully shuts down by itself
 	if err := server.Serve(); err != nil {

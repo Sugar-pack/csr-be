@@ -1,7 +1,11 @@
 package main
 
 import (
+	"context"
+	"errors"
 	"fmt"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/utils/timer"
+	"time"
 
 	"github.com/go-openapi/loads"
 	"github.com/go-openapi/runtime"
@@ -178,4 +182,31 @@ func AccessManager(api *operations.BeAPI, bindings []config.RoleEndpointBinding)
 		}
 	}
 	return manager, nil
+}
+
+func runUnblockPeriodically(ctx context.Context, client *ent.Client, checkPeriodDuration time.Duration, lg *zap.Logger) {
+	pt := timer.NewPeriodicTimer()
+	i := 0
+	f := func() {
+
+		eqRepo := repositories.NewEquipmentRepository()
+		numDeleted, err := eqRepo.UnblockAllExpiredEquipment(ctx, client)
+		if err != nil {
+			for err != nil {
+				lg.Error("error when performing UnblockAllExpiredEquipment()", zap.Error(err))
+				err = errors.Unwrap(err)
+			}
+		} else {
+			if numDeleted > 0 {
+				s := ""
+				if numDeleted != 1 {
+					s = "s"
+				}
+				lg.Info(fmt.Sprintf("Clear expired euqipment block: %d quipment_status record%s deleted", numDeleted, s))
+			}
+		}
+		i++
+	}
+	pt.Start(checkPeriodDuration, f)
+	f()
 }

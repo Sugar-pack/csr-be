@@ -1,6 +1,6 @@
 {
   "db": {
-    "host": "postgres",
+    "host": "localhost",
     "port": "5432",
     "user": "csr",
     "database": "csr",
@@ -8,19 +8,20 @@
   },
   "JWTSecretKey": 123,
   "email": {
-    "serverHost": "any",
-    "serverPort": 1,
-    "password": "any",
-    "senderFromAddress": "any",
-    "senderFromName": "any",
+    "serverHost": "smtp.yandex.ru",
+    "serverPort": 587,
+    "password": "joqxamaascolakdq",
+    "senderFromAddress": "noreply.lkot@yandex.ru",
+    "senderFromName": "Lyonkin Kot",
+    "isSendRequired": true,
     "confirmLinkExpiration": "15m",
-    "isSendRequired": false
+    "senderWebsiteUrl": "https://stage.csr.golangforall.com/"
   },
   "password": {
     "length": 8,
     "resetLinkExpiration": "15m"
   },
-  "orderStatusOverdueTimeCheckDuration": "4h",
+  "periodicalCheckDuration": "4h",
   "server": {
     "port": 8080
   },

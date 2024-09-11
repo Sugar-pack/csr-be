@@ -19,6 +19,8 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
+const day = time.Hour * 24
+
 type EquipmentSuite struct {
 	suite.Suite
 	ctx        context.Context
@@ -677,6 +679,82 @@ func (s *EquipmentSuite) TestEquipmentRepository_UnblockEquipment() {
 	require.Empty(t, eqUnblocked.Edges.EquipmentStatus)
 	require.NotEqual(t, eqToUnblock.Edges.CurrentStatus.Name, eqUnblocked.Edges.CurrentStatus.Name)
 	require.NoError(t, tx.Commit())
+}
+
+func (s *EquipmentSuite) TestEquipmentRepository_TaskUnblockExpiredEquipment() {
+	t := s.T()
+	ctx := s.ctx
+	client := s.client
+
+	type blockPeriod struct {
+		starts      time.Duration // Relatively to now
+		ends        time.Duration // Relatively to now
+		mustDeleted bool          // The status built from this struct must be deleted by the UnblockAllExpiredEquipment()
+	}
+	type testData struct {
+		name       string
+		periods    []blockPeriod
+		mustAvail  bool   // Current equipment must become available after the UnblockAllExpiredEquipment()
+		currStatus string // The  current status (eq.EquipmentStatusName) to be set during initialization. Will be set "not available" if empty and to the value if not
+	}
+	// Use days, because sqlite might store just date (YYYY-MM-DD without time)
+	testdata := []testData{
+		{"Box", []blockPeriod{{-5 * day, -4 * day, true}}, true, ""},
+		{"Syringe", []blockPeriod{{-4 * day, -1 * day, true}, {2 * day, 3 * day, false}}, true, ""},
+		{"Cage", []blockPeriod{{-5 * day, -4 * day, true}, {-3 * day, -1 * day, true}}, true, ""},
+		{"Collar", []blockPeriod{{-4 * day, 10 * day, false}}, false, ""},                          // This must stay blocked
+		{"Belt", []blockPeriod{{1 * day, 20 * day, false}}, true, domain.EquipmentStatusAvailable}, // This was not blocked yet
+	}
+
+	_, err := client.Equipment.Delete().Exec(ctx)
+	require.NoError(t, err)
+	_, err = client.EquipmentStatus.Delete().Exec(ctx)
+	require.NoError(t, err)
+
+	esnNotAvail, err := client.EquipmentStatusName.Query().Where(equipmentstatusname.Name(domain.EquipmentStatusNotAvailable)).Only(ctx)
+	require.NoError(t, err)
+	require.NotNil(t, esnNotAvail)
+
+	var numUnblockedEqExp = 0
+	var numDeletedStatusesExp = 0
+	for _, test := range testdata {
+		var esn *ent.EquipmentStatusName
+		if test.currStatus == "" {
+			esn = esnNotAvail
+		} else {
+			esn, err = client.EquipmentStatusName.Query().Where(equipmentstatusname.Name(test.currStatus)).Only(ctx)
+			require.NoError(t, err)
+		}
+
+		e, err := client.Equipment.Create().SetName(test.name).SetCurrentStatus(esn).Save(ctx)
+		require.NoError(t, err)
+
+		for _, period := range test.periods {
+			_, err := client.EquipmentStatus.Create().SetEquipmentStatusName(esnNotAvail).
+				SetStartDate(time.Now().Add(period.starts)).
+				SetEndDate(time.Now().Add(period.ends)).
+				SetEquipments(e).
+				Save(ctx)
+			require.NoError(t, err)
+
+			if period.mustDeleted {
+				numDeletedStatusesExp++
+			}
+		}
+		if test.mustAvail {
+			numUnblockedEqExp++
+		}
+	}
+
+	numDeletedStatuses, err := s.repository.UnblockAllExpiredEquipment(ctx, client)
+	require.NoError(t, err)
+	require.Equal(t, numDeletedStatusesExp, numDeletedStatuses)
+
+	eqAvail, err := client.Equipment.Query().
+		Where(equipment.HasCurrentStatusWith(equipmentstatusname.NameEQ(domain.EquipmentStatusAvailable))).
+		All(ctx)
+	require.NoError(t, err)
+	require.Equal(t, numUnblockedEqExp, len(eqAvail))
 }
 
 func Test_truncateHours(t *testing.T) {
