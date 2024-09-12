@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"time"
 
@@ -192,10 +191,7 @@ func runUnblockPeriodically(ctx context.Context, client *ent.Client, checkPeriod
 		eqRepo := repositories.NewEquipmentRepository()
 		numDeleted, err := eqRepo.UnblockAllExpiredEquipment(ctx, client)
 		if err != nil {
-			for err != nil {
-				lg.Error("error when performing UnblockAllExpiredEquipment()", zap.Error(err))
-				err = errors.Unwrap(err)
-			}
+			lg.Error("error when performing UnblockAllExpiredEquipment()", zap.Error(err))
 		} else {
 			if numDeleted > 0 {
 				lg.Info(fmt.Sprintf("Clear expired euqipment block: %d quipment_status records deleted", numDeleted))
