@@ -4,5 +4,5 @@ var (
 	EquipmentStatusAvailable    = "available"
 	EquipmentStatusBooked       = "booked"
 	EquipmentStatusInUse        = "in use"
-	EquipmentStatusNotAvailable = "not available"
+	EquipmentStatusNotAvailable = "not available" // aka "blocked"
 )

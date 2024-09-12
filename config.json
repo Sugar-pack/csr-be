@@ -20,7 +20,7 @@
     "length": 8,
     "resetLinkExpiration": "15m"
   },
-  "orderStatusOverdueTimeCheckDuration": "4h",
+  "periodicCheckDuration": "4h",
   "server": {
     "port": 8080
   },
