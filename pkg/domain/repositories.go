@@ -45,7 +45,7 @@ type EquipmentRepository interface {
 	EquipmentByID(ctx context.Context, id int) (*ent.Equipment, error)
 	DeleteEquipmentByID(ctx context.Context, id int) error
 	DeleteEquipmentPhoto(ctx context.Context, id string) error
-	AllEquipments(ctx context.Context, limit, offset int, orderBy, orderColumn string) ([]*ent.Equipment, error)
+	AllEquipments(ctx context.Context, limit, offset int, orderBy, orderColumn string, includeArchived bool) ([]*ent.Equipment, error)
 	UpdateEquipmentByID(ctx context.Context, id int, eq *models.Equipment) (*ent.Equipment, error)
 	AllEquipmentsTotal(ctx context.Context) (int, error)
 	EquipmentsByFilterTotal(ctx context.Context, filter models.EquipmentFilter) (int, error)

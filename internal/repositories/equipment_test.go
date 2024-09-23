@@ -205,11 +205,12 @@ func (s *EquipmentSuite) TestEquipmentRepository_AllEquipmentsEmptyOrderBy() {
 	offset := 0
 	orderBy := ""
 	orderColumn := equipment.FieldID
+	includeArchived := true
 	ctx := s.ctx
 	tx, err := s.client.Tx(ctx)
 	require.NoError(t, err)
 	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
-	equipments, err := s.repository.AllEquipments(ctx, limit, offset, orderBy, orderColumn)
+	equipments, err := s.repository.AllEquipments(ctx, limit, offset, orderBy, orderColumn, includeArchived)
 	require.Error(t, err)
 	require.NoError(t, tx.Rollback())
 	require.Nil(t, equipments)
@@ -238,11 +239,12 @@ func (s *EquipmentSuite) TestEquipmentRepository_AllEquipmentsOrderColumnNotExis
 	offset := 0
 	orderBy := utils.AscOrder
 	orderColumn := "price"
+	includeArchived := true
 	ctx := s.ctx
 	tx, err := s.client.Tx(ctx)
 	require.NoError(t, err)
 	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
-	equipments, err := s.repository.AllEquipments(ctx, limit, offset, orderBy, orderColumn)
+	equipments, err := s.repository.AllEquipments(ctx, limit, offset, orderBy, orderColumn, includeArchived)
 	require.Error(t, err)
 	require.NoError(t, tx.Rollback())
 	require.Nil(t, equipments)
@@ -254,11 +256,12 @@ func (s *EquipmentSuite) TestEquipmentRepository_AllEquipmentsOrderByIDDesc() {
 	offset := 0
 	orderBy := utils.DescOrder
 	orderColumn := equipment.FieldID
+	includeArchived := true
 	ctx := s.ctx
 	tx, err := s.client.Tx(ctx)
 	require.NoError(t, err)
 	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
-	equipments, err := s.repository.AllEquipments(ctx, limit, offset, orderBy, orderColumn)
+	equipments, err := s.repository.AllEquipments(ctx, limit, offset, orderBy, orderColumn, includeArchived)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -278,17 +281,18 @@ func (s *EquipmentSuite) TestEquipmentRepository_AllEquipmentsOrderByNameDesc() 
 	offset := 0
 	orderBy := utils.DescOrder
 	orderColumn := equipment.FieldName
+	includeArchived := true
 	ctx := s.ctx
 	tx, err := s.client.Tx(ctx)
 	require.NoError(t, err)
 	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
-	equipments, err := s.repository.AllEquipments(ctx, limit, offset, orderBy, orderColumn)
+	equipments, err := s.repository.AllEquipments(ctx, limit, offset, orderBy, orderColumn, includeArchived)
 	if err != nil {
 		t.Fatal(err)
 	}
 	require.NoError(t, tx.Commit())
 	require.Equal(t, len(s.equipments), len(equipments))
-	prevEquipmentName := "zzzzzzzzzzzzzzzzzzzzzzzzzzz"
+	prevEquipmentName := "test 9"
 	for _, value := range equipments {
 		require.True(t, mapContainsEquipment(value, s.equipments))
 		require.Less(t, value.Name, prevEquipmentName)
@@ -302,11 +306,12 @@ func (s *EquipmentSuite) TestEquipmentRepository_AllEquipmentsOrderByTitleDesc()
 	offset := 0
 	orderBy := utils.DescOrder
 	orderColumn := equipment.FieldTitle
+	includeArchived := true
 	ctx := s.ctx
 	tx, err := s.client.Tx(ctx)
 	require.NoError(t, err)
 	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
-	equipments, err := s.repository.AllEquipments(ctx, limit, offset, orderBy, orderColumn)
+	equipments, err := s.repository.AllEquipments(ctx, limit, offset, orderBy, orderColumn, includeArchived)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -326,11 +331,12 @@ func (s *EquipmentSuite) TestEquipmentRepository_AllEquipmentsOrderByIDAsc() {
 	offset := 0
 	orderBy := utils.AscOrder
 	orderColumn := equipment.FieldID
+	includeArchived := true
 	ctx := s.ctx
 	tx, err := s.client.Tx(ctx)
 	require.NoError(t, err)
 	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
-	equipments, err := s.repository.AllEquipments(ctx, limit, offset, orderBy, orderColumn)
+	equipments, err := s.repository.AllEquipments(ctx, limit, offset, orderBy, orderColumn, includeArchived)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -350,11 +356,12 @@ func (s *EquipmentSuite) TestEquipmentRepository_AllEquipmentsOrderByNameAsc() {
 	offset := 0
 	orderBy := utils.AscOrder
 	orderColumn := equipment.FieldName
+	includeArchived := true
 	ctx := s.ctx
 	tx, err := s.client.Tx(ctx)
 	require.NoError(t, err)
 	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
-	equipments, err := s.repository.AllEquipments(ctx, limit, offset, orderBy, orderColumn)
+	equipments, err := s.repository.AllEquipments(ctx, limit, offset, orderBy, orderColumn, includeArchived)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -374,11 +381,12 @@ func (s *EquipmentSuite) TestEquipmentRepository_AllEquipmentsOrderByTitleAsc() 
 	offset := 0
 	orderBy := utils.AscOrder
 	orderColumn := equipment.FieldTitle
+	includeArchived := true
 	ctx := s.ctx
 	tx, err := s.client.Tx(ctx)
 	require.NoError(t, err)
 	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
-	equipments, err := s.repository.AllEquipments(ctx, limit, offset, orderBy, orderColumn)
+	equipments, err := s.repository.AllEquipments(ctx, limit, offset, orderBy, orderColumn, includeArchived)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -398,11 +406,12 @@ func (s *EquipmentSuite) TestEquipmentRepository_AllEquipmentsLimit() {
 	offset := 0
 	orderBy := utils.AscOrder
 	orderColumn := equipment.FieldTitle
+	includeArchived := true
 	ctx := s.ctx
 	tx, err := s.client.Tx(ctx)
 	require.NoError(t, err)
 	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
-	equipments, err := s.repository.AllEquipments(ctx, limit, offset, orderBy, orderColumn)
+	equipments, err := s.repository.AllEquipments(ctx, limit, offset, orderBy, orderColumn, includeArchived)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -420,11 +429,12 @@ func (s *EquipmentSuite) TestEquipmentRepository_AllEquipmentsOffset() {
 	offset := 3
 	orderBy := utils.AscOrder
 	orderColumn := equipment.FieldTitle
+	includeArchived := true
 	ctx := s.ctx
 	tx, err := s.client.Tx(ctx)
 	require.NoError(t, err)
 	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
-	equipments, err := s.repository.AllEquipments(ctx, limit, offset, orderBy, orderColumn)
+	equipments, err := s.repository.AllEquipments(ctx, limit, offset, orderBy, orderColumn, includeArchived)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -433,6 +443,29 @@ func (s *EquipmentSuite) TestEquipmentRepository_AllEquipmentsOffset() {
 	for i, value := range equipments {
 		require.True(t, mapContainsEquipment(value, s.equipments))
 		require.Equal(t, s.equipments[i+1+offset].Name, value.Name)
+	}
+}
+
+func (s *EquipmentSuite) TestEquipmentRepository_AllEquipmentsWithoutArchived() {
+	t := s.T()
+	limit := math.MaxInt
+	offset := 0
+	orderBy := utils.DescOrder
+	orderColumn := equipment.FieldTitle
+	includeArchived := false
+	ctx := s.ctx
+	tx, err := s.client.Tx(ctx)
+	require.NoError(t, err)
+	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
+	equipments, err := s.repository.AllEquipments(ctx, limit, offset, orderBy, orderColumn, includeArchived)
+	if err != nil {
+		t.Fatal(err)
+	}
+	require.NoError(t, tx.Commit())
+	require.Equal(t, len(s.equipments), len(equipments))
+
+	for _, value := range equipments {
+		require.True(t, mapContainsEquipment(value, s.equipments))
 	}
 }
 

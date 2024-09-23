@@ -185,32 +185,61 @@ func (r *equipmentRepository) DeleteEquipmentPhoto(ctx context.Context, id strin
 	return nil
 }
 
-func (r *equipmentRepository) AllEquipments(ctx context.Context, limit, offset int, orderBy, orderColumn string) ([]*ent.Equipment, error) {
+func (r *equipmentRepository) AllEquipments(
+	ctx context.Context,
+	limit, offset int,
+	orderBy, orderColumn string,
+	includeArchived bool,
+) ([]*ent.Equipment, error) {
 	if !utils.IsValueInList(orderColumn, fieldsToOrderEquipments) {
 		return nil, errors.New("wrong column to order by")
 	}
-	orderFunc, err := utils.GetOrderFunc(orderBy, orderColumn)
-	if err != nil {
-		return nil, err
-	}
+
 	tx, err := middlewares.TxFromContext(ctx)
 	if err != nil {
 		return nil, err
 	}
-	result, err := tx.Equipment.Query().Order(orderFunc).Limit(limit).Offset(offset).
-		WithCategory().WithSubcategory().WithCurrentStatus().WithPetKinds().
-		WithPetSize().WithPhoto().
-		WithEquipmentStatus(func(esq *ent.EquipmentStatusQuery) {
-			esq.
-				Where(equipmentstatus.EndDateGTE(time.Now())).
-				Where(equipmentstatus.HasEquipmentStatusNameWith(
-					equipmentstatusname.NameEQ(domain.EquipmentStatusNotAvailable),
-				))
-		}).
-		All(ctx)
+
+	orderFunc, err := utils.GetOrderFunc(orderBy, orderColumn)
 	if err != nil {
 		return nil, err
 	}
+
+	query := tx.Equipment.Query().
+		Order(orderFunc).
+		Limit(limit).
+		Offset(offset).
+		WithCategory().
+		WithSubcategory().
+		WithCurrentStatus().
+		WithPetKinds().
+		WithPetSize().
+		WithPhoto().
+		WithEquipmentStatus(func(esq *ent.EquipmentStatusQuery) {
+			conditions := []predicate.EquipmentStatus{
+				equipmentstatus.EndDateGTE(time.Now()),
+			}
+
+			// Always exclude "not available" equipment if not including archived
+			if !includeArchived {
+				conditions = append(conditions,
+					equipmentstatus.Not(
+						equipmentstatus.HasEquipmentStatusNameWith(
+							equipmentstatusname.NameEQ(domain.EquipmentStatusNotAvailable),
+						),
+					),
+				)
+			}
+
+			esq.Where(conditions...)
+		})
+
+	result, err := query.All(ctx)
+
+	if err != nil {
+		return nil, err
+	}
+
 	return result, nil
 }
 

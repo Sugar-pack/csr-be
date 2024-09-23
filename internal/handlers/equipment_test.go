@@ -461,15 +461,17 @@ func (s *EquipmentTestSuite) TestEquipment_ListEquipmentFunc_MapErr() {
 	offset := 0
 	orderBy := "asc"
 	orderColumn := "id"
+	includeArchived := true
 
 	handlerFunc := s.equipment.ListEquipmentFunc(s.equipmentRepo)
 	data := equipment.GetAllEquipmentParams{
-		HTTPRequest: &request,
+		HTTPRequest:     &request,
+		IncludeArchived: &includeArchived,
 	}
 	var equipmentToReturn []*ent.Equipment
 	equipmentToReturn = append(equipmentToReturn, InvalidEquipment(t))
 	s.equipmentRepo.On("AllEquipmentsTotal", ctx).Return(1, nil)
-	s.equipmentRepo.On("AllEquipments", ctx, limit, offset, orderBy, orderColumn).Return(equipmentToReturn, nil)
+	s.equipmentRepo.On("AllEquipments", ctx, limit, offset, orderBy, orderColumn, includeArchived).Return(equipmentToReturn, nil)
 
 	resp := handlerFunc(data, nil)
 	responseRecorder := httptest.NewRecorder()
@@ -487,15 +489,17 @@ func (s *EquipmentTestSuite) TestEquipment_ListEquipmentFunc_EmptyPaginationPara
 	offset := 0
 	orderBy := "asc"
 	orderColumn := "id"
+	includeArchived := true
 
 	handlerFunc := s.equipment.ListEquipmentFunc(s.equipmentRepo)
 	data := equipment.GetAllEquipmentParams{
-		HTTPRequest: &request,
+		HTTPRequest:     &request,
+		IncludeArchived: &includeArchived,
 	}
 	var equipmentToReturn []*ent.Equipment
 	equipmentToReturn = append(equipmentToReturn, ValidEquipment(t, 1))
 	s.equipmentRepo.On("AllEquipmentsTotal", ctx).Return(1, nil)
-	s.equipmentRepo.On("AllEquipments", ctx, limit, offset, orderBy, orderColumn).Return(equipmentToReturn, nil)
+	s.equipmentRepo.On("AllEquipments", ctx, limit, offset, orderBy, orderColumn, includeArchived).Return(equipmentToReturn, nil)
 
 	resp := handlerFunc(data, nil)
 	responseRecorder := httptest.NewRecorder()
@@ -521,19 +525,21 @@ func (s *EquipmentTestSuite) TestEquipment_ListEquipmentFunc_LimitGreaterThanTot
 	var offset int64 = 0
 	var orderBy = "asc"
 	var orderColumn = "id"
+	var includeArchived = true
 
 	handlerFunc := s.equipment.ListEquipmentFunc(s.equipmentRepo)
 	data := equipment.GetAllEquipmentParams{
-		HTTPRequest: &request,
-		Limit:       &limit,
-		Offset:      &offset,
-		OrderBy:     &orderBy,
-		OrderColumn: &orderColumn,
+		HTTPRequest:     &request,
+		Limit:           &limit,
+		Offset:          &offset,
+		OrderBy:         &orderBy,
+		OrderColumn:     &orderColumn,
+		IncludeArchived: &includeArchived,
 	}
 	var equipmentToReturn []*ent.Equipment
 	equipmentToReturn = append(equipmentToReturn, ValidEquipment(t, 1))
 	s.equipmentRepo.On("AllEquipmentsTotal", ctx).Return(1, nil)
-	s.equipmentRepo.On("AllEquipments", ctx, int(limit), int(offset), orderBy, orderColumn).Return(equipmentToReturn, nil)
+	s.equipmentRepo.On("AllEquipments", ctx, int(limit), int(offset), orderBy, orderColumn, includeArchived).Return(equipmentToReturn, nil)
 
 	resp := handlerFunc(data, nil)
 	responseRecorder := httptest.NewRecorder()
@@ -559,14 +565,16 @@ func (s *EquipmentTestSuite) TestEquipment_ListEquipmentFunc_LimitLessThanTotal(
 	var offset int64 = 0
 	var orderBy = "asc"
 	var orderColumn = "id"
+	var includeArchived = true
 
 	handlerFunc := s.equipment.ListEquipmentFunc(s.equipmentRepo)
 	data := equipment.GetAllEquipmentParams{
-		HTTPRequest: &request,
-		Limit:       &limit,
-		Offset:      &offset,
-		OrderBy:     &orderBy,
-		OrderColumn: &orderColumn,
+		HTTPRequest:     &request,
+		Limit:           &limit,
+		Offset:          &offset,
+		OrderBy:         &orderBy,
+		OrderColumn:     &orderColumn,
+		IncludeArchived: &includeArchived,
 	}
 	equipmentToReturn := []*ent.Equipment{
 		ValidEquipment(t, 1),
@@ -576,7 +584,7 @@ func (s *EquipmentTestSuite) TestEquipment_ListEquipmentFunc_LimitLessThanTotal(
 		ValidEquipment(t, 5),
 	}
 	s.equipmentRepo.On("AllEquipmentsTotal", ctx).Return(5, nil)
-	s.equipmentRepo.On("AllEquipments", ctx, int(limit), int(offset), orderBy, orderColumn).
+	s.equipmentRepo.On("AllEquipments", ctx, int(limit), int(offset), orderBy, orderColumn, includeArchived).
 		Return(equipmentToReturn[:limit], nil)
 
 	resp := handlerFunc(data, nil)
@@ -607,14 +615,16 @@ func (s *EquipmentTestSuite) TestEquipment_ListEquipmentFunc_SecondPage() {
 	var offset int64 = 3
 	var orderBy = "asc"
 	var orderColumn = "id"
+	var includeArchived = true
 
 	handlerFunc := s.equipment.ListEquipmentFunc(s.equipmentRepo)
 	data := equipment.GetAllEquipmentParams{
-		HTTPRequest: &request,
-		Limit:       &limit,
-		Offset:      &offset,
-		OrderBy:     &orderBy,
-		OrderColumn: &orderColumn,
+		HTTPRequest:     &request,
+		Limit:           &limit,
+		Offset:          &offset,
+		OrderBy:         &orderBy,
+		OrderColumn:     &orderColumn,
+		IncludeArchived: &includeArchived,
 	}
 	equipmentToReturn := []*ent.Equipment{
 		ValidEquipment(t, 1),
@@ -624,7 +634,7 @@ func (s *EquipmentTestSuite) TestEquipment_ListEquipmentFunc_SecondPage() {
 		ValidEquipment(t, 5),
 	}
 	s.equipmentRepo.On("AllEquipmentsTotal", ctx).Return(5, nil)
-	s.equipmentRepo.On("AllEquipments", ctx, int(limit), int(offset), orderBy, orderColumn).
+	s.equipmentRepo.On("AllEquipments", ctx, int(limit), int(offset), orderBy, orderColumn, includeArchived).
 		Return(equipmentToReturn[offset:], nil)
 
 	resp := handlerFunc(data, nil)
@@ -655,14 +665,16 @@ func (s *EquipmentTestSuite) TestEquipment_ListEquipmentFunc_SeveralPages() {
 	var offset int64 = 0
 	var orderBy = "asc"
 	var orderColumn = "id"
+	var includeArchived = true
 
 	handlerFunc := s.equipment.ListEquipmentFunc(s.equipmentRepo)
 	data := equipment.GetAllEquipmentParams{
-		HTTPRequest: &request,
-		Limit:       &limit,
-		Offset:      &offset,
-		OrderBy:     &orderBy,
-		OrderColumn: &orderColumn,
+		HTTPRequest:     &request,
+		Limit:           &limit,
+		Offset:          &offset,
+		OrderBy:         &orderBy,
+		OrderColumn:     &orderColumn,
+		IncludeArchived: &includeArchived,
 	}
 	equipmentToReturn := []*ent.Equipment{
 		ValidEquipment(t, 1),
@@ -672,7 +684,7 @@ func (s *EquipmentTestSuite) TestEquipment_ListEquipmentFunc_SeveralPages() {
 		ValidEquipment(t, 5),
 	}
 	s.equipmentRepo.On("AllEquipmentsTotal", ctx).Return(5, nil)
-	s.equipmentRepo.On("AllEquipments", ctx, int(limit), int(offset), orderBy, orderColumn).
+	s.equipmentRepo.On("AllEquipments", ctx, int(limit), int(offset), orderBy, orderColumn, includeArchived).
 		Return(equipmentToReturn[:limit], nil)
 
 	resp := handlerFunc(data, nil)
@@ -696,7 +708,7 @@ func (s *EquipmentTestSuite) TestEquipment_ListEquipmentFunc_SeveralPages() {
 
 	offset = limit
 	s.equipmentRepo.On("AllEquipmentsTotal", ctx).Return(5, nil)
-	s.equipmentRepo.On("AllEquipments", ctx, int(limit), int(offset), orderBy, orderColumn).
+	s.equipmentRepo.On("AllEquipments", ctx, int(limit), int(offset), orderBy, orderColumn, includeArchived).
 		Return(equipmentToReturn[offset:], nil)
 	resp = handlerFunc(data, nil)
 	responseRecorder = httptest.NewRecorder()
