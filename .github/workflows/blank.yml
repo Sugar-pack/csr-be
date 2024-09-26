@@ -86,18 +86,26 @@ jobs:
           source: csr
           target: ~/
       - name: Deploy
-        run: |
-          ssh -o "StrictHostKeyChecking=no" -p ${{ secrets.DEPLOY_SSH_PORT }} ${{ secrets.DEPLOY_SSH_USER }}@${{ secrets.DEPLOY_SSH_HOST }} "
-          mkdir -p /var/www/csr/stage/ &&
-          echo '${{ secrets.DEPLOY_CONFIG }}' > /var/www/csr/stage/config.json &&
-          sudo rm -rf /etc/systemd/system/stage.csr.service.d &&
-          echo -e '[Service]
-          Environment=\"JWT_SECRET_KEY=${{ secrets.JWT_SECRET_KEY }}\"
-          Environment=\"EMAIL_PASSWORD=${{ secrets.EMAIL_PASSWORD }}\"
-          Environment=\"DB_USER=${{ secrets.DB_USER }}\"
-          Environment=\"DB_PASSWORD=${{ secrets.DB_PASSWORD }}\"' | 
-          sudo EDITOR='tee' systemctl edit stage.csr.service &&
-          sudo systemctl daemon-reload &&
-          sudo systemctl stop stage.csr &&
-          cp ~/csr /var/www/csr/stage/server &&
-          sudo systemctl start stage.csr"
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.DEPLOY_SSH_HOST }}
+          username: ${{ secrets.DEPLOY_SSH_USER }}
+          key: ${{ secrets.DEPLOY_SSH_PRIVATE_KEY }}
+          port: ${{ secrets.DEPLOY_SSH_PORT }}
+          script: |
+            mkdir -p /var/www/csr/stage/
+            echo '${{ secrets.DEPLOY_CONFIG }}' > /var/www/csr/stage/config.json
+            sudo rm -rf /etc/systemd/system/stage.csr.service.d
+            mkdir -p /etc/systemd/system/stage.csr.service.d/override.conf
+            sudo chown root:root /etc/systemd/system/stage.csr.service.d
+            sudo chmod 755 /etc/systemd/system/stage.csr.service.d
+            echo '[Service] 
+            Environment="JWT_SECRET_KEY=${{ secrets.JWT_SECRET_KEY }}"
+            Environment="EMAIL_PASSWORD=${{ secrets.EMAIL_PASSWORD }}"
+            Environment="DB_USER=${{ secrets.DB_USER }}"
+            Environment="DB_PASSWORD=${{ secrets.DB_PASSWORD }}"' > /etc/systemd/system/stage.csr.service.d/override.conf
+            sudo chown root:root /etc/systemd/system/stage.csr.service.d/override.conf  
+            sudo chmod 644 root:root /etc/systemd/system/stage.csr.service.d/override.conf  
+            sudo systemctl daemon-reload && sudo service stage.csr stop
+            cp ~/csr /var/www/csr/stage/server
+            sudo service stage.csr start
