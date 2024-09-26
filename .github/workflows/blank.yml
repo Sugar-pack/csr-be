@@ -67,7 +67,7 @@ jobs:
           path: csr
           retention-days: 5
   deploy:
-    if: github.ref == 'refs/heads/master'
+    if: github.ref == 'refs/heads/feat/#8/separate_secrets'
     environment:
       stage
     runs-on: ubuntu-latest
