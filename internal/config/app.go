@@ -106,6 +106,7 @@ func getDefaultConfig() *AppConfig {
 			Host:     "localhost",
 			User:     "csr",
 			Password: "password",
+			Database: "csr",
 		},
 		Password: Password{
 			Length:              8,

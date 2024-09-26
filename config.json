@@ -2,7 +2,7 @@
   "db": {
     "host": "postgres",
     "port": "5432",
-    "database": "",
+    "database": "csr",
     "showSql": false
   },
   "email": {
