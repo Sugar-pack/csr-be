@@ -86,26 +86,18 @@ jobs:
           source: csr
           target: ~/
       - name: Deploy
-        before_script:
-          - 'which ssh-agent || ( apt-get update -y && apt-get install openssh-client -y )'
-          - eval $(ssh-agent -s)
-          - echo ${{ secrets.DEPLOY_SSH_PRIVATE_KEY }} | tr -d '\r' | ssh-add - > /dev/null
-          - mkdir -p ~/.ssh
-          - chmod 700 ~/.ssh
-          - ssh-keyscan -p ${{ secrets.DEPLOY_SSH_PORT }} ${{ secrets.DEPLOY_SSH_HOST }} >> ~/.ssh/known_hosts
-          - chmod 644 ~/.ssh/known_hosts
-        script: |
-            ssh -p ${{ secrets.DEPLOY_SSH_PORT }} ${{ secrets.DEPLOY_SSH_USER }}@${{ secrets.DEPLOY_SSH_HOST }} "
-            mkdir -p /var/www/csr/stage/ &&
-            echo '${{ secrets.DEPLOY_CONFIG }}' > /var/www/csr/stage/config.json &&
-            sudo rm -rf /etc/systemd/system/stage.csr.service.d &&
-            echo -e '[Service]
-            Environment=\"JWT_SECRET_KEY=${{ secrets.JWT_SECRET_KEY }}\"
-            Environment=\"EMAIL_PASSWORD=${{ secrets.EMAIL_PASSWORD }}\"
-            Environment=\"DB_USER=${{ secrets.DB_USER }}\"
-            Environment=\"DB_PASSWORD=${{ secrets.DB_PASSWORD }}\"' | 
-            sudo EDITOR='tee' systemctl edit stage.csr.service &&
-            sudo systemctl daemon-reload &&
-            sudo systemctl stop stage.csr &&
-            cp ~/csr /var/www/csr/stage/server &&
-            sudo systemctl start stage.csr"
+        run: |
+          ssh -o "StrictHostKeyChecking=no" -p ${{ secrets.DEPLOY_SSH_PORT }} ${{ secrets.DEPLOY_SSH_USER }}@${{ secrets.DEPLOY_SSH_HOST }} "
+          mkdir -p /var/www/csr/stage/ &&
+          echo '${{ secrets.DEPLOY_CONFIG }}' > /var/www/csr/stage/config.json &&
+          sudo rm -rf /etc/systemd/system/stage.csr.service.d &&
+          echo -e '[Service]
+          Environment=\"JWT_SECRET_KEY=${{ secrets.JWT_SECRET_KEY }}\"
+          Environment=\"EMAIL_PASSWORD=${{ secrets.EMAIL_PASSWORD }}\"
+          Environment=\"DB_USER=${{ secrets.DB_USER }}\"
+          Environment=\"DB_PASSWORD=${{ secrets.DB_PASSWORD }}\"' | 
+          sudo EDITOR='tee' systemctl edit stage.csr.service &&
+          sudo systemctl daemon-reload &&
+          sudo systemctl stop stage.csr &&
+          cp ~/csr /var/www/csr/stage/server &&
+          sudo systemctl start stage.csr"
