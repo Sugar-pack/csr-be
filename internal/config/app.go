@@ -85,6 +85,7 @@ func GetAppConfig(additionalDirectories ...string) (*AppConfig, error) {
 	if err := viper.ReadInConfig(); err != nil {
 		return nil, fmt.Errorf("failed to read in config: %w", err)
 	}
+	bindEnvVars()
 
 	conf := getDefaultConfig()
 	if err := viper.Unmarshal(&conf); err != nil {
@@ -100,6 +101,7 @@ func GetAppConfig(additionalDirectories ...string) (*AppConfig, error) {
 
 func getDefaultConfig() *AppConfig {
 	return &AppConfig{
+		JWTSecretKey: "default_value",
 		DB: DB{
 			Host:     "localhost",
 			User:     "csr",
@@ -110,6 +112,7 @@ func getDefaultConfig() *AppConfig {
 			ResetLinkExpiration: 15 * time.Minute,
 		},
 		Email: Email{
+			Password:              "default_value",
 			SenderWebsiteUrl:      "https://csr.golangforall.com/",
 			ConfirmLinkExpiration: 15 * time.Minute,
 		},
@@ -118,4 +121,13 @@ func getDefaultConfig() *AppConfig {
 			Port: 8080,
 		},
 	}
+}
+
+func bindEnvVars() {
+	viper.BindEnv("jwtsecretkey", "JWT_SECRET_KEY")
+	viper.BindEnv("email.password", "EMAIL_PASSWORD")
+	viper.BindEnv("db.user", "DB_USER")
+	viper.BindEnv("db.password", "DB_PASSWORD")
+
+	viper.AutomaticEnv()
 }
