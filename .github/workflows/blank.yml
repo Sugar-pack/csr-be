@@ -102,8 +102,7 @@ jobs:
             echo -e "[Service]\n\
             Environment=\"JWT_SECRET_KEY=${{ secrets.JWT_SECRET_KEY }}\"\n\
             Environment=\"EMAIL_PASSWORD=${{ secrets.EMAIL_PASSWORD }}\"\n\
-            Environment=\"DB_USER=${{ secrets.DB_USER }}\"\n\
-            Environment=\"DB_PASSWORD=${{ secrets.DB_PASSWORD }}\"" > override.conf
+            Environment=\"DB_USER=${{ secrets.DB_USER }}\"" > override.conf
             sudo mv override.conf /etc/systemd/system/stage.csr.service.d/override.conf
             sudo chown root:root /etc/systemd/system/stage.csr.service.d/override.conf  
             sudo chmod 644 /etc/systemd/system/stage.csr.service.d/override.conf  

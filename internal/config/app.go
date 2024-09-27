@@ -105,8 +105,7 @@ func getDefaultConfig() *AppConfig {
 		DB: DB{
 			Host:     "localhost",
 			User:     "csr",
-			Password: "password",
-			Database: "csr",
+			Database: "stage_csr",
 		},
 		Password: Password{
 			Length:              8,
@@ -128,7 +127,6 @@ func bindEnvVars() {
 	viper.BindEnv("jwtsecretkey", "JWT_SECRET_KEY")
 	viper.BindEnv("email.password", "EMAIL_PASSWORD")
 	viper.BindEnv("db.user", "DB_USER")
-	viper.BindEnv("db.password", "DB_PASSWORD")
 
 	viper.AutomaticEnv()
 }
