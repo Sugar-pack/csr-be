@@ -2,9 +2,9 @@ name: build-deploy
 on:
   workflow_dispatch:
   push:
-    branches: ["master"]
+    branches: ["feat/#8/separate_secrets"]
   pull_request:
-    branches: ["master"]
+    branches: ["feat/#8/separate_secrets"]
 jobs:
   test:
     runs-on: ubuntu-22.04
@@ -67,7 +67,7 @@ jobs:
           path: csr
           retention-days: 5
   deploy:
-    if: github.ref == 'refs/heads/master'
+    if: github.ref == 'refs/heads/feat/#8/separate_secrets'
     environment:
       stage
     runs-on: ubuntu-latest
