@@ -3,6 +3,7 @@ Description=stage.csr
 After=network.target
 
 [Service]
+EnvironmentFile=/etc/systemd/system/stage.csr.env
 Type=simple
 WorkingDirectory=/var/www/csr/stage
 User=csr

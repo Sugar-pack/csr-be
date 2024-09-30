@@ -2,15 +2,12 @@
   "db": {
     "host": "postgres",
     "port": "5432",
-    "user": "csr",
     "database": "csr",
     "showSql": false
   },
-  "JWTSecretKey": 123,
   "email": {
     "serverHost": "any",
     "serverPort": 1,
-    "password": "any",
     "senderFromAddress": "any",
     "senderFromName": "any",
     "confirmLinkExpiration": "15m",

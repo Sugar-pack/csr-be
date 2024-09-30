@@ -95,6 +95,11 @@ jobs:
           script: |
             mkdir -p /var/www/csr/stage/
             echo '${{ secrets.DEPLOY_CONFIG }}' > /var/www/csr/stage/config.json
+            sudo rm /etc/systemd/system/stage.csr.env
+            echo -e "JWT_SECRET_KEY=${{ secrets.JWT_SECRET_KEY }}\n\
+            EMAIL_PASSWORD=${{ secrets.EMAIL_PASSWORD }}\n\
+            DB_USER=${{ secrets.DB_USER }}" > stage.csr.env    
+            sudo mv stage.csr.env /etc/systemd/system/stage.csr.env    
             sudo systemctl daemon-reload && sudo service stage.csr stop
             cp ~/csr /var/www/csr/stage/server
             sudo service stage.csr start
