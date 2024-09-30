@@ -2,9 +2,9 @@ name: build-deploy
 on:
   workflow_dispatch:
   push:
-    branches: ["feat/master"]
+    branches: ["feat/#8/separate_secrets"]
   pull_request:
-    branches: ["master"]
+    branches: ["feat/#8/separate_secrets"]
 jobs:
   test:
     runs-on: ubuntu-22.04
@@ -67,7 +67,7 @@ jobs:
           path: csr
           retention-days: 5
   deploy:
-    if: github.ref == 'refs/heads/master'
+    if: github.ref == 'refs/heads/feat/#8/separate_secrets'
     environment:
       stage
     runs-on: ubuntu-latest
@@ -95,17 +95,11 @@ jobs:
           script: |
             mkdir -p /var/www/csr/stage/
             echo '${{ secrets.DEPLOY_CONFIG }}' > /var/www/csr/stage/config.json
-            sudo rm -rf /etc/systemd/system/stage.csr.service.d
-            sudo mkdir -p /etc/systemd/system/stage.csr.service.d
-            sudo chown root:root /etc/systemd/system/stage.csr.service.d
-            sudo chmod 755 /etc/systemd/system/stage.csr.service.d
-            echo -e "[Service]\n\
-            Environment=\"JWT_SECRET_KEY=${{ secrets.JWT_SECRET_KEY }}\"\n\
-            Environment=\"EMAIL_PASSWORD=${{ secrets.EMAIL_PASSWORD }}\"\n\
-            Environment=\"DB_USER=${{ secrets.DB_USER }}\"" > override.conf
-            sudo mv override.conf /etc/systemd/system/stage.csr.service.d/override.conf
-            sudo chown root:root /etc/systemd/system/stage.csr.service.d/override.conf  
-            sudo chmod 644 /etc/systemd/system/stage.csr.service.d/override.conf  
+            sudo rm /etc/systemd/system/stage.csr.env
+            echo -e "JWT_SECRET_KEY=${{ secrets.JWT_SECRET_KEY }}\n\
+            EMAIL_PASSWORD=${{ secrets.EMAIL_PASSWORD }}\n\
+            DB_USER=${{ secrets.DB_USER }}" > stage.csr.env    
+            sudo mv stage.csr.env /etc/systemd/system/stage.csr.env    
             sudo systemctl daemon-reload && sudo service stage.csr stop
             cp ~/csr /var/www/csr/stage/server
             sudo service stage.csr start 
