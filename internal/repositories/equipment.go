@@ -189,7 +189,6 @@ func (r *equipmentRepository) AllEquipments(
 	ctx context.Context,
 	limit, offset int,
 	orderBy, orderColumn string,
-	includeArchived bool,
 ) ([]*ent.Equipment, error) {
 	if !utils.IsValueInList(orderColumn, fieldsToOrderEquipments) {
 		return nil, errors.New("wrong column to order by")
@@ -218,17 +217,9 @@ func (r *equipmentRepository) AllEquipments(
 		WithEquipmentStatus(func(esq *ent.EquipmentStatusQuery) {
 			conditions := []predicate.EquipmentStatus{
 				equipmentstatus.EndDateGTE(time.Now()),
-			}
-
-			// Always exclude "not available" equipment if not including archived
-			if !includeArchived {
-				conditions = append(conditions,
-					equipmentstatus.Not(
-						equipmentstatus.HasEquipmentStatusNameWith(
-							equipmentstatusname.NameEQ(domain.EquipmentStatusNotAvailable),
-						),
-					),
-				)
+				equipmentstatus.HasEquipmentStatusNameWith(
+					equipmentstatusname.NameEQ(domain.EquipmentStatusNotAvailable),
+				),
 			}
 
 			esq.Where(conditions...)

@@ -1474,12 +1474,6 @@ paths:
             - name
             - title
           default: id
-        - name: include_archived
-          in: query
-          required: false
-          description: param to include archived equipment
-          type: boolean
-          default: false
       responses:
         200:
           description: Success

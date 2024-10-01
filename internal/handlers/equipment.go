@@ -4,14 +4,12 @@ import (
 	"errors"
 	"math"
 	"net/http"
-	"sort"
 	"time"
 
 	"github.com/go-openapi/runtime/middleware"
 	"go.uber.org/zap"
 
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/ent"
-	genEquipment "git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/ent/equipment"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/ent/order"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/swagger/models"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/swagger/restapi/operations"
@@ -145,7 +143,6 @@ func (c Equipment) ListEquipmentFunc(repository domain.EquipmentRepository) equi
 		offset := utils.GetValueByPointerOrDefaultValue(s.Offset, 0)
 		orderBy := utils.GetValueByPointerOrDefaultValue(s.OrderBy, utils.AscOrder)
 		orderColumn := utils.GetValueByPointerOrDefaultValue(s.OrderColumn, order.FieldID)
-		includeArchived := utils.GetValueByPointerOrDefaultValue(s.IncludeArchived, false)
 
 		// TODO remove this redundant step. There is no need in checking total if we can simple do len() on return slice
 		// also there is a double database query actions that can be done in a single one
@@ -157,23 +154,11 @@ func (c Equipment) ListEquipmentFunc(repository domain.EquipmentRepository) equi
 		}
 		var equipments []*ent.Equipment
 		if total > 0 {
-			equipments, err = repository.AllEquipments(ctx, int(limit), int(offset), orderBy, orderColumn, includeArchived)
+			equipments, err = repository.AllEquipments(ctx, int(limit), int(offset), orderBy, orderColumn)
 			if err != nil {
 				c.logger.Error(messages.ErrQueryEquipments, zap.Error(err))
 				return equipment.NewGetAllEquipmentDefault(http.StatusInternalServerError).
 					WithPayload(buildInternalErrorPayload(messages.ErrQueryEquipments, err.Error()))
-			}
-		}
-
-		if includeArchived {
-			sortEquipment(equipments, orderColumn)
-
-		} else {
-			for i, e := range equipments {
-				if getStatusName(e) == domain.EquipmentStatusNotAvailable {
-					equipments = equipments[:i]
-					break
-				}
 			}
 		}
 
@@ -194,40 +179,6 @@ func (c Equipment) ListEquipmentFunc(repository domain.EquipmentRepository) equi
 		}
 		return equipment.NewGetAllEquipmentOK().WithPayload(listEquipment)
 	}
-}
-
-func sortEquipment(equipments []*ent.Equipment, orderColumn string) {
-	sort.Slice(equipments, func(i, j int) bool {
-		statusI := getStatusName(equipments[i])
-		statusJ := getStatusName(equipments[j])
-
-		// If equipment[i] is archived and equipment[j] is not, return false (i comes after j)
-		if statusI == domain.EquipmentStatusNotAvailable && statusJ != domain.EquipmentStatusNotAvailable {
-			return false
-		}
-		// If equipment[j] is archived and equipment[i] is not, return true (i comes before j)
-		if statusI != domain.EquipmentStatusNotAvailable && statusJ == domain.EquipmentStatusNotAvailable {
-			return true
-		}
-		// If both are archived or both are not archived, sort by orderColumn
-		switch orderColumn {
-		case genEquipment.FieldName:
-			return equipments[i].Name < equipments[j].Name
-		case genEquipment.FieldTitle:
-			return equipments[i].Title < equipments[j].Title
-		case genEquipment.FieldCompensationCost:
-			return equipments[i].CompensationCost < equipments[j].CompensationCost
-		default:
-			return equipments[i].ID < equipments[j].ID
-		}
-	})
-}
-
-func getStatusName(eq *ent.Equipment) string {
-	if eq.Edges.CurrentStatus == nil {
-		return ""
-	}
-	return eq.Edges.CurrentStatus.Name
 }
 
 func (c Equipment) EditEquipmentFunc(repository domain.EquipmentRepository) equipment.EditEquipmentHandlerFunc {
