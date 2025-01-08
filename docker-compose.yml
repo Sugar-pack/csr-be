@@ -1,0 +1,34 @@
+version: "3"
+services:
+  postgres:
+    image: "postgres:14-alpine"
+    container_name: db-local
+    environment:
+      - POSTGRES_USER=csr
+      - POSTGRES_DB=csr
+      - POSTGRES_HOST_AUTH_METHOD=trust
+    command: -p 5432
+    ports:
+      - "5432:5432"
+    networks:
+      - csr_network
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U csr -p 5432" ]
+      interval: 2s
+      timeout: 1s
+      retries: 5
+
+  csr:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    depends_on:
+      - postgres
+    ports:
+      - "8080:8080"
+    networks:
+      - csr_network
+    command: "go run ./cmd/swagger/"
+
+networks:
+  csr_network:

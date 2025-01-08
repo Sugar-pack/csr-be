@@ -29,6 +29,7 @@ func (Order) Edges() []ent.Edge {
 	return []ent.Edge{
 		edge.From("users", User.Type).Ref("order").Unique(),
 		edge.From("equipments", Equipment.Type).Ref("order"),
+		edge.From("current_status", OrderStatusName.Type).Ref("orders").Unique(),
 		edge.To("order_status", OrderStatus.Type),
 		edge.To("equipment_status", EquipmentStatus.Type),
 	}

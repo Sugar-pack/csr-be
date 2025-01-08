@@ -11,6 +11,7 @@ import (
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/swagger/client/active_areas"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/swagger/models"
 	utils "git.epam.com/epm-lstr/epm-lstr-lc/be/internal/integration-tests/common"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/messages"
 )
 
 func TestIntegration_GetActiveAreas(t *testing.T) {
@@ -21,17 +22,10 @@ func TestIntegration_GetActiveAreas(t *testing.T) {
 	ctx := context.Background()
 	client := utils.SetupClient()
 
-	l, p, err := utils.GenerateLoginAndPassword()
-	require.NoError(t, err)
-
-	_, err = utils.CreateUser(ctx, client, l, p)
-	require.NoError(t, err)
-
-	loginUser, err := utils.LoginUser(ctx, client, l, p)
-	require.NoError(t, err)
+	auth := utils.AdminUserLogin(t)
+	token := auth.GetPayload().AccessToken
 
 	t.Run("get all active areas ok", func(t *testing.T) {
-		token := loginUser.GetPayload().AccessToken
 		params := active_areas.NewGetAllActiveAreasParamsWithContext(ctx)
 
 		got, err := client.ActiveAreas.GetAllActiveAreas(params, utils.AuthInfoFunc(token))
@@ -42,12 +36,15 @@ func TestIntegration_GetActiveAreas(t *testing.T) {
 	t.Run("get all active areas failed: no authorization", func(t *testing.T) {
 		params := active_areas.NewGetAllActiveAreasParamsWithContext(ctx)
 
-		_, err = client.ActiveAreas.GetAllActiveAreas(params, utils.AuthInfoFunc(nil))
+		_, err := client.ActiveAreas.GetAllActiveAreas(params, utils.AuthInfoFunc(nil))
 		require.Error(t, err)
 
 		errExp := active_areas.NewGetAllActiveAreasDefault(http.StatusUnauthorized)
-		errExp.Payload = &models.Error{
-			Data: nil,
+		msgExp := "unauthenticated for invalid credentials"
+		codeExp := int32(http.StatusUnauthorized)
+		errExp.Payload = &models.SwaggerError{
+			Code:    &codeExp,
+			Message: &msgExp,
 		}
 		assert.Equal(t, errExp, err)
 	})
@@ -56,12 +53,14 @@ func TestIntegration_GetActiveAreas(t *testing.T) {
 		params := active_areas.NewGetAllActiveAreasParamsWithContext(ctx)
 		dummyToken := utils.TokenNotExist
 
-		_, err = client.ActiveAreas.GetAllActiveAreas(params, utils.AuthInfoFunc(&dummyToken))
+		_, err := client.ActiveAreas.GetAllActiveAreas(params, utils.AuthInfoFunc(&dummyToken))
 		require.Error(t, err)
 
-		errExp := active_areas.NewGetAllActiveAreasDefault(http.StatusInternalServerError)
-		errExp.Payload = &models.Error{
-			Data: nil,
+		errExp := active_areas.NewGetAllActiveAreasDefault(http.StatusUnauthorized)
+		codeExp := int32(http.StatusUnauthorized)
+		errExp.Payload = &models.SwaggerError{
+			Code:    &codeExp,
+			Message: &messages.ErrInvalidToken,
 		}
 		assert.Equal(t, errExp, err)
 	})

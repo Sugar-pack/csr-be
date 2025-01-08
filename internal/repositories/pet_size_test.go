@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/swagger/models"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/middlewares"
@@ -21,18 +21,18 @@ func TestPetSizeRepository_Create(t *testing.T) {
 
 	repo := NewPetSizeRepository()
 	tx, err := client.Tx(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
 	petSize, err := repo.Create(ctx, models.PetSize{Name: &name, Size: &size})
-	assert.NoError(t, err)
-	assert.NoError(t, tx.Commit())
+	require.NoError(t, err)
+	require.NoError(t, tx.Commit())
 
 	selectedPetSize, err := client.PetSize.Get(ctx, 1)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
-	assert.Equal(t, petSize.ID, selectedPetSize.ID)
-	assert.Equal(t, petSize.Name, selectedPetSize.Name)
+	require.Equal(t, petSize.ID, selectedPetSize.ID)
+	require.Equal(t, petSize.Name, selectedPetSize.Name)
 }
 
 func TestPetSizeRepository_GetAll(t *testing.T) {
@@ -47,15 +47,15 @@ func TestPetSizeRepository_GetAll(t *testing.T) {
 
 	repo := NewPetSizeRepository()
 	tx, err := client.Tx(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
 	rows, err := repo.GetAll(ctx)
-	assert.NoError(t, err)
-	assert.NoError(t, tx.Commit())
+	require.NoError(t, err)
+	require.NoError(t, tx.Commit())
 
-	assert.Equal(t, 1, rows[0].ID)
-	assert.Equal(t, name, rows[0].Name)
+	require.Equal(t, 1, rows[0].ID)
+	require.Equal(t, name, rows[0].Name)
 }
 
 func TestPetSizeRepository_Get(t *testing.T) {
@@ -70,15 +70,15 @@ func TestPetSizeRepository_Get(t *testing.T) {
 
 	repo := NewPetSizeRepository()
 	tx, err := client.Tx(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
 	row, err := repo.GetByID(ctx, 1)
-	assert.NoError(t, err)
-	assert.NoError(t, tx.Commit())
+	require.NoError(t, err)
+	require.NoError(t, tx.Commit())
 
-	assert.Equal(t, 1, row.ID)
-	assert.Equal(t, name, row.Name)
+	require.Equal(t, 1, row.ID)
+	require.Equal(t, name, row.Name)
 }
 
 func TestPetSizeRepository_Delete(t *testing.T) {
@@ -93,16 +93,16 @@ func TestPetSizeRepository_Delete(t *testing.T) {
 
 	repo := NewPetSizeRepository()
 	tx, err := client.Tx(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
 	err = repo.Delete(ctx, 1)
-	assert.NoError(t, err)
-	assert.NoError(t, tx.Commit())
+	require.NoError(t, err)
+	require.NoError(t, tx.Commit())
 
 	selected, err := client.PetSize.Get(ctx, 1)
-	assert.ErrorContains(t, err, "ent: pet_size not found")
-	assert.Nil(t, selected)
+	require.ErrorContains(t, err, "ent: pet_size not found")
+	require.Nil(t, selected)
 }
 
 func TestPetSizeRepository_Update(t *testing.T) {
@@ -120,17 +120,17 @@ func TestPetSizeRepository_Update(t *testing.T) {
 
 	repo := NewPetSizeRepository()
 	tx, err := client.Tx(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
 	_, err = repo.Update(ctx, 1, &models.PetSize{Name: &name2, Size: &size2})
-	assert.NoError(t, err)
-	assert.NoError(t, tx.Commit())
+	require.NoError(t, err)
+	require.NoError(t, tx.Commit())
 
 	selected, err := client.PetSize.Get(ctx, 1)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
-	assert.Equal(t, 1, selected.ID)
-	assert.Equal(t, name2, selected.Name)
-	assert.Equal(t, size2, selected.Size)
+	require.Equal(t, 1, selected.ID)
+	require.Equal(t, name2, selected.Name)
+	require.Equal(t, size2, selected.Size)
 }

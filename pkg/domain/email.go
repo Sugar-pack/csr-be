@@ -5,6 +5,7 @@ type Sender interface {
 	SendNewPassword(email string, userName string, password string) error
 	SendRegistrationConfirmLink(email string, userName string, token string) error
 	IsSendRequired() bool
+	SendEmailConfirmationLink(email string, userName string, token string) error
 }
 
 type SMTPClient interface {

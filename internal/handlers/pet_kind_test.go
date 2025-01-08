@@ -10,7 +10,7 @@ import (
 	"github.com/go-openapi/loads"
 	"github.com/go-openapi/runtime"
 	_ "github.com/mattn/go-sqlite3"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/zap"
 
@@ -35,11 +35,11 @@ func TestSetPetKindHandler(t *testing.T) {
 	}
 	api := operations.NewBeAPI(swaggerSpec)
 	SetPetKindHandler(logger, api)
-	assert.NotEmpty(t, api.PetKindGetAllPetKindsHandler)
-	assert.NotEmpty(t, api.PetKindEditPetKindHandler)
-	assert.NotEmpty(t, api.PetKindDeletePetKindHandler)
-	assert.NotEmpty(t, api.PetKindCreateNewPetKindHandler)
-	assert.NotEmpty(t, api.PetKindGetPetKindHandler)
+	require.NotEmpty(t, api.PetKindGetAllPetKindsHandler)
+	require.NotEmpty(t, api.PetKindEditPetKindHandler)
+	require.NotEmpty(t, api.PetKindDeletePetKindHandler)
+	require.NotEmpty(t, api.PetKindCreateNewPetKindHandler)
+	require.NotEmpty(t, api.PetKindGetPetKindHandler)
 }
 
 type PetKindTestSuite struct {
@@ -104,12 +104,11 @@ func (s *PetKindTestSuite) TestPetKind_CreatePetKindFunc_OK() {
 
 	s.petKindRepo.On("Create", ctx, petKindToAdd).Return(petKindToReturn, nil)
 
-	access := "dummy access"
-	resp := handlerFunc(data, access)
+	resp := handlerFunc(data, nil)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusCreated, responseRecorder.Code)
+	require.Equal(t, http.StatusCreated, responseRecorder.Code)
 	s.petKindRepo.AssertExpectations(t)
 
 	actualPetKind := ent.PetKind{}
@@ -119,7 +118,7 @@ func (s *PetKindTestSuite) TestPetKind_CreatePetKindFunc_OK() {
 		t.Errorf("unable to unmarshal response body: %v", err)
 	}
 	eq := isEqualPetKind(t, petKindToReturn, &actualPetKind)
-	assert.Equal(t, true, eq)
+	require.Equal(t, true, eq)
 }
 
 func (s *PetKindTestSuite) TestPetKind_CreatePetKindFunc_ErrFromRepo() {
@@ -140,12 +139,11 @@ func (s *PetKindTestSuite) TestPetKind_CreatePetKindFunc_ErrFromRepo() {
 
 	s.petKindRepo.On("Create", ctx, petKindToAdd).Return(nil, err)
 
-	access := "dummy access"
-	resp := handlerFunc.Handle(data, access)
+	resp := handlerFunc.Handle(data, nil)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
+	require.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
 	s.petKindRepo.AssertExpectations(t)
 }
 
@@ -167,12 +165,11 @@ func (s *PetKindTestSuite) TestPetKind_CreatePetKindFunc_ErrRespNil() {
 
 	s.petKindRepo.On("Create", ctx, petKindToAdd).Return(toReturn, nil)
 
-	access := "dummy access"
-	resp := handlerFunc.Handle(data, access)
+	resp := handlerFunc.Handle(data, nil)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
+	require.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
 	s.petKindRepo.AssertExpectations(t)
 }
 
@@ -190,12 +187,11 @@ func (s *PetKindTestSuite) TestPetKind_GetAllPetKindFunc_OK() {
 	}
 	s.petKindRepo.On("GetAll", ctx).Return(petKindToReturn, nil)
 
-	access := "dummy access"
-	resp := handlerFunc.Handle(data, access)
+	resp := handlerFunc.Handle(data, nil)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusOK, responseRecorder.Code)
+	require.Equal(t, http.StatusOK, responseRecorder.Code)
 	s.petKindRepo.AssertExpectations(t)
 
 	actualPetKind := []*ent.PetKind{}
@@ -206,7 +202,7 @@ func (s *PetKindTestSuite) TestPetKind_GetAllPetKindFunc_OK() {
 	}
 	for i := 0; i < 10; i++ {
 		eq := isEqualPetKind(t, petKindToReturn[i], actualPetKind[i])
-		assert.Equal(t, true, eq)
+		require.Equal(t, true, eq)
 	}
 }
 
@@ -222,12 +218,11 @@ func (s *PetKindTestSuite) TestPetKind_GetAllPetKindFunc_ErrFromRepo() {
 
 	s.petKindRepo.On("GetAll", ctx).Return(nil, err)
 
-	access := "dummy access"
-	resp := handlerFunc(data, access)
+	resp := handlerFunc(data, nil)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
+	require.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
 	s.petKindRepo.AssertExpectations(t)
 }
 
@@ -242,12 +237,11 @@ func (s *PetKindTestSuite) TestPetKind_GetAllPetKindFunc_ErrRespNil() {
 	}
 	s.petKindRepo.On("GetAll", ctx).Return(toReturn, nil)
 
-	access := "dummy access"
-	resp := handlerFunc(data, access)
+	resp := handlerFunc(data, nil)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
+	require.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
 	s.petKindRepo.AssertExpectations(t)
 }
 
@@ -265,12 +259,11 @@ func (s *PetKindTestSuite) TestPetKind_DeletePetKindFunc_Err() {
 
 	s.petKindRepo.On("Delete", ctx, idToDelete).Return(err)
 
-	access := "dummy access"
-	resp := handlerFunc(data, access)
+	resp := handlerFunc(data, nil)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
+	require.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
 	s.petKindRepo.AssertExpectations(t)
 }
 
@@ -286,12 +279,11 @@ func (s *PetKindTestSuite) TestPetKind_DeletePetKindFunc_OK() {
 	}
 	s.petKindRepo.On("Delete", ctx, idToDelete).Return(nil)
 
-	access := "dummy access"
-	resp := handlerFunc(data, access)
+	resp := handlerFunc(data, nil)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusOK, responseRecorder.Code)
+	require.Equal(t, http.StatusOK, responseRecorder.Code)
 	s.petKindRepo.AssertExpectations(t)
 }
 
@@ -308,12 +300,11 @@ func (s *PetKindTestSuite) TestPetKind_GetPetKindByIDFunc_OK() {
 	petKindToReturn := ValidPetKind(t)
 	s.petKindRepo.On("GetByID", ctx, idToGet).Return(petKindToReturn, nil)
 
-	access := "dummy access"
-	resp := handlerFunc(data, access)
+	resp := handlerFunc(data, nil)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusOK, responseRecorder.Code)
+	require.Equal(t, http.StatusOK, responseRecorder.Code)
 	s.petKindRepo.AssertExpectations(t)
 
 	actualPetKind := ent.PetKind{}
@@ -323,7 +314,7 @@ func (s *PetKindTestSuite) TestPetKind_GetPetKindByIDFunc_OK() {
 		t.Errorf("unable to unmarshal response body: %v", err)
 	}
 	eq := isEqualPetKind(t, petKindToReturn, &actualPetKind)
-	assert.Equal(t, true, eq)
+	require.Equal(t, true, eq)
 }
 
 func (s *PetKindTestSuite) TestPetKind_GetPetKindByIDFunc_ErrFromRepo() {
@@ -340,12 +331,11 @@ func (s *PetKindTestSuite) TestPetKind_GetPetKindByIDFunc_ErrFromRepo() {
 	err := errors.New("test")
 	s.petKindRepo.On("GetByID", ctx, idToGet).Return(nil, err)
 
-	access := "dummy access"
-	resp := handlerFunc(data, access)
+	resp := handlerFunc(data, nil)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
+	require.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
 	s.petKindRepo.AssertExpectations(t)
 }
 
@@ -361,12 +351,11 @@ func (s *PetKindTestSuite) TestPetKind_GetPetKindByIDFunc_ErrRespNil() {
 	}
 	s.petKindRepo.On("GetByID", ctx, idToGet).Return(nil, nil)
 
-	access := "dummy access"
-	resp := handlerFunc(data, access)
+	resp := handlerFunc(data, nil)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
+	require.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
 	s.petKindRepo.AssertExpectations(t)
 }
 
@@ -376,6 +365,7 @@ func (s *PetKindTestSuite) TestPetKind_EditPetKindFunc_OK() {
 	ctx := request.Context()
 	name := "test pet kind name"
 	handlerFunc := s.petKind.UpdatePetKindByID(s.petKindRepo)
+	id := 0
 	petKindToUpdate := &models.PetKind{
 		Name: &name,
 	}
@@ -386,14 +376,13 @@ func (s *PetKindTestSuite) TestPetKind_EditPetKindFunc_OK() {
 
 	petKindToReturn := ValidPetKind(t)
 
-	s.petKindRepo.On("Update", ctx, int(petKindToUpdate.ID), petKindToUpdate).Return(petKindToReturn, nil)
+	s.petKindRepo.On("Update", ctx, id, petKindToUpdate).Return(petKindToReturn, nil)
 
-	access := "dummy access"
-	resp := handlerFunc(data, access)
+	resp := handlerFunc(data, nil)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusOK, responseRecorder.Code)
+	require.Equal(t, http.StatusOK, responseRecorder.Code)
 	s.petKindRepo.AssertExpectations(t)
 
 	actualPetKind := ent.PetKind{}
@@ -403,7 +392,7 @@ func (s *PetKindTestSuite) TestPetKind_EditPetKindFunc_OK() {
 		t.Errorf("unable to unmarshal response body: %v", err)
 	}
 	eq := isEqualPetKind(t, petKindToReturn, &actualPetKind)
-	assert.Equal(t, true, eq)
+	require.Equal(t, true, eq)
 }
 
 func (s *PetKindTestSuite) TestPetKind_EditPetKindFunc_ErrRespNil() {
@@ -411,6 +400,7 @@ func (s *PetKindTestSuite) TestPetKind_EditPetKindFunc_ErrRespNil() {
 	request := http.Request{}
 	ctx := request.Context()
 	name := "test pet kind name"
+	id := 0
 	handlerFunc := s.petKind.UpdatePetKindByID(s.petKindRepo)
 	petKindToUpdate := &models.PetKind{
 		Name: &name,
@@ -419,14 +409,13 @@ func (s *PetKindTestSuite) TestPetKind_EditPetKindFunc_ErrRespNil() {
 		HTTPRequest: &request,
 		EditPetKind: petKindToUpdate,
 	}
-	s.petKindRepo.On("Update", ctx, int(petKindToUpdate.ID), petKindToUpdate).Return(nil, nil)
+	s.petKindRepo.On("Update", ctx, id, petKindToUpdate).Return(nil, nil)
 
-	access := "dummy access"
-	resp := handlerFunc(data, access)
+	resp := handlerFunc(data, nil)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
+	require.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
 	s.petKindRepo.AssertExpectations(t)
 }
 
@@ -435,6 +424,7 @@ func (s *PetKindTestSuite) TestPetKind_EditPetKindFunc_ErrFromRepo() {
 	request := http.Request{}
 	ctx := request.Context()
 	name := "test pet kind name"
+	id := 0
 	handlerFunc := s.petKind.UpdatePetKindByID(s.petKindRepo)
 	petKindToUpdate := &models.PetKind{
 		Name: &name,
@@ -444,13 +434,12 @@ func (s *PetKindTestSuite) TestPetKind_EditPetKindFunc_ErrFromRepo() {
 		EditPetKind: petKindToUpdate,
 	}
 	err := errors.New("test")
-	s.petKindRepo.On("Update", ctx, int(petKindToUpdate.ID), petKindToUpdate).Return(nil, err)
+	s.petKindRepo.On("Update", ctx, id, petKindToUpdate).Return(nil, err)
 
-	access := "dummy access"
-	resp := handlerFunc(data, access)
+	resp := handlerFunc(data, nil)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
+	require.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
 	s.petKindRepo.AssertExpectations(t)
 }

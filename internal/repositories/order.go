@@ -2,10 +2,12 @@ package repositories
 
 import (
 	"context"
+	"database/sql/driver"
 	"errors"
 	"fmt"
 	"time"
 
+	"entgo.io/ent/dialect/sql"
 	"github.com/go-openapi/strfmt"
 
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/ent"
@@ -20,11 +22,11 @@ import (
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/pkg/domain"
 )
 
-type OrderAccessDenied struct {
+type OrderValidationError struct {
 	Err error
 }
 
-func (r OrderAccessDenied) Error() string {
+func (r OrderValidationError) Error() string {
 	return r.Err.Error()
 }
 
@@ -44,18 +46,9 @@ func getDates(start *strfmt.DateTime, end *strfmt.DateTime, maxSeconds int) (*ti
 	rentStart := time.Time(*start)
 	rentEnd := time.Time(*end)
 
-	if rentStart.After(rentEnd) {
-		return nil, nil, errors.New("start date should be before end date")
-	}
-
-	diff := rentEnd.Sub(rentStart)
-	days := diff.Hours() / 24
-	if days < 1 {
-		return nil, nil, errors.New("small rent period")
-	}
-
-	if int(diff.Seconds()) > maxSeconds {
-		return nil, nil, errors.New("too big reservation period")
+	if int(rentEnd.Sub(rentStart).Seconds()) > maxSeconds {
+		// This kind of validation cannot be performed on handler's layer
+		return nil, nil, OrderValidationError{Err: errors.New("too big reservation period")}
 	}
 
 	return &rentStart, &rentEnd, nil
@@ -63,17 +56,21 @@ func getDates(start *strfmt.DateTime, end *strfmt.DateTime, maxSeconds int) (*ti
 
 func getQuantity(quantity int, maxQuantity int) (*int, error) {
 	if quantity > maxQuantity {
-		return nil, fmt.Errorf("quantity limit exceeded: %d allowed", maxQuantity)
+		// This kind of validation cannot be performed on handler's layer
+		return nil, OrderValidationError{Err: fmt.Errorf("quantity limit exceeded: %d allowed", maxQuantity)}
 	}
 
 	return &quantity, nil
 }
 
-func (r *orderRepository) List(ctx context.Context, ownerId, limit, offset int, orderBy, orderColumn string) ([]*ent.Order, error) {
-	if !utils.IsValueInList(orderColumn, fieldsToOrderOrders) {
+// List retrieves a list of orders from the order repository based on the provided criteria.
+// It takes an optional ownerId to filter orders by owner and a domain.OrderFilter for
+// additional filtering options. If ownerId is `nil` it retrievesall  orders for all users.
+func (r *orderRepository) List(ctx context.Context, ownerId *int, filter domain.OrderFilter) ([]*ent.Order, error) {
+	if !utils.IsValueInList(filter.OrderColumn, fieldsToOrderOrders) {
 		return nil, errors.New("wrong column to order by")
 	}
-	orderFunc, err := utils.GetOrderFunc(orderBy, orderColumn)
+	orderFunc, err := utils.GetOrderFunc(filter.OrderBy, filter.OrderColumn)
 	if err != nil {
 		return nil, err
 	}
@@ -81,30 +78,33 @@ func (r *orderRepository) List(ctx context.Context, ownerId, limit, offset int, 
 	if err != nil {
 		return nil, err
 	}
-	items, err := tx.Order.Query().
-		Where(order.HasUsersWith(user.ID(ownerId))).
-		Order(orderFunc).
-		Limit(limit).Offset(offset).
-		WithUsers().WithOrderStatus().
-		All(ctx)
+	query := tx.Order.Query().
+		Order(orderFunc).Limit(filter.Limit).Offset(filter.Offset)
+
+	if ownerId != nil {
+		query = query.Where(order.HasUsersWith(user.ID(*ownerId)))
+	}
+
+	query = r.applyListFilters(query, filter)
+
+	items, err := query.WithUsers().WithOrderStatus().WithEquipments().All(ctx)
 	if err != nil {
 		return nil, err
 	}
-	for i, item := range items { // get order status relations
-		items[i], err = r.getFullOrder(ctx, item)
-		if err != nil {
-			return nil, err
-		}
-	}
+
 	return items, err
 }
 
-func (r *orderRepository) OrdersTotal(ctx context.Context, ownerId int) (int, error) {
+func (r *orderRepository) OrdersTotal(ctx context.Context, ownerId *int) (int, error) {
 	tx, err := middlewares.TxFromContext(ctx)
 	if err != nil {
 		return 0, err
 	}
-	return tx.Order.Query().Where(order.HasUsersWith(user.ID(ownerId))).Count(ctx)
+	query := tx.Order.Query()
+	if ownerId != nil {
+		query = query.Where(order.HasUsersWith(user.ID(*ownerId)))
+	}
+	return query.Count(ctx)
 }
 
 func (r *orderRepository) Create(ctx context.Context, data *models.OrderCreateRequest, ownerId int, equipmentIDs []int) (*ent.Order, error) {
@@ -155,6 +155,11 @@ func (r *orderRepository) Create(ctx context.Context, data *models.OrderCreateRe
 		isFirst = true
 	}
 
+	statusName, err := tx.OrderStatusName.Query().Where(orderstatusname.StatusEQ(domain.OrderStatusInReview)).Only(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	createdOrder, err := tx.Order.
 		Create().
 		SetDescription(data.Description).
@@ -164,6 +169,7 @@ func (r *orderRepository) Create(ctx context.Context, data *models.OrderCreateRe
 		SetUsers(owner).
 		SetUsersID(owner.ID).
 		SetIsFirst(isFirst).
+		SetCurrentStatus(statusName).
 		AddEquipments(equipments...).
 		AddEquipmentIDs(equipmentIDs...).
 		Save(ctx)
@@ -171,10 +177,6 @@ func (r *orderRepository) Create(ctx context.Context, data *models.OrderCreateRe
 		return nil, err
 	}
 
-	statusName, err := tx.OrderStatusName.Query().Where(orderstatusname.StatusEQ(domain.OrderStatusInReview)).Only(ctx)
-	if err != nil {
-		return nil, err
-	}
 	_, err = tx.OrderStatus.Create().
 		SetComment("Order created").
 		SetCurrentDate(time.Now()).
@@ -214,7 +216,7 @@ func (r *orderRepository) Update(ctx context.Context, id int, data *models.Order
 	}
 
 	if owner.ID != userId {
-		return nil, OrderAccessDenied{Err: errors.New("permission denied")}
+		return nil, OrderValidationError{Err: errors.New("permission denied")}
 	}
 
 	equipment, err := foundOrder.QueryEquipments().First(ctx)
@@ -256,6 +258,25 @@ func (r *orderRepository) Update(ctx context.Context, id int, data *models.Order
 	return r.getFullOrder(ctx, returnOrder)
 }
 
+func (r *orderRepository) applyListFilters(q *ent.OrderQuery, filter domain.OrderFilter) *ent.OrderQuery {
+	if filter.Status != nil && *filter.Status != domain.OrderStatusAll {
+		statuses, isAggregated := domain.OrderStatusAggregation[*filter.Status]
+		if !isAggregated {
+			statuses = []string{*filter.Status}
+		}
+		statusValues := make([]driver.Value, len(statuses))
+		for i, s := range statuses {
+			statusValues[i] = s
+		}
+		q = q.Where(order.HasCurrentStatusWith(func(s *sql.Selector) {
+			s.Where(sql.InValues(s.C(orderstatusname.FieldStatus), statusValues...))
+		}))
+	}
+	if filter.EquipmentID != nil {
+		q = q.Where(order.HasEquipmentsWith(equipment.ID(*filter.EquipmentID)))
+	}
+	return q
+}
 func (r *orderRepository) getFullOrder(ctx context.Context, order *ent.Order) (*ent.Order, error) {
 	for i, orderStatus := range order.Edges.OrderStatus { // get order status relations
 		statusName, err := orderStatus.QueryOrderStatusName().Only(ctx)

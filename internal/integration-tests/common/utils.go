@@ -4,15 +4,18 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"math/rand"
 	"net/http"
+	"strings"
+	"testing"
 	"time"
-
-	httptransport "github.com/go-openapi/runtime/client"
-	"go.uber.org/zap"
 
 	"github.com/brianvoe/gofakeit/v6"
 	"github.com/go-openapi/runtime"
+	httptransport "github.com/go-openapi/runtime/client"
 	"github.com/go-openapi/strfmt"
+	"github.com/stretchr/testify/require"
+	"go.uber.org/zap"
 
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/config"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/swagger/client"
@@ -34,6 +37,7 @@ const (
 	LoginNotExist    = "some dummy login"
 	PasswordNotExist = "some dummy password"
 	TokenNotExist    = "some dummy token"
+	AdminID          = 1
 )
 
 func GenerateLoginAndPassword() (string, string, error) {
@@ -104,6 +108,80 @@ func GetUser(ctx context.Context, client *client.Be, authInfo runtime.ClientAuth
 	return currentUser, nil
 }
 
+func CreateLoginPassword(t *testing.T, roleId int64) (string, string, int64) {
+	t.Helper()
+	l, p, err := GenerateLoginAndPassword()
+	require.NoError(t, err)
+
+	ctx := context.Background()
+	client := SetupClient()
+
+	user, err := CreateUser(ctx, client, l, p)
+	require.NoError(t, err)
+
+	// login and get token
+	loginUser, err := LoginUser(ctx, client, l, p)
+	require.NoError(t, err)
+	auth := AuthInfoFunc(loginUser.GetPayload().AccessToken)
+
+	params := &users.AssignRoleToUserParams{
+		UserID: *user.ID,
+		Data: &models.AssignRoleToUser{
+			RoleID: &roleId,
+		},
+	}
+	params.SetContext(ctx)
+	params.SetHTTPClient(http.DefaultClient)
+
+	r, err := client.Users.AssignRoleToUser(params, auth)
+	require.NoError(t, err, r)
+	return l, p, *user.ID
+}
+
+func AdminUserLogin(t *testing.T) *users.LoginOK {
+	t.Helper()
+	ctx := context.Background()
+	client := SetupClient()
+	l, p, _ := CreateLoginPassword(t, 1)
+	// login and get token with admin role
+	loginUser, err := LoginUser(ctx, client, l, p)
+	require.NoError(t, err)
+	return loginUser
+}
+
+func ManagerUserLogin(t *testing.T) *users.LoginOK {
+	t.Helper()
+	ctx := context.Background()
+	client := SetupClient()
+	l, p, _ := CreateLoginPassword(t, 2)
+	// login and get token with manager role
+	loginUser, err := LoginUser(ctx, client, l, p)
+	require.NoError(t, err)
+	return loginUser
+}
+
+func OperatorUserLogin(t *testing.T) *users.LoginOK {
+	t.Helper()
+	ctx := context.Background()
+	client := SetupClient()
+	l, p, _ := CreateLoginPassword(t, 3)
+	// login and get token with operator role
+	loginUser, err := LoginUser(ctx, client, l, p)
+	require.NoError(t, err)
+	return loginUser
+}
+
+func UserLogin(t *testing.T) *users.LoginOK {
+	t.Helper()
+	ctx := context.Background()
+	client := SetupClient()
+	l, p, _ := CreateLoginPassword(t, 4)
+	// login and get token with user role
+	loginUser, err := LoginUser(ctx, client, l, p)
+	require.NoError(t, err)
+	return loginUser
+}
+
 func SetupClient() *client.Be {
 	serverConfig, err := config.GetAppConfig("../../../int-test-infra/")
 	if err != nil {
@@ -141,4 +219,18 @@ func NewAPIClient(host string, schemes []string) (*client.Be, error) {
 	// https://github.com/go-swagger/go-swagger/issues/1244
 	be.Consumers["image/jpg"] = runtime.ByteStreamConsumer()
 	return client.New(be, nil), nil
+}
+
+func GenerateRandomString(length int) (string, error) {
+	rand.Seed(time.Now().UnixNano())
+	charset := "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+	var builder strings.Builder
+	for i := 0; i < length; i++ {
+		err := builder.WriteByte(charset[rand.Intn(len(charset))])
+		if err != nil {
+			return "", err
+		}
+	}
+
+	return builder.String(), nil
 }

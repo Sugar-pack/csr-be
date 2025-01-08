@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"flag"
-	"log"
 	"net/http"
 	"os"
 	"testing"
@@ -18,37 +17,20 @@ import (
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/swagger/client/categories"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/swagger/models"
 	utils "git.epam.com/epm-lstr/epm-lstr-lc/be/internal/integration-tests/common"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/messages"
 )
 
 var (
 	testCategoryName        = gofakeit.Name()
 	migrationCategoryNumber = 9
-	testLogin               string
-	testPassword            string
 	auth                    runtime.ClientAuthInfoWriterFunc
 )
 
 func TestMain(m *testing.M) {
 	flag.Parse()
 	if !testing.Short() {
-		ctx := context.Background()
-		beClient := utils.SetupClient()
-
-		var err error
-		testLogin, testPassword, err = utils.GenerateLoginAndPassword()
-		if err != nil {
-			log.Fatalf("GenerateLoginAndPassword: %v", err)
-		}
-		_, err = utils.CreateUser(ctx, beClient, testLogin, testPassword)
-		if err != nil {
-			log.Fatalf("CreateUser: %v", err)
-		}
-		loginUser, err := utils.LoginUser(ctx, beClient, testLogin, testPassword)
-		if err != nil {
-			log.Fatalf("LoginUser: %v", err)
-		}
-
-		auth = utils.AuthInfoFunc(loginUser.GetPayload().AccessToken)
+		data := utils.AdminUserLogin(&testing.T{}) // TODO: refactor tests
+		auth = utils.AuthInfoFunc(data.GetPayload().AccessToken)
 
 		os.Exit(m.Run())
 	}
@@ -80,7 +62,12 @@ func TestIntegration_GetAllCategories(t *testing.T) {
 		require.Error(t, gotErr)
 
 		wantErr := categories.NewGetAllCategoriesDefault(http.StatusUnprocessableEntity)
-		wantErr.Payload = &models.Error{Data: nil}
+		msgExp := "order_column in query should be one of [id name]"
+		codeExp := int32(606)
+		wantErr.Payload = &models.SwaggerError{
+			Code:    &codeExp,
+			Message: &msgExp,
+		}
 		assert.Equal(t, wantErr, gotErr)
 	})
 }
@@ -106,8 +93,12 @@ func TestIntegration_CreateCategory(t *testing.T) {
 		_, gotErr := client.Categories.CreateNewCategory(categories.NewCreateNewCategoryParamsWithContext(ctx).WithNewCategory(modelCategory), utils.AuthInfoFunc(&token))
 		require.Error(t, gotErr)
 
-		wantErr := categories.NewCreateNewCategoryDefault(http.StatusInternalServerError)
-		wantErr.Payload = &models.Error{Data: nil}
+		wantErr := categories.NewCreateNewCategoryDefault(http.StatusUnauthorized)
+		codeExp := int32(http.StatusUnauthorized)
+		wantErr.Payload = &models.SwaggerError{
+			Code:    &codeExp,
+			Message: &messages.ErrInvalidToken,
+		}
 		assert.Equal(t, wantErr, gotErr)
 	})
 
@@ -182,9 +173,12 @@ func TestIntegration_GetCategoryByID(t *testing.T) {
 		require.Error(t, gotErr)
 
 		wantErr := categories.NewGetCategoryByIDDefault(http.StatusInternalServerError)
-		wantErr.Payload = &models.Error{Data: &models.ErrorData{
-			Message: "failed to get category",
-		}}
+		codeExp := int32(http.StatusInternalServerError)
+		wantErr.Payload = &models.SwaggerError{
+			Code:    &codeExp,
+			Message: &messages.ErrGetCategory,
+			Details: "ent: category not found",
+		}
 		assert.Equal(t, wantErr, gotErr)
 	})
 
@@ -193,8 +187,12 @@ func TestIntegration_GetCategoryByID(t *testing.T) {
 		_, gotErr := client.Categories.GetCategoryByID(categories.NewGetCategoryByIDParamsWithContext(ctx).WithCategoryID(1), utils.AuthInfoFunc(&token))
 		require.Error(t, gotErr)
 
-		wantErr := categories.NewGetCategoryByIDDefault(http.StatusInternalServerError)
-		wantErr.Payload = &models.Error{Data: nil}
+		wantErr := categories.NewGetCategoryByIDDefault(http.StatusUnauthorized)
+		codeExp := int32(http.StatusUnauthorized)
+		wantErr.Payload = &models.SwaggerError{
+			Code:    &codeExp,
+			Message: &messages.ErrInvalidToken,
+		}
 		assert.Equal(t, wantErr, gotErr)
 	})
 }
@@ -276,9 +274,12 @@ func TestIntegration_EditCategory(t *testing.T) {
 		require.Error(t, gotErr)
 
 		wantErr := categories.NewUpdateCategoryDefault(http.StatusInternalServerError)
-		wantErr.Payload = &models.Error{Data: &models.ErrorData{
-			Message: "cant update category",
-		}}
+		codeExp := int32(http.StatusInternalServerError)
+		wantErr.Payload = &models.SwaggerError{
+			Code:    &codeExp,
+			Message: &messages.ErrUpdateCategory,
+			Details: "ent: category not found",
+		}
 		assert.Equal(t, wantErr, gotErr)
 	})
 
@@ -297,8 +298,12 @@ func TestIntegration_EditCategory(t *testing.T) {
 			WithCategoryID(*newCategory.Payload.Data.ID).WithUpdateCategory(updateCategory), utils.AuthInfoFunc(&token))
 		require.Error(t, gotErr)
 
-		wantErr := categories.NewUpdateCategoryDefault(http.StatusInternalServerError)
-		wantErr.Payload = &models.Error{Data: nil}
+		wantErr := categories.NewUpdateCategoryDefault(http.StatusUnauthorized)
+		codeExp := int32(http.StatusUnauthorized)
+		wantErr.Payload = &models.SwaggerError{
+			Code:    &codeExp,
+			Message: &messages.ErrInvalidToken,
+		}
 		assert.Equal(t, wantErr, gotErr)
 	})
 
@@ -308,7 +313,12 @@ func TestIntegration_EditCategory(t *testing.T) {
 		require.Error(t, gotErr)
 
 		wantErr := categories.NewUpdateCategoryDefault(http.StatusUnprocessableEntity)
-		wantErr.Payload = &models.Error{Data: nil}
+		msgExp := "updateCategory in body is required"
+		codeExp := int32(602)
+		wantErr.Payload = &models.SwaggerError{
+			Code:    &codeExp,
+			Message: &msgExp,
+		}
 		assert.Equal(t, wantErr, gotErr)
 	})
 }
@@ -326,7 +336,12 @@ func TestIntegration_DeleteCategory(t *testing.T) {
 		require.Error(t, gotErr)
 
 		wantErr := categories.NewDeleteCategoryDefault(http.StatusInternalServerError)
-		wantErr.Payload = &models.Error{Data: &models.ErrorData{Message: "delete category failed"}}
+		codeExp := int32(http.StatusInternalServerError)
+		wantErr.Payload = &models.SwaggerError{
+			Code:    &codeExp,
+			Message: &messages.ErrDeleteCategory,
+			Details: "ent: category not found",
+		}
 		assert.Equal(t, wantErr, gotErr)
 
 		_, gotErr = client.Categories.DeleteCategory(categories.NewDeleteCategoryParamsWithContext(ctx).WithCategoryID(-33), auth)
@@ -340,8 +355,12 @@ func TestIntegration_DeleteCategory(t *testing.T) {
 		_, gotErr := client.Categories.DeleteCategory(categories.NewDeleteCategoryParamsWithContext(ctx).WithCategoryID(1), utils.AuthInfoFunc(&token))
 		require.Error(t, gotErr)
 
-		wantErr := categories.NewDeleteCategoryDefault(http.StatusInternalServerError)
-		wantErr.Payload = &models.Error{Data: nil}
+		wantErr := categories.NewDeleteCategoryDefault(http.StatusUnauthorized)
+		codeExp := int32(http.StatusUnauthorized)
+		wantErr.Payload = &models.SwaggerError{
+			Code:    &codeExp,
+			Message: &messages.ErrInvalidToken,
+		}
 		assert.Equal(t, wantErr, gotErr)
 	})
 

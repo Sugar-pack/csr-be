@@ -9,10 +9,13 @@ import (
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/ent/equipmentstatus"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/ent/equipmentstatusname"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/ent/order"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/ent/user"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/swagger/models"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/middlewares"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/pkg/domain"
 )
+
+const maintenanceTime = time.Hour * 24 // Equipment must be maintained and sanitized after return
 
 type equipmentStatusRepository struct {
 }
@@ -79,6 +82,61 @@ func (r *equipmentStatusRepository) GetEquipmentsStatusesByOrder(ctx context.Con
 		All(ctx)
 }
 
+func (r *equipmentStatusRepository) GetEquipmentStatusByID(
+	ctx context.Context, equipmentStatusID int) (*ent.EquipmentStatus, error) {
+	tx, err := middlewares.TxFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return tx.EquipmentStatus.Query().Where(equipmentstatus.ID(equipmentStatusID)).
+		WithEquipmentStatusName().WithEquipments().
+		Only(ctx)
+}
+
+func (r *equipmentStatusRepository) GetOrderAndUserByEquipmentStatusID(
+	ctx context.Context,
+	equipmentStatusID int) (*ent.Order, *ent.User, error) {
+	tx, err := middlewares.TxFromContext(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	orderResult, err := tx.Order.Query().
+		Where(order.HasEquipmentStatusWith(equipmentstatus.IDEQ(equipmentStatusID))).
+		Only(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	userResult, err := tx.User.Query().Where(user.HasOrderWith(order.IDEQ(equipmentStatusID))).
+		Only(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return orderResult, userResult, nil
+}
+
+func (r *equipmentStatusRepository) GetUnavailableEquipmentStatusByEquipmentID(
+	ctx context.Context, equipmentID int) ([]*ent.EquipmentStatus, error) {
+	tx, err := middlewares.TxFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return tx.EquipmentStatus.Query().
+		Where(equipmentstatus.HasEquipmentsWith(equipment.IDEQ(equipmentID))).
+		Where(
+			equipmentstatus.Or(
+				equipmentstatus.HasEquipmentStatusNameWith(equipmentstatusname.NameEQ(domain.EquipmentStatusBooked)),
+				equipmentstatus.HasEquipmentStatusNameWith(equipmentstatusname.NameEQ(domain.EquipmentStatusInUse)),
+				equipmentstatus.HasEquipmentStatusNameWith(equipmentstatusname.NameEQ(domain.EquipmentStatusNotAvailable)),
+			)).
+		Where(equipmentstatus.EndDateGTE(time.Now())).
+		All(ctx)
+}
+
 func (r *equipmentStatusRepository) HasStatusByPeriod(ctx context.Context, status string, eqID int,
 	startDate, endDate time.Time) (bool, error) {
 	tx, err := middlewares.TxFromContext(ctx)
@@ -90,7 +148,7 @@ func (r *equipmentStatusRepository) HasStatusByPeriod(ctx context.Context, statu
 		Where(equipment.IDEQ(eqID)).
 		QueryEquipmentStatus().
 		Where(equipmentstatus.And(
-			equipmentstatus.StartDateLTE(endDate.Add(time.Hour*24))),
+			equipmentstatus.StartDateLTE(endDate.Add(maintenanceTime))),
 			equipmentstatus.EndDateGTE(startDate)).
 		WithEquipmentStatusName().
 		All(ctx)
@@ -128,4 +186,20 @@ func (r *equipmentStatusRepository) Update(ctx context.Context, data *models.Equ
 	}
 	equipmentStatus.SetUpdatedAt(time.Now())
 	return equipmentStatus.Save(ctx)
+}
+
+// GetLastEquipmentStatusByEquipmentID - returns last equipment status for equpment by column EndDate.
+func (r *equipmentStatusRepository) GetLastEquipmentStatusByEquipmentID(ctx context.Context, equipmentID int) (*ent.EquipmentStatus, error) {
+	tx, err := middlewares.TxFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return tx.EquipmentStatus.
+		Query().
+		QueryEquipments().
+		Where(equipment.IDEQ(equipmentID)).
+		QueryEquipmentStatus().
+		WithEquipmentStatusName().
+		Order(ent.Asc(equipmentstatus.FieldEndDate)).
+		First(ctx)
 }

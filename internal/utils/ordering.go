@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 
+	"entgo.io/ent/dialect/sql"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/ent"
 )
 
@@ -12,8 +13,8 @@ const (
 	DescOrder = "desc"
 )
 
-func GetOrderFunc(orderBy, orderColumn string) (ent.OrderFunc, error) {
-	var orderFunc ent.OrderFunc
+func GetOrderFunc(orderBy, orderColumn string) (func(*sql.Selector), error) {
+	var orderFunc func(*sql.Selector)
 	var err error
 	switch orderBy {
 	case AscOrder:

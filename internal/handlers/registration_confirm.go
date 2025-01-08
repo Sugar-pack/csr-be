@@ -6,8 +6,10 @@ import (
 	"github.com/go-openapi/runtime/middleware"
 	"go.uber.org/zap"
 
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/swagger/models"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/swagger/restapi/operations"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/swagger/restapi/operations/registration_confirm"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/messages"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/services"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/pkg/domain"
 )
@@ -38,7 +40,7 @@ func (rc registrationConfirmHandler) SendRegistrationConfirmLinkByLoginFunc() re
 		if login == "" {
 			rc.logger.Warn("Login is empty")
 			return registration_confirm.NewSendRegistrationConfirmLinkByLoginDefault(http.StatusBadRequest).
-				WithPayload(buildStringPayload("Login is required"))
+				WithPayload(buildBadRequestErrorPayload(messages.ErrLoginRequired, ""))
 		}
 		err := rc.regConfirm.SendConfirmationLink(ctx, login)
 		if err != nil {
@@ -46,19 +48,21 @@ func (rc registrationConfirmHandler) SendRegistrationConfirmLinkByLoginFunc() re
 			switch err {
 			case services.ErrRegistrationAlreadyConfirmed:
 				return registration_confirm.NewSendRegistrationConfirmLinkByLoginDefault(http.StatusInternalServerError).
-					WithPayload(buildStringPayload("Registration is already confirmed."))
+					WithPayload(buildInternalErrorPayload(messages.ErrRegistrationAlreadyConfirmed, ""))
 			case services.ErrUserNotFound:
 				return registration_confirm.NewSendRegistrationConfirmLinkByLoginDefault(http.StatusInternalServerError).
-					WithPayload(buildStringPayload("Can't find this user, registration confirmation link wasn't send"))
+					WithPayload(buildInternalErrorPayload(messages.ErrRegistrationCannotFindUser, ""))
 			default:
 				return registration_confirm.NewSendRegistrationConfirmLinkByLoginDefault(http.StatusInternalServerError).
-					WithPayload(buildStringPayload("Can't send registration confirmation link. Please try again later"))
+					WithPayload(buildInternalErrorPayload(messages.ErrRegistrationCannotSend, ""))
 			}
 		}
 		if !rc.regConfirm.IsSendRequired() {
-			return registration_confirm.NewSendRegistrationConfirmLinkByLoginOK().WithPayload("Confirmation link was not sent to email, sending parameter was set to false and not required")
+			return registration_confirm.NewSendRegistrationConfirmLinkByLoginOK().WithPayload(
+				models.RegistrationConfirmResponse(messages.MsgConfirmationNotRequired))
 		}
-		return registration_confirm.NewSendRegistrationConfirmLinkByLoginOK().WithPayload("Confirmation link was sent")
+		return registration_confirm.NewSendRegistrationConfirmLinkByLoginOK().WithPayload(
+			models.RegistrationConfirmResponse(messages.MsgConfirmationSent))
 	}
 }
 
@@ -70,8 +74,9 @@ func (rc registrationConfirmHandler) VerifyRegistrationConfirmTokenFunc() regist
 		if err != nil {
 			rc.logger.Error("Failed to verify confirmation token", zap.Error(err))
 			return registration_confirm.NewVerifyRegistrationConfirmTokenDefault(http.StatusInternalServerError).
-				WithPayload(buildStringPayload("Failed to verify confirmation token. Please try again later"))
+				WithPayload(buildInternalErrorPayload(messages.ErrFailedToConfirm, ""))
 		}
-		return registration_confirm.NewVerifyRegistrationConfirmTokenOK().WithPayload("You have successfully confirmed registration")
+		return registration_confirm.NewVerifyRegistrationConfirmTokenOK().WithPayload(
+			models.RegistrationConfirmResponse(messages.MsgRegistrationConfirmed))
 	}
 }

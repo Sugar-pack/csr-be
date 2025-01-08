@@ -8,6 +8,7 @@ import (
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/swagger/client/pet_size"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/swagger/models"
 	utils "git.epam.com/epm-lstr/epm-lstr-lc/be/internal/integration-tests/common"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/messages"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -26,17 +27,10 @@ func TestIntegration_PetSize(t *testing.T) {
 	ctx := context.Background()
 	client := utils.SetupClient()
 
-	l, p, err := utils.GenerateLoginAndPassword()
-	require.NoError(t, err)
-
-	_, err = utils.CreateUser(ctx, client, l, p)
-	require.NoError(t, err)
-
-	loginUser, err := utils.LoginUser(ctx, client, l, p)
-	require.NoError(t, err)
+	auth := utils.AdminUserLogin(t)
+	token := auth.GetPayload().AccessToken
 
 	t.Run("register a new pet size ok", func(t *testing.T) {
-		token := loginUser.GetPayload().AccessToken
 
 		params := pet_size.NewCreateNewPetSizeParamsWithContext(ctx)
 		params.NewPetSize = &models.PetSize{
@@ -57,19 +51,21 @@ func TestIntegration_PetSize(t *testing.T) {
 	})
 
 	t.Run("register a new pet kind failed: validation error", func(t *testing.T) {
-		token := loginUser.GetPayload().AccessToken
 
 		params := pet_size.NewCreateNewPetSizeParamsWithContext(ctx)
 		params.NewPetSize = &models.PetSize{
 			Name: nil,
 		}
 
-		_, err = client.PetSize.CreateNewPetSize(params, utils.AuthInfoFunc(token))
+		_, err := client.PetSize.CreateNewPetSize(params, utils.AuthInfoFunc(token))
 		require.Error(t, err)
 
 		errExp := pet_size.NewCreateNewPetSizeDefault(http.StatusUnprocessableEntity)
-		errExp.Payload = &models.Error{
-			Data: nil,
+		msgExp := "name in body is required"
+		codeExp := int32(602)
+		errExp.Payload = &models.SwaggerError{
+			Code:    &codeExp,
+			Message: &msgExp,
 		}
 		assert.Equal(t, errExp, err)
 	})
@@ -77,12 +73,15 @@ func TestIntegration_PetSize(t *testing.T) {
 	t.Run("register a new pet kind failed: no authorization", func(t *testing.T) {
 		params := pet_size.NewCreateNewPetSizeParamsWithContext(ctx)
 
-		_, err = client.PetSize.CreateNewPetSize(params, utils.AuthInfoFunc(nil))
+		_, err := client.PetSize.CreateNewPetSize(params, utils.AuthInfoFunc(nil))
 		require.Error(t, err)
 
 		errExp := pet_size.NewCreateNewPetSizeDefault(http.StatusUnauthorized)
-		errExp.Payload = &models.Error{
-			Data: nil,
+		msgExp := "unauthenticated for invalid credentials"
+		codeExp := int32(http.StatusUnauthorized)
+		errExp.Payload = &models.SwaggerError{
+			Code:    &codeExp,
+			Message: &msgExp,
 		}
 		assert.Equal(t, errExp, err)
 	})
@@ -91,12 +90,14 @@ func TestIntegration_PetSize(t *testing.T) {
 		params := pet_size.NewCreateNewPetSizeParamsWithContext(ctx)
 		dummyToken := utils.TokenNotExist
 
-		_, err = client.PetSize.CreateNewPetSize(params, utils.AuthInfoFunc(&dummyToken))
+		_, err := client.PetSize.CreateNewPetSize(params, utils.AuthInfoFunc(&dummyToken))
 		require.Error(t, err)
 
-		errExp := pet_size.NewCreateNewPetSizeDefault(http.StatusInternalServerError)
-		errExp.Payload = &models.Error{
-			Data: nil,
+		errExp := pet_size.NewCreateNewPetSizeDefault(http.StatusUnauthorized)
+		codeExp := int32(http.StatusUnauthorized)
+		errExp.Payload = &models.SwaggerError{
+			Code:    &codeExp,
+			Message: &messages.ErrInvalidToken,
 		}
 		assert.Equal(t, errExp, err)
 	})

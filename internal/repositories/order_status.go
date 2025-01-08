@@ -29,16 +29,16 @@ func (r *orderStatusRepository) ApproveOrRejectOrder(ctx context.Context, userID
 	}
 	order, err := tx.Order.Get(ctx, int(*status.OrderID))
 	if err != nil {
-		return fmt.Errorf("status history error, failed to get order: %s", err)
+		return fmt.Errorf("status approve or reject error, failed to get order: %s", err)
 	}
 
 	statusName, err := tx.OrderStatusName.Query().Where(orderstatusname.Status(*status.Status)).Only(ctx)
 	if err != nil {
-		return fmt.Errorf("status history error, failed to get status name: %s", err)
+		return fmt.Errorf("status approve or reject error, failed to get status name: %s", err)
 	}
 	user, err := tx.User.Get(ctx, userID)
 	if err != nil {
-		return fmt.Errorf("status history error, failed to get user: %s", err)
+		return fmt.Errorf("status approve or reject error, failed to get user: %s", err)
 	}
 	_, err = tx.OrderStatus.Create().
 		SetComment(*status.Comment).
@@ -48,8 +48,14 @@ func (r *orderStatusRepository) ApproveOrRejectOrder(ctx context.Context, userID
 		SetUsers(user).Save(ctx)
 
 	if err != nil {
-		return fmt.Errorf("status history error, failed to create order status: %s", err)
+		return fmt.Errorf("status approve or reject error, failed to create order status: %s", err)
 	}
+
+	_, err = order.Update().SetCurrentStatus(statusName).Save(ctx)
+	if err != nil {
+		return fmt.Errorf("status approve or reject error, unable to update order: %s", err)
+	}
+
 	return nil
 }
 
@@ -90,13 +96,18 @@ func (r *orderStatusRepository) UpdateStatus(ctx context.Context, userID int, st
 	}
 	_, err = tx.OrderStatus.Create().
 		SetComment(*status.Comment).
-		SetCurrentDate(time.Time(*status.CreatedAt)).
+		SetCurrentDate(time.Now()).
 		SetOrder(receivedOrder).
 		SetOrderStatusName(statusName).
 		SetUsers(receivedUser).Save(ctx)
 
 	if err != nil {
 		return fmt.Errorf("status history error, failed to create order status: %s", err)
+	}
+
+	_, err = receivedOrder.Update().SetCurrentStatus(statusName).Save(ctx)
+	if err != nil {
+		return fmt.Errorf("unable to update current_status field for order: %s", err)
 	}
 
 	if *status.Status == domain.OrderStatusApproved {
@@ -128,7 +139,7 @@ func (r *orderStatusRepository) GetOrderCurrentStatus(ctx context.Context, order
 		WithOrder(func(query *ent.OrderQuery) {
 			query.WithUsers()
 		}).
-		Order(ent.Desc(orderstatus.FieldCurrentDate)).First(ctx)
+		Order(ent.Desc(orderstatus.FieldID)).First(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("status history error, failed to get statuses: %s", err)
 	}

@@ -24,19 +24,11 @@ func TestIntegration_GetAllPetKind(t *testing.T) {
 	ctx := context.Background()
 	client := utils.SetupClient()
 
-	l, p, err := utils.GenerateLoginAndPassword()
-	require.NoError(t, err)
-
-	_, err = utils.CreateUser(ctx, client, l, p)
-	require.NoError(t, err)
-
-	loginUser, err := utils.LoginUser(ctx, client, l, p)
-	require.NoError(t, err)
-
+	loginUser := utils.AdminUserLogin(t)
 	token := loginUser.GetPayload().AccessToken
 	params := pet_kind.NewGetAllPetKindsParamsWithContext(ctx)
 
-	_, err = client.PetKind.GetAllPetKinds(params, utils.AuthInfoFunc(token))
+	_, err := client.PetKind.GetAllPetKinds(params, utils.AuthInfoFunc(token))
 	require.NoError(t, err)
 }
 
@@ -48,14 +40,7 @@ func TestIntegration_GetPetKind(t *testing.T) {
 	ctx := context.Background()
 	client := utils.SetupClient()
 
-	l, p, err := utils.GenerateLoginAndPassword()
-	require.NoError(t, err)
-
-	_, err = utils.CreateUser(ctx, client, l, p)
-	require.NoError(t, err)
-
-	loginUser, err := utils.LoginUser(ctx, client, l, p)
-	require.NoError(t, err)
+	loginUser := utils.AdminUserLogin(t)
 
 	t.Run("get pet kind ok", func(t *testing.T) {
 		token := loginUser.GetPayload().AccessToken
@@ -87,14 +72,7 @@ func TestIntegration_EditPetKind(t *testing.T) {
 	ctx := context.Background()
 	client := utils.SetupClient()
 
-	l, p, err := utils.GenerateLoginAndPassword()
-	require.NoError(t, err)
-
-	_, err = utils.CreateUser(ctx, client, l, p)
-	require.NoError(t, err)
-
-	loginUser, err := utils.LoginUser(ctx, client, l, p)
-	require.NoError(t, err)
+	loginUser := utils.AdminUserLogin(t)
 
 	token := loginUser.GetPayload().AccessToken
 
@@ -131,14 +109,7 @@ func TestIntegration_DeletePetKind(t *testing.T) {
 	ctx := context.Background()
 	client := utils.SetupClient()
 
-	l, p, err := utils.GenerateLoginAndPassword()
-	require.NoError(t, err)
-
-	_, err = utils.CreateUser(ctx, client, l, p)
-	require.NoError(t, err)
-
-	loginUser, err := utils.LoginUser(ctx, client, l, p)
-	require.NoError(t, err)
+	loginUser := utils.AdminUserLogin(t)
 
 	token := loginUser.GetPayload().AccessToken
 
@@ -151,5 +122,5 @@ func TestIntegration_DeletePetKind(t *testing.T) {
 	kind, err := client.PetKind.DeletePetKind(params, utils.AuthInfoFunc(token))
 	require.NoError(t, err)
 
-	assert.Equal(t, kind.GetPayload(), "Pet kind deleted")
+	assert.Equal(t, kind.GetPayload(), "pet kind deleted")
 }

@@ -4,7 +4,7 @@ This CSR backend API.
 
 ## How to run this code
 Checked from unix-compatible OS.
-Go 1.19.2 is the current version.
+Go 1.22.5 is the current version.
 
 1. Install all necessary tools
    ```bash
@@ -14,13 +14,17 @@ Go 1.19.2 is the current version.
     ```shell
     make generate
     ```
-3. Run the service: 
+3. Run database
+    ```shell
+    make db
+    ```
+4. Run the service: 
     ```shell
     make run
     ```
    The server is here - http://127.0.0.1:8080/api
    Swagger docs are here - http://127.0.0.1:8080/api/docs
-8. Service cURL request example:
+5. Service cURL request example:
    ```shell
    curl -XPOST http://127.0.0.1:8080/api/v1/users/ -vvv
    *   Trying 127.0.0.1:8080...
@@ -39,7 +43,20 @@ Go 1.19.2 is the current version.
    < 
    {"data":{"id":"1"}}
    ```
-
+## How to start project in docker compose
+Before starting, you need to install git (https://git-scm.com/downloads) and docker (https://docs.docker.com/desktop/install/windows-install/)
+0. Change in config.json db host to
+   ```
+   "host": "postgres",
+   ```
+1. Run the build container (pull updates and build):
+    ```shell
+    make rebuild_project
+    ```
+2. Run the build container:
+    ```shell
+    make start_project
+    ```
 ### For developers
 
 To draw entities relationships diagram:

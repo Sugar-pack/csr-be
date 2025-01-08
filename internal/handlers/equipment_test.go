@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -8,11 +9,13 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/go-openapi/loads"
 	"github.com/go-openapi/runtime"
+	"github.com/go-openapi/strfmt"
 	_ "github.com/mattn/go-sqlite3"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/zap"
 
@@ -23,6 +26,8 @@ import (
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/swagger/restapi"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/swagger/restapi/operations"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/swagger/restapi/operations/equipment"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/roles"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/pkg/domain"
 )
 
 func TestSetEquipmentHandler(t *testing.T) {
@@ -39,20 +44,24 @@ func TestSetEquipmentHandler(t *testing.T) {
 
 	//fileManager := &servicesmock.FileManager{}
 	SetEquipmentHandler(logger, api)
-	assert.NotEmpty(t, api.EquipmentCreateNewEquipmentHandler)
-	assert.NotEmpty(t, api.EquipmentGetEquipmentHandler)
-	assert.NotEmpty(t, api.EquipmentEditEquipmentHandler)
-	assert.NotEmpty(t, api.EquipmentDeleteEquipmentHandler)
-	assert.NotEmpty(t, api.EquipmentGetAllEquipmentHandler)
-	assert.NotEmpty(t, api.EquipmentFindEquipmentHandler)
+	require.NotEmpty(t, api.EquipmentCreateNewEquipmentHandler)
+	require.NotEmpty(t, api.EquipmentGetEquipmentHandler)
+	require.NotEmpty(t, api.EquipmentEditEquipmentHandler)
+	require.NotEmpty(t, api.EquipmentDeleteEquipmentHandler)
+	require.NotEmpty(t, api.EquipmentGetAllEquipmentHandler)
+	require.NotEmpty(t, api.EquipmentFindEquipmentHandler)
+	require.NotEmpty(t, api.EquipmentArchiveEquipmentHandler)
+	require.NotEmpty(t, api.EquipmentBlockEquipmentHandler)
+	require.NotEmpty(t, api.EquipmentUnblockEquipmentHandler)
 }
 
 type EquipmentTestSuite struct {
 	suite.Suite
-	logger        *zap.Logger
-	equipmentRepo *mocks.EquipmentRepository
-	statusRepo    *mocks.EquipmentStatusNameRepository
-	equipment     *Equipment
+	logger              *zap.Logger
+	equipmentRepo       *mocks.EquipmentRepository
+	statusRepo          *mocks.EquipmentStatusNameRepository
+	equipmentStatusRepo *mocks.EquipmentStatusRepository
+	equipment           *Equipment
 }
 
 func InvalidEquipment(t *testing.T) *ent.Equipment {
@@ -86,7 +95,76 @@ func (s *EquipmentTestSuite) SetupTest() {
 	s.logger = zap.NewNop()
 	s.equipmentRepo = &mocks.EquipmentRepository{}
 	s.statusRepo = &mocks.EquipmentStatusNameRepository{}
+	s.equipmentStatusRepo = &mocks.EquipmentStatusRepository{}
 	s.equipment = NewEquipment(s.logger)
+}
+
+func (s *EquipmentTestSuite) TestEquipment_ArchiveEquipmentFunc_RepoNotFoundErr() {
+	t := s.T()
+	request := http.Request{}
+	ctx := context.Background()
+
+	handlerFunc := s.equipment.ArchiveEquipmentFunc(s.equipmentRepo)
+	id := 1
+	data := equipment.ArchiveEquipmentParams{
+		HTTPRequest: request.WithContext(ctx),
+		EquipmentID: int64(id),
+	}
+	err := &ent.NotFoundError{}
+
+	s.equipmentRepo.On("ArchiveEquipment", ctx, id).Return(err)
+
+	resp := handlerFunc(data, nil)
+	responseRecorder := httptest.NewRecorder()
+	producer := runtime.JSONProducer()
+	resp.WriteResponse(responseRecorder, producer)
+	require.Equal(t, http.StatusNotFound, responseRecorder.Code)
+	s.equipmentRepo.AssertExpectations(t)
+}
+
+func (s *EquipmentTestSuite) TestEquipment_ArchiveEquipmentFunc_RepoErr() {
+	t := s.T()
+	request := http.Request{}
+	ctx := context.Background()
+
+	handlerFunc := s.equipment.ArchiveEquipmentFunc(s.equipmentRepo)
+	id := 1
+	data := equipment.ArchiveEquipmentParams{
+		HTTPRequest: request.WithContext(ctx),
+		EquipmentID: int64(id),
+	}
+	err := errors.New("some error")
+
+	s.equipmentRepo.On("ArchiveEquipment", ctx, id).Return(err)
+
+	resp := handlerFunc(data, nil)
+	responseRecorder := httptest.NewRecorder()
+	producer := runtime.JSONProducer()
+	resp.WriteResponse(responseRecorder, producer)
+	require.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
+	s.equipmentRepo.AssertExpectations(t)
+}
+
+func (s *EquipmentTestSuite) TestEquipment_ArchiveEquipmentFunc_Ok() {
+	t := s.T()
+	request := http.Request{}
+	ctx := context.Background()
+
+	handlerFunc := s.equipment.ArchiveEquipmentFunc(s.equipmentRepo)
+	id := 1
+	data := equipment.ArchiveEquipmentParams{
+		HTTPRequest: request.WithContext(ctx),
+		EquipmentID: int64(id),
+	}
+
+	s.equipmentRepo.On("ArchiveEquipment", ctx, id).Return(nil)
+
+	resp := handlerFunc(data, nil)
+	responseRecorder := httptest.NewRecorder()
+	producer := runtime.JSONProducer()
+	resp.WriteResponse(responseRecorder, producer)
+	require.Equal(t, http.StatusNoContent, responseRecorder.Code)
+	s.equipmentRepo.AssertExpectations(t)
 }
 
 func (s *EquipmentTestSuite) TestEquipment_PostEquipmentFunc_RepoErr() {
@@ -105,15 +183,14 @@ func (s *EquipmentTestSuite) TestEquipment_PostEquipmentFunc_RepoErr() {
 	}
 	err := errors.New("test error")
 
-	s.statusRepo.On("GetByName", ctx, "available").Return(statusToAdd, nil)
+	s.statusRepo.On("GetByName", ctx, domain.EquipmentStatusAvailable).Return(statusToAdd, nil)
 	s.equipmentRepo.On("CreateEquipment", ctx, equipmentToAdd, statusToAdd).Return(nil, err)
 
-	access := "dummy access"
-	resp := handlerFunc(data, access)
+	resp := handlerFunc(data, nil)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
+	require.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
 	s.equipmentRepo.AssertExpectations(t)
 }
 
@@ -132,14 +209,13 @@ func (s *EquipmentTestSuite) TestEquipment_PostEquipmentFunc_RepoStatusErr() {
 	}
 	err := errors.New("test error")
 
-	s.statusRepo.On("GetByName", ctx, "available").Return(nil, err)
+	s.statusRepo.On("GetByName", ctx, domain.EquipmentStatusAvailable).Return(nil, err)
 
-	access := "dummy access"
-	resp := handlerFunc(data, access)
+	resp := handlerFunc(data, nil)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
+	require.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
 	s.equipmentRepo.AssertExpectations(t)
 }
 
@@ -159,15 +235,14 @@ func (s *EquipmentTestSuite) TestEquipment_PostEquipmentFunc_MapErr() {
 	statusToAdd := ValidStatus(t)
 	equipmentToReturn := InvalidEquipment(t)
 
-	s.statusRepo.On("GetByName", ctx, "available").Return(statusToAdd, nil)
+	s.statusRepo.On("GetByName", ctx, domain.EquipmentStatusAvailable).Return(statusToAdd, nil)
 	s.equipmentRepo.On("CreateEquipment", ctx, equipmentToAdd, statusToAdd).Return(equipmentToReturn, nil)
 
-	access := "dummy access"
-	resp := handlerFunc(data, access)
+	resp := handlerFunc(data, nil)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
+	require.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
 	s.equipmentRepo.AssertExpectations(t)
 }
 
@@ -187,15 +262,14 @@ func (s *EquipmentTestSuite) TestEquipment_PostEquipmentFunc_OK() {
 	statusToAdd := ValidStatus(t)
 	equipmentToReturn := ValidEquipment(t, 1)
 
-	s.statusRepo.On("GetByName", ctx, "available").Return(statusToAdd, nil)
+	s.statusRepo.On("GetByName", ctx, domain.EquipmentStatusAvailable).Return(statusToAdd, nil)
 	s.equipmentRepo.On("CreateEquipment", ctx, equipmentToAdd, statusToAdd).Return(equipmentToReturn, nil)
 
-	access := "dummy access"
-	resp := handlerFunc(data, access)
+	resp := handlerFunc(data, nil)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusCreated, responseRecorder.Code)
+	require.Equal(t, http.StatusCreated, responseRecorder.Code)
 	s.equipmentRepo.AssertExpectations(t)
 
 	actualEquipment := &models.Equipment{}
@@ -203,7 +277,7 @@ func (s *EquipmentTestSuite) TestEquipment_PostEquipmentFunc_OK() {
 	if err != nil {
 		t.Errorf("unable to unmarshal response body: %v", err)
 	}
-	assert.Equal(t, equipmentToReturn.Name, *actualEquipment.Name)
+	require.Equal(t, equipmentToReturn.Name, *actualEquipment.Name)
 }
 
 func (s *EquipmentTestSuite) TestEquipment_GetEquipmentFunc_RepoErr() {
@@ -221,12 +295,11 @@ func (s *EquipmentTestSuite) TestEquipment_GetEquipmentFunc_RepoErr() {
 
 	s.equipmentRepo.On("EquipmentByID", ctx, int(equipmentId)).Return(nil, err)
 
-	access := "dummy access"
-	resp := handlerFunc(data, access)
+	resp := handlerFunc(data, nil)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
+	require.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
 	s.equipmentRepo.AssertExpectations(t)
 }
 
@@ -245,12 +318,11 @@ func (s *EquipmentTestSuite) TestEquipment_GetEquipmentFunc_MapErr() {
 
 	s.equipmentRepo.On("EquipmentByID", ctx, int(equipmentId)).Return(equipmentToReturn, nil)
 
-	access := "dummy access"
-	resp := handlerFunc(data, access)
+	resp := handlerFunc(data, nil)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
+	require.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
 	s.equipmentRepo.AssertExpectations(t)
 }
 
@@ -269,12 +341,11 @@ func (s *EquipmentTestSuite) TestEquipment_GetEquipmentFunc_OK() {
 
 	s.equipmentRepo.On("EquipmentByID", ctx, int(equipmentId)).Return(equipmentToReturn, nil)
 
-	access := "dummy access"
-	resp := handlerFunc(data, access)
+	resp := handlerFunc(data, nil)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusOK, responseRecorder.Code)
+	require.Equal(t, http.StatusOK, responseRecorder.Code)
 	s.equipmentRepo.AssertExpectations(t)
 
 	actualEquipment := &models.Equipment{}
@@ -282,7 +353,7 @@ func (s *EquipmentTestSuite) TestEquipment_GetEquipmentFunc_OK() {
 	if err != nil {
 		t.Errorf("unable to unmarshal response body: %v", err)
 	}
-	assert.Equal(t, equipmentToReturn.Name, *actualEquipment.Name)
+	require.Equal(t, equipmentToReturn.Name, *actualEquipment.Name)
 }
 
 func (s *EquipmentTestSuite) TestEquipment_DeleteEquipmentFunc_RepoErr() {
@@ -302,12 +373,11 @@ func (s *EquipmentTestSuite) TestEquipment_DeleteEquipmentFunc_RepoErr() {
 	s.equipmentRepo.On("EquipmentByID", ctx, int(equipmentId)).Return(equipmentToReturn, nil)
 	s.equipmentRepo.On("DeleteEquipmentByID", ctx, int(equipmentId)).Return(err)
 
-	access := "dummy access"
-	resp := handlerFunc(data, access)
+	resp := handlerFunc(data, nil)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
+	require.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
 	s.equipmentRepo.AssertExpectations(t)
 }
 
@@ -328,12 +398,11 @@ func (s *EquipmentTestSuite) TestEquipment_DeleteEquipmentFunc_OK() {
 	s.equipmentRepo.On("DeleteEquipmentByID", ctx, int(equipmentId)).Return(nil)
 	s.equipmentRepo.On("DeleteEquipmentPhoto", ctx, equipmentToReturn.Edges.Photo.ID).Return(nil)
 
-	access := "dummy access"
-	resp := handlerFunc(data, access)
+	resp := handlerFunc(data, nil)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusOK, responseRecorder.Code)
+	require.Equal(t, http.StatusOK, responseRecorder.Code)
 	s.equipmentRepo.AssertExpectations(t)
 }
 
@@ -349,12 +418,11 @@ func (s *EquipmentTestSuite) TestEquipment_ListEquipmentFunc_RepoErr() {
 	err := errors.New("test error")
 	s.equipmentRepo.On("AllEquipmentsTotal", ctx).Return(0, err)
 
-	access := "dummy access"
-	resp := handlerFunc(data, access)
+	resp := handlerFunc(data, nil)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
+	require.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
 	s.equipmentRepo.AssertExpectations(t)
 }
 
@@ -369,8 +437,7 @@ func (s *EquipmentTestSuite) TestEquipment_ListEquipmentFunc_NotFound() {
 	}
 	s.equipmentRepo.On("AllEquipmentsTotal", ctx).Return(0, nil)
 
-	access := "dummy access"
-	resp := handlerFunc(data, access)
+	resp := handlerFunc(data, nil)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
@@ -380,9 +447,9 @@ func (s *EquipmentTestSuite) TestEquipment_ListEquipmentFunc_NotFound() {
 	if err != nil {
 		t.Errorf("unable to unmarshal response body: %v", err)
 	}
-	assert.Equal(t, http.StatusOK, responseRecorder.Code)
-	assert.Equal(t, 0, int(*responseEquipments.Total))
-	assert.Equal(t, 0, len(responseEquipments.Items))
+	require.Equal(t, http.StatusOK, responseRecorder.Code)
+	require.Equal(t, 0, int(*responseEquipments.Total))
+	require.Equal(t, 0, len(responseEquipments.Items))
 	s.equipmentRepo.AssertExpectations(t)
 }
 
@@ -404,12 +471,11 @@ func (s *EquipmentTestSuite) TestEquipment_ListEquipmentFunc_MapErr() {
 	s.equipmentRepo.On("AllEquipmentsTotal", ctx).Return(1, nil)
 	s.equipmentRepo.On("AllEquipments", ctx, limit, offset, orderBy, orderColumn).Return(equipmentToReturn, nil)
 
-	access := "dummy access"
-	resp := handlerFunc(data, access)
+	resp := handlerFunc(data, nil)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
+	require.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
 	s.equipmentRepo.AssertExpectations(t)
 }
 
@@ -431,12 +497,11 @@ func (s *EquipmentTestSuite) TestEquipment_ListEquipmentFunc_EmptyPaginationPara
 	s.equipmentRepo.On("AllEquipmentsTotal", ctx).Return(1, nil)
 	s.equipmentRepo.On("AllEquipments", ctx, limit, offset, orderBy, orderColumn).Return(equipmentToReturn, nil)
 
-	access := "dummy access"
-	resp := handlerFunc(data, access)
+	resp := handlerFunc(data, nil)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusOK, responseRecorder.Code)
+	require.Equal(t, http.StatusOK, responseRecorder.Code)
 	s.equipmentRepo.AssertExpectations(t)
 
 	var responseEquipments models.ListEquipment
@@ -444,8 +509,8 @@ func (s *EquipmentTestSuite) TestEquipment_ListEquipmentFunc_EmptyPaginationPara
 	if err != nil {
 		t.Errorf("unable to unmarshal response body: %v", err)
 	}
-	assert.Equal(t, 1, int(*responseEquipments.Total))
-	assert.Equal(t, equipmentToReturn[0].Name, *responseEquipments.Items[0].Name)
+	require.Equal(t, 1, int(*responseEquipments.Total))
+	require.Equal(t, equipmentToReturn[0].Name, *responseEquipments.Items[0].Name)
 }
 
 func (s *EquipmentTestSuite) TestEquipment_ListEquipmentFunc_LimitGreaterThanTotal() {
@@ -470,12 +535,11 @@ func (s *EquipmentTestSuite) TestEquipment_ListEquipmentFunc_LimitGreaterThanTot
 	s.equipmentRepo.On("AllEquipmentsTotal", ctx).Return(1, nil)
 	s.equipmentRepo.On("AllEquipments", ctx, int(limit), int(offset), orderBy, orderColumn).Return(equipmentToReturn, nil)
 
-	access := "dummy access"
-	resp := handlerFunc(data, access)
+	resp := handlerFunc(data, nil)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusOK, responseRecorder.Code)
+	require.Equal(t, http.StatusOK, responseRecorder.Code)
 	s.equipmentRepo.AssertExpectations(t)
 
 	var responseEquipments models.ListEquipment
@@ -483,8 +547,8 @@ func (s *EquipmentTestSuite) TestEquipment_ListEquipmentFunc_LimitGreaterThanTot
 	if err != nil {
 		t.Errorf("unable to unmarshal response body: %v", err)
 	}
-	assert.Equal(t, 1, int(*responseEquipments.Total))
-	assert.Equal(t, equipmentToReturn[0].Name, *responseEquipments.Items[0].Name)
+	require.Equal(t, 1, int(*responseEquipments.Total))
+	require.Equal(t, equipmentToReturn[0].Name, *responseEquipments.Items[0].Name)
 }
 
 func (s *EquipmentTestSuite) TestEquipment_ListEquipmentFunc_LimitLessThanTotal() {
@@ -515,12 +579,11 @@ func (s *EquipmentTestSuite) TestEquipment_ListEquipmentFunc_LimitLessThanTotal(
 	s.equipmentRepo.On("AllEquipments", ctx, int(limit), int(offset), orderBy, orderColumn).
 		Return(equipmentToReturn[:limit], nil)
 
-	access := "dummy access"
-	resp := handlerFunc(data, access)
+	resp := handlerFunc(data, nil)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusOK, responseRecorder.Code)
+	require.Equal(t, http.StatusOK, responseRecorder.Code)
 	s.equipmentRepo.AssertExpectations(t)
 
 	var responseEquipments models.ListEquipment
@@ -528,11 +591,11 @@ func (s *EquipmentTestSuite) TestEquipment_ListEquipmentFunc_LimitLessThanTotal(
 	if err != nil {
 		t.Errorf("unable to unmarshal response body: %v", err)
 	}
-	assert.Greater(t, len(equipmentToReturn), len(responseEquipments.Items))
-	assert.Equal(t, len(equipmentToReturn), int(*responseEquipments.Total))
-	assert.Equal(t, int(limit), len(responseEquipments.Items))
+	require.Greater(t, len(equipmentToReturn), len(responseEquipments.Items))
+	require.Equal(t, len(equipmentToReturn), int(*responseEquipments.Total))
+	require.Equal(t, int(limit), len(responseEquipments.Items))
 	for _, item := range responseEquipments.Items {
-		assert.True(t, containsEquipment(t, equipmentToReturn, item))
+		require.True(t, containsEquipment(t, equipmentToReturn, item))
 	}
 }
 
@@ -564,12 +627,11 @@ func (s *EquipmentTestSuite) TestEquipment_ListEquipmentFunc_SecondPage() {
 	s.equipmentRepo.On("AllEquipments", ctx, int(limit), int(offset), orderBy, orderColumn).
 		Return(equipmentToReturn[offset:], nil)
 
-	access := "dummy access"
-	resp := handlerFunc(data, access)
+	resp := handlerFunc(data, nil)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusOK, responseRecorder.Code)
+	require.Equal(t, http.StatusOK, responseRecorder.Code)
 	s.equipmentRepo.AssertExpectations(t)
 
 	var responseEquipments models.ListEquipment
@@ -577,11 +639,11 @@ func (s *EquipmentTestSuite) TestEquipment_ListEquipmentFunc_SecondPage() {
 	if err != nil {
 		t.Errorf("unable to unmarshal response body: %v", err)
 	}
-	assert.Greater(t, len(equipmentToReturn), len(responseEquipments.Items))
-	assert.Equal(t, len(equipmentToReturn), int(*responseEquipments.Total))
-	assert.Equal(t, 2, len(responseEquipments.Items))
+	require.Greater(t, len(equipmentToReturn), len(responseEquipments.Items))
+	require.Equal(t, len(equipmentToReturn), int(*responseEquipments.Total))
+	require.Equal(t, 2, len(responseEquipments.Items))
 	for _, item := range responseEquipments.Items {
-		assert.True(t, containsEquipment(t, equipmentToReturn, item))
+		require.True(t, containsEquipment(t, equipmentToReturn, item))
 	}
 }
 
@@ -613,12 +675,11 @@ func (s *EquipmentTestSuite) TestEquipment_ListEquipmentFunc_SeveralPages() {
 	s.equipmentRepo.On("AllEquipments", ctx, int(limit), int(offset), orderBy, orderColumn).
 		Return(equipmentToReturn[:limit], nil)
 
-	access := "dummy access"
-	resp := handlerFunc(data, access)
+	resp := handlerFunc(data, nil)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusOK, responseRecorder.Code)
+	require.Equal(t, http.StatusOK, responseRecorder.Code)
 	s.equipmentRepo.AssertExpectations(t)
 
 	var responseFirstPage models.ListEquipment
@@ -626,22 +687,22 @@ func (s *EquipmentTestSuite) TestEquipment_ListEquipmentFunc_SeveralPages() {
 	if err != nil {
 		t.Errorf("unable to unmarshal response body: %v", err)
 	}
-	assert.Greater(t, len(equipmentToReturn), len(responseFirstPage.Items))
-	assert.Equal(t, len(equipmentToReturn), int(*responseFirstPage.Total))
-	assert.Equal(t, 3, len(responseFirstPage.Items))
+	require.Greater(t, len(equipmentToReturn), len(responseFirstPage.Items))
+	require.Equal(t, len(equipmentToReturn), int(*responseFirstPage.Total))
+	require.Equal(t, 3, len(responseFirstPage.Items))
 	for _, item := range responseFirstPage.Items {
-		assert.True(t, containsEquipment(t, equipmentToReturn, item))
+		require.True(t, containsEquipment(t, equipmentToReturn, item))
 	}
 
 	offset = limit
 	s.equipmentRepo.On("AllEquipmentsTotal", ctx).Return(5, nil)
 	s.equipmentRepo.On("AllEquipments", ctx, int(limit), int(offset), orderBy, orderColumn).
 		Return(equipmentToReturn[offset:], nil)
-	resp = handlerFunc(data, access)
+	resp = handlerFunc(data, nil)
 	responseRecorder = httptest.NewRecorder()
 	producer = runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusOK, responseRecorder.Code)
+	require.Equal(t, http.StatusOK, responseRecorder.Code)
 	s.equipmentRepo.AssertExpectations(t)
 
 	var responseSecondPage models.ListEquipment
@@ -649,15 +710,15 @@ func (s *EquipmentTestSuite) TestEquipment_ListEquipmentFunc_SeveralPages() {
 	if err != nil {
 		t.Errorf("unable to unmarshal response body: %v", err)
 	}
-	assert.Greater(t, len(equipmentToReturn), len(responseSecondPage.Items))
-	assert.Equal(t, len(equipmentToReturn), int(*responseSecondPage.Total))
-	assert.Equal(t, 2, len(responseSecondPage.Items))
+	require.Greater(t, len(equipmentToReturn), len(responseSecondPage.Items))
+	require.Equal(t, len(equipmentToReturn), int(*responseSecondPage.Total))
+	require.Equal(t, 2, len(responseSecondPage.Items))
 	for _, item := range responseSecondPage.Items {
-		assert.True(t, containsEquipment(t, equipmentToReturn, item))
+		require.True(t, containsEquipment(t, equipmentToReturn, item))
 	}
 
-	assert.Equal(t, len(equipmentToReturn), len(responseFirstPage.Items)+len(responseSecondPage.Items))
-	assert.False(t, equipmentsDuplicated(t, responseFirstPage.Items, responseSecondPage.Items))
+	require.Equal(t, len(equipmentToReturn), len(responseFirstPage.Items)+len(responseSecondPage.Items))
+	require.False(t, equipmentsDuplicated(t, responseFirstPage.Items, responseSecondPage.Items))
 }
 
 func (s *EquipmentTestSuite) TestEquipment_FindEquipmentFunc_RepoErr() {
@@ -677,12 +738,11 @@ func (s *EquipmentTestSuite) TestEquipment_FindEquipmentFunc_RepoErr() {
 
 	s.equipmentRepo.On("EquipmentsByFilterTotal", ctx, equipmentFilter).Return(0, err)
 
-	access := "dummy access"
-	resp := handlerFunc(data, access)
+	resp := handlerFunc(data, nil)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
+	require.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
 	s.equipmentRepo.AssertExpectations(t)
 }
 
@@ -702,20 +762,19 @@ func (s *EquipmentTestSuite) TestEquipment_FindEquipmentFunc_NoResult() {
 
 	s.equipmentRepo.On("EquipmentsByFilterTotal", ctx, equipmentFilter).Return(0, nil)
 
-	access := "dummy access"
-	resp := handlerFunc(data, access)
+	resp := handlerFunc(data, nil)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusOK, responseRecorder.Code)
+	require.Equal(t, http.StatusOK, responseRecorder.Code)
 
 	var responseEquipments models.ListEquipment
 	err := json.Unmarshal(responseRecorder.Body.Bytes(), &responseEquipments)
 	if err != nil {
 		t.Errorf("unable to unmarshal response body: %v", err)
 	}
-	assert.Equal(t, 0, int(*responseEquipments.Total))
-	assert.Equal(t, 0, len(responseEquipments.Items))
+	require.Equal(t, 0, int(*responseEquipments.Total))
+	require.Equal(t, 0, len(responseEquipments.Items))
 	s.equipmentRepo.AssertExpectations(t)
 }
 
@@ -743,12 +802,11 @@ func (s *EquipmentTestSuite) TestEquipment_FindEquipmentFunc_MapErr() {
 	s.equipmentRepo.On("EquipmentsByFilter", ctx, equipmentFilter, limit, offset, orderBy, orderColumn).
 		Return(equipmentToReturn, nil)
 
-	access := "dummy access"
-	resp := handlerFunc(data, access)
+	resp := handlerFunc(data, nil)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
+	require.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
 	s.equipmentRepo.AssertExpectations(t)
 }
 
@@ -780,12 +838,11 @@ func (s *EquipmentTestSuite) TestEquipment_FindEquipmentFunc_EmptyPaginationPara
 	s.equipmentRepo.On("EquipmentsByFilter", ctx, equipmentFilter, limit, offset, orderBy, orderColumn).
 		Return(equipmentToReturn[:2], nil)
 
-	access := "dummy access"
-	resp := handlerFunc(data, access)
+	resp := handlerFunc(data, nil)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusOK, responseRecorder.Code)
+	require.Equal(t, http.StatusOK, responseRecorder.Code)
 	s.equipmentRepo.AssertExpectations(t)
 
 	var responseEquipments models.ListEquipment
@@ -793,10 +850,10 @@ func (s *EquipmentTestSuite) TestEquipment_FindEquipmentFunc_EmptyPaginationPara
 	if err != nil {
 		t.Errorf("unable to unmarshal response body: %v", err)
 	}
-	assert.Equal(t, 2, int(*responseEquipments.Total))
-	assert.Equal(t, 2, len(responseEquipments.Items))
-	assert.Equal(t, equipmentToReturn[0].Name, *responseEquipments.Items[0].Name)
-	assert.Equal(t, equipmentToReturn[1].Name, *responseEquipments.Items[1].Name)
+	require.Equal(t, 2, int(*responseEquipments.Total))
+	require.Equal(t, 2, len(responseEquipments.Items))
+	require.Equal(t, equipmentToReturn[0].Name, *responseEquipments.Items[0].Name)
+	require.Equal(t, equipmentToReturn[1].Name, *responseEquipments.Items[1].Name)
 }
 
 func (s *EquipmentTestSuite) TestEquipment_FindEquipmentFunc_LimitGreaterThanTotal() {
@@ -832,12 +889,11 @@ func (s *EquipmentTestSuite) TestEquipment_FindEquipmentFunc_LimitGreaterThanTot
 	s.equipmentRepo.On("EquipmentsByFilter", ctx, equipmentFilter, int(limit), int(offset), orderBy, orderColumn).
 		Return(equipmentToReturn[:2], nil)
 
-	access := "dummy access"
-	resp := handlerFunc(data, access)
+	resp := handlerFunc(data, nil)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusOK, responseRecorder.Code)
+	require.Equal(t, http.StatusOK, responseRecorder.Code)
 	s.equipmentRepo.AssertExpectations(t)
 
 	var actualEquipment models.ListEquipment
@@ -845,9 +901,9 @@ func (s *EquipmentTestSuite) TestEquipment_FindEquipmentFunc_LimitGreaterThanTot
 	if err != nil {
 		t.Errorf("unable to unmarshal response body: %v", err)
 	}
-	assert.Equal(t, 2, int(*actualEquipment.Total))
-	assert.Equal(t, 2, len(actualEquipment.Items))
-	assert.Equal(t, equipmentToReturn[0].Name, *actualEquipment.Items[0].Name)
+	require.Equal(t, 2, int(*actualEquipment.Total))
+	require.Equal(t, 2, len(actualEquipment.Items))
+	require.Equal(t, equipmentToReturn[0].Name, *actualEquipment.Items[0].Name)
 }
 
 func (s *EquipmentTestSuite) TestEquipment_FindEquipmentFunc_LimitLessThanTotal() {
@@ -883,12 +939,11 @@ func (s *EquipmentTestSuite) TestEquipment_FindEquipmentFunc_LimitLessThanTotal(
 	s.equipmentRepo.On("EquipmentsByFilter", ctx, equipmentFilter, int(limit), int(offset), orderBy, orderColumn).
 		Return(equipmentToReturn[:2], nil)
 
-	access := "dummy access"
-	resp := handlerFunc(data, access)
+	resp := handlerFunc(data, nil)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusOK, responseRecorder.Code)
+	require.Equal(t, http.StatusOK, responseRecorder.Code)
 	s.equipmentRepo.AssertExpectations(t)
 
 	var actualEquipment models.ListEquipment
@@ -896,10 +951,10 @@ func (s *EquipmentTestSuite) TestEquipment_FindEquipmentFunc_LimitLessThanTotal(
 	if err != nil {
 		t.Errorf("unable to unmarshal response body: %v", err)
 	}
-	assert.Equal(t, 3, int(*actualEquipment.Total))
-	assert.Equal(t, 2, len(actualEquipment.Items))
+	require.Equal(t, 3, int(*actualEquipment.Total))
+	require.Equal(t, 2, len(actualEquipment.Items))
 	for _, item := range actualEquipment.Items {
-		assert.True(t, containsEquipment(t, equipmentToReturn, item))
+		require.True(t, containsEquipment(t, equipmentToReturn, item))
 	}
 }
 
@@ -935,12 +990,11 @@ func (s *EquipmentTestSuite) TestEquipment_FindEquipmentFunc_SecondPage() {
 	s.equipmentRepo.On("EquipmentsByFilter", ctx, equipmentFilter, int(limit), int(offset), orderBy, orderColumn).
 		Return(equipmentToReturn[offset:], nil)
 
-	access := "dummy access"
-	resp := handlerFunc(data, access)
+	resp := handlerFunc(data, nil)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusOK, responseRecorder.Code)
+	require.Equal(t, http.StatusOK, responseRecorder.Code)
 	s.equipmentRepo.AssertExpectations(t)
 
 	var responseEquipments models.ListEquipment
@@ -948,11 +1002,11 @@ func (s *EquipmentTestSuite) TestEquipment_FindEquipmentFunc_SecondPage() {
 	if err != nil {
 		t.Errorf("unable to unmarshal response body: %v", err)
 	}
-	assert.Greater(t, len(equipmentToReturn), len(responseEquipments.Items))
-	assert.Equal(t, len(equipmentToReturn), int(*responseEquipments.Total))
-	assert.Equal(t, 2, len(responseEquipments.Items))
+	require.Greater(t, len(equipmentToReturn), len(responseEquipments.Items))
+	require.Equal(t, len(equipmentToReturn), int(*responseEquipments.Total))
+	require.Equal(t, 2, len(responseEquipments.Items))
 	for _, item := range responseEquipments.Items {
-		assert.True(t, containsEquipment(t, equipmentToReturn, item))
+		require.True(t, containsEquipment(t, equipmentToReturn, item))
 	}
 }
 
@@ -977,12 +1031,11 @@ func (s *EquipmentTestSuite) TestEquipment_EditEquipmentFunc_RepoErr() {
 	s.equipmentRepo.On("UpdateEquipmentByID", ctx, int(equipmentId), equipmentUpdate).
 		Return(nil, err)
 
-	access := "dummy access"
-	resp := handlerFunc(data, access)
+	resp := handlerFunc(data, nil)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
+	require.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
 	s.equipmentRepo.AssertExpectations(t)
 }
 
@@ -1007,12 +1060,11 @@ func (s *EquipmentTestSuite) TestEquipment_EditEquipmentFunc_MapErr() {
 	s.equipmentRepo.On("UpdateEquipmentByID", ctx, int(equipmentId), equipmentUpdate).
 		Return(equipmentToReturn, nil)
 
-	access := "dummy access"
-	resp := handlerFunc(data, access)
+	resp := handlerFunc(data, nil)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
+	require.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
 	s.equipmentRepo.AssertExpectations(t)
 }
 
@@ -1037,21 +1089,157 @@ func (s *EquipmentTestSuite) TestEquipment_EditEquipmentFunc_OK() {
 	s.equipmentRepo.On("UpdateEquipmentByID", ctx, int(equipmentId), equipmentUpdate).
 		Return(equipmentToReturn, nil)
 
-	access := "dummy access"
-	resp := handlerFunc(data, access)
+	resp := handlerFunc(data, nil)
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusOK, responseRecorder.Code)
+	require.Equal(t, http.StatusOK, responseRecorder.Code)
 
 	var responseEquipment models.Equipment
 	err := json.Unmarshal(responseRecorder.Body.Bytes(), &responseEquipment)
 	if err != nil {
 		t.Errorf("unable to unmarshal response body: %v", err)
 	}
-	assert.Equal(t, equipmentToReturn.Name, *responseEquipment.Name)
+	require.Equal(t, equipmentToReturn.Name, *responseEquipment.Name)
 
 	s.equipmentRepo.AssertExpectations(t)
+}
+
+func (s *EquipmentTestSuite) TestEquipment_BlockEquipmentFunc_RepoNotFoundErr() {
+	t := s.T()
+	request := http.Request{}
+	ctx := context.Background()
+
+	handlerFunc := s.equipment.BlockEquipmentFunc(s.equipmentRepo, s.equipmentStatusRepo)
+	userID, equipmentID := 1, 1
+	startDate, endDate := time.Now().Add(time.Hour*24), time.Now().Add(time.Hour*48)
+	params := equipment.BlockEquipmentParams{
+		HTTPRequest: request.WithContext(ctx),
+		EquipmentID: int64(equipmentID),
+		Data: &models.ChangeEquipmentStatusToBlockedRequest{
+			StartDate: strfmt.DateTime(startDate),
+			EndDate:   strfmt.DateTime(endDate),
+		},
+	}
+	err := &ent.NotFoundError{}
+
+	s.equipmentRepo.On("BlockEquipment", ctx, equipmentID, startDate, endDate, userID).Return(err)
+	s.equipmentStatusRepo.On("GetLastEquipmentStatusByEquipmentID", ctx, equipmentID).Return(nil, err)
+	responseRecorder := httptest.NewRecorder()
+	producer := runtime.JSONProducer()
+	principal := &models.Principal{ID: int64(userID), Role: roles.Manager}
+	resp := handlerFunc(params, principal)
+	resp.WriteResponse(responseRecorder, producer)
+	require.Equal(t, http.StatusNotFound, responseRecorder.Code)
+	s.equipmentRepo.AssertExpectations(t)
+
+	responseRecorder = httptest.NewRecorder()
+	producer = runtime.JSONProducer()
+	principal = &models.Principal{ID: int64(userID), Role: roles.Admin}
+	resp = handlerFunc(params, principal)
+	resp.WriteResponse(responseRecorder, producer)
+	require.Equal(t, http.StatusForbidden, responseRecorder.Code)
+	s.equipmentRepo.AssertExpectations(t)
+}
+
+func (s *EquipmentTestSuite) TestEquipment_BlockEquipmentFunc_OK() {
+	t := s.T()
+	request := http.Request{}
+	ctx := context.Background()
+
+	handlerFunc := s.equipment.BlockEquipmentFunc(s.equipmentRepo, s.equipmentStatusRepo)
+	userID, equipmentID := 1, 1
+	startDate, endDate := time.Now().Add(time.Hour*24), time.Now().Add(time.Hour*48)
+	params := equipment.BlockEquipmentParams{
+		HTTPRequest: request.WithContext(ctx),
+		EquipmentID: int64(equipmentID),
+		Data: &models.ChangeEquipmentStatusToBlockedRequest{
+			StartDate: strfmt.DateTime(startDate),
+			EndDate:   strfmt.DateTime(endDate),
+		},
+	}
+
+	err := &ent.NotFoundError{}
+
+	s.equipmentRepo.On("BlockEquipment", ctx, equipmentID, startDate, endDate, userID).Return(nil)
+	s.equipmentStatusRepo.On("GetLastEquipmentStatusByEquipmentID", ctx, equipmentID).Return(nil, err)
+	principal := &models.Principal{ID: int64(userID), Role: roles.Manager}
+	resp := handlerFunc(params, principal)
+	responseRecorder := httptest.NewRecorder()
+	producer := runtime.JSONProducer()
+	resp.WriteResponse(responseRecorder, producer)
+	require.Equal(t, http.StatusNoContent, responseRecorder.Code)
+	s.equipmentRepo.AssertExpectations(t)
+
+	principal = &models.Principal{ID: int64(userID), Role: roles.Operator}
+	resp = handlerFunc(params, principal)
+	responseRecorder = httptest.NewRecorder()
+	producer = runtime.JSONProducer()
+	resp.WriteResponse(responseRecorder, producer)
+	require.Equal(t, http.StatusForbidden, responseRecorder.Code)
+	s.equipmentRepo.AssertExpectations(t)
+}
+
+func (s *EquipmentTestSuite) TestEquipment_UnblockEquipmentFunc_RepoNotFoundErr() {
+	t := s.T()
+	request := http.Request{}
+	ctx := context.Background()
+
+	handlerFunc := s.equipment.UnblockEquipmentFunc(s.equipmentRepo)
+	userID, equipmentID := 1, 1
+	params := equipment.UnblockEquipmentParams{
+		HTTPRequest: request.WithContext(ctx),
+		EquipmentID: int64(equipmentID),
+	}
+	err := &ent.NotFoundError{}
+	authRoles := []string{roles.Manager, roles.Operator, roles.Admin}
+	s.equipmentRepo.On("UnblockEquipment", ctx, equipmentID).Return(err)
+
+	for _, r := range authRoles {
+		httpStatus := http.StatusForbidden
+		if r == roles.Manager {
+			httpStatus = http.StatusNotFound
+		}
+
+		responseRecorder := httptest.NewRecorder()
+		producer := runtime.JSONProducer()
+		principal := &models.Principal{ID: int64(userID), Role: r}
+		resp := handlerFunc(params, principal)
+		resp.WriteResponse(responseRecorder, producer)
+		require.Equal(t, httpStatus, responseRecorder.Code)
+		s.equipmentRepo.AssertExpectations(t)
+	}
+}
+
+func (s *EquipmentTestSuite) TestEquipment_UnblockEquipmentFunc_OK() {
+	t := s.T()
+	request := http.Request{}
+	ctx := context.Background()
+
+	handlerFunc := s.equipment.UnblockEquipmentFunc(s.equipmentRepo)
+	userID, equipmentID := 1, 1
+	params := equipment.UnblockEquipmentParams{
+		HTTPRequest: request.WithContext(ctx),
+		EquipmentID: int64(equipmentID),
+	}
+
+	authRoles := []string{roles.Manager, roles.Operator, roles.Admin}
+	s.equipmentRepo.On("UnblockEquipment", ctx, equipmentID).Return(nil)
+
+	for _, r := range authRoles {
+		httpStatus := http.StatusForbidden
+		if r == roles.Manager {
+			httpStatus = http.StatusNoContent
+		}
+
+		principal := &models.Principal{ID: int64(userID), Role: r}
+		resp := handlerFunc(params, principal)
+		responseRecorder := httptest.NewRecorder()
+		producer := runtime.JSONProducer()
+		resp.WriteResponse(responseRecorder, producer)
+		require.Equal(t, httpStatus, responseRecorder.Code)
+		s.equipmentRepo.AssertExpectations(t)
+	}
 }
 
 func containsEquipment(t *testing.T, array []*ent.Equipment, item *models.EquipmentResponse) bool {

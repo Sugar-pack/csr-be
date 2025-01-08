@@ -21,19 +21,12 @@ func TestIntegration_GetAllPetSize(t *testing.T) {
 	ctx := context.Background()
 	client := utils.SetupClient()
 
-	l, p, err := utils.GenerateLoginAndPassword()
-	require.NoError(t, err)
+	auth := utils.AdminUserLogin(t)
+	token := auth.GetPayload().AccessToken
 
-	_, err = utils.CreateUser(ctx, client, l, p)
-	require.NoError(t, err)
-
-	loginUser, err := utils.LoginUser(ctx, client, l, p)
-	require.NoError(t, err)
-
-	token := loginUser.GetPayload().AccessToken
 	params := pet_size.NewGetAllPetSizeParamsWithContext(ctx)
 
-	_, err = client.PetSize.GetAllPetSize(params, utils.AuthInfoFunc(token))
+	_, err := client.PetSize.GetAllPetSize(params, utils.AuthInfoFunc(token))
 	require.NoError(t, err)
 }
 
@@ -45,17 +38,10 @@ func TestIntegration_GetPetSize(t *testing.T) {
 	ctx := context.Background()
 	client := utils.SetupClient()
 
-	l, p, err := utils.GenerateLoginAndPassword()
-	require.NoError(t, err)
-
-	_, err = utils.CreateUser(ctx, client, l, p)
-	require.NoError(t, err)
-
-	loginUser, err := utils.LoginUser(ctx, client, l, p)
-	require.NoError(t, err)
+	auth := utils.AdminUserLogin(t)
+	token := auth.GetPayload().AccessToken
 
 	t.Run("get pet size ok", func(t *testing.T) {
-		token := loginUser.GetPayload().AccessToken
 
 		petSizeID, err := getSizeIDByName(ctx, client, token, name)
 		require.NoError(t, err)
@@ -85,16 +71,8 @@ func TestIntegration_DeletePetSize(t *testing.T) {
 	ctx := context.Background()
 	client := utils.SetupClient()
 
-	l, p, err := utils.GenerateLoginAndPassword()
-	require.NoError(t, err)
-
-	_, err = utils.CreateUser(ctx, client, l, p)
-	require.NoError(t, err)
-
-	loginUser, err := utils.LoginUser(ctx, client, l, p)
-	require.NoError(t, err)
-
-	token := loginUser.GetPayload().AccessToken
+	auth := utils.AdminUserLogin(t)
+	token := auth.GetPayload().AccessToken
 
 	petSizeID, err := getSizeIDByName(ctx, client, token, name)
 	require.NoError(t, err)
@@ -105,7 +83,7 @@ func TestIntegration_DeletePetSize(t *testing.T) {
 	res, err := client.PetSize.DeletePetSize(params, utils.AuthInfoFunc(token))
 	require.NoError(t, err)
 
-	assert.Equal(t, "Pet size deleted", res.GetPayload())
+	assert.Equal(t, "pet size deleted", res.GetPayload())
 }
 
 func getSizeIDByName(ctx context.Context, client *client.Be, token *string, petSizeName string) (*int64, error) {
@@ -118,7 +96,7 @@ func getSizeIDByName(ctx context.Context, client *client.Be, token *string, petS
 
 	for _, petSize := range allPetSize.GetPayload() {
 		if *petSize.Name == petSizeName {
-			petSizeID = &petSize.ID
+			petSizeID = petSize.ID
 		}
 	}
 	return petSizeID, nil

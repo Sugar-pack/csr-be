@@ -7,13 +7,13 @@ import (
 	"testing"
 
 	"github.com/go-openapi/loads"
+	"github.com/stretchr/testify/require"
 
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/mocks"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/swagger/restapi"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/swagger/restapi/operations"
 
 	"github.com/go-openapi/runtime"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/zap"
 
@@ -31,8 +31,8 @@ func TestSetRegistrationHandler(t *testing.T) {
 	regConfService := &mocks.RegistrationConfirmService{}
 	api := operations.NewBeAPI(swaggerSpec)
 	SetRegistrationHandler(logger, api, regConfService)
-	assert.NotEmpty(t, api.RegistrationConfirmSendRegistrationConfirmLinkByLoginHandler)
-	assert.NotEmpty(t, api.RegistrationConfirmVerifyRegistrationConfirmTokenHandler)
+	require.NotEmpty(t, api.RegistrationConfirmSendRegistrationConfirmLinkByLoginHandler)
+	require.NotEmpty(t, api.RegistrationConfirmVerifyRegistrationConfirmTokenHandler)
 }
 
 type RegistrationConfirmHandlerTestSuite struct {
@@ -69,7 +69,7 @@ func (s *RegistrationConfirmHandlerTestSuite) TestRegistrationConfirmHandler_Sen
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusOK, responseRecorder.Code)
+	require.Equal(t, http.StatusOK, responseRecorder.Code)
 	s.regConfirmService.AssertExpectations(t)
 }
 
@@ -86,7 +86,7 @@ func (s *RegistrationConfirmHandlerTestSuite) TestRegistrationConfirmHandler_Sen
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusBadRequest, responseRecorder.Code)
+	require.Equal(t, http.StatusBadRequest, responseRecorder.Code)
 	s.regConfirmService.AssertExpectations(t)
 }
 
@@ -106,7 +106,7 @@ func (s *RegistrationConfirmHandlerTestSuite) TestRegistrationConfirmHandler_Sen
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
+	require.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
 	s.regConfirmService.AssertExpectations(t)
 }
 
@@ -125,7 +125,7 @@ func (s *RegistrationConfirmHandlerTestSuite) TestRegistrationConfirmHandler_Ver
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusOK, responseRecorder.Code)
+	require.Equal(t, http.StatusOK, responseRecorder.Code)
 	s.regConfirmService.AssertExpectations(t)
 }
 
@@ -145,6 +145,6 @@ func (s *RegistrationConfirmHandlerTestSuite) TestRegistrationConfirmHandler_Ver
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
+	require.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
 	s.regConfirmService.AssertExpectations(t)
 }

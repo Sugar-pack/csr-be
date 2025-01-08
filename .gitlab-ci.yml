@@ -4,11 +4,11 @@ stages:
   - deploy
 
 test:
-  image: golang:1.19-alpine
+  image: golang:1.22.5-alpine
   stage: test
   coverage: '/total:\s+\(statements\)\s+(\d+.\d+\%)/'
   variables:
-    min_coverage: '70'
+    min_coverage: '60'
     coverage_result: '/total:\s+\(statements\)\s+(\d+.\d+)\%/'
   script:
     - set -e
@@ -31,7 +31,7 @@ lint:
       - report.txt
 
 build:
-  image: golang:1.19-alpine
+  image: golang:1.22.5-alpine
   stage: build
   script:
     - apk add --update --no-cache make

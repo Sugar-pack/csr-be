@@ -2,6 +2,7 @@ package equipmentstatusname
 
 import (
 	"context"
+	"net/http"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -10,6 +11,8 @@ import (
 	eqStatusName "git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/swagger/client/equipment_status_name"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/swagger/models"
 	utils "git.epam.com/epm-lstr/epm-lstr-lc/be/internal/integration-tests/common"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/messages"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/pkg/domain"
 )
 
 func TestIntegration_GetStatuses(t *testing.T) {
@@ -20,23 +23,15 @@ func TestIntegration_GetStatuses(t *testing.T) {
 	ctx := context.Background()
 	client := utils.SetupClient()
 
-	l, p, err := utils.GenerateLoginAndPassword()
-	require.NoError(t, err)
-
-	_, err = utils.CreateUser(ctx, client, l, p)
-	require.NoError(t, err)
-
-	loginUser, err := utils.LoginUser(ctx, client, l, p)
-	require.NoError(t, err)
-
-	token := loginUser.GetPayload().AccessToken
+	auth := utils.AdminUserLogin(t)
+	token := auth.GetPayload().AccessToken
 
 	t.Run("Get List Statuses", func(t *testing.T) {
 		params := eqStatusName.NewListEquipmentStatusNamesParamsWithContext(ctx)
 		got, err := client.EquipmentStatusName.ListEquipmentStatusNames(params, utils.AuthInfoFunc(token))
 		require.NoError(t, err)
-		// expect len 4 according to migration
-		want := 4
+		// expect len 5 according to migration
+		want := 5
 		assert.Equal(t, want, len(got.GetPayload()))
 	})
 
@@ -46,8 +41,12 @@ func TestIntegration_GetStatuses(t *testing.T) {
 		_, gotErr := client.EquipmentStatusName.ListEquipmentStatusNames(params, utils.AuthInfoFunc(&dummyToken))
 		require.Error(t, gotErr)
 
-		wantErr := eqStatusName.NewListEquipmentStatusNamesDefault(500)
-		wantErr.Payload = &models.Error{Data: nil}
+		wantErr := eqStatusName.NewListEquipmentStatusNamesDefault(http.StatusUnauthorized)
+		codeExp := int32(http.StatusUnauthorized)
+		wantErr.Payload = &models.SwaggerError{
+			Code:    &codeExp,
+			Message: &messages.ErrInvalidToken,
+		}
 		assert.Equal(t, wantErr, gotErr)
 	})
 }
@@ -60,16 +59,8 @@ func TestIntegration_GetStatus(t *testing.T) {
 	ctx := context.Background()
 	client := utils.SetupClient()
 
-	l, p, err := utils.GenerateLoginAndPassword()
-	require.NoError(t, err)
-
-	_, err = utils.CreateUser(ctx, client, l, p)
-	require.NoError(t, err)
-
-	loginUser, err := utils.LoginUser(ctx, client, l, p)
-	require.NoError(t, err)
-
-	token := loginUser.GetPayload().AccessToken
+	auth := utils.AdminUserLogin(t)
+	token := auth.GetPayload().AccessToken
 
 	t.Run("Get Status", func(t *testing.T) {
 		params := eqStatusName.NewGetEquipmentStatusNameParamsWithContext(ctx)
@@ -78,7 +69,7 @@ func TestIntegration_GetStatus(t *testing.T) {
 		require.NoError(t, err)
 
 		got := *res.Payload.Data.Name
-		want := "available"
+		want := domain.EquipmentStatusAvailable
 		assert.Equal(t, want, got)
 	})
 
@@ -89,9 +80,12 @@ func TestIntegration_GetStatus(t *testing.T) {
 		require.Error(t, gotErr)
 
 		wantErr := eqStatusName.NewGetEquipmentStatusNameDefault(500)
-		wantErr.Payload = &models.Error{Data: &models.ErrorData{
-			Message: "can't get status",
-		}}
+		codeExp := int32(http.StatusInternalServerError)
+		wantErr.Payload = &models.SwaggerError{
+			Code:    &codeExp,
+			Message: &messages.ErrGetEqStatus,
+			Details: "ent: equipment_status_name not found",
+		}
 		assert.Equal(t, wantErr, gotErr)
 	})
 
@@ -103,8 +97,12 @@ func TestIntegration_GetStatus(t *testing.T) {
 		_, gotErr := client.EquipmentStatusName.GetEquipmentStatusName(params, utils.AuthInfoFunc(&dummyToken))
 		require.Error(t, gotErr)
 
-		wantErr := eqStatusName.NewGetEquipmentStatusNameDefault(500)
-		wantErr.Payload = &models.Error{Data: nil}
+		wantErr := eqStatusName.NewGetEquipmentStatusNameDefault(http.StatusUnauthorized)
+		codeExp := int32(http.StatusUnauthorized)
+		wantErr.Payload = &models.SwaggerError{
+			Code:    &codeExp,
+			Message: &messages.ErrInvalidToken,
+		}
 		assert.Equal(t, wantErr, gotErr)
 	})
 }
@@ -117,21 +115,13 @@ func TestIntegration_PostStatus(t *testing.T) {
 	ctx := context.Background()
 	client := utils.SetupClient()
 
-	l, p, err := utils.GenerateLoginAndPassword()
-	require.NoError(t, err)
-
-	_, err = utils.CreateUser(ctx, client, l, p)
-	require.NoError(t, err)
-
-	loginUser, err := utils.LoginUser(ctx, client, l, p)
-	require.NoError(t, err)
-
-	token := loginUser.GetPayload().AccessToken
+	auth := utils.AdminUserLogin(t)
+	token := auth.GetPayload().AccessToken
 
 	t.Run("Post Status successfully", func(t *testing.T) {
 		want := "test status"
 		params := eqStatusName.NewPostEquipmentStatusNameParamsWithContext(ctx)
-		params.Name = &models.EquipmentStatusName{
+		params.Name = &models.NewEquipmentStatusName{
 			Name: &want,
 		}
 		res, err := client.EquipmentStatusName.PostEquipmentStatusName(params, utils.AuthInfoFunc(token))
@@ -144,29 +134,38 @@ func TestIntegration_PostStatus(t *testing.T) {
 	t.Run("Post Status failed: post same status again", func(t *testing.T) {
 		wantSameStatus := "test status"
 		params := eqStatusName.NewPostEquipmentStatusNameParamsWithContext(ctx)
-		params.Name = &models.EquipmentStatusName{
+		params.Name = &models.NewEquipmentStatusName{
 			Name: &wantSameStatus,
 		}
 		_, gotErr := client.EquipmentStatusName.PostEquipmentStatusName(params, utils.AuthInfoFunc(token))
 		require.Error(t, gotErr)
 
-		wantErr := eqStatusName.NewPostEquipmentStatusNameDefault(500)
-		wantErr.Payload = &models.Error{Data: &models.ErrorData{Message: "can't create status"}}
+		wantErr := eqStatusName.NewPostEquipmentStatusNameDefault(http.StatusInternalServerError)
+		codeExp := int32(http.StatusInternalServerError)
+		wantErr.Payload = &models.SwaggerError{
+			Code:    &codeExp,
+			Message: &messages.ErrCreateEqStatus,
+			Details: "ent: constraint failed: ERROR: duplicate key value violates unique constraint \"equipment_status_names_name_key\" (SQLSTATE 23505)",
+		}
 		assert.Equal(t, wantErr, gotErr)
 	})
 
 	t.Run("Post Status failed: invalid auth", func(t *testing.T) {
 		want := "new status"
 		params := eqStatusName.NewPostEquipmentStatusNameParamsWithContext(ctx)
-		params.Name = &models.EquipmentStatusName{
+		params.Name = &models.NewEquipmentStatusName{
 			Name: &want,
 		}
 		dummyToken := utils.TokenNotExist
 		_, gotErr := client.EquipmentStatusName.PostEquipmentStatusName(params, utils.AuthInfoFunc(&dummyToken))
 		require.Error(t, gotErr)
 
-		wantErr := eqStatusName.NewPostEquipmentStatusNameDefault(500)
-		wantErr.Payload = &models.Error{Data: nil}
+		wantErr := eqStatusName.NewPostEquipmentStatusNameDefault(http.StatusUnauthorized)
+		codeExp := int32(http.StatusUnauthorized)
+		wantErr.Payload = &models.SwaggerError{
+			Code:    &codeExp,
+			Message: &messages.ErrInvalidToken,
+		}
 		assert.Equal(t, wantErr, gotErr)
 	})
 }
@@ -179,21 +178,13 @@ func TestIntegration_DeleteStatus(t *testing.T) {
 	ctx := context.Background()
 	client := utils.SetupClient()
 
-	l, p, err := utils.GenerateLoginAndPassword()
-	require.NoError(t, err)
-
-	_, err = utils.CreateUser(ctx, client, l, p)
-	require.NoError(t, err)
-
-	loginUser, err := utils.LoginUser(ctx, client, l, p)
-	require.NoError(t, err)
-
-	token := loginUser.GetPayload().AccessToken
+	auth := utils.AdminUserLogin(t)
+	token := auth.GetPayload().AccessToken
 
 	t.Run("Delete Status successfully", func(t *testing.T) {
 		params := eqStatusName.NewDeleteEquipmentStatusNameParamsWithContext(ctx)
-		// StatusID = 5 is "test status"
-		params.StatusID = 5
+		// StatusID = 6 is "test status"
+		params.StatusID = 6 // todo: get statusID from database
 		res, err := client.EquipmentStatusName.DeleteEquipmentStatusName(params, utils.AuthInfoFunc(token))
 		require.NoError(t, err)
 
@@ -208,8 +199,13 @@ func TestIntegration_DeleteStatus(t *testing.T) {
 		_, gotErr := client.EquipmentStatusName.DeleteEquipmentStatusName(params, utils.AuthInfoFunc(token))
 		require.Error(t, gotErr)
 
-		wantErr := eqStatusName.NewDeleteEquipmentStatusNameDefault(500)
-		wantErr.Payload = &models.Error{Data: &models.ErrorData{Message: "can't delete status"}}
+		wantErr := eqStatusName.NewDeleteEquipmentStatusNameDefault(http.StatusInternalServerError)
+		codeExp := int32(http.StatusInternalServerError)
+		wantErr.Payload = &models.SwaggerError{
+			Code:    &codeExp,
+			Message: &messages.ErrDeleteEqStatus,
+			Details: "ent: equipment_status_name not found",
+		}
 		assert.Equal(t, wantErr, gotErr)
 	})
 
@@ -219,8 +215,13 @@ func TestIntegration_DeleteStatus(t *testing.T) {
 		_, gotErr := client.EquipmentStatusName.DeleteEquipmentStatusName(params, utils.AuthInfoFunc(token))
 		require.Error(t, gotErr)
 
-		wantErr := eqStatusName.NewDeleteEquipmentStatusNameDefault(500)
-		wantErr.Payload = &models.Error{Data: &models.ErrorData{Message: "can't delete status"}}
+		wantErr := eqStatusName.NewDeleteEquipmentStatusNameDefault(http.StatusInternalServerError)
+		codeExp := int32(http.StatusInternalServerError)
+		wantErr.Payload = &models.SwaggerError{
+			Code:    &codeExp,
+			Message: &messages.ErrDeleteEqStatus,
+			Details: "ent: equipment_status_name not found",
+		}
 		assert.Equal(t, wantErr, gotErr)
 	})
 
@@ -232,8 +233,12 @@ func TestIntegration_DeleteStatus(t *testing.T) {
 		_, gotErr := client.EquipmentStatusName.DeleteEquipmentStatusName(params, utils.AuthInfoFunc(&dummyToken))
 		require.Error(t, gotErr)
 
-		wantErr := eqStatusName.NewDeleteEquipmentStatusNameDefault(500)
-		wantErr.Payload = &models.Error{Data: nil}
+		wantErr := eqStatusName.NewDeleteEquipmentStatusNameDefault(http.StatusUnauthorized)
+		codeExp := int32(http.StatusUnauthorized)
+		wantErr.Payload = &models.SwaggerError{
+			Code:    &codeExp,
+			Message: &messages.ErrInvalidToken,
+		}
 		assert.Equal(t, wantErr, gotErr)
 	})
 }

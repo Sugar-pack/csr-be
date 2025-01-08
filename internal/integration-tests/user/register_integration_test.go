@@ -8,6 +8,7 @@ import (
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/swagger/client/users"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/swagger/models"
 	utils "git.epam.com/epm-lstr/epm-lstr-lc/be/internal/integration-tests/common"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/messages"
 
 	"github.com/brianvoe/gofakeit/v6"
 	"github.com/go-openapi/strfmt"
@@ -32,9 +33,7 @@ func TestIntegration_RegisterUser(t *testing.T) {
 		Login:       &l,
 		Password:    &p,
 		Type:        &userType,
-		// not provided in documentation, but also required
-		// todo: update documentation
-		Name: gofakeit.Name(),
+		Name:        gofakeit.Name(),
 		// not provided in documentation, but also required
 		// todo: update documentation
 		Email: strfmt.Email(gofakeit.Email()),
@@ -46,7 +45,7 @@ func TestIntegration_RegisterUser(t *testing.T) {
 	params.SetHTTPClient(http.DefaultClient)
 
 	t.Run("user person register ok", func(t *testing.T) {
-		// login, password, type required, name and email also
+		// login, password, type required
 		user, err := c.Users.PostUser(params)
 		require.NoError(t, err)
 
@@ -54,17 +53,15 @@ func TestIntegration_RegisterUser(t *testing.T) {
 	})
 
 	t.Run("login is already used", func(t *testing.T) {
-		_, err := c.Users.PostUser(params)
-		require.Error(t, err)
+		r, err := c.Users.PostUser(params)
+		require.Error(t, err, r)
 
-		errExp := users.NewPostUserDefault(417)
-		errExp.Payload = &models.Error{
-			Data: &models.ErrorData{
-				CorrelationID: "",
-				Message:       "login is already used",
-			},
+		errExp := users.NewPostUserDefault(http.StatusExpectationFailed)
+		codeExp := int32(http.StatusExpectationFailed)
+		errExp.Payload = &models.SwaggerError{
+			Code:    &codeExp,
+			Message: &messages.ErrLoginInUse,
 		}
-
 		assert.Equal(t, errExp, err)
 	})
 
@@ -79,9 +76,7 @@ func TestIntegration_RegisterUser(t *testing.T) {
 			Login:       &l,
 			Password:    &p,
 			Type:        &userType,
-			// not provided in documentation, but also required
-			// todo: update documentation
-			Name: gofakeit.Name(),
+			Name:        gofakeit.Name(),
 			// not provided in documentation, but also required
 			// todo: update documentation
 			Email: strfmt.Email(gofakeit.Email()),
@@ -106,9 +101,7 @@ func TestIntegration_RegisterUser(t *testing.T) {
 			Login:       &l,
 			Password:    &p,
 			Type:        &userType,
-			// not provided in documentation, but also required
-			// todo: update documentation
-			Name: gofakeit.Name(),
+			Name:        gofakeit.Name(),
 			// not provided in documentation, but also required
 			// todo: update documentation
 			Email: strfmt.Email(gofakeit.Email()),
@@ -120,8 +113,11 @@ func TestIntegration_RegisterUser(t *testing.T) {
 		require.Error(t, err)
 
 		errExp := users.NewPostUserDefault(422)
-		errExp.Payload = &models.Error{
-			Data: nil,
+		msgExp := "type in body should be one of [person organization]"
+		codeExp := int32(606)
+		errExp.Payload = &models.SwaggerError{
+			Code:    &codeExp,
+			Message: &msgExp,
 		}
 
 		assert.Equal(t, errExp, err)
@@ -136,61 +132,93 @@ func TestIntegration_RegisterUser(t *testing.T) {
 		require.Error(t, err)
 
 		errExp := users.NewPostUserDefault(422)
-		errExp.Payload = &models.Error{
-			Data: nil,
+		msgExp := "login in body should be at least 3 chars long"
+		codeExp := int32(604)
+		errExp.Payload = &models.SwaggerError{
+			Code:    &codeExp,
+			Message: &msgExp,
 		}
 
 		assert.Equal(t, errExp, err)
 	})
 
-	t.Run("name validation error", func(t *testing.T) {
-		empty := ""
-		data.Name = empty
-		params.SetData(data)
-
-		_, err := c.Users.PostUser(params)
-		require.Error(t, err)
-
-		errExp := users.NewPostUserDefault(422)
-		errExp.Payload = &models.Error{
-			Data: nil,
+	t.Run("name absence is ok", func(t *testing.T) {
+		userType = "person"
+		l, p, err = utils.GenerateLoginAndPassword()
+		require.NoError(t, err)
+		data = &models.UserRegister{
+			ActiveAreas: []int64{3},
+			Login:       &l,
+			Password:    &p,
+			Type:        &userType,
+			Name:        "d",
+			Email:       strfmt.Email(gofakeit.Email()),
 		}
-
-		assert.Equal(t, errExp, err)
+		params.SetData(data)
+		_, err := c.Users.PostUser(params)
+		require.NoError(t, err)
 	})
 
 	t.Run("email validation error", func(t *testing.T) {
-		empty := ""
-		data.Email = strfmt.Email(empty)
+		userType = "person"
+		l, p, err = utils.GenerateLoginAndPassword()
+		require.NoError(t, err)
+		data = &models.UserRegister{
+			ActiveAreas: []int64{3},
+			Login:       &l,
+			Password:    &p,
+			Type:        &userType,
+			Name:        gofakeit.Name(),
+			Email:       strfmt.Email(""),
+		}
 		params.SetData(data)
-
 		_, err := c.Users.PostUser(params)
 		require.Error(t, err)
 
-		errExp := users.NewPostUserDefault(422)
-		errExp.Payload = &models.Error{
-			Data: nil,
+		errExp := users.NewPostUserDefault(http.StatusInternalServerError)
+		codeExp := int32(http.StatusInternalServerError)
+		errExp.Payload = &models.SwaggerError{
+			Code:    &codeExp,
+			Message: &messages.ErrCreateUser,
+			Details: "ent: validator failed for field \"User.email\": value is less than the required length",
 		}
-
 		assert.Equal(t, errExp, err)
 	})
 
 	t.Run("password validation error", func(t *testing.T) {
-		data.Password = nil
+		data = &models.UserRegister{
+			ActiveAreas: []int64{3},
+			Login:       &l,
+			Password:    nil,
+			Type:        &userType,
+			Name:        gofakeit.Name(),
+			Email:       strfmt.Email(gofakeit.Email()),
+		}
 		params.SetData(data)
 
 		_, err := c.Users.PostUser(params)
 		require.Error(t, err)
 
 		errExp := users.NewPostUserDefault(422)
-		errExp.Payload = &models.Error{
-			Data: nil,
+		msgExp := "password in body is required"
+		codeExp := int32(602)
+		errExp.Payload = &models.SwaggerError{
+			Code:    &codeExp,
+			Message: &msgExp,
 		}
-
 		assert.Equal(t, errExp, err)
 	})
 
 	t.Run("password validation error: length less than 3", func(t *testing.T) {
+		data = &models.UserRegister{
+			ActiveAreas: []int64{3},
+			Login:       &l,
+			Password:    &p,
+			Type:        &userType,
+			Name:        gofakeit.Name(),
+			Email:       strfmt.Email(gofakeit.Email()),
+		}
+
 		notEmpty := "22"
 		data.Password = &notEmpty
 		params.SetData(data)
@@ -199,14 +227,28 @@ func TestIntegration_RegisterUser(t *testing.T) {
 		require.Error(t, err)
 
 		errExp := users.NewPostUserDefault(422)
-		errExp.Payload = &models.Error{
-			Data: nil,
+		msgExp := "password in body should be at least 6 chars long"
+		codeExp := int32(604)
+		errExp.Payload = &models.SwaggerError{
+			Code:    &codeExp,
+			Message: &msgExp,
 		}
 
 		assert.Equal(t, errExp, err)
 	})
 
 	t.Run("type validation error: type is not person or organization", func(t *testing.T) {
+		data = &models.UserRegister{
+			ActiveAreas: []int64{3},
+			Login:       &l,
+			Password:    &p,
+			Type:        &userType,
+			Name:        gofakeit.Name(),
+			// not provided in documentation, but also required
+			// todo: update documentation
+			Email: strfmt.Email(gofakeit.Email()),
+		}
+
 		notDefinedType := "some type"
 		data.Type = &notDefinedType
 		params.SetData(data)
@@ -215,8 +257,11 @@ func TestIntegration_RegisterUser(t *testing.T) {
 		require.Error(t, err)
 
 		errExp := users.NewPostUserDefault(422)
-		errExp.Payload = &models.Error{
-			Data: nil,
+		msgExp := "type in body should be one of [person organization]"
+		codeExp := int32(606)
+		errExp.Payload = &models.SwaggerError{
+			Code:    &codeExp,
+			Message: &msgExp,
 		}
 
 		assert.Equal(t, errExp, err)

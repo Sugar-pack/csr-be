@@ -3,13 +3,18 @@ package repositories
 import (
 	"context"
 	"errors"
+	"fmt"
+	"time"
 
 	"entgo.io/ent/dialect/sql"
 
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/ent"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/ent/category"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/ent/equipment"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/ent/equipmentstatus"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/ent/equipmentstatusname"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/ent/order"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/ent/orderstatusname"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/ent/petkind"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/ent/petsize"
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/ent/photo"
@@ -48,6 +53,11 @@ func (r *equipmentRepository) EquipmentsByFilter(ctx context.Context, filter mod
 		return nil, err
 	}
 
+	var filterReceiptDate string
+	if filter.ReceiptDate != 0 {
+		filterReceiptDate = time.Unix(filter.ReceiptDate, 0).Format(utils.TimeFormat)
+	}
+
 	result, err := tx.Equipment.Query().
 		Where(
 			equipment.HasCategoryWith(OptionalIntCategory(filter.Category, category.FieldID)),
@@ -60,11 +70,13 @@ func (r *equipmentRepository) EquipmentsByFilter(ctx context.Context, filter mod
 			OptionalIntEquipment(filter.CompensationCost, equipment.FieldCompensationCost),
 			OptionalIntEquipment(filter.InventoryNumber, equipment.FieldInventoryNumber),
 			OptionalStringEquipment(filter.Supplier, equipment.FieldSupplier),
-			OptionalStringEquipment(filter.ReceiptDate, equipment.FieldReceiptDate),
+			OptionalStringEquipment(
+				filterReceiptDate,
+				equipment.FieldReceiptDate,
+			),
 			OptionalStringEquipment(filter.Title, equipment.FieldTitle),
 			OptionalBoolEquipment(filter.TechnicalIssues, equipment.FieldTechIssue),
 			OptionalStringEquipment(filter.Condition, equipment.FieldCondition),
-			OptionalIntEquipment(filter.MaximumAmount, equipment.FieldMaximumAmount),
 			OptionalIntEquipment(filter.MaximumDays, equipment.FieldMaximumDays),
 			equipment.HasPetKindsWith(OptionalIntsPetKind(filter.PetKinds, petkind.FieldID)),
 			equipment.HasPetSizeWith(OptionalIntsPetSize(filter.PetSize, petsize.FieldID)),
@@ -93,6 +105,9 @@ func (r *equipmentRepository) CreateEquipment(ctx context.Context, NewEquipment 
 	if err != nil {
 		return nil, err
 	}
+
+	eqReceiptDate := time.Unix(*NewEquipment.ReceiptDate, 0).Format(utils.TimeFormat)
+
 	eq, err := tx.Equipment.Create().
 		SetName(*NewEquipment.Name).
 		SetDescription(*NewEquipment.Description).
@@ -102,8 +117,7 @@ func (r *equipmentRepository) CreateEquipment(ctx context.Context, NewEquipment 
 		SetCondition(NewEquipment.Condition).
 		SetInventoryNumber(*NewEquipment.InventoryNumber).
 		SetSupplier(*NewEquipment.Supplier).
-		SetReceiptDate(*NewEquipment.ReceiptDate).
-		SetMaximumAmount(*NewEquipment.MaximumAmount).
+		SetReceiptDate(eqReceiptDate).
 		SetMaximumDays(*NewEquipment.MaximumDays).
 		SetCategory(&ent.Category{ID: int(*NewEquipment.Category)}).
 		SetCurrentStatus(status).
@@ -133,7 +147,14 @@ func (r *equipmentRepository) EquipmentByID(ctx context.Context, id int) (*ent.E
 		return nil, err
 	}
 	result, err := tx.Equipment.Query().Where(equipment.ID(id)).
-		WithCategory().WithSubcategory().WithCurrentStatus().WithPetKinds().WithPetSize().WithPhoto().Only(ctx)
+		WithCategory().WithSubcategory().WithCurrentStatus().WithPetKinds().WithPetSize().WithPhoto().
+		WithEquipmentStatus(func(esq *ent.EquipmentStatusQuery) {
+			esq.
+				Where(equipmentstatus.EndDateGTE(time.Now())).
+				Where(equipmentstatus.HasEquipmentStatusNameWith(
+					equipmentstatusname.NameEQ(domain.EquipmentStatusNotAvailable),
+				))
+		}).Only(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -164,24 +185,52 @@ func (r *equipmentRepository) DeleteEquipmentPhoto(ctx context.Context, id strin
 	return nil
 }
 
-func (r *equipmentRepository) AllEquipments(ctx context.Context, limit, offset int, orderBy, orderColumn string) ([]*ent.Equipment, error) {
+func (r *equipmentRepository) AllEquipments(
+	ctx context.Context,
+	limit, offset int,
+	orderBy, orderColumn string,
+) ([]*ent.Equipment, error) {
 	if !utils.IsValueInList(orderColumn, fieldsToOrderEquipments) {
 		return nil, errors.New("wrong column to order by")
 	}
-	orderFunc, err := utils.GetOrderFunc(orderBy, orderColumn)
-	if err != nil {
-		return nil, err
-	}
+
 	tx, err := middlewares.TxFromContext(ctx)
 	if err != nil {
 		return nil, err
 	}
-	result, err := tx.Equipment.Query().Order(orderFunc).Limit(limit).Offset(offset).
-		WithCategory().WithSubcategory().WithCurrentStatus().WithPetKinds().WithPetSize().WithPhoto().
-		All(ctx)
+
+	orderFunc, err := utils.GetOrderFunc(orderBy, orderColumn)
 	if err != nil {
 		return nil, err
 	}
+
+	query := tx.Equipment.Query().
+		Order(orderFunc).
+		Limit(limit).
+		Offset(offset).
+		WithCategory().
+		WithSubcategory().
+		WithCurrentStatus().
+		WithPetKinds().
+		WithPetSize().
+		WithPhoto().
+		WithEquipmentStatus(func(esq *ent.EquipmentStatusQuery) {
+			conditions := []predicate.EquipmentStatus{
+				equipmentstatus.EndDateGTE(time.Now()),
+				equipmentstatus.HasEquipmentStatusNameWith(
+					equipmentstatusname.NameEQ(domain.EquipmentStatusNotAvailable),
+				),
+			}
+
+			esq.Where(conditions...)
+		})
+
+	result, err := query.All(ctx)
+
+	if err != nil {
+		return nil, err
+	}
+
 	return result, nil
 }
 
@@ -198,10 +247,81 @@ func (r *equipmentRepository) AllEquipmentsTotal(ctx context.Context) (int, erro
 	return total, nil
 }
 
+func (r *equipmentRepository) ArchiveEquipment(ctx context.Context, id int) error {
+	tx, err := middlewares.TxFromContext(ctx)
+	if err != nil {
+		return err
+	}
+	// check if equipment exists
+	_, err = tx.Equipment.Get(ctx, id)
+	if err != nil {
+		return err
+	}
+	// get equipment status archived id
+	equipmentStatusArchived, err := tx.EquipmentStatusName.Query().Where(equipmentstatusname.Name("archived")).Only(ctx)
+	if err != nil {
+		return err
+	}
+	// get closed order status id
+	orderStatusClosed, err := tx.OrderStatusName.
+		Query().
+		Where(orderstatusname.Status(domain.OrderStatusClosed)).
+		Only(ctx)
+	if err != nil {
+		return err
+	}
+	// get equipment status and change it to archived
+	equipmentStatuses, err := tx.EquipmentStatus.Query().QueryEquipments().Where(equipment.ID(id)).QueryEquipmentStatus().All(ctx)
+	if err != nil {
+		return err
+	}
+	// if this equipment is not in order, then change status to archived
+	if len(equipmentStatuses) == 0 {
+		_, err = tx.Equipment.UpdateOneID(id).SetCurrentStatus(equipmentStatusArchived).Save(ctx)
+		return err
+	}
+	// if this equipment is in order, then archive equipment status
+	for _, equipmentStatus := range equipmentStatuses {
+		_, err = equipmentStatus.Update().SetEquipmentStatusNameID(equipmentStatusArchived.ID).Save(ctx)
+		if err != nil {
+			return err
+		}
+		// get orders with this equipment status
+		var ordersToUpdate = []*ent.Order{}
+		ordersToUpdate, err = equipmentStatus.QueryOrder().All(ctx)
+		if err != nil {
+			return err
+		}
+		// change all order statuses to close
+		for _, orderToUpdate := range ordersToUpdate {
+			var orderStatusesToUpdate = []*ent.OrderStatus{}
+			orderStatusesToUpdate, err = tx.OrderStatus.Query().QueryOrder().Where(order.ID(orderToUpdate.ID)).
+				QueryOrderStatus().All(ctx)
+			if err != nil {
+				return err
+			}
+			for _, orderStatusToUpdate := range orderStatusesToUpdate {
+				_, err = orderStatusToUpdate.Update().SetOrderStatusNameID(orderStatusClosed.ID).Save(ctx)
+				if err != nil {
+					return err
+				}
+			}
+		}
+	}
+	// change equipment status to archived
+	_, err = tx.Equipment.UpdateOneID(id).SetCurrentStatus(equipmentStatusArchived).Save(ctx)
+	return err
+}
+
 func (r *equipmentRepository) EquipmentsByFilterTotal(ctx context.Context, filter models.EquipmentFilter) (int, error) {
 	tx, err := middlewares.TxFromContext(ctx)
 	if err != nil {
 		return 0, err
+	}
+
+	var filterReceiptDate string
+	if filter.ReceiptDate != 0 {
+		filterReceiptDate = time.Unix(filter.ReceiptDate, 0).Format(utils.TimeFormat)
 	}
 
 	total, err := tx.Equipment.Query().
@@ -216,11 +336,13 @@ func (r *equipmentRepository) EquipmentsByFilterTotal(ctx context.Context, filte
 			OptionalIntEquipment(filter.CompensationCost, equipment.FieldCompensationCost),
 			OptionalIntEquipment(filter.InventoryNumber, equipment.FieldInventoryNumber),
 			OptionalStringEquipment(filter.Supplier, equipment.FieldSupplier),
-			OptionalStringEquipment(filter.ReceiptDate, equipment.FieldReceiptDate),
+			OptionalStringEquipment(
+				filterReceiptDate,
+				equipment.FieldReceiptDate,
+			),
 			OptionalStringEquipment(filter.Title, equipment.FieldTitle),
 			OptionalBoolEquipment(filter.TechnicalIssues, equipment.FieldTechIssue),
 			OptionalStringEquipment(filter.Condition, equipment.FieldCondition),
-			OptionalIntEquipment(filter.MaximumAmount, equipment.FieldMaximumAmount),
 			OptionalIntEquipment(filter.MaximumDays, equipment.FieldMaximumDays),
 			equipment.HasPetKindsWith(OptionalIntsPetKind(filter.PetKinds, petkind.FieldID)),
 			equipment.HasPetSizeWith(OptionalIntsPetSize(filter.PetSize, petsize.FieldID)),
@@ -264,14 +386,15 @@ func (r *equipmentRepository) UpdateEquipmentByID(ctx context.Context, id int, e
 	if *eq.Supplier != "" {
 		edit.SetSupplier(*eq.Supplier)
 	}
-	if *eq.ReceiptDate != "" {
-		edit.SetReceiptDate(*eq.ReceiptDate)
+
+	eqReceiptDate := time.Unix(*eq.ReceiptDate, 0).Format(utils.TimeFormat)
+
+	if *eq.ReceiptDate != 0 {
+		edit.SetReceiptDate(eqReceiptDate)
 	}
+
 	if *eq.Category != 0 {
 		edit.SetCategory(&ent.Category{ID: int(*eq.Category)})
-	}
-	if *eq.MaximumAmount != 0 {
-		edit.SetMaximumAmount(*eq.MaximumAmount)
 	}
 	if *eq.MaximumDays != 0 {
 		edit.SetMaximumDays(*eq.MaximumDays)
@@ -400,4 +523,239 @@ func OptionalIntsPetKind(k []int64, field string) predicate.PetKind {
 	return func(s *sql.Selector) {
 		s.Where(sql.InInts(s.C(field), petKind...))
 	}
+}
+
+func (r *equipmentRepository) BlockEquipment(
+	ctx context.Context, id int, startDate, endDate time.Time, userID int) error {
+	tx, err := middlewares.TxFromContext(ctx)
+	if err != nil {
+		return err
+	}
+
+	eqToBlock, err := tx.Equipment.Get(ctx, id)
+	if err != nil {
+		return err
+	}
+
+	timeNow := time.Now()
+	// Get EquipmentStatusName for "not available" from DB.
+	eqStatusNotAvailable, err := tx.EquipmentStatusName.
+		Query().
+		Where(equipmentstatusname.Name(domain.EquipmentStatusNotAvailable)).
+		Only(ctx)
+	if err != nil {
+		return err
+	}
+
+	// Set a new EquipmentStatusName for current Equipment (equipment.equipment_status_name_equipments)
+	_, err = eqToBlock.Update().SetCurrentStatus(eqStatusNotAvailable).Save(ctx)
+	if err != nil {
+		return err
+	}
+
+	// Get (if exists) EquipmentStatus for current Equipment.
+	// Note, that only one row with "not available" status may exist per single equipment id.
+	eqToBlockStatus, err := tx.EquipmentStatus.
+		Query().
+		QueryEquipments().
+		Where(equipment.IDEQ(id)).
+		QueryEquipmentStatus().
+		WithEquipmentStatusName().
+		Where(equipmentstatus.HasEquipmentStatusNameWith(equipmentstatusname.ID(eqStatusNotAvailable.ID))).
+		Only(ctx)
+
+	// Check if current EquipmentStatus has specific EquipmentStatusName - "not available".
+	// If the record exists - update it, otherwise create a new EquipmentStatus.
+	if eqToBlockStatus != nil {
+		eqToBlockStatus.
+			Update().
+			SetStartDate(startDate).
+			SetEndDate(endDate).
+			SetUpdatedAt(timeNow).
+			Save(ctx)
+		if err != nil {
+			return err
+		}
+	} else if ent.IsNotFound(err) {
+		_, err = tx.EquipmentStatus.Create().
+			SetCreatedAt(timeNow).
+			SetEndDate(endDate).
+			SetStartDate(startDate).
+			SetEquipments(eqToBlock).
+			SetEquipmentStatusName(eqStatusNotAvailable).
+			SetUpdatedAt(timeNow).
+			Save(ctx)
+		if err != nil {
+			return err
+		}
+	} else {
+		// Means multiple "not available" (blocking) statuses exist per single equipment. Must never happen
+		return fmt.Errorf("multiple statuses not available for blocking period: %w", err)
+	}
+
+	// Get OrderStatusName form DB
+	orStatusBlocked, err := tx.OrderStatusName.
+		Query().
+		Where(orderstatusname.Status(domain.OrderStatusBlocked)).
+		Only(ctx)
+	if err != nil {
+		return err
+	}
+
+	// Find all Orders which have OrderStatusName booked and start from startDate and later
+	orderIDs, err := eqToBlock.QueryOrder().
+		Where(order.RentStartGTE(startDate), order.RentStartLTE(endDate)). // rentStart must be in range of startDate..endDate
+		Where(order.RentEndGTE(startDate)).                                // rentEnd must be equal or greater than startDate
+		Where(order.HasCurrentStatusWith(orderstatusname.StatusIn(
+			domain.OrderStatusPrepared,
+			domain.OrderStatusApproved))).
+		IDs(ctx)
+	if err != nil {
+		return err
+	}
+
+	// Do action only if we found some Orders according to DB request above.
+	if len(orderIDs) > 0 {
+		// Set a new OrderStatusName for these Orders
+		_, err = tx.Order.Update().Where(order.IDIn(orderIDs...)).SetCurrentStatus(orStatusBlocked).Save(ctx)
+		if err != nil {
+			return err
+		}
+
+		// Create new OrderStatuses for orders
+		oss := make([]*ent.OrderStatusCreate, len(orderIDs))
+		for i, order := range orderIDs {
+			oss[i] = tx.OrderStatus.Create().
+				SetComment("").
+				SetCurrentDate(time.Now()).
+				SetOrderID(order).
+				SetUsersID(userID).
+				SetOrderStatusName(orStatusBlocked)
+		}
+		_, err = tx.OrderStatus.CreateBulk(oss...).Save(ctx)
+		if err != nil {
+			return err
+		}
+	}
+	return err
+}
+
+func (r *equipmentRepository) UnblockEquipment(ctx context.Context, id int) error {
+	tx, err := middlewares.TxFromContext(ctx)
+	if err != nil {
+		return err
+	}
+
+	eqToUnblock, err := tx.Equipment.Get(ctx, id)
+	if err != nil {
+		return err
+	}
+
+	// Get EquipmentStatusNames form DB
+	eqStatusNotAvailable, err := tx.EquipmentStatusName.
+		Query().
+		Where(equipmentstatusname.Name(domain.EquipmentStatusNotAvailable)).
+		Only(ctx)
+	if err != nil {
+		return err
+	}
+
+	eqStatusAvailable, err := tx.EquipmentStatusName.
+		Query().
+		Where(equipmentstatusname.Name(domain.EquipmentStatusAvailable)).
+		Only(ctx)
+	if err != nil {
+		return err
+	}
+
+	// Set a new EquipmentStatusName for current Equipment
+	_, err = eqToUnblock.Update().SetCurrentStatus(eqStatusAvailable).Save(ctx)
+	if err != nil {
+		return err
+	}
+
+	// Get EquipmentStatus for Equipment according to criteria
+	equipmentStatus, err := tx.EquipmentStatus.
+		Query().
+		Where(equipmentstatus.HasEquipmentsWith(equipment.ID(eqToUnblock.ID))).
+		Where(equipmentstatus.HasEquipmentStatusNameWith(equipmentstatusname.ID(eqStatusNotAvailable.ID))).
+		Only(ctx)
+	if err != nil {
+		return err
+	}
+
+	err = tx.EquipmentStatus.DeleteOne(equipmentStatus).Exec(ctx)
+	if err != nil {
+		return err
+	}
+
+	return err
+}
+
+// UnblockAllExpiredEquipment unblocks all blocked equipment with expired blocking period. To be run periodically.
+// todo introduce this argument? /* Take into account that invoking duration affects the result */ offset time.Duration. And make `until := time.Now().Add(offset).UTC()`
+func (r *equipmentRepository) UnblockAllExpiredEquipment(ctx context.Context, client *ent.Client) (numDeleted int, err error) {
+	tx, err := client.Tx(ctx)
+	if err != nil {
+		return 0, err
+	}
+
+	defer func() {
+		if err != nil {
+			tx.Rollback()
+		}
+	}()
+
+	eqStatusAvailable, err := tx.EquipmentStatusName.
+		Query().
+		Where(equipmentstatusname.Name(domain.EquipmentStatusAvailable)).
+		Only(ctx)
+	if err != nil {
+		return 0, err
+	}
+
+	until := time.Now().UTC()
+	eqToUnblock, err := tx.Equipment.Query().
+		Where(
+			equipment.HasEquipmentStatusWith(
+				equipmentstatus.And(
+					equipmentstatus.HasEquipmentStatusNameWith(equipmentstatusname.NameEQ(domain.EquipmentStatusNotAvailable)),
+					equipmentstatus.EndDateLTE(until),
+				),
+			),
+		).
+		All(ctx)
+
+	// Change the "current status" to "available" for the selected equipment
+	for _, eq := range eqToUnblock {
+		_, err = tx.Equipment.UpdateOneID(eq.ID).SetCurrentStatus(eqStatusAvailable).Save(ctx)
+		if err != nil {
+			return 0, err
+		}
+	}
+
+	// Delete all equipmentStatuses for selected equipments which have expired date and "not available" status (there are other statuses, not only "not available")
+	numDeleted, err = tx.EquipmentStatus.
+		Delete().
+		Where(equipmentstatus.HasEquipmentStatusNameWith(equipmentstatusname.NameEQ(domain.EquipmentStatusNotAvailable))).
+		Where(equipmentstatus.EndDateLTE(until)).
+		Exec(ctx)
+	if err != nil {
+		return 0, err
+	}
+
+	if err := tx.Commit(); err != nil {
+		return 0, err
+	}
+
+	// Note that we do not process orders that were blocked due to equipment being blocked. These are handled manually.
+
+	return numDeleted, err
+}
+
+// Set EquipmentStatus EndDate back in time to give access for the unblocked equipment again
+func truncateHours(date *time.Time) time.Time {
+	extraHour := 1
+	hours := date.Hour() + extraHour
+	return date.Add(time.Duration(-hours) * time.Hour)
 }

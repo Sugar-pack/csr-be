@@ -6,24 +6,27 @@ import (
 
 	"github.com/go-playground/validator"
 	"github.com/spf13/viper"
+
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/middlewares"
 )
 
 type AppConfig struct {
-	Password                            Password
-	JWTSecretKey                        string `validate:"required"`
-	Email                               Email
-	OrderStatusOverdueTimeCheckDuration time.Duration `validate:"required"`
-	Server                              Server
-	DB                                  DB
+	Password              Password
+	JWTSecretKey          string `validate:"required"`
+	Email                 Email
+	PeriodicCheckDuration time.Duration `validate:"required"`
+	Server                Server
+	DB                    DB
+	AccessBindings        []RoleEndpointBinding
 }
 
 type DB struct {
-	Host          string `validate:"required"`
-	Port          string
-	User          string `validate:"required"`
-	Password      string
-	Database      string `validate:"required"`
-	EntMigrations bool
+	Host     string `validate:"required"`
+	Port     string
+	User     string `validate:"required"`
+	Password string
+	Database string `validate:"required"`
+	ShowSql  bool
 }
 
 func (db DB) GetConnectionString() string {
@@ -45,23 +48,29 @@ func (db DB) GetConnectionString() string {
 }
 
 type Email struct {
-	ServerHost        string `validate:"required"`
-	ServerPort        string `validate:"required"`
-	Password          string `validate:"required"`
-	SenderFromAddress string `validate:"required"`
-	SenderFromName    string `validate:"required"`
-	SenderWebsiteUrl  string `validate:"required"`
-	IsSendRequired    bool
+	ServerHost            string        `validate:"required"`
+	ServerPort            string        `validate:"required"`
+	Password              string        `validate:"required"`
+	SenderFromAddress     string        `validate:"required"`
+	SenderFromName        string        `validate:"required"`
+	SenderWebsiteUrl      string        `validate:"required"`
+	ConfirmLinkExpiration time.Duration `validate:"required"`
+	IsSendRequired        bool
 }
 
 type Password struct {
-	ResetExpirationMinutes time.Duration `validate:"required"`
-	Length                 int           `validate:"required,gte=8"`
+	ResetLinkExpiration time.Duration `validate:"required"`
+	Length              int           `validate:"required,gte=8"`
 }
 
 type Server struct {
 	Host string `validate:"required"`
 	Port int    `validate:"required,gte=1024"`
+}
+
+type RoleEndpointBinding struct {
+	Role             middlewares.Role
+	AllowedEndpoints middlewares.ExistingEndpoints
 }
 
 func GetAppConfig(additionalDirectories ...string) (*AppConfig, error) {
@@ -76,6 +85,7 @@ func GetAppConfig(additionalDirectories ...string) (*AppConfig, error) {
 	if err := viper.ReadInConfig(); err != nil {
 		return nil, fmt.Errorf("failed to read in config: %w", err)
 	}
+	bindEnvVars()
 
 	conf := getDefaultConfig()
 	if err := viper.Unmarshal(&conf); err != nil {
@@ -91,21 +101,32 @@ func GetAppConfig(additionalDirectories ...string) (*AppConfig, error) {
 
 func getDefaultConfig() *AppConfig {
 	return &AppConfig{
+		JWTSecretKey: "default_value",
 		DB: DB{
 			Host:     "localhost",
 			User:     "csr",
-			Password: "password",
+			Database: "stage_csr",
 		},
 		Password: Password{
-			Length:                 8,
-			ResetExpirationMinutes: 15 * time.Minute,
+			Length:              8,
+			ResetLinkExpiration: 15 * time.Minute,
 		},
 		Email: Email{
-			SenderWebsiteUrl: "https://csr.golangforall.com/",
+			Password:              "default_value",
+			SenderWebsiteUrl:      "https://csr.golangforall.com/",
+			ConfirmLinkExpiration: 15 * time.Minute,
 		},
 		Server: Server{
-			Host: "127.0.0.1",
+			Host: "0.0.0.0",
 			Port: 8080,
 		},
 	}
+}
+
+func bindEnvVars() {
+	viper.BindEnv("jwtsecretkey", "JWT_SECRET_KEY")
+	viper.BindEnv("email.password", "EMAIL_PASSWORD")
+	viper.BindEnv("db.user", "DB_USER")
+
+	viper.AutomaticEnv()
 }

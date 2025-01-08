@@ -7,21 +7,27 @@ import (
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/pkg/domain"
 )
 
+const (
+	defaultRegistrationConfirmPath = "templates/registration-confirm/index.html"
+)
+
 type sender struct {
-	websiteUrl       string
-	senderName       string
-	senderEmail      string
-	isRequiredToSend bool
-	client           domain.SMTPClient
+	websiteUrl              string
+	senderName              string
+	senderEmail             string
+	isRequiredToSend        bool
+	client                  domain.SMTPClient
+	RegistrationConfirmPath string
 }
 
 func NewSenderSmtp(config config.Email, client domain.SMTPClient) domain.Sender {
 	return &sender{
-		websiteUrl:       config.SenderWebsiteUrl,
-		senderName:       config.SenderFromName,
-		senderEmail:      config.SenderFromAddress,
-		isRequiredToSend: config.IsSendRequired,
-		client:           client,
+		websiteUrl:              config.SenderWebsiteUrl,
+		senderName:              config.SenderFromName,
+		senderEmail:             config.SenderFromAddress,
+		isRequiredToSend:        config.IsSendRequired,
+		client:                  client,
+		RegistrationConfirmPath: defaultRegistrationConfirmPath,
 	}
 }
 
@@ -83,7 +89,7 @@ func (c *sender) SendRegistrationConfirmLink(email string, userName string, toke
 	if c.isRequiredToSend == false {
 		return nil
 	}
-	text, err := GenerateRegistrationConfirmMessage(userName, c.websiteUrl, token)
+	text, err := GenerateRegistrationConfirmMessage(userName, c.websiteUrl, token, c.RegistrationConfirmPath)
 	if err != nil {
 		return fmt.Errorf("cant generate email %w", err)
 	}
@@ -91,6 +97,30 @@ func (c *sender) SendRegistrationConfirmLink(email string, userName string, toke
 		FromName: c.senderName,
 		FromAddr: c.senderEmail,
 		Subject:  "Registration confirmation",
+		ToAddr:   email,
+		Text:     text,
+	}
+	err = c.client.Send(sendData)
+	if err != nil {
+		return fmt.Errorf("cant send email %w", err)
+	}
+
+	return err
+}
+
+func (c *sender) SendEmailConfirmationLink(email string, userName string, token string) error {
+	if !c.isRequiredToSend {
+		return nil
+	}
+
+	text, err := GenerateEmailConfirmMessage(userName, c.websiteUrl, token)
+	if err != nil {
+		return fmt.Errorf("cant generate message for new email confirmation  %w", err)
+	}
+	sendData := &domain.SendData{
+		FromName: c.senderName,
+		FromAddr: c.senderEmail,
+		Subject:  "Email confirmation",
 		ToAddr:   email,
 		Text:     text,
 	}

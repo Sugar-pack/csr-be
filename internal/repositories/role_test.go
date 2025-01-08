@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/ent"
@@ -57,13 +57,13 @@ func (s *roleRepositoryTestSuite) TestRoleRepository_GetRoles() {
 	t := s.T()
 	ctx := s.ctx
 	tx, err := s.client.Tx(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
 	roles, err := s.repository.GetRoles(ctx)
-	assert.NoError(t, err)
-	assert.NoError(t, tx.Commit())
-	assert.Equal(t, len(s.roles), len(roles))
+	require.NoError(t, err)
+	require.NoError(t, tx.Commit())
+	require.Equal(t, len(s.roles), len(roles))
 	for _, role := range roles {
-		assert.Contains(t, s.roles, role.Name)
+		require.Contains(t, s.roles, role.Name)
 	}
 }

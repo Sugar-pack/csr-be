@@ -2,17 +2,14 @@ package main
 
 import (
 	"context"
-	"os/signal"
-	"syscall"
-
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/config"
+	internalDB "git.epam.com/epm-lstr/epm-lstr-lc/be/internal/db"
+	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/logger"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 	_ "github.com/jackc/pgx/v4/stdlib"
 	"go.uber.org/zap"
-
-	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/config"
-	internalDB "git.epam.com/epm-lstr/epm-lstr-lc/be/internal/db"
-	entMigrate "git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/ent/migrate"
-	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/logger"
+	"os/signal"
+	"syscall"
 )
 
 func main() {
@@ -29,15 +26,9 @@ func main() {
 		lg.Fatal("fail to setup app config", zap.Error(err))
 	}
 
-	entClient, db, err := internalDB.GetDB(conf.DB.GetConnectionString())
+	entClient, db, err := internalDB.GetDB(conf.DB)
 	if err != nil {
 		lg.Fatal("failed to db connection", zap.Error(err))
-	}
-
-	if conf.DB.EntMigrations {
-		if err := entClient.Schema.Create(ctx, entMigrate.WithDropIndex(true)); err != nil {
-			lg.Fatal("failed creating schema resources", zap.Error(err))
-		}
 	}
 
 	if err := internalDB.ApplyMigrations(db); err != nil {
@@ -50,7 +41,9 @@ func main() {
 		lg.Fatal("error setup swagger api", zap.Error(err))
 	}
 
-	go checker.PeriodicalCheckup(ctx, conf.OrderStatusOverdueTimeCheckDuration, entClient, lg)
+	go checker.PeriodicalCheckup(ctx, conf.PeriodicCheckDuration, entClient, lg)
+
+	runUnblockPeriodically(ctx, entClient, conf.PeriodicCheckDuration, lg)
 
 	// Swagger servers handles signals and gracefully shuts down by itself
 	if err := server.Serve(); err != nil {

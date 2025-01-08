@@ -15,8 +15,8 @@ import (
 	"github.com/go-openapi/loads"
 	"github.com/go-openapi/runtime"
 	_ "github.com/mattn/go-sqlite3"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/zap"
 
@@ -42,10 +42,10 @@ func TestSetPhotoHandler(t *testing.T) {
 	api := operations.NewBeAPI(swaggerSpec)
 
 	SetPhotoHandler(logger, api)
-	assert.NotEmpty(t, api.PhotosCreateNewPhotoHandler)
-	assert.NotEmpty(t, api.PhotosGetPhotoHandler)
-	assert.NotEmpty(t, api.PhotosDeletePhotoHandler)
-	assert.NotEmpty(t, api.PhotosDownloadPhotoHandler)
+	require.NotEmpty(t, api.PhotosCreateNewPhotoHandler)
+	require.NotEmpty(t, api.PhotosGetPhotoHandler)
+	require.NotEmpty(t, api.PhotosDeletePhotoHandler)
+	require.NotEmpty(t, api.PhotosDownloadPhotoHandler)
 }
 
 type PhotoTestSuite struct {
@@ -83,22 +83,22 @@ func (s *PhotoTestSuite) TestPhoto_CreatePhoto_EmptyFile() {
 	}
 
 	handlerFunc := s.handler.CreateNewPhotoFunc(s.repository)
-	access := "dummy access"
-	resp := handlerFunc.Handle(data, access)
+
+	resp := handlerFunc.Handle(data, nil)
 
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusBadRequest, responseRecorder.Code)
+	require.Equal(t, http.StatusBadRequest, responseRecorder.Code)
 
-	response := models.Error{}
+	response := models.SwaggerError{}
 	err = json.Unmarshal(responseRecorder.Body.Bytes(), &response)
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.NotEmpty(t, response)
-	assert.NotEmpty(t, response.Data)
-	assert.Equal(t, "File is empty", response.Data.Message)
+	require.NotEmpty(t, response)
+	require.NotEmpty(t, response.Message)
+	require.Equal(t, "File is empty", *response.Message)
 
 	s.repository.AssertExpectations(t)
 }
@@ -126,22 +126,22 @@ func (s *PhotoTestSuite) TestPhoto_CreatePhoto_WrongMimeType() {
 	}
 
 	handlerFunc := s.handler.CreateNewPhotoFunc(s.repository)
-	access := "dummy access"
-	resp := handlerFunc.Handle(data, access)
+
+	resp := handlerFunc.Handle(data, nil)
 
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusBadRequest, responseRecorder.Code)
+	require.Equal(t, http.StatusBadRequest, responseRecorder.Code)
 
-	response := models.Error{}
+	response := models.SwaggerError{}
 	err = json.Unmarshal(responseRecorder.Body.Bytes(), &response)
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.NotEmpty(t, response)
-	assert.NotEmpty(t, response.Data)
-	assert.Containsf(t, response.Data.Message, "Wrong file format", "returned wrong error")
+	require.NotEmpty(t, response)
+	require.NotEmpty(t, response.Message)
+	require.Containsf(t, *response.Message, "Wrong file format", "returned wrong error")
 
 	s.repository.AssertExpectations(t)
 }
@@ -180,21 +180,21 @@ func (s *PhotoTestSuite) TestPhoto_CreatePhoto_OK() {
 	}, nil)
 
 	handlerFunc := s.handler.CreateNewPhotoFunc(s.repository)
-	access := "dummy access"
-	resp := handlerFunc.Handle(data, access)
+
+	resp := handlerFunc.Handle(data, nil)
 
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusCreated, responseRecorder.Code)
+	require.Equal(t, http.StatusCreated, responseRecorder.Code)
 
 	returnedPhoto := models.CreateNewPhotoResponse{}
 	err = json.Unmarshal(responseRecorder.Body.Bytes(), &returnedPhoto)
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.NotEmpty(t, returnedPhoto.Data.ID)
-	assert.NotEmpty(t, returnedPhoto.Data.FileName)
+	require.NotEmpty(t, returnedPhoto.Data.ID)
+	require.NotEmpty(t, returnedPhoto.Data.FileName)
 
 	s.repository.AssertExpectations(t)
 }
@@ -219,16 +219,16 @@ func (s *PhotoTestSuite) TestPhoto_GetPhoto_OK() {
 	}, nil)
 
 	handlerFunc := s.handler.GetPhotoFunc(s.repository)
-	access := "dummy access"
-	resp := handlerFunc.Handle(data, access)
+
+	resp := handlerFunc.Handle(data, nil)
 
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusOK, responseRecorder.Code)
-	assert.Equal(t, "image/jpg", responseRecorder.Header().Get("Content-Type"))
+	require.Equal(t, http.StatusOK, responseRecorder.Code)
+	require.Equal(t, "image/jpg", responseRecorder.Header().Get("Content-Type"))
 
-	assert.Equal(t, []byte{1, 1, 1}, responseRecorder.Body.Bytes())
+	require.Equal(t, []byte{1, 1, 1}, responseRecorder.Body.Bytes())
 
 	s.repository.AssertExpectations(t)
 }
@@ -248,23 +248,23 @@ func (s *PhotoTestSuite) TestPhoto_GetPhoto_RepoErr() {
 	s.repository.On("PhotoByID", ctx, data.PhotoID).Return(nil, errorToReturn)
 
 	handlerFunc := s.handler.GetPhotoFunc(s.repository)
-	access := "dummy access"
-	resp := handlerFunc(data, access)
+
+	resp := handlerFunc(data, nil)
 
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
-	assert.Equal(t, "application/json", responseRecorder.Header().Get("Content-Type"))
+	require.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
+	require.Equal(t, "application/json", responseRecorder.Header().Get("Content-Type"))
 
-	response := models.Error{}
+	response := models.SwaggerError{}
 	err := json.Unmarshal(responseRecorder.Body.Bytes(), &response)
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.NotEmpty(t, response)
-	assert.NotEmpty(t, response.Data)
-	assert.Equal(t, errorToReturn.Error(), response.Data.Message)
+	require.NotEmpty(t, response)
+	require.NotEmpty(t, response.Message)
+	require.Contains(t, errorToReturn.Error(), response.Details)
 
 	s.repository.AssertExpectations(t)
 }
@@ -290,16 +290,16 @@ func (s *PhotoTestSuite) TestPhoto_DownloadPhoto_OK() {
 	}, nil)
 
 	handlerFunc := s.handler.DownloadPhotoFunc(s.repository)
-	access := "dummy access"
-	resp := handlerFunc.Handle(data, access)
+
+	resp := handlerFunc.Handle(data, nil)
 
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusOK, responseRecorder.Code)
-	assert.Equal(t, "application/octet-stream", responseRecorder.Header().Get("Content-Type"))
+	require.Equal(t, http.StatusOK, responseRecorder.Code)
+	require.Equal(t, "application/octet-stream", responseRecorder.Header().Get("Content-Type"))
 
-	assert.Equal(t, bytesToReturn, responseRecorder.Body.Bytes())
+	require.Equal(t, bytesToReturn, responseRecorder.Body.Bytes())
 
 	s.repository.AssertExpectations(t)
 }
@@ -315,26 +315,26 @@ func (s *PhotoTestSuite) TestPhoto_DeletePhoto_NotExists() {
 		PhotoID:     id,
 	}
 
-	errorToReturn := errors.New("not found")
+	errorToReturn := errors.New("failed to delete photo")
 	s.repository.On("PhotoByID", ctx, data.PhotoID).Return(nil, errorToReturn)
 
 	handlerFunc := s.handler.DeletePhotoFunc(s.repository)
-	access := "dummy access"
-	resp := handlerFunc.Handle(data, access)
+
+	resp := handlerFunc.Handle(data, nil)
 
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
+	require.Equal(t, http.StatusInternalServerError, responseRecorder.Code)
 
-	response := models.Error{}
+	response := models.SwaggerError{}
 	err := json.Unmarshal(responseRecorder.Body.Bytes(), &response)
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.NotEmpty(t, response)
-	assert.NotEmpty(t, response.Data)
-	assert.Equal(t, errorToReturn.Error(), response.Data.Message)
+	require.NotEmpty(t, response)
+	require.NotEmpty(t, response.Message)
+	require.Equal(t, errorToReturn.Error(), *response.Message)
 
 	s.repository.AssertExpectations(t)
 }
@@ -358,13 +358,13 @@ func (s *PhotoTestSuite) TestPhoto_DeletePhoto_OK() {
 	s.repository.On("DeletePhotoByID", ctx, data.PhotoID).Return(nil)
 
 	handlerFunc := s.handler.DeletePhotoFunc(s.repository)
-	access := "dummy access"
-	resp := handlerFunc.Handle(data, access)
+
+	resp := handlerFunc.Handle(data, nil)
 
 	responseRecorder := httptest.NewRecorder()
 	producer := runtime.JSONProducer()
 	resp.WriteResponse(responseRecorder, producer)
-	assert.Equal(t, http.StatusOK, responseRecorder.Code)
+	require.Equal(t, http.StatusOK, responseRecorder.Code)
 	s.repository.AssertExpectations(t)
 }
 

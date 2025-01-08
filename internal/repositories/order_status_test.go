@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/go-openapi/strfmt"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/ent"
@@ -38,11 +38,11 @@ func (s *orderStatusTestSuite) SetupTest() {
 	s.client = client
 
 	s.statusNameMap = map[int]string{ // list of statuses. copy of sql migration
-		1: "in review",
-		2: "approved",
-		3: "in progress",
-		4: "rejected",
-		5: "closed",
+		1: domain.OrderStatusInReview,
+		2: domain.OrderStatusApproved,
+		3: domain.OrderStatusInProgress,
+		4: domain.OrderStatusRejected,
+		5: domain.OrderStatusClosed,
 	}
 
 	_, err := s.client.OrderStatusName.Delete().Exec(s.ctx) // clean up
@@ -106,11 +106,11 @@ func (s *orderStatusTestSuite) TestOrderStatusRepository_UpdateStatus_OrderNotEx
 	}
 	ctx := s.ctx
 	tx, err := s.client.Tx(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
 	err = s.repository.UpdateStatus(ctx, userID, data)
-	assert.Error(t, err)
-	assert.NoError(t, tx.Rollback())
+	require.Error(t, err)
+	require.NoError(t, tx.Rollback())
 }
 
 func (s *orderStatusTestSuite) TestOrderStatusRepository_UpdateStatus_StatusNameNotExists() {
@@ -128,11 +128,11 @@ func (s *orderStatusTestSuite) TestOrderStatusRepository_UpdateStatus_StatusName
 	}
 	ctx := s.ctx
 	tx, err := s.client.Tx(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
 	err = s.repository.UpdateStatus(ctx, userID, data)
-	assert.Error(t, err)
-	assert.NoError(t, tx.Rollback())
+	require.Error(t, err)
+	require.NoError(t, tx.Rollback())
 }
 
 func (s *orderStatusTestSuite) TestOrderStatusRepository_UpdateStatus_UserNotExists() {
@@ -153,11 +153,11 @@ func (s *orderStatusTestSuite) TestOrderStatusRepository_UpdateStatus_UserNotExi
 	}
 	ctx := s.ctx
 	tx, err := s.client.Tx(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
 	err = s.repository.UpdateStatus(ctx, userID, data)
-	assert.Error(t, err)
-	assert.NoError(t, tx.Rollback())
+	require.Error(t, err)
+	require.NoError(t, tx.Rollback())
 }
 
 func (s *orderStatusTestSuite) TestOrderStatusRepository_UpdateStatus_OK() {
@@ -178,11 +178,11 @@ func (s *orderStatusTestSuite) TestOrderStatusRepository_UpdateStatus_OK() {
 	}
 	ctx := s.ctx
 	tx, err := s.client.Tx(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
 	err = s.repository.UpdateStatus(ctx, userID, data)
-	assert.NoError(t, err)
-	assert.NoError(t, tx.Commit())
+	require.NoError(t, err)
+	require.NoError(t, tx.Commit())
 	_, err = s.client.OrderStatus.Delete().Exec(s.ctx)
 	if err != nil {
 		t.Fatal(err)
@@ -194,12 +194,12 @@ func (s *orderStatusTestSuite) TestOrderStatusRepository_StatusHistory_Empty() {
 	orderID := s.order.ID
 	ctx := s.ctx
 	tx, err := s.client.Tx(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
 	statuses, err := s.repository.StatusHistory(ctx, orderID)
-	assert.NoError(t, err)
-	assert.NoError(t, tx.Commit())
-	assert.Empty(t, statuses)
+	require.NoError(t, err)
+	require.NoError(t, tx.Commit())
+	require.Empty(t, statuses)
 }
 
 func (s *orderStatusTestSuite) TestOrderStatusRepository_StatusHistory() {
@@ -215,15 +215,15 @@ func (s *orderStatusTestSuite) TestOrderStatusRepository_StatusHistory() {
 
 	ctx := s.ctx
 	tx, err := s.client.Tx(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
 	statuses, err := s.repository.StatusHistory(ctx, orderID)
-	assert.NoError(t, err)
-	assert.NoError(t, tx.Commit())
-	assert.Equal(t, 1, len(statuses))
-	assert.Equal(t, orderStatus.ID, statuses[0].ID)
-	assert.Equal(t, orderStatus.Comment, statuses[0].Comment)
-	assert.Equal(t, orderStatus.CurrentDate, statuses[0].CurrentDate)
+	require.NoError(t, err)
+	require.NoError(t, tx.Commit())
+	require.Equal(t, 1, len(statuses))
+	require.Equal(t, orderStatus.ID, statuses[0].ID)
+	require.Equal(t, orderStatus.Comment, statuses[0].Comment)
+	require.Equal(t, orderStatus.CurrentDate, statuses[0].CurrentDate)
 	_, err = s.client.OrderStatus.Delete().Exec(s.ctx)
 	if err != nil {
 		t.Fatal(err)
@@ -242,14 +242,14 @@ func (s *orderStatusTestSuite) TestOrderStatusRepository_GetOrderCurrentStatus()
 
 	ctx := s.ctx
 	tx, err := s.client.Tx(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
 	status, err := s.repository.GetOrderCurrentStatus(ctx, orderID)
-	assert.NoError(t, err)
-	assert.NoError(t, tx.Commit())
-	assert.Equal(t, orderStatus.ID, status.ID)
-	assert.Equal(t, orderStatus.Comment, status.Comment)
-	assert.Equal(t, orderStatus.CurrentDate, status.CurrentDate)
+	require.NoError(t, err)
+	require.NoError(t, tx.Commit())
+	require.Equal(t, orderStatus.ID, status.ID)
+	require.Equal(t, orderStatus.Comment, status.Comment)
+	require.Equal(t, orderStatus.CurrentDate, status.CurrentDate)
 	_, err = s.client.OrderStatus.Delete().Exec(s.ctx)
 	if err != nil {
 		t.Fatal(err)
@@ -268,15 +268,15 @@ func (s *orderStatusTestSuite) TestOrderStatusRepository_GetUserStatusHistory() 
 
 	ctx := s.ctx
 	tx, err := s.client.Tx(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
 	statuses, err := s.repository.GetUserStatusHistory(ctx, userID)
-	assert.NoError(t, err)
-	assert.NoError(t, tx.Commit())
-	assert.Equal(t, 1, len(statuses))
-	assert.Equal(t, orderStatus.ID, statuses[0].ID)
-	assert.Equal(t, orderStatus.Comment, statuses[0].Comment)
-	assert.Equal(t, orderStatus.CurrentDate, statuses[0].CurrentDate)
+	require.NoError(t, err)
+	require.NoError(t, tx.Commit())
+	require.Equal(t, 1, len(statuses))
+	require.Equal(t, orderStatus.ID, statuses[0].ID)
+	require.Equal(t, orderStatus.Comment, statuses[0].Comment)
+	require.Equal(t, orderStatus.CurrentDate, statuses[0].CurrentDate)
 	_, err = s.client.OrderStatus.Delete().Exec(s.ctx)
 	if err != nil {
 		t.Fatal(err)

@@ -4,3 +4,8 @@
 coverage.out
 csr
 report.txt
+.rdbgrc.breakpoints
+.tool-versions
+playground
+vendor
+.DS_Store

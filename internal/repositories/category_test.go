@@ -5,7 +5,7 @@ import (
 	"math"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 
 	"git.epam.com/epm-lstr/epm-lstr-lc/be/internal/generated/ent"
@@ -114,26 +114,26 @@ func (s *categoryRepositorySuite) TestCategoryRepository_CreateCategory() {
 	}
 	ctx := s.ctx
 	tx, err := s.client.Tx(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
 	createdCategory, err := s.repository.CreateCategory(ctx, newCategory)
-	assert.NoError(t, err)
-	assert.Equal(t, name, createdCategory.Name)
-	assert.Equal(t, maxReservationTime, createdCategory.MaxReservationTime)
-	assert.Equal(t, maxReservationUnits, createdCategory.MaxReservationUnits)
-	assert.NoError(t, tx.Rollback())
+	require.NoError(t, err)
+	require.Equal(t, name, createdCategory.Name)
+	require.Equal(t, maxReservationTime, createdCategory.MaxReservationTime)
+	require.Equal(t, maxReservationUnits, createdCategory.MaxReservationUnits)
+	require.NoError(t, tx.Rollback())
 }
 
 func (s *categoryRepositorySuite) TestCategoryRepository_AllCategoriesTotal() {
 	t := s.T()
 	ctx := s.ctx
 	tx, err := s.client.Tx(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
 	total, err := s.repository.AllCategoriesTotal(ctx)
-	assert.NoError(t, err)
-	assert.NoError(t, tx.Commit())
-	assert.Equal(t, len(s.categories), total)
+	require.NoError(t, err)
+	require.NoError(t, tx.Commit())
+	require.Equal(t, len(s.categories), total)
 }
 func (s *categoryRepositorySuite) TestCategoryRepository_AllCategory_EmptyOrderBy() {
 	t := s.T()
@@ -147,12 +147,12 @@ func (s *categoryRepositorySuite) TestCategoryRepository_AllCategory_EmptyOrderB
 
 	ctx := s.ctx
 	tx, err := s.client.Tx(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
 	categories, err := s.repository.AllCategories(ctx, filter)
-	assert.Error(t, err)
-	assert.NoError(t, tx.Commit())
-	assert.Nil(t, categories)
+	require.Error(t, err)
+	require.NoError(t, tx.Commit())
+	require.Nil(t, categories)
 }
 
 func (s *categoryRepositorySuite) TestCategoryRepository_AllCategory_EmptyOrderColumn() {
@@ -165,12 +165,12 @@ func (s *categoryRepositorySuite) TestCategoryRepository_AllCategory_EmptyOrderC
 	}
 	ctx := s.ctx
 	tx, err := s.client.Tx(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
 	categories, err := s.repository.AllCategories(ctx, filter)
-	assert.Error(t, err)
-	assert.NoError(t, tx.Commit())
-	assert.Nil(t, categories)
+	require.Error(t, err)
+	require.NoError(t, tx.Commit())
+	require.Nil(t, categories)
 }
 
 func (s *categoryRepositorySuite) TestCategoryRepository_AllCategory_WrongOrderColumn() {
@@ -186,12 +186,12 @@ func (s *categoryRepositorySuite) TestCategoryRepository_AllCategory_WrongOrderC
 
 	ctx := s.ctx
 	tx, err := s.client.Tx(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
 	categories, err := s.repository.AllCategories(ctx, filter)
-	assert.Error(t, err)
-	assert.NoError(t, tx.Commit())
-	assert.Nil(t, categories)
+	require.Error(t, err)
+	require.NoError(t, tx.Commit())
+	require.Nil(t, categories)
 }
 
 func (s *categoryRepositorySuite) TestCategoryRepository_AllCategory_OrderByIDDesc() {
@@ -207,16 +207,16 @@ func (s *categoryRepositorySuite) TestCategoryRepository_AllCategory_OrderByIDDe
 
 	ctx := s.ctx
 	tx, err := s.client.Tx(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
 	categories, err := s.repository.AllCategories(ctx, filter)
-	assert.NoError(t, err)
-	assert.NoError(t, tx.Commit())
-	assert.Equal(t, len(s.categories), len(categories))
+	require.NoError(t, err)
+	require.NoError(t, tx.Commit())
+	require.Equal(t, len(s.categories), len(categories))
 	prevCategoryID := math.MaxInt
 	for _, value := range categories {
-		assert.True(t, containsCategory(t, value, s.categories))
-		assert.LessOrEqual(t, value.ID, prevCategoryID)
+		require.True(t, containsCategory(t, value, s.categories))
+		require.LessOrEqual(t, value.ID, prevCategoryID)
 		prevCategoryID = value.ID
 	}
 }
@@ -233,16 +233,16 @@ func (s *categoryRepositorySuite) TestCategoryRepository_AllCategory_OrderByName
 
 	ctx := s.ctx
 	tx, err := s.client.Tx(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
 	categories, err := s.repository.AllCategories(ctx, filter)
-	assert.NoError(t, err)
-	assert.NoError(t, tx.Commit())
-	assert.Equal(t, len(s.categories), len(categories))
+	require.NoError(t, err)
+	require.NoError(t, tx.Commit())
+	require.Equal(t, len(s.categories), len(categories))
 	prevCategoryName := "zzzzzzzzzzzzzzzzzzzzz"
 	for _, value := range categories {
-		assert.True(t, containsCategory(t, value, s.categories))
-		assert.LessOrEqual(t, value.Name, prevCategoryName)
+		require.True(t, containsCategory(t, value, s.categories))
+		require.LessOrEqual(t, value.Name, prevCategoryName)
 		prevCategoryName = value.Name
 	}
 }
@@ -260,16 +260,16 @@ func (s *categoryRepositorySuite) TestCategoryRepository_AllCategory_OrderByIDAs
 
 	ctx := s.ctx
 	tx, err := s.client.Tx(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
 	categories, err := s.repository.AllCategories(ctx, filter)
-	assert.NoError(t, err)
-	assert.NoError(t, tx.Commit())
-	assert.Equal(t, len(s.categories), len(categories))
+	require.NoError(t, err)
+	require.NoError(t, tx.Commit())
+	require.Equal(t, len(s.categories), len(categories))
 	prevCategoryID := 0
 	for _, value := range categories {
-		assert.True(t, containsCategory(t, value, s.categories))
-		assert.GreaterOrEqual(t, value.ID, prevCategoryID)
+		require.True(t, containsCategory(t, value, s.categories))
+		require.GreaterOrEqual(t, value.ID, prevCategoryID)
 		prevCategoryID = value.ID
 	}
 }
@@ -287,16 +287,16 @@ func (s *categoryRepositorySuite) TestCategoryRepository_AllCategory_OrderByName
 
 	ctx := s.ctx
 	tx, err := s.client.Tx(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
 	categories, err := s.repository.AllCategories(ctx, filter)
-	assert.NoError(t, err)
-	assert.NoError(t, tx.Commit())
-	assert.Equal(t, len(s.categories), len(categories))
+	require.NoError(t, err)
+	require.NoError(t, tx.Commit())
+	require.Equal(t, len(s.categories), len(categories))
 	prevCategoryName := ""
 	for _, value := range categories {
-		assert.True(t, containsCategory(t, value, s.categories))
-		assert.GreaterOrEqual(t, value.Name, prevCategoryName)
+		require.True(t, containsCategory(t, value, s.categories))
+		require.GreaterOrEqual(t, value.Name, prevCategoryName)
 		prevCategoryName = value.Name
 	}
 }
@@ -313,14 +313,14 @@ func (s *categoryRepositorySuite) TestCategoryRepository_AllCategory_Limit() {
 	}
 	ctx := s.ctx
 	tx, err := s.client.Tx(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
 	categories, err := s.repository.AllCategories(ctx, filter)
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.NoError(t, tx.Commit())
-	assert.Equal(t, filter.Limit, len(categories))
+	require.NoError(t, tx.Commit())
+	require.Equal(t, filter.Limit, len(categories))
 }
 
 func (s *categoryRepositorySuite) TestCategoryRepository_AllCategory_Offset() {
@@ -336,14 +336,14 @@ func (s *categoryRepositorySuite) TestCategoryRepository_AllCategory_Offset() {
 
 	ctx := s.ctx
 	tx, err := s.client.Tx(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
 	categories, err := s.repository.AllCategories(ctx, filter)
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.NoError(t, tx.Commit())
-	assert.Equal(t, len(s.categories)-filter.Offset, len(categories))
+	require.NoError(t, tx.Commit())
+	require.Equal(t, len(s.categories)-filter.Offset, len(categories))
 }
 
 func (s *categoryRepositorySuite) TestCategoryRepository_AllCategory_HasEquipment() {
@@ -359,28 +359,28 @@ func (s *categoryRepositorySuite) TestCategoryRepository_AllCategory_HasEquipmen
 
 	ctx := s.ctx
 	tx, err := s.client.Tx(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
 	categories, err := s.repository.AllCategories(ctx, filter)
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.NoError(t, tx.Commit())
-	assert.Equal(t, 1, len(categories))
+	require.NoError(t, tx.Commit())
+	require.Equal(t, 1, len(categories))
 }
 
 func (s *categoryRepositorySuite) TestCategoryRepository_CategoryByID() {
 	t := s.T()
 	ctx := s.ctx
 	tx, err := s.client.Tx(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
 	category, err := s.repository.CategoryByID(ctx, s.categories[0].ID)
-	assert.NoError(t, err)
-	assert.NoError(t, tx.Commit())
-	assert.Equal(t, s.categories[0].Name, category.Name)
-	assert.Equal(t, s.categories[0].MaxReservationTime, category.MaxReservationTime)
-	assert.Equal(t, s.categories[0].MaxReservationUnits, category.MaxReservationUnits)
+	require.NoError(t, err)
+	require.NoError(t, tx.Commit())
+	require.Equal(t, s.categories[0].Name, category.Name)
+	require.Equal(t, s.categories[0].MaxReservationTime, category.MaxReservationTime)
+	require.Equal(t, s.categories[0].MaxReservationUnits, category.MaxReservationUnits)
 }
 
 func (s *categoryRepositorySuite) TestCategoryRepository_DeleteCategoryByID() {
@@ -397,11 +397,11 @@ func (s *categoryRepositorySuite) TestCategoryRepository_DeleteCategoryByID() {
 	}
 	ctx := s.ctx
 	tx, err := s.client.Tx(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
 	err = s.repository.DeleteCategoryByID(ctx, createdCategory.ID)
-	assert.NoError(t, err)
-	assert.NoError(t, tx.Commit())
+	require.NoError(t, err)
+	require.NoError(t, tx.Commit())
 }
 
 func (s *categoryRepositorySuite) TestCategoryRepository_UpdateCategory() {
@@ -412,14 +412,14 @@ func (s *categoryRepositorySuite) TestCategoryRepository_UpdateCategory() {
 	}
 	ctx := s.ctx
 	tx, err := s.client.Tx(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	ctx = context.WithValue(ctx, middlewares.TxContextKey, tx)
 	category, err := s.repository.UpdateCategory(ctx, s.categories[0].ID, update)
-	assert.NoError(t, err)
-	assert.NoError(t, tx.Commit())
-	assert.Equal(t, name, category.Name)
-	assert.Equal(t, s.categories[0].MaxReservationTime, category.MaxReservationTime)
-	assert.Equal(t, s.categories[0].MaxReservationUnits, category.MaxReservationUnits)
+	require.NoError(t, err)
+	require.NoError(t, tx.Commit())
+	require.Equal(t, name, category.Name)
+	require.Equal(t, s.categories[0].MaxReservationTime, category.MaxReservationTime)
+	require.Equal(t, s.categories[0].MaxReservationUnits, category.MaxReservationUnits)
 }
 
 func containsCategory(t *testing.T, eq *ent.Category, list []*ent.Category) bool {
